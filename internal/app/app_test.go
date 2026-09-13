@@ -32,7 +32,7 @@ func TestCommandsAndExitCodes(t *testing.T) {
 		Update: func(context.Context) (update.Result, error) {
 			return update.Result{Current: true, From: "v1.2.3"}, nil
 		},
-		Web: func(_ context.Context, _ operation.Plan, output io.Writer) error {
+		Hosted: func(_ context.Context, _ operation.Plan, output io.Writer) error {
 			_, err := io.WriteString(output, "delivery: http://127.0.0.1:8080/d/token/\n")
 			return err
 		},
@@ -52,7 +52,7 @@ func TestCommandsAndExitCodes(t *testing.T) {
 		{name: "invalid transfer grammar", args: []string{"from", "a", "into", "b"}, code: ExitCLI, wantError: "expected: courier from"},
 		{name: "unsupported transfer route", args: []string{"from", "https://example.test/file", "to", "out"}, code: ExitCLI, wantError: "unsupported operation route"},
 		{name: "browser transfer route", args: []string{"from", "web://", "to", "out", "--background"}, code: ExitOK, wantOutput: "delivery: http://"},
-		{name: "planned transfer route", args: []string{"from", "webhook://", "to", "out"}, code: ExitCLI, wantError: "planned but not shipped"},
+		{name: "webhook transfer route", args: []string{"from", "webhook://", "to", "out"}, code: ExitOK, wantOutput: "delivery: http://"},
 		{name: "duplicate archive", args: []string{"from", "a", "to", "b", "--archive", "--archive"}, code: ExitCLI, wantError: "value may only be set once"},
 		{name: "current update", args: []string{"update"}, code: ExitOK, wantOutput: "courier v1.2.3 is current"},
 	} {
@@ -91,6 +91,14 @@ func TestCommandsAndExitCodes(t *testing.T) {
 				t.Fatalf("code=%d stderr=%q", code, stderr.String())
 			}
 		})
+	}
+}
+
+func TestUnknownRuntimeRoute(t *testing.T) {
+	err := runRoute(context.Background(), Dependencies{}, operation.Plan{Route: operation.Route(255)}, selection.All(), io.Discard, io.Discard)
+	var commandErr *commandError
+	if !errors.As(err, &commandErr) || commandErr.code != ExitCLI {
+		t.Fatalf("unknown route=%v", err)
 	}
 }
 
@@ -816,11 +824,15 @@ type fakeInfo struct {
 	name      string
 	size      int64
 	directory bool
+	mode      fs.FileMode
 }
 
 func (f fakeInfo) Name() string { return f.name }
 func (f fakeInfo) Size() int64  { return f.size }
 func (f fakeInfo) Mode() fs.FileMode {
+	if f.mode != 0 {
+		return f.mode
+	}
 	if f.directory {
 		return fs.ModeDir | 0o700
 	}

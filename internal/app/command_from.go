@@ -1,7 +1,9 @@
 package app
 
 import (
+	"context"
 	"errors"
+	"io"
 	"strconv"
 
 	"github.com/iwonz/courier/internal/operation"
@@ -76,25 +78,12 @@ func newTransferCommand(dependencies Dependencies) *cobra.Command {
 					return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: err}
 				}
 			}
-			switch plan.Route {
-			case operation.RoutePathToPath:
-				return runTransfer(command.Context(), dependencies, plan, selector, command.OutOrStdout(), command.ErrOrStderr())
-			case operation.RouteWebToPath, operation.RoutePathToWeb:
-				if dependencies.Web == nil {
-					return &commandError{code: ExitControl, stage: "control", cause: errors.New("web delivery dependencies are incomplete")}
-				}
-				if err := dependencies.Web(command.Context(), plan, command.OutOrStdout()); err != nil {
-					return &commandError{code: ExitControl, stage: "control", cause: err}
-				}
-				return nil
-			default:
-				return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: errors.New("requested route is planned but not shipped")}
-			}
+			return runRoute(command.Context(), dependencies, plan, selector, command.OutOrStdout(), command.ErrOrStderr())
 		},
 	}
 	boolFlag(command, &values.archive, "archive", "create and transfer <source-name>.tar.gz")
 	boolFlag(command, &values.extract, "extract", "extract a tar.gz archive into the destination root")
-	command.Flags().Var(&values.listen, "listen", "browser delivery bind address (default 127.0.0.1:8080)")
+	command.Flags().Var(&values.listen, "listen", "incoming HTTP delivery bind address (default 127.0.0.1:8080)")
 	boolFlag(command, &values.background, "background", "keep the delivery active after this command exits")
 	command.Flags().Var(&values.auth, "auth", "authentication mode: none, basic, or password")
 	command.Flags().Var(&values.authAttempts, "auth-attempts", "failed authentication threshold (default 5)")
@@ -110,6 +99,25 @@ func newTransferCommand(dependencies Dependencies) *cobra.Command {
 	command.Flags().Var(&values.uploadRate, "upload-rate", "aggregate upload rate or unlimited")
 	command.Flags().Var(&values.downloadRate, "download-rate", "aggregate download rate or unlimited")
 	return command
+}
+
+func runRoute(ctx context.Context, dependencies Dependencies, plan operation.Plan, selector selection.Selector, stdout, stderr io.Writer) error {
+	switch plan.Route {
+	case operation.RoutePathToPath:
+		return runTransfer(ctx, dependencies, plan, selector, stdout, stderr)
+	case operation.RouteWebToPath, operation.RoutePathToWeb, operation.RouteWebhookToPath:
+		if dependencies.Hosted == nil {
+			return &commandError{code: ExitControl, stage: "control", cause: errors.New("web delivery dependencies are incomplete")}
+		}
+		if err := dependencies.Hosted(ctx, plan, stdout); err != nil {
+			return &commandError{code: ExitControl, stage: "control", cause: err}
+		}
+		return nil
+	case operation.RoutePathToHTTP:
+		return runOutgoingWebhook(ctx, dependencies, plan, selector, stdout, stderr)
+	default:
+		return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: errors.New("operation route has no runtime handler")}
+	}
 }
 
 func boolFlag(command *cobra.Command, value *operation.BoolValue, name, usage string) {

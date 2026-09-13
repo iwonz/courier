@@ -1,5 +1,5 @@
 schema_version: 1
-contract_version: 0.10.0
+contract_version: 0.11.0
 target_release: 0.2.0
 language: en
 
@@ -14,10 +14,10 @@ endpoint_kinds:
     status: shipped
     syntax: "web://"
   - name: webhook
-    status: planned
+    status: shipped
     syntax: "webhook://"
   - name: http
-    status: planned
+    status: shipped
     syntax: "http://host/path or https://host/path"
 
 commands:
@@ -215,12 +215,12 @@ routes:
     destination: [web]
     allowed_flags: [archive, listen, background, auth, auth-attempts, auth-fail-action, limit, no-ui, allow-ip, exclude, exclude-regex, exclude-from, download-rate]
   - name: webhook-to-path
-    status: planned
+    status: shipped
     source: [webhook]
     destination: [local, ssh]
     allowed_flags: [extract, listen, background, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
   - name: path-to-http
-    status: planned
+    status: shipped
     source: [local, ssh]
     destination: [http]
     allowed_flags: [archive, auth, exclude, exclude-regex, exclude-from, upload-rate]
@@ -242,3 +242,5 @@ examples:
   - courier from root@203.0.113.10:/opt/node/data to ./backup/
   - courier from source-server:/opt/node/data to backup-server:/srv/data/
   - courier from ./data to ./backup/ --archive
+  - courier from webhook:// to ./inbox/ --auth basic
+  - courier from ./report.pdf to https://example.com/hooks/courier

@@ -1,6 +1,6 @@
 # Courier CLI
 
-Courier is an extensible, cross-platform CLI for safely transferring files and directories between local and SSH endpoints.
+Courier is an extensible, cross-platform CLI for safely transferring files and directories across local, SSH, browser, and webhook endpoints.
 
 ```text
 courier from <source> to <destination> [flags]
@@ -57,6 +57,9 @@ courier from source-server:/opt/node/data to backup-server:/srv/data/
 courier from ./data to ./backup/ --archive
 courier from ./backup/data.tar.gz to ./restore/ --extract
 courier from ./data to ./backup/ --exclude '*.tmp' --exclude-from ./courier.ignore
+courier from webhook:// to ./inbox/ --auth basic
+courier from ./report.pdf to https://example.com/hooks/courier
+courier from ./data to https://example.com/hooks/courier --archive
 ```
 
 The destination rules are deterministic:
@@ -98,6 +101,7 @@ The updater compares the installed semantic version with the latest GitHub Relea
 | `10` | SSH connection, trust, or authentication error |
 | `20` | Preflight, archive, transfer, commit, or cleanup error |
 | `30` | Self-update error |
+| `40` | Registry, IPC, worker, or local control error |
 
 Failure output includes the stage, safe reason, and confirmed transferred bytes. Credentials are never included.
 
@@ -118,6 +122,8 @@ The machine-readable [CLI contract](docs/cli-contract.yaml) is the source of tru
 Browser delivery pages, the administration interface, and the project landing page share the Lit-based [`@courier/ui`](web/ui) package. Its [UI architecture guide](docs/ui.md) documents assets, themes, localization, components, and the exact TypeScript coverage gate.
 
 See [Browser deliveries](docs/web-deliveries.md) for `web://` URLs, authentication, safe navigation, transactional uploads, and foreground/background lifecycle behavior.
+
+See [Webhook deliveries](docs/webhook-deliveries.md) for Courier's exact incoming and outgoing multipart profile, HTTP result semantics, and intentionally unsupported provider-specific behavior.
 
 ## License
 

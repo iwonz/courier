@@ -87,7 +87,7 @@ func basicCredentials(request *http.Request) (string, []byte, bool) {
 
 func (host *Host) root(response http.ResponseWriter, request *http.Request) {
 	hosted, exists := host.lookup(request)
-	if !exists {
+	if !exists || hosted.record.Route == delivery.RouteWebhookToPath {
 		writeError(response, http.StatusNotFound, "delivery not found")
 		return
 	}
@@ -115,7 +115,7 @@ func (host *Host) root(response http.ResponseWriter, request *http.Request) {
 
 func (host *Host) login(response http.ResponseWriter, request *http.Request) {
 	hosted, exists := host.lookup(request)
-	if !exists {
+	if !exists || hosted.record.Route == delivery.RouteWebhookToPath {
 		writeError(response, http.StatusNotFound, "delivery not found")
 		return
 	}
@@ -179,7 +179,7 @@ type metadataEntry struct {
 
 func (host *Host) metadata(response http.ResponseWriter, request *http.Request) {
 	hosted, exists := host.lookup(request)
-	if !exists {
+	if !exists || hosted.record.Route == delivery.RouteWebhookToPath {
 		writeError(response, http.StatusNotFound, "delivery not found")
 		return
 	}
@@ -444,6 +444,19 @@ func (host *Host) upload(response http.ResponseWriter, request *http.Request) {
 		writeError(response, http.StatusForbidden, "request origin denied")
 		return
 	}
+	host.receiveUpload(response, request, hosted, "")
+}
+
+func (host *Host) webhookUpload(response http.ResponseWriter, request *http.Request) {
+	hosted, exists := host.lookup(request)
+	if !exists || hosted.record.Route != delivery.RouteWebhookToPath {
+		writeError(response, http.StatusNotFound, "delivery not found")
+		return
+	}
+	host.receiveUpload(response, request, hosted, "file")
+}
+
+func (host *Host) receiveUpload(response http.ResponseWriter, request *http.Request, hosted *hostedDelivery, requiredField string) {
 	declared := int64(-1)
 	if value := request.Header.Get("X-Courier-File-Size"); value != "" {
 		parsed, err := strconv.ParseInt(value, 10, 64)
@@ -465,7 +478,10 @@ func (host *Host) upload(response http.ResponseWriter, request *http.Request) {
 	}
 	reader := multipart.NewReader(request.Body, parameters["boundary"])
 	part, name, err := firstFilePart(reader)
-	if err != nil {
+	if err != nil || requiredField != "" && part.FormName() != requiredField {
+		if part != nil {
+			_ = part.Close()
+		}
 		writeError(response, http.StatusBadRequest, "one file part is required")
 		return
 	}
@@ -600,6 +616,15 @@ func writeError(response http.ResponseWriter, status int, message string) {
 }
 
 func URL(bind, token string) (string, error) {
+	return deliveryURL(bind, token, "/")
+}
+
+// WebhookURL returns the opaque incoming multipart endpoint.
+func WebhookURL(bind, token string) (string, error) {
+	return deliveryURL(bind, token, "/upload")
+}
+
+func deliveryURL(bind, token, suffix string) (string, error) {
 	host, port, err := net.SplitHostPort(bind)
 	if err != nil {
 		return "", err
@@ -607,6 +632,6 @@ func URL(bind, token string) (string, error) {
 	if host == "0.0.0.0" || host == "::" {
 		host = "127.0.0.1"
 	}
-	value := url.URL{Scheme: "http", Host: net.JoinHostPort(host, port), Path: "/d/" + token + "/"}
+	value := url.URL{Scheme: "http", Host: net.JoinHostPort(host, port), Path: "/d/" + token + suffix}
 	return value.String(), nil
 }

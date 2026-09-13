@@ -29,6 +29,7 @@ var (
 	openDeliveryStore     = delivery.OpenStore
 	newWebDefinition      = webdelivery.NewDefinition
 	webAddress            = webdelivery.URL
+	webhookAddress        = webdelivery.WebhookURL
 	webNow                = time.Now
 	newWebCoordinator     = func(store *delivery.Store, directory string) webCoordinator {
 		return worker.DefaultCoordinator(store, directory)
@@ -54,6 +55,8 @@ func acquireWebDelivery(ctx context.Context, plan operation.Plan, configured del
 	route := delivery.RouteWebToPath
 	if plan.Route == operation.RoutePathToWeb {
 		route = delivery.RoutePathToWeb
+	} else if plan.Route == operation.RouteWebhookToPath {
+		route = delivery.RouteWebhookToPath
 	}
 	return newWebCoordinator(store, stateDirectory).Acquire(ctx, worker.AcquireRequest{
 		Bind: plan.Options.Listen, Compatibility: "web-v1/" + buildinfo.Version, Route: route,
@@ -188,7 +191,11 @@ func webRunner(credentials func(context.Context, operation.AuthMode) (policy.Cre
 		if err != nil {
 			return err
 		}
-		address, err := webAddress(plan.Options.Listen, definition.Token)
+		addressFunc := webAddress
+		if plan.Route == operation.RouteWebhookToPath {
+			addressFunc = webhookAddress
+		}
+		address, err := addressFunc(plan.Options.Listen, definition.Token)
 		if err != nil {
 			if acquired.Lease != nil {
 				_ = releaseWebLease(acquired.Lease, context.Background())

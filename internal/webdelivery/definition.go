@@ -106,6 +106,9 @@ func routeForPlan(plan operation.Plan) delivery.Route {
 	if plan.Route == operation.RoutePathToWeb {
 		return delivery.RoutePathToWeb
 	}
+	if plan.Route == operation.RouteWebhookToPath {
+		return delivery.RouteWebhookToPath
+	}
 	return ""
 }
 
@@ -126,6 +129,10 @@ func (definition Definition) Validate(route delivery.Route) error {
 	case delivery.RouteWebToPath:
 		if source.Kind != endpoint.KindWeb || !destination.IsPath() || definition.Archive {
 			return errors.New("invalid browser-upload definition")
+		}
+	case delivery.RouteWebhookToPath:
+		if source.Kind != endpoint.KindWebhook || !destination.IsPath() || definition.Archive || definition.NoUI {
+			return errors.New("invalid incoming-webhook definition")
 		}
 	case delivery.RoutePathToWeb:
 		if !source.IsPath() || destination.Kind != endpoint.KindWeb || definition.Extract {

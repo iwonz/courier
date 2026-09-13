@@ -119,7 +119,7 @@ func (host *Host) Register(ctx context.Context, record delivery.Delivery, runtim
 		return err
 	}
 	openedEndpoint := definition.Source
-	if record.Route == delivery.RouteWebToPath {
+	if record.Route == delivery.RouteWebToPath || record.Route == delivery.RouteWebhookToPath {
 		openedEndpoint = definition.Destination
 	}
 	parsed, _ := endpoint.Parse(openedEndpoint)
@@ -140,8 +140,8 @@ func (host *Host) Register(ctx context.Context, record delivery.Delivery, runtim
 	if err != nil {
 		return err
 	}
-	if record.Route == delivery.RouteWebToPath && !info.IsDir() {
-		return errors.New("browser upload destination must be an existing directory")
+	if (record.Route == delivery.RouteWebToPath || record.Route == delivery.RouteWebhookToPath) && !info.IsDir() {
+		return errors.New("incoming delivery destination must be an existing directory")
 	}
 	if record.Route == delivery.RoutePathToWeb && !info.Mode().IsRegular() && !info.IsDir() {
 		return errors.New("browser download source must be a file or directory")
@@ -267,6 +267,7 @@ func (host *Host) routes() http.Handler {
 	router.Handle("/assets/*", host.assets)
 	router.Route("/d/{token}", func(router chi.Router) {
 		router.Get("/", host.root)
+		router.Post("/upload", host.webhookUpload)
 		router.Post("/api/v1/session", host.login)
 		router.Get("/api/v1/meta", host.metadata)
 		router.Get("/api/v1/download", host.download)

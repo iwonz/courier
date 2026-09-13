@@ -69,6 +69,9 @@ func webDefinition(route delivery.Route, localPath string) Definition {
 	if route == delivery.RouteWebToPath {
 		definition.Source = "web://"
 		definition.Destination = localPath
+	} else if route == delivery.RouteWebhookToPath {
+		definition.Source = "webhook://"
+		definition.Destination = localPath
 	} else {
 		definition.Source = localPath
 		definition.Destination = "web://"
@@ -156,6 +159,26 @@ func TestDefinitionValidationAndURL(t *testing.T) {
 	if err != nil || routeForPlan(pathPlan) != delivery.RoutePathToWeb {
 		t.Fatalf("unexpected path plan: %v", err)
 	}
+	webhookPlan, err := operation.Build(operation.Request{Source: "webhook://", Destination: t.TempDir()})
+	if err != nil || routeForPlan(webhookPlan) != delivery.RouteWebhookToPath {
+		t.Fatalf("unexpected webhook plan: %v", err)
+	}
+	webhookDefinition, err := NewDefinition(webhookPlan, policy.Credentials{}, EndpointRuntime{}, bytes.NewReader(bytes.Repeat([]byte{5}, ResourceTokenBytes)))
+	if err != nil || webhookDefinition.Validate(delivery.RouteWebhookToPath) != nil {
+		t.Fatalf("unexpected webhook definition: %+v %v", webhookDefinition, err)
+	}
+	for index, mutate := range []func(*Definition){
+		func(value *Definition) { value.Source = "web://" },
+		func(value *Definition) { value.Destination = "web://" },
+		func(value *Definition) { value.Archive = true },
+		func(value *Definition) { value.NoUI = true },
+	} {
+		candidate := webhookDefinition
+		mutate(&candidate)
+		if err := candidate.Validate(delivery.RouteWebhookToPath); err == nil {
+			t.Fatalf("webhook mutation %d accepted", index)
+		}
+	}
 
 	valid := webDefinition(delivery.RouteWebToPath, t.TempDir())
 	mutations := []func(*Definition){
@@ -191,6 +214,9 @@ func TestDefinitionValidationAndURL(t *testing.T) {
 	}
 	if _, err := URL("invalid", valid.Token); err == nil {
 		t.Fatal("expected URL bind error")
+	}
+	if value, err := WebhookURL("127.0.0.1:8080", valid.Token); err != nil || value != "http://127.0.0.1:8080/d/"+valid.Token+"/upload" {
+		t.Fatalf("unexpected webhook URL: %q %v", value, err)
 	}
 	if _, err := RandomDefinition(plan, policy.Credentials{}); err != nil {
 		t.Fatal(err)
@@ -477,6 +503,25 @@ func multipartBody(t *testing.T, name string, data []byte, second bool) (*bytes.
 	return buffer, writer.FormDataContentType()
 }
 
+func multipartFieldBody(t *testing.T, field, name string, data []byte, second bool) (*bytes.Buffer, string) {
+	t.Helper()
+	buffer := &bytes.Buffer{}
+	writer := multipart.NewWriter(buffer)
+	part, err := writer.CreateFormFile(field, name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = part.Write(data)
+	if second {
+		part, _ = writer.CreateFormFile("second", "second.txt")
+		_, _ = part.Write([]byte("second"))
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buffer, writer.FormDataContentType()
+}
+
 func tarGzipBody(t *testing.T, entries map[string]string) []byte {
 	t.Helper()
 	var output bytes.Buffer
@@ -571,6 +616,98 @@ func TestBrowserUploadExtraction(t *testing.T) {
 	body, contentType = multipartBody(t, "unsupported.zip", []byte("not an archive"), false)
 	if response := perform(host, http.MethodPost, base, body, map[string]string{"Content-Type": contentType}); response.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("unsupported extraction=%d %q", response.Code, response.Body.String())
+	}
+}
+
+func TestIncomingWebhookProfileAndExtraction(t *testing.T) {
+	root := t.TempDir()
+	host := newTestHost(t, nil)
+	definition := webDefinition(delivery.RouteWebhookToPath, root)
+	record := webRecord(testDeliveryID, delivery.RouteWebhookToPath, delivery.DefaultPolicy())
+	if err := host.Register(context.Background(), record, marshalDefinition(t, definition)); err != nil {
+		t.Fatal(err)
+	}
+	resource := "/d/" + definition.Token
+	if response := perform(host, http.MethodPost, "/d/unknown/upload", nil, nil); response.Code != http.StatusNotFound {
+		t.Fatalf("unknown webhook=%d", response.Code)
+	}
+	browserRoot := t.TempDir()
+	browserDefinition := webDefinition(delivery.RouteWebToPath, browserRoot)
+	browserDefinition.Token = fixedToken(8)
+	browserID := delivery.ID("00000000-0000-4000-8000-000000000038")
+	if err := host.Register(context.Background(), webRecord(browserID, delivery.RouteWebToPath, delivery.DefaultPolicy()), marshalDefinition(t, browserDefinition)); err != nil {
+		t.Fatal(err)
+	}
+	if response := perform(host, http.MethodPost, "/d/"+browserDefinition.Token+"/upload", nil, nil); response.Code != http.StatusNotFound {
+		t.Fatalf("browser token accepted as webhook=%d", response.Code)
+	}
+	for _, surface := range []struct{ method, target string }{
+		{http.MethodGet, resource + "/"},
+		{http.MethodPost, resource + "/api/v1/session"},
+		{http.MethodGet, resource + "/api/v1/meta"},
+		{http.MethodGet, resource + "/api/v1/download"},
+		{http.MethodPost, resource + "/api/v1/upload"},
+	} {
+		if response := perform(host, surface.method, surface.target, nil, nil); response.Code != http.StatusNotFound {
+			t.Fatalf("webhook exposed browser surface %q: %d", surface.target, response.Code)
+		}
+	}
+	body, contentType := multipartFieldBody(t, "wrong", "wrong.txt", []byte("bad"), false)
+	if response := perform(host, http.MethodPost, resource+"/upload", body, map[string]string{"Content-Type": contentType}); response.Code != http.StatusBadRequest {
+		t.Fatalf("wrong field=%d %q", response.Code, response.Body.String())
+	}
+	body, contentType = multipartFieldBody(t, "file", "many.txt", []byte("one"), true)
+	if response := perform(host, http.MethodPost, resource+"/upload", body, map[string]string{"Content-Type": contentType}); response.Code != http.StatusBadRequest {
+		t.Fatalf("multiple fields=%d %q", response.Code, response.Body.String())
+	}
+	body, contentType = multipartFieldBody(t, "file", "accepted.txt", []byte("accepted"), false)
+	response := perform(host, http.MethodPost, resource+"/upload", body, map[string]string{"Content-Type": contentType, "Origin": "https://automation.example"})
+	data, err := os.ReadFile(filepath.Join(root, "accepted.txt"))
+	if response.Code != http.StatusCreated || err != nil || string(data) != "accepted" {
+		t.Fatalf("accepted=%d %q data=%q err=%v", response.Code, response.Body.String(), data, err)
+	}
+	body, contentType = multipartFieldBody(t, "file", "accepted.txt", []byte("replace"), false)
+	if response := perform(host, http.MethodPost, resource+"/upload", body, map[string]string{"Content-Type": contentType}); response.Code != http.StatusConflict {
+		t.Fatalf("collision=%d %q", response.Code, response.Body.String())
+	}
+
+	extractRoot := t.TempDir()
+	extractDefinition := webDefinition(delivery.RouteWebhookToPath, extractRoot)
+	extractDefinition.Token = fixedToken(7)
+	extractDefinition.Extract = true
+	extractID := delivery.ID("00000000-0000-4000-8000-000000000037")
+	if err := host.Register(context.Background(), webRecord(extractID, delivery.RouteWebhookToPath, delivery.DefaultPolicy()), marshalDefinition(t, extractDefinition)); err != nil {
+		t.Fatal(err)
+	}
+	payload := tarGzipBody(t, map[string]string{"bundle/file.txt": "contents"})
+	body, contentType = multipartFieldBody(t, "file", "bundle.tar.gz", payload, false)
+	response = perform(host, http.MethodPost, "/d/"+extractDefinition.Token+"/upload", body, map[string]string{"Content-Type": contentType})
+	data, err = os.ReadFile(filepath.Join(extractRoot, "bundle", "file.txt"))
+	if response.Code != http.StatusCreated || err != nil || string(data) != "contents" {
+		t.Fatalf("extract=%d %q data=%q err=%v", response.Code, response.Body.String(), data, err)
+	}
+}
+
+func TestIncomingWebhookBasicAuthentication(t *testing.T) {
+	root := t.TempDir()
+	host := newTestHost(t, nil)
+	configured := delivery.DefaultPolicy()
+	configured.Auth = delivery.AuthBasic
+	definition := webDefinition(delivery.RouteWebhookToPath, root)
+	definition.Credentials = policy.Credentials{BasicUsername: "hook", BasicPassword: []byte("secret")}
+	record := webRecord(testDeliveryID, delivery.RouteWebhookToPath, configured)
+	if err := host.Register(context.Background(), record, marshalDefinition(t, definition)); err != nil {
+		t.Fatal(err)
+	}
+	body, contentType := multipartFieldBody(t, "file", "auth.txt", []byte("accepted"), false)
+	response := perform(host, http.MethodPost, "/d/"+definition.Token+"/upload", body, map[string]string{"Content-Type": contentType})
+	if response.Code != http.StatusUnauthorized || response.Header().Get("WWW-Authenticate") == "" {
+		t.Fatalf("unauthorized=%d headers=%v", response.Code, response.Header())
+	}
+	body, contentType = multipartFieldBody(t, "file", "auth.txt", []byte("accepted"), false)
+	response = perform(host, http.MethodPost, "/d/"+definition.Token+"/upload", body, map[string]string{"Content-Type": contentType, "Authorization": "Basic aG9vazpzZWNyZXQ="})
+	if response.Code != http.StatusCreated {
+		t.Fatalf("authorized=%d %q", response.Code, response.Body.String())
 	}
 }
 

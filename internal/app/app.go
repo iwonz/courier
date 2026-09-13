@@ -28,6 +28,7 @@ import (
 	"github.com/iwonz/courier/internal/transfer"
 	"github.com/iwonz/courier/internal/update"
 	"github.com/iwonz/courier/internal/webdelivery"
+	"github.com/iwonz/courier/internal/webhook"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/term"
@@ -52,20 +53,21 @@ type Resource struct {
 
 // Dependencies makes command orchestration locally testable.
 type Dependencies struct {
-	Open           func(context.Context, endpoint.Endpoint) (*Resource, error)
-	OpenArtifact   func(string) (fsx.Backend, string, func() error, error)
-	Transfer       func(context.Context, transfer.Request) (transfer.Result, error)
-	Archive        func(context.Context, fsx.Backend, string, string, string, selection.Selector, progress.Sink) (*archive.Artifact, error)
-	Extract        func(context.Context, archive.ExtractionRequest) (archive.ExtractionResult, error)
-	Web            func(context.Context, operation.Plan, io.Writer) error
-	WebCredentials func(context.Context, operation.AuthMode) (policy.Credentials, error)
-	WebEndpoint    func(context.Context, endpoint.Endpoint) (webdelivery.EndpointRuntime, error)
-	Select         func([]operation.SelectionRule) (selection.Selector, error)
-	Update         func(context.Context) (update.Result, error)
-	Reporter       func(io.Writer, bool) *report.Reporter
-	Terminal       func(io.Writer) bool
-	TempDir        string
-	Build          BuildIdentity
+	Open                func(context.Context, endpoint.Endpoint) (*Resource, error)
+	OpenArtifact        func(string) (fsx.Backend, string, func() error, error)
+	Transfer            func(context.Context, transfer.Request) (transfer.Result, error)
+	Archive             func(context.Context, fsx.Backend, string, string, string, selection.Selector, progress.Sink) (*archive.Artifact, error)
+	Extract             func(context.Context, archive.ExtractionRequest) (archive.ExtractionResult, error)
+	Hosted              func(context.Context, operation.Plan, io.Writer) error
+	Webhook             func(context.Context, webhook.Request) (webhook.Result, error)
+	DeliveryCredentials func(context.Context, operation.AuthMode) (policy.Credentials, error)
+	DeliveryEndpoint    func(context.Context, endpoint.Endpoint) (webdelivery.EndpointRuntime, error)
+	Select              func([]operation.SelectionRule) (selection.Selector, error)
+	Update              func(context.Context) (update.Result, error)
+	Reporter            func(io.Writer, bool) *report.Reporter
+	Terminal            func(io.Writer) bool
+	TempDir             string
+	Build               BuildIdentity
 }
 
 // BuildIdentity is the version metadata rendered by the version command.
@@ -171,14 +173,15 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 		Select: func(rules []operation.SelectionRule) (selection.Selector, error) {
 			return selection.Compile(rules, selection.OpenFile)
 		},
-		Update:         updater.Run,
-		Reporter:       report.New,
-		Terminal:       writerIsTerminal,
-		Build:          BuildIdentity{Version: buildinfo.Version, Commit: buildinfo.Commit, Date: buildinfo.Date},
-		WebCredentials: deliveryCredentialPrompt(input, promptOutput),
-		WebEndpoint:    endpointCredentialProvider(factory),
+		Update:              updater.Run,
+		Reporter:            report.New,
+		Terminal:            writerIsTerminal,
+		Build:               BuildIdentity{Version: buildinfo.Version, Commit: buildinfo.Commit, Date: buildinfo.Date},
+		DeliveryCredentials: deliveryCredentialPrompt(input, promptOutput),
+		DeliveryEndpoint:    endpointCredentialProvider(factory),
+		Webhook:             (webhook.Sender{}).Send,
 	}
-	dependencies.Web = webRunner(dependencies.WebCredentials, dependencies.WebEndpoint)
+	dependencies.Hosted = webRunner(dependencies.DeliveryCredentials, dependencies.DeliveryEndpoint)
 	return dependencies, nil
 }
 

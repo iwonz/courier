@@ -210,7 +210,7 @@ func TestBrowserCommandDependencyFailures(t *testing.T) {
 	if code := Execute(context.Background(), NewRoot(Dependencies{}), args, io.Discard, &stderr); code != ExitControl || !strings.Contains(stderr.String(), "dependencies") {
 		t.Fatalf("nil web dependency code=%d stderr=%q", code, stderr.String())
 	}
-	dependencies := Dependencies{Web: func(context.Context, operation.Plan, io.Writer) error { return errors.New("web failure") }}
+	dependencies := Dependencies{Hosted: func(context.Context, operation.Plan, io.Writer) error { return errors.New("web failure") }}
 	stderr.Reset()
 	if code := Execute(context.Background(), NewRoot(dependencies), args, io.Discard, &stderr); code != ExitControl || !strings.Contains(stderr.String(), "web failure") {
 		t.Fatalf("web failure code=%d stderr=%q", code, stderr.String())
@@ -268,15 +268,30 @@ func TestAcquireWebDelivery(t *testing.T) {
 	if _, err := acquireWebDelivery(context.Background(), uploadPlan, configured, nil); err == nil {
 		t.Fatal("coordinator error ignored")
 	}
+	webhookPlan, err := operation.Build(operation.Request{Source: "webhook://", Destination: t.TempDir(), Options: []operation.Option{{Name: operation.OptionBackground, Value: "true"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	newWebCoordinator = func(*delivery.Store, string) webCoordinator {
+		return coordinatorFunc(func(_ context.Context, request worker.AcquireRequest) (worker.Acquired, error) {
+			if request.Route != delivery.RouteWebhookToPath {
+				t.Fatalf("unexpected webhook route: %s", request.Route)
+			}
+			return worker.Acquired{}, nil
+		})
+	}
+	if _, err := acquireWebDelivery(context.Background(), webhookPlan, configured, nil); err != nil {
+		t.Fatal(err)
+	}
 	if originalCoordinator(nil, directory) == nil {
 		t.Fatal("default coordinator factory returned nil")
 	}
 }
 
 func TestWebRunnerBranches(t *testing.T) {
-	originalDefinition, originalAddress, originalAcquire, originalRelease := newWebDefinition, webAddress, runWebAcquire, releaseWebLease
+	originalDefinition, originalAddress, originalWebhookAddress, originalAcquire, originalRelease := newWebDefinition, webAddress, webhookAddress, runWebAcquire, releaseWebLease
 	t.Cleanup(func() {
-		newWebDefinition, webAddress, runWebAcquire, releaseWebLease = originalDefinition, originalAddress, originalAcquire, originalRelease
+		newWebDefinition, webAddress, webhookAddress, runWebAcquire, releaseWebLease = originalDefinition, originalAddress, originalWebhookAddress, originalAcquire, originalRelease
 	})
 	plan := browserPlan(t, true)
 	if err := webRunner(nil, nil)(context.Background(), plan, io.Discard); err == nil {
@@ -369,6 +384,23 @@ func TestWebRunnerBranches(t *testing.T) {
 	cancel()
 	if err := webRunner(provider, nil)(canceled, foreground, io.Discard); !errors.Is(err, context.Canceled) || !errors.Is(err, releaseError) {
 		t.Fatalf("foreground result=%v", err)
+	}
+	webhookPlan, err := operation.Build(operation.Request{Source: "webhook://", Destination: t.TempDir(), Options: []operation.Option{{Name: operation.OptionBackground, Value: "true"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	runWebAcquire = func(context.Context, operation.Plan, delivery.Policy, json.RawMessage) (worker.Acquired, error) {
+		return worker.Acquired{DeliveryID: appWebDeliveryID}, nil
+	}
+	webhookAddress = func(bind, token string) (string, error) {
+		if bind == "" || token == "" {
+			t.Fatal("missing webhook address input")
+		}
+		return "http://delivery/upload", nil
+	}
+	output.Reset()
+	if err := webRunner(provider, nil)(context.Background(), webhookPlan, &output); err != nil || !strings.Contains(output.String(), "/upload") {
+		t.Fatalf("webhook output=%q err=%v", output.String(), err)
 	}
 }
 

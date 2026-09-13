@@ -1,6 +1,6 @@
 # Courier CLI reference
 
-Contract version `0.10.0`; target release `0.2.0`. This file is generated from `docs/cli-contract.yaml`.
+Contract version `0.11.0`; target release `0.2.0`. This file is generated from `docs/cli-contract.yaml`.
 
 ## Commands
 
@@ -22,8 +22,8 @@ Contract version `0.10.0`; target release `0.2.0`. This file is generated from `
 | shipped | `local` | ./path, /absolute/path, or an explicit Windows path |
 | shipped | `ssh` | [user@]host:/path or [user@]host:C:/path |
 | shipped | `web` | web:// |
-| planned | `webhook` | webhook:// |
-| planned | `http` | http://host/path or https://host/path |
+| shipped | `webhook` | webhook:// |
+| shipped | `http` | http://host/path or https://host/path |
 
 ## Routes and options
 
@@ -32,8 +32,8 @@ Contract version `0.10.0`; target release `0.2.0`. This file is generated from `
 | shipped | `path-to-path` | local, ssh | local, ssh | `--archive`, `--extract`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-extracted-size`, `--upload-rate`, `--download-rate` |
 | shipped | `web-to-path` | web | local, ssh | `--extract`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
 | shipped | `path-to-web` | local, ssh | web | `--archive`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--no-ui`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--download-rate` |
-| planned | `webhook-to-path` | webhook | local, ssh | `--extract`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
-| planned | `path-to-http` | local, ssh | http | `--archive`, `--auth`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--upload-rate` |
+| shipped | `webhook-to-path` | webhook | local, ssh | `--extract`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
+| shipped | `path-to-http` | local, ssh | http | `--archive`, `--auth`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--upload-rate` |
 
 ## Options
 
@@ -78,4 +78,6 @@ courier from ./report.pdf to server:/srv/inbox/
 courier from root@203.0.113.10:/opt/node/data to ./backup/
 courier from source-server:/opt/node/data to backup-server:/srv/data/
 courier from ./data to ./backup/ --archive
+courier from webhook:// to ./inbox/ --auth basic
+courier from ./report.pdf to https://example.com/hooks/courier
 ```
