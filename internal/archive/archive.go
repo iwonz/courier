@@ -32,6 +32,7 @@ var (
 	removeTemporary = os.Remove
 	statTemporary   = os.Stat
 	verifyTemporary = Verify
+	newGzipWriter   = func(writer io.Writer) (*gzip.Writer, error) { return gzip.NewWriterLevel(writer, gzip.NoCompression) }
 	closeTar        = func(writer *tar.Writer) error { return writer.Close() }
 	closeGzip       = func(writer *gzip.Writer) error { return writer.Close() }
 )
@@ -85,7 +86,10 @@ func CreateSelected(ctx context.Context, backend fsx.Backend, sourcePath, source
 		all := selection.All()
 		selector = all
 	}
-	gzipWriter := gzip.NewWriter(file)
+	gzipWriter, err := newGzipWriter(file)
+	if err != nil {
+		return nil, err
+	}
 	tarWriter := tar.NewWriter(gzipWriter)
 	if err := writeNodeSelected(ctx, backend, sourcePath, sourceName, "", tarWriter, tracker, selector); err != nil {
 		return nil, err
@@ -202,42 +206,15 @@ func (w *archiveWriter) Write(data []byte) (int, error) {
 	return written, err
 }
 
-// Verify fully streams a gzip/tar archive and validates supported entry paths.
+// Verify fully streams a tar.gz archive through the extraction inspector so
+// creation and extraction enforce one set of structural safety rules.
 func Verify(name string) error {
-	file, err := os.Open(name)
+	info, err := os.Stat(name)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	gzipReader, err := gzip.NewReader(file)
-	if err != nil {
-		return err
-	}
-	defer gzipReader.Close()
-	reader := tar.NewReader(gzipReader)
-	seen := make(map[string]struct{})
-	for {
-		header, err := reader.Next()
-		if errors.Is(err, io.EOF) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		if _, err := safety.SafeArchiveJoin("archive-root", header.Name); err != nil {
-			return err
-		}
-		if _, duplicate := seen[header.Name]; duplicate {
-			return fmt.Errorf("duplicate archive entry %q", header.Name)
-		}
-		seen[header.Name] = struct{}{}
-		switch header.Typeflag {
-		case tar.TypeReg, tar.TypeRegA, tar.TypeDir, tar.TypeSymlink:
-		default:
-			return fmt.Errorf("unsupported archive entry %q type %d", header.Name, header.Typeflag)
-		}
-		if _, err := io.Copy(io.Discard, reader); err != nil {
-			return err
-		}
-	}
+	_, err = (TarGzipCodec{}).Inspect(context.Background(), InspectRequest{
+		SourceFS: fsx.Local{}, SourcePath: name, CompressedSize: info.Size(), Limits: Limits{Unlimited: true},
+	})
+	return err
 }

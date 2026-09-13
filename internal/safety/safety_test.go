@@ -111,7 +111,7 @@ func TestSafeArchiveJoin(t *testing.T) {
 	if err != nil || got != filepath.Join(root, "folder", "file-🚚.txt") {
 		t.Fatalf("got=%q err=%v", got, err)
 	}
-	for _, name := range []string{"", ".", "..", "../secret", "a/../../secret", "/absolute", `C:\escape`, "bad\x00name"} {
+	for _, name := range []string{"", ".", "..", "../secret", "a/../secret", "a//secret", "./secret", "/absolute", `C:\escape`, "C:/escape", "bad\x00name"} {
 		if _, err := SafeArchiveJoin(root, name); !errors.Is(err, ErrUnsafe) {
 			t.Errorf("name=%q error=%v", name, err)
 		}
@@ -121,6 +121,32 @@ func TestSafeArchiveJoin(t *testing.T) {
 	relArchive = func(string, string) (string, error) { return "", errors.New("rel") }
 	if _, err := SafeArchiveJoin(root, "entry"); !errors.Is(err, ErrUnsafe) {
 		t.Fatalf("expected relative path failure, got %v", err)
+	}
+	relArchive = func(string, string) (string, error) { return "..", nil }
+	if _, err := SafeArchiveJoin(root, "entry"); !errors.Is(err, ErrUnsafe) {
+		t.Fatalf("expected relative escape failure, got %v", err)
+	}
+}
+
+func TestValidateArchiveSymlink(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		target string
+		safe   bool
+	}{
+		{"source/link", "file", true},
+		{"source/dir/link", "../file", true},
+		{"source/link", "../outside", false},
+		{"link", "../outside", false},
+		{"source/link", "", false},
+		{"source/link", "/absolute", false},
+		{"source/link", `C:\outside`, false},
+		{"source/link", "C:/outside", false},
+		{"source/link", "bad\x00target", false},
+	} {
+		if err := ValidateArchiveSymlink(test.name, test.target); (err == nil) != test.safe {
+			t.Errorf("name=%q target=%q safe=%t err=%v", test.name, test.target, test.safe, err)
+		}
 	}
 }
 

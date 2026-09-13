@@ -12,6 +12,8 @@ import (
 
 func newTransferCommand(dependencies Dependencies) *cobra.Command {
 	var archiveMode operation.BoolValue
+	var extractMode operation.BoolValue
+	var maxExtractedSize operation.SingleValue
 	var selectionValues operation.OrderedValues
 	command := &cobra.Command{
 		Use:   "from <source> to <destination>",
@@ -23,9 +25,15 @@ func newTransferCommand(dependencies Dependencies) *cobra.Command {
 			return nil
 		},
 		RunE: func(command *cobra.Command, args []string) error {
-			options := make([]operation.Option, 0, 1+len(selectionValues.Options()))
+			options := make([]operation.Option, 0, 3+len(selectionValues.Options()))
 			if value, explicit := archiveMode.Value(); explicit {
 				options = append(options, operation.Option{Name: operation.OptionArchive, Value: strconv.FormatBool(value)})
+			}
+			if value, explicit := extractMode.Value(); explicit {
+				options = append(options, operation.Option{Name: operation.OptionExtract, Value: strconv.FormatBool(value)})
+			}
+			if value, explicit := maxExtractedSize.Value(); explicit {
+				options = append(options, operation.Option{Name: operation.OptionMaxExtractedSize, Value: value})
 			}
 			options = append(options, selectionValues.Options()...)
 			plan, err := operation.Build(operation.Request{Source: args[0], Destination: args[2], Options: options})
@@ -50,6 +58,9 @@ func newTransferCommand(dependencies Dependencies) *cobra.Command {
 	}
 	command.Flags().Var(&archiveMode, "archive", "create and transfer <source-name>.tar.gz")
 	command.Flags().Lookup("archive").NoOptDefVal = "true"
+	command.Flags().Var(&extractMode, "extract", "extract a tar.gz archive into the destination root")
+	command.Flags().Lookup("extract").NoOptDefVal = "true"
+	command.Flags().Var(&maxExtractedSize, "max-extracted-size", "maximum expanded size or unlimited (default 100GiB)")
 	command.Flags().Var(selectionValues.For(operation.OptionExclude), "exclude", "exclude a gitignore pattern")
 	command.Flags().Var(selectionValues.For(operation.OptionExcludeRegex), "exclude-regex", "exclude paths matching a Go regular expression")
 	command.Flags().Var(selectionValues.For(operation.OptionExcludeFrom), "exclude-from", "read gitignore patterns from a local file")

@@ -135,10 +135,10 @@ func TestCreateInputAndCancellationErrors(t *testing.T) {
 
 func TestCreateOperationFailures(t *testing.T) {
 	originalCreate, originalRemove, originalStat, originalVerify := createTemporary, removeTemporary, statTemporary, verifyTemporary
-	originalTar, originalGzip := closeTar, closeGzip
+	originalWriter, originalTar, originalGzip := newGzipWriter, closeTar, closeGzip
 	t.Cleanup(func() {
 		createTemporary, removeTemporary, statTemporary, verifyTemporary = originalCreate, originalRemove, originalStat, originalVerify
-		closeTar, closeGzip = originalTar, originalGzip
+		newGzipWriter, closeTar, closeGzip = originalWriter, originalTar, originalGzip
 	})
 	backend := archiveBackend{Backend: fsx.Local{}, lstat: func(string) (fs.FileInfo, error) { return archiveInfo{mode: 0o600}, nil }, open: func(string) (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(nil)), nil }}
 	if _, err := Create(context.Background(), backend, "source", "source", filepath.Join(t.TempDir(), "missing"), nil); err == nil {
@@ -149,6 +149,9 @@ func TestCreateOperationFailures(t *testing.T) {
 		configure func(*memoryTemp)
 	}{
 		{"chmod", func(file *memoryTemp) { file.chmodErr = errors.New("chmod") }},
+		{"gzip writer", func(*memoryTemp) {
+			newGzipWriter = func(io.Writer) (*gzip.Writer, error) { return nil, errors.New("gzip writer") }
+		}},
 		{"tar close", func(*memoryTemp) { closeTar = func(*tar.Writer) error { return errors.New("tar close") } }},
 		{"gzip close", func(*memoryTemp) { closeGzip = func(*gzip.Writer) error { return errors.New("gzip close") } }},
 		{"sync", func(file *memoryTemp) { file.syncErr = errors.New("sync") }},
@@ -159,6 +162,7 @@ func TestCreateOperationFailures(t *testing.T) {
 		}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			newGzipWriter = originalWriter
 			closeTar = originalTar
 			closeGzip = originalGzip
 			verifyTemporary = func(string) error { return nil }

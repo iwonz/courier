@@ -10,7 +10,7 @@ Private keys and the native SSH agent are attempted before an interactive passwo
 
 ## Paths and transfer commits
 
-Endpoint parsing rejects control characters and ambiguous forms. Local operations use `os.Root` so validated relative operations cannot escape through symlink traversal or a check/open race. Archive extraction rejects absolute, parent-traversing, duplicate, and non-regular executable entries.
+Endpoint parsing rejects control characters and ambiguous forms. Local operations use `os.Root` so validated relative operations cannot escape through symlink traversal or a check/open race. Tar.gz creation and extraction share one two-pass inspector that rejects absolute or ambiguous paths, normalized duplicates, structural conflicts, unsupported types, and symlinks that escape their top-level archive entry. Extraction also enforces fixed entry-count, depth, and expansion-ratio limits even when the configurable expanded-size limit is unlimited.
 
 The transfer engine completes preflight before changing the final target. Data is written under a private partial name and committed only after completion. Existing final paths are rejected rather than overwritten or merged, and unrelated entries in a destination container are preserved. Local commits use exclusive link, symlink, or directory reservation operations; SFTP uses the no-replace protocol rename. Whole-directory atomicity remains subject to the destination operating system, filesystem, and transport guarantees.
 

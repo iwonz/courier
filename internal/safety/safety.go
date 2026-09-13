@@ -143,14 +143,42 @@ func SafeArchiveJoin(root, name string) (string, error) {
 	if name == "" || strings.ContainsRune(name, 0) || path.IsAbs(name) || filepath.IsAbs(name) || strings.Contains(name, `\`) {
 		return "", fmt.Errorf("%w: invalid archive entry %q", ErrUnsafe, name)
 	}
-	clean := path.Clean(name)
-	if clean == "." || clean == ".." || strings.HasPrefix(clean, "../") {
-		return "", fmt.Errorf("%w: archive entry escapes root", ErrUnsafe)
+	value := strings.TrimSuffix(name, "/")
+	if value == "" || isWindowsArchivePath(value) {
+		return "", fmt.Errorf("%w: invalid archive entry %q", ErrUnsafe, name)
 	}
+	for _, component := range strings.Split(value, "/") {
+		if component == "" || component == "." || component == ".." {
+			return "", fmt.Errorf("%w: archive entry has unsafe component", ErrUnsafe)
+		}
+	}
+	clean := path.Clean(value)
 	joined := filepath.Join(root, filepath.FromSlash(clean))
 	relative, err := relArchive(root, joined)
 	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
 		return "", fmt.Errorf("%w: archive entry escapes root", ErrUnsafe)
 	}
 	return joined, nil
+}
+
+// ValidateArchiveSymlink checks that a POSIX tar symlink target resolves
+// within the same top-level archive entry relative to the link's parent.
+func ValidateArchiveSymlink(name, target string) error {
+	if target == "" || strings.ContainsRune(target, 0) || path.IsAbs(target) || filepath.IsAbs(target) || strings.Contains(target, `\`) || isWindowsArchivePath(target) {
+		return fmt.Errorf("%w: invalid archive symlink target", ErrUnsafe)
+	}
+	resolved := path.Clean(path.Join(path.Dir(strings.TrimSuffix(name, "/")), target))
+	if _, err := SafeArchiveJoin("archive-root", resolved); err != nil {
+		return fmt.Errorf("%w: archive symlink escapes root", ErrUnsafe)
+	}
+	entryRoot := strings.Split(strings.TrimSuffix(name, "/"), "/")[0]
+	resolvedRoot := strings.Split(resolved, "/")[0]
+	if entryRoot != resolvedRoot {
+		return fmt.Errorf("%w: archive symlink escapes top-level entry", ErrUnsafe)
+	}
+	return nil
+}
+
+func isWindowsArchivePath(value string) bool {
+	return len(value) >= 2 && ((value[0] >= 'a' && value[0] <= 'z') || (value[0] >= 'A' && value[0] <= 'Z')) && value[1] == ':'
 }

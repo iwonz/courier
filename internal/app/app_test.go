@@ -356,6 +356,78 @@ func TestArchiveDestinationAndResolvedAliasSafety(t *testing.T) {
 	})
 }
 
+func TestExtractCommand(t *testing.T) {
+	root := t.TempDir()
+	archivePath := filepath.Join(root, "source.tar.gz")
+	sourceDirectory := filepath.Join(root, "source")
+	if err := os.Mkdir(sourceDirectory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(sourceDirectory, "file.txt"), []byte("payload"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	artifact, err := archive.Create(context.Background(), fsx.Local{}, sourceDirectory, "source", root, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(artifact.Path, archivePath); err != nil {
+		t.Fatal(err)
+	}
+	destination := filepath.Join(root, "extracted")
+	dependencies := transferDependencies(t, func(_ context.Context, value endpoint.Endpoint) (*Resource, error) {
+		return &Resource{Endpoint: value, Backend: fsx.Local{}, Path: value.Path}, nil
+	})
+	dependencies.Transfer = func(context.Context, transfer.Request) (transfer.Result, error) {
+		t.Fatal("copy engine must not run for extraction")
+		return transfer.Result{}, nil
+	}
+	var stdout, stderr bytes.Buffer
+	code := Execute(context.Background(), NewRoot(dependencies), []string{"from", archivePath, "to", destination, "--extract", "--max-extracted-size", "1GiB"}, &stdout, &stderr)
+	data, readErr := os.ReadFile(filepath.Join(destination, "source", "file.txt"))
+	if code != ExitOK || readErr != nil || string(data) != "payload" || !strings.Contains(stdout.String(), "transferred: 7 bytes") || !strings.Contains(stderr.String(), "stage=extract") {
+		t.Fatalf("code=%d data=%q readErr=%v stdout=%q stderr=%q", code, data, readErr, stdout.String(), stderr.String())
+	}
+
+	for _, test := range []struct {
+		name      string
+		args      []string
+		mutate    func(*Dependencies)
+		wantCode  int
+		wantStage string
+		wantText  string
+	}{
+		{name: "identity", args: []string{"from", archivePath, "to", archivePath, "--extract"}, wantCode: ExitTransfer, wantStage: "preflight", wantText: "transformed output collides"},
+		{name: "archive conflict", args: []string{"from", archivePath, "to", destination + "-a", "--archive", "--extract"}, wantCode: ExitCLI, wantStage: "preflight", wantText: "conflicts"},
+		{name: "limit requires extract", args: []string{"from", archivePath, "to", destination + "-b", "--max-extracted-size", "1GiB"}, wantCode: ExitCLI, wantStage: "preflight", wantText: "requires --extract"},
+		{name: "duplicate extract", args: []string{"from", archivePath, "to", destination + "-c", "--extract", "--extract"}, wantCode: ExitCLI, wantStage: "preflight", wantText: "value may only be set once"},
+		{name: "duplicate limit", args: []string{"from", archivePath, "to", destination + "-d", "--extract", "--max-extracted-size", "1GiB", "--max-extracted-size", "2GiB"}, wantCode: ExitCLI, wantStage: "preflight", wantText: "value may only be set once"},
+		{name: "incomplete", args: []string{"from", archivePath, "to", destination + "-e", "--extract"}, mutate: func(value *Dependencies) { value.Extract = nil }, wantCode: ExitTransfer, wantStage: "preflight", wantText: "incomplete"},
+		{name: "typed failure", args: []string{"from", archivePath, "to", destination + "-f", "--extract"}, mutate: func(value *Dependencies) {
+			value.Extract = func(context.Context, archive.ExtractionRequest) (archive.ExtractionResult, error) {
+				cause := errors.New("late collision")
+				return archive.ExtractionResult{Bytes: 3}, &archive.ExtractionError{Stage: progress.StageCommit, Confirmed: 3, Cause: cause}
+			}
+		}, wantCode: ExitTransfer, wantStage: "commit", wantText: "confirmed: 3 bytes"},
+		{name: "generic failure", args: []string{"from", archivePath, "to", destination + "-g", "--extract"}, mutate: func(value *Dependencies) {
+			value.Extract = func(context.Context, archive.ExtractionRequest) (archive.ExtractionResult, error) {
+				return archive.ExtractionResult{Bytes: 2}, errors.New("extract failure")
+			}
+		}, wantCode: ExitTransfer, wantStage: "extract", wantText: "confirmed: 2 bytes"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			configured := dependencies
+			if test.mutate != nil {
+				test.mutate(&configured)
+			}
+			var stderr bytes.Buffer
+			code := Execute(context.Background(), NewRoot(configured), test.args, io.Discard, &stderr)
+			if code != test.wantCode || !strings.Contains(stderr.String(), "stage: "+test.wantStage) || !strings.Contains(stderr.String(), test.wantText) {
+				t.Fatalf("code=%d stderr=%q", code, stderr.String())
+			}
+		})
+	}
+}
+
 func TestTransferFailurePathsAndCleanup(t *testing.T) {
 	validOpen := func(_ context.Context, value endpoint.Endpoint) (*Resource, error) {
 		return &Resource{Endpoint: value, Backend: lstatBackend{Backend: fsx.Local{}, lstat: func(name string) (fs.FileInfo, error) {
@@ -713,6 +785,7 @@ func TestDefaultDependencyFailuresAndErrorHelpers(t *testing.T) {
 
 func transferDependencies(t *testing.T, open func(context.Context, endpoint.Endpoint) (*Resource, error)) Dependencies {
 	t.Helper()
+	registry := archive.DefaultRegistry()
 	return Dependencies{
 		Open: open,
 		OpenArtifact: func(name string) (fsx.Backend, string, func() error, error) {
@@ -720,6 +793,7 @@ func transferDependencies(t *testing.T, open func(context.Context, endpoint.Endp
 		},
 		Transfer: (transfer.Engine{Token: func() (string, error) { return "test", nil }}).Run,
 		Archive:  archive.CreateSelected,
+		Extract:  registry.Extract,
 		Reporter: report.New,
 		Terminal: func(io.Writer) bool { return false },
 		TempDir:  t.TempDir(),

@@ -55,6 +55,7 @@ courier from ./report.pdf to server:/srv/inbox/
 courier from root@203.0.113.10:/opt/node/data to ./backup/
 courier from source-server:/opt/node/data to backup-server:/srv/data/
 courier from ./data to ./backup/ --archive
+courier from ./backup/data.tar.gz to ./restore/ --extract
 courier from ./data to ./backup/ --exclude '*.tmp' --exclude-from ./courier.ignore
 ```
 
@@ -64,10 +65,11 @@ The destination rules are deterministic:
 - every other destination is the exact final path;
 - an existing final path is a collision and is never overwritten or merged; unrelated entries in a destination directory are preserved;
 - `--archive` transfers a verified `<source-name>.tar.gz` instead of the source tree.
+- `--extract` treats the destination as an extraction root and accepts tar.gz only. It performs a complete read-only inspection before staging, rejects collisions, and preserves unrelated destination entries. The expanded-size default is `100GiB` and can be changed with `--max-extracted-size <size|unlimited>`; fixed limits of 100,000 entries, depth 64, and a 100:1 expansion ratio always apply.
 
 Courier never deletes the source. An identical plain source/destination is a successful no-op; transformed identity and copying a directory into itself are rejected. Files are staged under private partial names and committed only into an absent final path after preflight and transfer complete.
 
-Selection is shared by ordinary copy and archive creation. `--exclude` uses ordered gitignore syntax, `--exclude-regex` uses Go regular expressions, and `--exclude-from` expands a local gitignore-style rule file at its exact command-line position. The rule file is read before transfer endpoints are opened.
+Selection is shared by ordinary copy, archive creation, and extraction. `--exclude` uses ordered gitignore syntax, `--exclude-regex` uses Go regular expressions, and `--exclude-from` expands a local gitignore-style rule file at its exact command-line position. The rule file is read before transfer endpoints are opened.
 
 ## SSH
 

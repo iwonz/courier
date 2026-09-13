@@ -11,6 +11,27 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 5 | `feat/005-cli-update-reporting` | `cli-update-reporting` | `from … to …`, reporting, exit codes, self-update |
 | 6 | `feat/006-distribution-and-quality` | `distribution-and-quality` | GoReleaser, installers, npm/Brew, CI, integration and cleanup tests |
 | 7 | `feat/007-optional-remote-helper` | `optional-remote-helper` | Consent-gated helper fallback for genuine remote capability gaps and Windows runtime hardening |
+| 8 | `fix/008-windows-ci` | `windows-ci` | Portable Windows CI and coverage handling |
+| 9 | `fix/009-release-verification` | `release-verification` | Release and package publication verification |
+| 10 | `fix/010-self-contained-distribution` | `self-contained-distribution` | Single-repository package manifests and self-contained release channels |
+| 11 | `fix/011-homebrew-trust` | `homebrew-trust` | Homebrew cask trust guidance |
+| 12 | `chore/012-openspec-baseline` | `openspec-baseline` | Consolidated OpenSpec baseline for completed changes 001–011 |
+| 13 | `feat/013-cli-contract-registry` | `cli-contract-registry` | Canonical CLI contract, generated reference, contract gate, and command providers |
+| 14 | `feat/014-operation-routing` | `operation-routing` | Typed endpoints and routes, option matrix, and preflight taxonomy |
+| 15 | `fix/015-safe-copy-semantics` | `safe-copy-semantics` | No-op identity, collision rejection, no-replace commits, and destination preservation |
+| 16 | `feat/016-selection-engine` | `selection-engine` | Shared ordered gitignore and regular-expression selection |
+| 17 | `feat/017-archive-extraction` | `archive-extraction` | Tar.gz codec registry, verified extraction, extraction-root semantics, and bomb limits |
+| 18 | `feat/018-courier-ui-kit` | `courier-ui-kit` | Sanitized identity assets and shared Lit/TypeScript/Vite UI kit |
+| 19 | `feat/019-delivery-registry` | `delivery-registry` | Server and delivery domain, policies, counters, tombstones, and private persistence |
+| 20 | `feat/020-worker-lifecycle` | `worker-lifecycle` | Shared-bind workers, versioned IPC, leases, stop lifecycle, and stale cleanup |
+| 21 | `feat/021-delivery-policy-core` | `delivery-policy-core` | Authentication, sessions, IP policy, reservations, and aggregate size/rate enforcement |
+| 22 | `feat/022-web-deliveries` | `web-deliveries` | Browser upload/download delivery routes and opaque resources |
+| 23 | `feat/023-webhook-deliveries` | `webhook-deliveries` | Incoming multipart and outgoing single-file webhooks |
+| 24 | `feat/024-server-control` | `server-control` | Server listing and UUID-scoped stop commands |
+| 25 | `feat/025-admin-ui` | `admin-ui` | UI singleton, guarded admin API, live progress, and optimistic policy editing |
+| 26 | `feat/026-operational-reporting` | `operational-reporting` | Unified stages, counters, redacted diagnostics, history, and final exit-code mapping |
+| 27 | `feat/027-project-landing` | `project-landing` | Static GitHub Pages landing generated from shipped contract data |
+| 28 | `test/028-cross-platform-acceptance` | `cross-platform-acceptance` | Route, security, platform, installer, performance, race, and browser acceptance suites |
 
 ## Definition of Done
 
@@ -21,4 +42,6 @@ Work is split into stacked branches. Each branch is based on the previous branch
 - tests use local fixtures or containers only and always register cleanup;
 - local and remote temporary artifacts are removed after success, failure, and cancellation;
 - installation and security documentation match the shipped CLI;
+- generated command and web assets are current and contract-gated;
+- first-party TypeScript statements, branches, functions, and lines are 100% covered once web sources are introduced;
 - one release command creates and pushes the tag, builds with GoReleaser Community, publishes the GitHub Release with notes, and publishes `@iwonz/courier` when credentials are available.

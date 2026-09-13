@@ -1,6 +1,6 @@
 # Courier CLI reference
 
-Contract version `0.8.0`; target release `0.2.0`. This file is generated from `docs/cli-contract.yaml`.
+Contract version `0.9.0`; target release `0.2.0`. This file is generated from `docs/cli-contract.yaml`.
 
 ## Commands
 
@@ -40,7 +40,7 @@ Contract version `0.8.0`; target release `0.2.0`. This file is generated from `d
 | Status | Option | Repeatable | Default | Applies to | Conflicts |
 |---|---|---:|---|---|---|
 | shipped | `--archive` | false | `false` | path-to-path, path-to-web, path-to-http | extract |
-| planned | `--extract` | false | `false` | path-to-path, web-to-path, webhook-to-path | archive |
+| shipped | `--extract` | false | `false` | path-to-path, web-to-path, webhook-to-path | archive |
 | planned | `--listen <host:port>` | false | `127.0.0.1:8080` | web-to-path, path-to-web, webhook-to-path, ui-start | none |
 | planned | `--background` | false | `false` | web-to-path, path-to-web, webhook-to-path, ui-start | none |
 | planned | `--auth <none|basic|password>` | false | `none` | web-to-path, path-to-web, webhook-to-path, path-to-http | none |
@@ -53,7 +53,7 @@ Contract version `0.8.0`; target release `0.2.0`. This file is generated from `d
 | shipped | `--exclude-regex <regex>` | true | `none` | path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http | none |
 | shipped | `--exclude-from <file>` | true | `none` | path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http | none |
 | planned | `--max-file-size <size|unlimited>` | false | `10GiB` | web-to-path, webhook-to-path | none |
-| planned | `--max-extracted-size <size|unlimited>` | false | `100GiB` | path-to-path, web-to-path, webhook-to-path | none |
+| shipped | `--max-extracted-size <size|unlimited>` | false | `100GiB` | path-to-path, web-to-path, webhook-to-path | none |
 | planned | `--upload-rate <rate|unlimited>` | false | `unlimited` | local-to-ssh, ssh-to-ssh, web-to-path, webhook-to-path, path-to-http | none |
 | planned | `--download-rate <rate|unlimited>` | false | `unlimited` | ssh-to-local, ssh-to-ssh, path-to-web | none |
 | planned | `--all` | false | `false` | servers-stop | none |

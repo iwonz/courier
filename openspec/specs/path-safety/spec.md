@@ -35,7 +35,7 @@ Courier SHALL reject copying a directory into its own descendant on the same fil
 
 ### Requirement: Traversal prevention
 
-Courier SHALL combine canonical preflight checks with `os.Root`-bounded local filesystem operations and safe archive entry handling, rejecting absolute, parent-traversing, symlink-escaping, empty, NUL-containing, and platform-escape paths.
+Courier SHALL combine canonical preflight checks with `os.Root`-bounded local operations and strict archive entry and symlink-target validation, rejecting absolute, parent-traversing, symlink-escaping, empty-component, dot-component, NUL-containing, and platform-escape paths.
 
 #### Scenario: Local symlink escapes operation root
 
@@ -44,5 +44,5 @@ Courier SHALL combine canonical preflight checks with `os.Root`-bounded local fi
 
 #### Scenario: Parent archive entry
 
-- **WHEN** archive entry is `../../secret`
-- **THEN** safe join fails and no path outside the extraction root is returned
+- **WHEN** an archive entry is `folder/../secret` or `../../secret`
+- **THEN** validation fails and no path outside or ambiguously within the extraction root is returned

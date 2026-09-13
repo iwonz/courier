@@ -53,6 +53,7 @@ type Dependencies struct {
 	OpenArtifact func(string) (fsx.Backend, string, func() error, error)
 	Transfer     func(context.Context, transfer.Request) (transfer.Result, error)
 	Archive      func(context.Context, fsx.Backend, string, string, string, selection.Selector, progress.Sink) (*archive.Artifact, error)
+	Extract      func(context.Context, archive.ExtractionRequest) (archive.ExtractionResult, error)
 	Select       func([]operation.SelectionRule) (selection.Selector, error)
 	Update       func(context.Context) (update.Result, error)
 	Reporter     func(io.Writer, bool) *report.Reporter
@@ -147,6 +148,7 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 		effective.User = connection.Target.User
 		return &Resource{Endpoint: effective, Backend: sshx.NewSFTPBackend(connection.SFTP), Path: value.Path, Close: connection.Close}, nil
 	}
+	archiveRegistry := archive.DefaultRegistry()
 	return Dependencies{
 		Open: open,
 		OpenArtifact: func(name string) (fsx.Backend, string, func() error, error) {
@@ -158,6 +160,7 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 		},
 		Transfer: (transfer.Engine{}).Run,
 		Archive:  archive.CreateSelected,
+		Extract:  archiveRegistry.Extract,
 		Select: func(rules []operation.SelectionRule) (selection.Selector, error) {
 			return selection.Compile(rules, selection.OpenFile)
 		},
@@ -258,7 +261,8 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 	sourceEndpoint := plan.Source
 	destinationEndpoint := plan.Destination
 	archiveMode := plan.Options.Archive
-	if dependencies.Open == nil || dependencies.Transfer == nil || dependencies.Reporter == nil || dependencies.Terminal == nil || archiveMode && (dependencies.Archive == nil || dependencies.OpenArtifact == nil) {
+	extractMode := plan.Options.Extract
+	if dependencies.Open == nil || dependencies.Reporter == nil || dependencies.Terminal == nil || !extractMode && dependencies.Transfer == nil || archiveMode && (dependencies.Archive == nil || dependencies.OpenArtifact == nil) || extractMode && dependencies.Extract == nil {
 		return transferOutcome{}, transferCommandError(progress.StagePreflight, errors.New("transfer dependencies are incomplete"), 0)
 	}
 	var source, destination *Resource
@@ -298,6 +302,8 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 	transformation := safety.TransformNone
 	if archiveMode {
 		transformation = safety.TransformArchive
+	} else if extractMode {
+		transformation = safety.TransformExtract
 	}
 	disposition, err := safety.EvaluateTransfer(source.Endpoint, destination.Endpoint, false, transformation)
 	if err != nil {
@@ -305,6 +311,24 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 	}
 	if disposition == safety.NoOp {
 		return transferOutcome{destination: destination.Endpoint.Raw, result: transfer.Result{Destination: destination.Path}}, nil
+	}
+	if extractMode {
+		reporter := dependencies.Reporter(stderr, dependencies.Terminal(stderr))
+		defer reporter.Finish()
+		result, extractErr := dependencies.Extract(ctx, archive.ExtractionRequest{
+			SourceFS: source.Backend, SourcePath: source.Path, SourceName: source.Endpoint.Base(),
+			DestinationFS: destination.Backend, DestinationRoot: destination.Path, Selector: selector,
+			Limits:   archive.Limits{MaxBytes: plan.Options.MaxExtractedSize.Value, Unlimited: plan.Options.MaxExtractedSize.Unlimited, Configured: true},
+			Progress: reporter.Handle,
+		})
+		if extractErr != nil {
+			var typed *archive.ExtractionError
+			if errors.As(extractErr, &typed) {
+				return transferOutcome{}, transferCommandError(typed.Stage, typed.Cause, typed.Confirmed)
+			}
+			return transferOutcome{}, transferCommandError(progress.StageExtract, extractErr, result.Bytes)
+		}
+		return transferOutcome{destination: destination.Endpoint.Raw, result: transfer.Result{Destination: destination.Path, Bytes: result.Bytes, Elapsed: result.Elapsed}}, nil
 	}
 	sourceInfo, err := source.Backend.Lstat(source.Path)
 	if err != nil {

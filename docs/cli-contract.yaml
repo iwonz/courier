@@ -1,5 +1,5 @@
 schema_version: 1
-contract_version: 0.8.0
+contract_version: 0.9.0
 target_release: 0.2.0
 language: en
 
@@ -26,7 +26,7 @@ commands:
     usage: courier from <source> to <destination> [options]
     status: shipped
     system: false
-    flags: [archive, exclude, exclude-regex, exclude-from]
+    flags: [archive, extract, exclude, exclude-regex, exclude-from, max-extracted-size]
   - name: servers
     path: servers
     usage: courier servers
@@ -80,7 +80,7 @@ flags:
     conflicts: [extract]
   - name: extract
     syntax: --extract
-    status: planned
+    status: shipped
     repeatable: false
     default: "false"
     applies_to: [path-to-path, web-to-path, webhook-to-path]
@@ -171,7 +171,7 @@ flags:
     conflicts: []
   - name: max-extracted-size
     syntax: --max-extracted-size <size|unlimited>
-    status: planned
+    status: shipped
     repeatable: false
     default: 100GiB
     applies_to: [path-to-path, web-to-path, webhook-to-path]

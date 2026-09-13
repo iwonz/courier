@@ -9,6 +9,7 @@ type Stage string
 const (
 	StagePreflight Stage = "preflight"
 	StageArchive   Stage = "archive"
+	StageExtract   Stage = "extract"
 	StageTransfer  Stage = "transfer"
 	StageCommit    Stage = "commit"
 	StageVerify    Stage = "verify"
