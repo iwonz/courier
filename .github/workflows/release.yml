@@ -29,7 +29,7 @@ jobs:
           done
 
   quality:
-    name: Repeat quality and release dry run
+    name: Repeat Linux release-candidate acceptance
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -42,12 +42,32 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install pinned OpenSpec
+        run: npm install --global @fission-ai/openspec@1.11.0
+      - name: Install pinned browser dependencies
+        run: npm ci --prefix web --ignore-scripts --no-audit --no-fund --loglevel=error
+      - name: Install Chromium runtime
+        working-directory: web
+        run: npx playwright install --with-deps chromium
       - uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: v2.18.1
           install-only: true
       - run: make verify GORELEASER=goreleaser
+
+  macos-runtime:
+    name: Repeat macOS runtime and exact coverage
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.25.5
+          cache: true
+      - run: ./scripts/test-runtime.sh
 
   powershell-installer:
     name: Repeat Windows tests and PowerShell installer
@@ -69,6 +89,7 @@ jobs:
     needs:
       - preflight
       - quality
+      - macos-runtime
       - powershell-installer
     runs-on: ubuntu-latest
     permissions:

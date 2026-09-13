@@ -7,7 +7,7 @@ Define local verification and ordered one-command release publication.
 
 ### Requirement: Mandatory local dry run
 
-Courier SHALL provide one local verification command that runs formatting checks, vet, race tests, exact first-party statement coverage, installer/npm checks, and `goreleaser release --snapshot --clean` before a tag can be pushed by the release command.
+Courier SHALL provide one local verification command that runs formatting checks, vet, race tests, exact first-party Go and TypeScript coverage, real-browser checks, workflow and strict OpenSpec validation, installer/npm checks, `goreleaser release --snapshot --clean`, artifact verification, and isolated Linux package installation before a tag can be pushed by the release command.
 
 #### Scenario: Broken cross-build
 
@@ -65,11 +65,11 @@ Courier SHALL require npm CI publication credentials to have package read/write 
 - **WHEN** a token authenticates `npm whoami` but requires an OTP for package writes
 - **THEN** release documentation identifies it as unsuitable for `NPM_TOKEN` and directs the maintainer to replace the encrypted secret
 
-### Requirement: Exact Winget pull-request verification
+### Requirement: Acceptance-gated publication
 
-Courier SHALL verify the open upstream Winget pull request using the fork owner and release branch returned by GitHub's pull-request API.
+Courier SHALL publish a tagged release only after the repeated Linux release dry run, real-browser suite, distribution package suite, macOS runtime suite, Windows exact-coverage suite, installer tests, contract freshness, workflow validation, and strict OpenSpec validation succeed.
 
-#### Scenario: GoReleaser-created pull request
+#### Scenario: Any acceptance job fails
 
-- **WHEN** GoReleaser opens the upstream pull request from `iwonz:winget-pkgs:courier-<version>`
-- **THEN** the verification job finds its `iwonz:courier-<version>` head label through the REST filter
+- **WHEN** a release candidate fails one required platform, browser, package, installer, contract, workflow, or specification check
+- **THEN** GitHub Release and npm publication jobs do not start

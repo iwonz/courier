@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -144,6 +145,57 @@ func TestLocalFileAndCancellation(t *testing.T) {
 	if err != nil || result.Bytes != 128*1024 {
 		t.Fatalf("retry result=%+v err=%v", result, err)
 	}
+}
+
+func TestLargeSyntheticStreamBackpressureAndCleanup(t *testing.T) {
+	const (
+		bufferSize = 4 * 1024
+		streamSize = int64(8 * 1024 * 1024 * 1024)
+	)
+	root := t.TempDir()
+	destination := filepath.Join(root, "large-output.bin")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	reader := &syntheticReader{remaining: streamSize}
+	source := stubBackend{
+		Backend: fsx.Local{},
+		lstat:   func(string) (fs.FileInfo, error) { return fakeInfo{mode: 0o600, size: streamSize}, nil },
+		open:    func(string) (io.ReadCloser, error) { return reader, nil },
+	}
+	destinationBackend := &backpressureBackend{Local: fsx.Local{}, ctx: ctx, blocked: make(chan struct{})}
+	finished := make(chan error, 1)
+	go func() {
+		_, err := (Engine{Token: func() (string, error) { return "bounded", nil }, BufferSize: bufferSize}).Run(ctx, Request{
+			SourceFS: source, SourcePath: "synthetic-large-stream", DestinationFS: destinationBackend, Destination: destination,
+		})
+		finished <- err
+	}()
+
+	select {
+	case <-destinationBackend.blocked:
+	case <-time.After(5 * time.Second):
+		t.Fatal("destination did not apply backpressure")
+	}
+	cancel()
+	var err error
+	select {
+	case err = <-finished:
+	case <-time.After(5 * time.Second):
+		t.Fatal("cancellation did not release the blocked transfer")
+	}
+
+	var transferErr *Error
+	if !errors.As(err, &transferErr) || !errors.Is(err, context.Canceled) || transferErr.Stage != progress.StageTransfer || transferErr.Confirmed != bufferSize {
+		t.Fatalf("error=%v", err)
+	}
+	if reader.maximumRead > bufferSize || reader.totalRead != 2*bufferSize || destinationBackend.maximumWrite > bufferSize || destinationBackend.writes != 2 {
+		t.Fatalf("reader total=%d max=%d writer calls=%d max=%d", reader.totalRead, reader.maximumRead, destinationBackend.writes, destinationBackend.maximumWrite)
+	}
+	if _, statErr := os.Lstat(destination); !os.IsNotExist(statErr) {
+		t.Fatalf("final destination exists after cancellation: %v", statErr)
+	}
+	assertNoTemporaryPaths(t, root)
 }
 
 func TestPreflightFailures(t *testing.T) {
@@ -483,3 +535,65 @@ func (w *fakeWriter) Write(data []byte) (int, error) {
 }
 func (w *fakeWriter) Sync() error  { return w.syncErr }
 func (w *fakeWriter) Close() error { return w.closeErr }
+
+type syntheticReader struct {
+	remaining   int64
+	totalRead   int
+	maximumRead int
+}
+
+func (r *syntheticReader) Read(data []byte) (int, error) {
+	if r.remaining == 0 {
+		return 0, io.EOF
+	}
+	length := len(data)
+	if int64(length) > r.remaining {
+		length = int(r.remaining)
+	}
+	for index := 0; index < length; index++ {
+		data[index] = byte(index)
+	}
+	r.remaining -= int64(length)
+	r.totalRead += length
+	if length > r.maximumRead {
+		r.maximumRead = length
+	}
+	return length, nil
+}
+
+func (*syntheticReader) Close() error { return nil }
+
+type backpressureBackend struct {
+	fsx.Local
+	ctx          context.Context
+	blocked      chan struct{}
+	blockedOnce  sync.Once
+	writes       int
+	maximumWrite int
+}
+
+func (b *backpressureBackend) Create(name string, mode fs.FileMode) (fsx.Writable, error) {
+	writer, err := b.Local.Create(name, mode)
+	if err != nil {
+		return nil, err
+	}
+	return &backpressureWriter{Writable: writer, backend: b}, nil
+}
+
+type backpressureWriter struct {
+	fsx.Writable
+	backend *backpressureBackend
+}
+
+func (w *backpressureWriter) Write(data []byte) (int, error) {
+	w.backend.writes++
+	if len(data) > w.backend.maximumWrite {
+		w.backend.maximumWrite = len(data)
+	}
+	if w.backend.writes == 2 {
+		w.backend.blockedOnce.Do(func() { close(w.backend.blocked) })
+		<-w.backend.ctx.Done()
+		return 0, w.backend.ctx.Err()
+	}
+	return w.Writable.Write(data)
+}

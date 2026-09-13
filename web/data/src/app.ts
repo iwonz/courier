@@ -1,7 +1,7 @@
 import { LitElement, css, html, nothing } from "lit";
-import { browserThemeState, defineCourierElements, type Locale, type ThemeState } from "@courier/ui";
+import { browserLocale, browserThemeState, defineCourierElements, type Locale, type ThemeState } from "@courier/ui";
 import { childPath, downloadURL, loadMetadata, login, parentPath, upload, type Entry, type Metadata } from "./api";
-import { dataLocale, dataText } from "./catalog";
+import { dataText } from "./catalog";
 
 defineCourierElements();
 
@@ -14,17 +14,19 @@ export class CourierDataApp extends LitElement {
   };
 
   static styles = css`
-    :host { display: block; min-height: 100vh; padding: clamp(1rem, 4vw, 3rem); background: var(--courier-color-canvas); color: var(--courier-color-text); font-family: var(--courier-font-sans); }
+    :host { box-sizing: border-box; display: block; min-height: 100vh; padding: clamp(1rem, 4vw, 3rem); background: var(--courier-color-canvas); color: var(--courier-color-text); font-family: var(--courier-font-sans); }
+    main, courier-panel { min-width: 0; }
     main { width: min(52rem, 100%); margin: 0 auto; display: grid; gap: 1rem; }
-    header, nav, form, li { display: flex; gap: .75rem; align-items: center; justify-content: space-between; }
+    header, nav, form, li { display: flex; gap: .75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
     ul { list-style: none; padding: 0; display: grid; gap: .5rem; }
     li { padding: .75rem; border-bottom: 1px solid var(--courier-color-border); }
-    input { min-height: 2.75rem; padding: 0 .75rem; }
+    input { box-sizing: border-box; min-width: 0; max-width: 100%; min-height: 2.75rem; padding: 0 .75rem; }
+    h1, h2, p { overflow-wrap: anywhere; }
     a, button.link { color: var(--courier-color-accent); }
     button.link { appearance: none; border: 0; background: transparent; padding: 0; font: inherit; cursor: pointer; }
   `;
 
-  private locale: Locale = dataLocale();
+  private locale: Locale = browserLocale();
   private metadata?: Metadata;
   private failed = false;
   private csrf = "";
@@ -106,7 +108,7 @@ export class CourierDataApp extends LitElement {
       <main>
         <header>
           <h1>${this.t("title")}</h1>
-          <nav><courier-theme-selector></courier-theme-selector><courier-locale-selector @courier-locale=${this.setLocale}></courier-locale-selector></nav>
+          <nav><courier-theme-selector></courier-theme-selector><courier-locale-selector @courier-locale-change=${this.setLocale}></courier-locale-selector></nav>
         </header>
         ${this.failed ? html`
           <courier-panel><p>${this.t("failed")}</p><courier-button @click=${this.refresh}>${this.t("retry")}</courier-button></courier-panel>

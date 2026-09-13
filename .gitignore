@@ -7,6 +7,8 @@
 /web/*/coverage/
 /web/ui/dist/
 /web/landing/dist/
+/web/test-results/
+/web/playwright-report/
 *.test
 *.tmp
 .DS_Store

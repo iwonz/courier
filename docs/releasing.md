@@ -34,13 +34,13 @@ make verify
 
 The gate runs:
 
-1. `gofmt` verification and `go vet`;
-2. all Go tests with the race detector on the primary quality runner;
-3. exact 100% first-party Go statement coverage on both Linux and Windows, including platform-specific agent and update code;
-4. local POSIX installer acceptance tests and npm package tests;
-5. GoReleaser configuration validation;
-6. `goreleaser release --snapshot --clean`;
-7. checksum and artifact-matrix verification.
+1. `gofmt`, `go vet`, command-contract freshness, GitHub Actions syntax, and strict OpenSpec validation;
+2. all Go tests with the race detector on Linux plus exact 100% first-party statement coverage and compiled runtime checks on Linux, macOS, and Windows;
+3. exact TypeScript coverage, deterministic UI builds, embedded-asset freshness, and real Chromium acceptance for all three browser surfaces;
+4. npm wrapper and POSIX/PowerShell installer acceptance;
+5. GoReleaser configuration validation and `goreleaser release --snapshot --clean`;
+6. checksum and complete primary/BSD artifact-matrix verification;
+7. labeled native-package installation in Ubuntu, Debian, Arch, Manjaro, Fedora, Red Hat UBI, and Alpine containers, followed by ownership-scoped cleanup assertions.
 
 The artifact matrix includes the six primary macOS/Linux/Windows targets plus exact-platform BSD helper archives. Helper archives use the same `courier_<version>_<os>_<arch>.tar.gz` convention and are verified by the snapshot gate and post-publication workflow.
 
@@ -72,9 +72,9 @@ GoReleaser generates release notes from conventional commits between tags. It co
 The release workflow enforces this sequence:
 
 ```text
-credentials + quality + PowerShell acceptance
-                    |
-                    v
+credentials + Linux acceptance + macOS/Windows runtime acceptance
+                              |
+                              v
 GitHub Release + in-repository Homebrew/Scoop manifests
                     |
                     v
@@ -83,3 +83,5 @@ GitHub Release + in-repository Homebrew/Scoop manifests
                     v
        GitHub/npm/manifest verification
 ```
+
+See [Acceptance and release-candidate verification](acceptance.md) for prerequisites, focused commands, resource ownership, and the browser/package boundaries.

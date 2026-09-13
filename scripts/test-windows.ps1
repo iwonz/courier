@@ -2,7 +2,10 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $Repository = Resolve-Path (Join-Path $PSScriptRoot "..")
-$Coverage = Join-Path $Repository "coverage-windows.out"
+$TemporaryDirectory = Join-Path ([IO.Path]::GetTempPath()) ("courier-runtime-" + [Guid]::NewGuid().ToString("N"))
+$Coverage = Join-Path $TemporaryDirectory "coverage.out"
+$Binary = Join-Path $TemporaryDirectory "courier.exe"
+New-Item -ItemType Directory -Force -Path $TemporaryDirectory | Out-Null
 
 Push-Location $Repository
 try {
@@ -23,8 +26,21 @@ try {
     if ($Total -ne "100.0%") {
         throw "Windows statement coverage is $Total, expected 100.0%"
     }
+
+    & go build -trimpath -o $Binary ./cmd/courier
+    if ($LASTEXITCODE -ne 0) {
+        throw "Windows Courier build failed with exit code $LASTEXITCODE"
+    }
+    $Help = & $Binary help
+    if ($LASTEXITCODE -ne 0 -or -not ($Help -join "`n").Contains("Safely transfer files and directories")) {
+        throw "Compiled Windows Courier help check failed"
+    }
+    $Version = & $Binary version
+    if ($LASTEXITCODE -ne 0 -or -not ($Version -join "`n").Contains("courier dev")) {
+        throw "Compiled Windows Courier version check failed"
+    }
 }
 finally {
     Pop-Location
-    Remove-Item -LiteralPath $Coverage -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $TemporaryDirectory -Recurse -Force -ErrorAction SilentlyContinue
 }

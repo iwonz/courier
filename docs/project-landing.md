@@ -22,6 +22,6 @@ The page covers curl, wget, PowerShell, npm, npx, Yarn, pnpm, Homebrew, Scoop, d
 
 ## Verification and deployment
 
-The landing's Vitest configuration requires 100% statements, branches, functions, and lines. The root web gate tests the UI kit and all three consumers, produces a deterministic production build, and is part of `make verify` and every GoReleaser dry run.
+The landing's Vitest configuration requires 100% statements, branches, functions, and lines. The root web gate tests the UI kit and all three consumers, produces a deterministic production build, and is part of `make verify` and every GoReleaser dry run. Pinned Playwright acceptance also exercises the compiled landing in Chromium across both locales, all theme preferences, keyboard navigation, persisted selectors, and narrow/wide viewports.
 
 `.github/workflows/pages.yml` runs independently on `main` and by manual dispatch. Its build job has read-only repository access, verifies generated contract data, tests and builds the landing, and uploads only `web/landing/dist`. The deploy job alone receives `pages: write` and short-lived OIDC permission for the protected `github-pages` environment. No publication token is written into source or static assets.

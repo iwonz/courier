@@ -1,6 +1,6 @@
 import { LitElement, css, html } from "lit";
-import { browserThemeState, defineCourierElements, type Locale, type ThemeState } from "@courier/ui";
-import { landingLocale, landingText, type LandingMessage } from "./catalog";
+import { browserLocale, browserThemeState, defineCourierElements, type Locale, type ThemeState } from "@courier/ui";
+import { landingText, type LandingMessage } from "./catalog";
 import { contractData } from "./contract";
 
 defineCourierElements();
@@ -38,8 +38,8 @@ export class CourierLandingApp extends LitElement {
     h2 { margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); }
     h3 { margin: 0; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; }
-    article { min-width: 0; }
-    pre { margin: .75rem 0 0; padding: .9rem; overflow: auto; background: var(--courier-color-surface); border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-small); }
+    article, courier-panel, .grid > * { min-width: 0; }
+    pre { box-sizing: border-box; max-width: 100%; margin: .75rem 0 0; padding: .9rem; overflow: auto; background: var(--courier-color-surface); border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-small); }
     code { font-family: var(--courier-font-mono); }
     .table { overflow-x: auto; border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-medium); }
     table { width: 100%; border-collapse: collapse; min-width: 42rem; }
@@ -52,7 +52,7 @@ export class CourierLandingApp extends LitElement {
     @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
   `;
 
-  private locale: Locale = landingLocale();
+  private locale: Locale = browserLocale();
   private theme?: ThemeState;
 
   connectedCallback(): void {
@@ -83,7 +83,7 @@ export class CourierLandingApp extends LitElement {
             <a href="#commands">${this.t("commands")}</a>
             <a href="#docs">${this.t("documentation")}</a>
             <courier-theme-selector></courier-theme-selector>
-            <courier-locale-selector @courier-locale=${this.setLocale}></courier-locale-selector>
+            <courier-locale-selector @courier-locale-change=${this.setLocale}></courier-locale-selector>
           </div>
         </nav>
         <div id="top" class="meta">${this.t("version")} ${contractData.contractVersion} · ${this.t("target")} ${contractData.targetRelease}</div>

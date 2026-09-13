@@ -1,7 +1,10 @@
 GORELEASER_VERSION := v2.18.1
 GORELEASER ?= .cache/tools/goreleaser
+ACTIONLINT_VERSION := v1.7.12
+ACTIONLINT ?= go run github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VERSION)
+OPENSPEC ?= openspec
 
-.PHONY: all fmt-check vet contract-check test npm-test ui-test goreleaser-check snapshot verify precommit hooks release clean
+.PHONY: all fmt-check vet contract-check workflow-check openspec-check test npm-test ui-test browser-test goreleaser-check snapshot package-test verify precommit hooks release clean
 
 all: verify
 
@@ -16,9 +19,13 @@ contract-check:
 	go run ./cmd/contractdoc --check
 
 test: fmt-check vet contract-check
-	go test -race ./... -covermode=atomic -coverprofile=coverage.out
-	@total="$$(go tool cover -func=coverage.out | awk '/^total:/ { print $$3 }')"; \
-	if [ "$$total" != "100.0%" ]; then printf '%s\n' "statement coverage is $$total, expected 100.0%" >&2; exit 1; fi
+	./scripts/test-runtime.sh --race
+
+workflow-check:
+	$(ACTIONLINT) -color
+
+openspec-check:
+	$(OPENSPEC) validate --all --strict --no-interactive
 
 npm-test:
 	npm test --prefix npm --loglevel=error
@@ -27,6 +34,9 @@ npm-test:
 ui-test:
 	npm ci --prefix web --ignore-scripts --no-audit --no-fund --loglevel=error
 	npm run verify --prefix web --loglevel=error
+
+browser-test: ui-test
+	npm run browser:test --prefix web --loglevel=error
 
 goreleaser-check:
 	@if [ ! -x "$(GORELEASER)" ] && ! command -v "$(GORELEASER)" >/dev/null 2>&1; then \
@@ -40,7 +50,10 @@ snapshot: goreleaser-check
 	./scripts/test-release-installer.sh
 	node ./scripts/test-npm-dist.js
 
-verify: test npm-test ui-test snapshot
+package-test: snapshot
+	./scripts/test-linux-packages.sh
+
+verify: test npm-test browser-test workflow-check openspec-check package-test
 
 precommit: verify
 
@@ -51,4 +64,4 @@ release:
 	./scripts/release.sh $(VERSION)
 
 clean:
-	rm -rf dist .cache coverage.out coverage.html web/ui/dist web/ui/coverage web/data/coverage web/admin/coverage web/landing/dist web/landing/coverage
+	rm -rf dist .cache coverage.out coverage.html web/ui/dist web/ui/coverage web/data/coverage web/admin/coverage web/landing/dist web/landing/coverage web/test-results web/playwright-report

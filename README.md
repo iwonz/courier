@@ -114,12 +114,12 @@ Failure output includes the stage, sanitized reason, and separate read, sent, an
 
 ## Develop
 
-Go 1.25 or newer and Node.js 24 or newer are required for source, npm-package, and shared UI checks. GoReleaser Community is bootstrapped locally at its pinned checksum-verified version.
+Go 1.25 or newer and Node.js 24 or newer are required for source, npm-package, and shared UI checks. The full release-candidate gate also requires Docker, OpenSpec 1.11.0, and the pinned Playwright Chromium runtime. GoReleaser Community is bootstrapped locally at its pinned checksum-verified version.
 
 ```sh
 make hooks       # opt into the repository pre-commit quality gate
-make test        # formatting, vet, race detector, and exact 100% Go statement coverage
-make verify      # Go/UI tests, npm checks, and goreleaser release --snapshot --clean
+make test        # formatting, vet, race detector, exact Go coverage, and compiled runtime checks
+make verify      # full browser/package/platform-ready release-candidate dry run
 ```
 
 Development is spec-first: every task owns a path under `openspec/changes`, a conventional branch name, and one conventional commit. See the [implementation plan](docs/implementation-plan.md) and [release runbook](docs/releasing.md).
@@ -137,6 +137,8 @@ See [Server control](docs/server-control.md) for authoritative inventory, UUID-s
 See [Administration UI](docs/admin-ui.md) for foreground/background startup, local API guards, live state, and optimistic policy editing.
 
 See [Project landing](docs/project-landing.md) for contract-backed static content, shared UI behavior, verification, and repository-owned GitHub Pages deployment.
+
+See [Acceptance](docs/acceptance.md) for local prerequisites, bounded-stream and browser coverage, labeled container cleanup, and CI publication gates.
 
 ## License
 

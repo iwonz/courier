@@ -4,8 +4,10 @@ on:
   push:
     branches:
       - main
+      - "chore/**"
       - "feat/**"
       - "fix/**"
+      - "test/**"
   pull_request:
 
 permissions:
@@ -13,7 +15,7 @@ permissions:
 
 jobs:
   quality:
-    name: Tests, coverage, and release dry run
+    name: Linux release-candidate acceptance
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -26,6 +28,15 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install pinned OpenSpec
+        run: npm install --global @fission-ai/openspec@1.11.0
+      - name: Install pinned browser dependencies
+        run: npm ci --prefix web --ignore-scripts --no-audit --no-fund --loglevel=error
+      - name: Install Chromium runtime
+        working-directory: web
+        run: npx playwright install --with-deps chromium
       - uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
@@ -38,8 +49,19 @@ jobs:
           path: dist/
           retention-days: 3
 
+  macos-runtime:
+    name: macOS runtime and exact coverage
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.25.5
+          cache: true
+      - run: ./scripts/test-runtime.sh
+
   powershell-installer:
-    name: Windows tests and PowerShell installer
+    name: Windows runtime, exact coverage, and installer
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
