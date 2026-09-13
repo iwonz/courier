@@ -12,7 +12,7 @@ Private keys and the native SSH agent are attempted before an interactive passwo
 
 Endpoint parsing rejects control characters and ambiguous forms. Local operations use `os.Root` so validated relative operations cannot escape through symlink traversal or a check/open race. Archive extraction rejects absolute, parent-traversing, duplicate, and non-regular executable entries.
 
-The transfer engine completes preflight before changing the final target. Data is written under a private partial name, synchronized, and renamed only after completion. Existing trees are synchronized through a complete staged tree. Atomic replacement remains subject to the guarantees of the destination operating system and filesystem; Courier does not claim stronger cross-filesystem atomicity.
+The transfer engine completes preflight before changing the final target. Data is written under a private partial name and committed only after completion. Existing final paths are rejected rather than overwritten or merged, and unrelated entries in a destination container are preserved. Local commits use exclusive link, symlink, or directory reservation operations; SFTP uses the no-replace protocol rename. Whole-directory atomicity remains subject to the destination operating system, filesystem, and transport guarantees.
 
 ## Optional remote helper
 

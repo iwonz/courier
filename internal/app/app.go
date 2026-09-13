@@ -290,6 +290,17 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 			resultErr = errors.Join(resultErr, transferCommandError(progress.StageCleanup, closeErr, 0))
 		}
 	}()
+	transformation := safety.TransformNone
+	if archiveMode {
+		transformation = safety.TransformArchive
+	}
+	disposition, err := safety.EvaluateTransfer(source.Endpoint, destination.Endpoint, false, transformation)
+	if err != nil {
+		return transferOutcome{}, transferCommandError(progress.StagePreflight, err, 0)
+	}
+	if disposition == safety.NoOp {
+		return transferOutcome{destination: destination.Endpoint.Raw, result: transfer.Result{Destination: destination.Path}}, nil
+	}
 	sourceInfo, err := source.Backend.Lstat(source.Path)
 	if err != nil {
 		return transferOutcome{}, transferCommandError(progress.StagePreflight, err, 0)
@@ -308,8 +319,12 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 	if err != nil {
 		return transferOutcome{}, transferCommandError(progress.StagePreflight, err, 0)
 	}
-	if err := safety.ValidateTransfer(source.Endpoint, actualEndpoint, sourceInfo.IsDir()); err != nil {
+	disposition, err = safety.EvaluateTransfer(source.Endpoint, actualEndpoint, sourceInfo.IsDir(), transformation)
+	if err != nil {
 		return transferOutcome{}, transferCommandError(progress.StagePreflight, err, 0)
+	}
+	if disposition == safety.NoOp {
+		return transferOutcome{destination: actualEndpoint.Raw, result: transfer.Result{Destination: actualEndpoint.Path}}, nil
 	}
 	actualPath := destination.Path
 	if outputName == "" {
@@ -317,6 +332,11 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 	}
 	if actualEndpoint.Path != destination.Endpoint.Path {
 		actualPath = destination.Backend.Join(destination.Path, outputName)
+	}
+	if _, collisionErr := destination.Backend.Lstat(actualPath); collisionErr == nil {
+		return transferOutcome{}, transferCommandError(progress.StagePreflight, fmt.Errorf("%w: %q", fsx.ErrDestinationExists, actualEndpoint.Raw), 0)
+	} else if !errors.Is(collisionErr, fs.ErrNotExist) {
+		return transferOutcome{}, transferCommandError(progress.StagePreflight, collisionErr, 0)
 	}
 	reporter := dependencies.Reporter(stderr, dependencies.Terminal(stderr))
 	defer reporter.Finish()

@@ -29,6 +29,9 @@ func newTransferCommand(dependencies Dependencies) *cobra.Command {
 			if err != nil {
 				return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: err}
 			}
+			if plan.Route != operation.RoutePathToPath {
+				return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: errors.New("requested route is planned but not shipped")}
+			}
 			return runTransfer(command.Context(), dependencies, plan, command.OutOrStdout(), command.ErrOrStderr())
 		},
 	}

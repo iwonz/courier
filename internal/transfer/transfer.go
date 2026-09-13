@@ -60,6 +60,9 @@ func (e Engine) Run(ctx context.Context, request Request) (result Result, result
 	if request.SourceFS == nil || request.DestinationFS == nil || request.SourcePath == "" || request.Destination == "" {
 		return Result{}, &Error{Stage: progress.StagePreflight, Cause: errors.New("source and destination are required")}
 	}
+	if err := ensureAbsent(request.DestinationFS, request.Destination); err != nil {
+		return Result{}, &Error{Stage: progress.StagePreflight, Cause: err}
+	}
 	total, err := scan(ctx, request.SourceFS, request.SourcePath)
 	if err != nil {
 		return Result{}, &Error{Stage: progress.StagePreflight, Cause: err}
@@ -103,7 +106,7 @@ func (e Engine) Run(ctx context.Context, request Request) (result Result, result
 		return Result{}, transferError(tracker, progress.StageTransfer, err)
 	}
 	tracker.Stage(progress.StageCommit)
-	if err := commit(request.DestinationFS, stagePath, request.Destination, token); err != nil {
+	if err := commit(request.DestinationFS, stagePath, request.Destination); err != nil {
 		return Result{}, transferError(tracker, progress.StageCommit, err)
 	}
 	cleanupStage = false
@@ -235,31 +238,17 @@ func (w *countingWriter) Write(data []byte) (int, error) {
 	return written, err
 }
 
-func commit(backend fsx.Backend, stagePath, destination, token string) error {
-	_, err := backend.Lstat(destination)
-	if errors.Is(err, fs.ErrNotExist) {
-		return backend.Rename(stagePath, destination)
-	}
-	if err != nil {
+func ensureAbsent(backend fsx.Backend, destination string) error {
+	if _, err := backend.Lstat(destination); err == nil {
+		return fmt.Errorf("%w: %q", fsx.ErrDestinationExists, destination)
+	} else if !errors.Is(err, fs.ErrNotExist) {
 		return err
-	}
-	backup := destination + ".courier-backup-" + token
-	if err := backend.RemoveAll(backup); err != nil {
-		return err
-	}
-	if err := backend.Rename(destination, backup); err != nil {
-		return err
-	}
-	if err := backend.Rename(stagePath, destination); err != nil {
-		if restoreErr := backend.Rename(backup, destination); restoreErr != nil {
-			return errors.Join(err, fmt.Errorf("restore previous destination: %w", restoreErr))
-		}
-		return err
-	}
-	if err := backend.RemoveAll(backup); err != nil {
-		return fmt.Errorf("remove committed backup %q: %w", backup, err)
 	}
 	return nil
+}
+
+func commit(backend fsx.Backend, stagePath, destination string) error {
+	return backend.CommitAbsent(stagePath, destination)
 }
 
 func randomToken() (string, error) {

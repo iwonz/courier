@@ -14,7 +14,7 @@ func remote(user, host, value string) endpoint.Endpoint {
 	return endpoint.Endpoint{User: user, Host: host, Path: value, Remote: true}
 }
 
-func TestValidateTransfer(t *testing.T) {
+func TestEvaluateTransfer(t *testing.T) {
 	root := t.TempDir()
 	source := filepath.Join(root, "source")
 	if err := os.Mkdir(source, 0o755); err != nil {
@@ -29,23 +29,28 @@ func TestValidateTransfer(t *testing.T) {
 		source endpoint.Endpoint
 		dest   endpoint.Endpoint
 		dir    bool
+		mode   Transformation
+		want   Disposition
 		unsafe bool
 	}{
-		{"different kinds", local(source), remote("", "host", "/x"), true, false},
-		{"different remotes", remote("me", "one", "/x"), remote("me", "two", "/x"), true, false},
-		{"different users", remote("me", "one", "/x"), remote("you", "one", "/x"), true, false},
-		{"remote same", remote("me", "HOST", "/x/../x"), remote("me", "host", "/x"), false, true},
-		{"remote descendant dir", remote("me", "host", "/x"), remote("me", "host", "/x/y"), true, true},
-		{"remote descendant file", remote("me", "host", "/x"), remote("me", "host", "/x/y"), false, false},
-		{"remote sibling", remote("me", "host", "/x"), remote("me", "host", "/xy"), true, false},
-		{"local same through link", local(source), local(link), true, true},
-		{"local descendant missing", local(source), local(filepath.Join(link, "new", "child")), true, true},
-		{"local sibling", local(source), local(filepath.Join(root, "other")), true, false},
+		{"different kinds", local(source), remote("", "host", "/x"), true, TransformNone, Proceed, false},
+		{"different remotes", remote("me", "one", "/x"), remote("me", "two", "/x"), true, TransformNone, Proceed, false},
+		{"different users", remote("me", "one", "/x"), remote("you", "one", "/x"), true, TransformNone, Proceed, false},
+		{"remote same", remote("me", "HOST", "/x/../x"), remote("me", "host", "/x"), false, TransformNone, NoOp, false},
+		{"remote archive collision", remote("me", "host", "/x"), remote("me", "host", "/x"), false, TransformArchive, Proceed, true},
+		{"remote extract collision", remote("me", "host", "/x"), remote("me", "host", "/x"), false, TransformExtract, Proceed, true},
+		{"remote descendant dir", remote("me", "host", "/x"), remote("me", "host", "/x/y"), true, TransformNone, Proceed, true},
+		{"remote descendant file", remote("me", "host", "/x"), remote("me", "host", "/x/y"), false, TransformNone, Proceed, false},
+		{"remote sibling", remote("me", "host", "/x"), remote("me", "host", "/xy"), true, TransformNone, Proceed, false},
+		{"remote Windows same", endpoint.Endpoint{User: "me", Host: "host", Path: "C:/Data", PathFlavor: endpoint.PathWindows, Remote: true}, endpoint.Endpoint{User: "me", Host: "host", Path: "c:/data", PathFlavor: endpoint.PathWindows, Remote: true}, false, TransformNone, NoOp, false},
+		{"local same through link", local(source), local(link), true, TransformNone, NoOp, false},
+		{"local descendant missing", local(source), local(filepath.Join(link, "new", "child")), true, TransformNone, Proceed, true},
+		{"local sibling", local(source), local(filepath.Join(root, "other")), true, TransformNone, Proceed, false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			err := ValidateTransfer(test.source, test.dest, test.dir)
-			if errors.Is(err, ErrUnsafe) != test.unsafe {
-				t.Fatalf("error=%v unsafe=%v", err, test.unsafe)
+			got, err := EvaluateTransfer(test.source, test.dest, test.dir, test.mode)
+			if got != test.want || errors.Is(err, ErrUnsafe) != test.unsafe {
+				t.Fatalf("disposition=%v error=%v unsafe=%v", got, err, test.unsafe)
 			}
 		})
 	}
@@ -59,7 +64,7 @@ func TestCanonicalErrors(t *testing.T) {
 		localCaseInsensitive = originalCase
 	})
 	absLocal = func(string) (string, error) { return "", errors.New("abs") }
-	if err := ValidateTransfer(local("x"), local("y"), false); !errors.Is(err, ErrUnsafe) {
+	if _, err := EvaluateTransfer(local("x"), local("y"), false, TransformNone); !errors.Is(err, ErrUnsafe) {
 		t.Fatal(err)
 	}
 	calls := 0
@@ -70,27 +75,27 @@ func TestCanonicalErrors(t *testing.T) {
 		}
 		return originalAbs(value)
 	}
-	if err := ValidateTransfer(local("x"), local("y"), false); !errors.Is(err, ErrUnsafe) {
+	if _, err := EvaluateTransfer(local("x"), local("y"), false, TransformNone); !errors.Is(err, ErrUnsafe) {
 		t.Fatal(err)
 	}
 	absLocal = originalAbs
 	statLocal = func(string) (os.FileInfo, error) { return nil, errors.New("stat") }
-	if err := ValidateTransfer(local("x"), local("y"), false); !errors.Is(err, ErrUnsafe) {
+	if _, err := EvaluateTransfer(local("x"), local("y"), false, TransformNone); !errors.Is(err, ErrUnsafe) {
 		t.Fatal(err)
 	}
 	statLocal = func(string) (os.FileInfo, error) { return nil, nil }
 	evalLocal = func(string) (string, error) { return "", errors.New("eval") }
-	if err := ValidateTransfer(local("x"), local("y"), false); !errors.Is(err, ErrUnsafe) {
+	if _, err := EvaluateTransfer(local("x"), local("y"), false, TransformNone); !errors.Is(err, ErrUnsafe) {
 		t.Fatal(err)
 	}
 	statLocal, evalLocal = originalStat, originalEval
 	localCaseInsensitive = true
-	if err := ValidateTransfer(local("MixedCase"), local("mixedcase"), false); !errors.Is(err, ErrUnsafe) {
-		t.Fatalf("expected case-insensitive match, got %v", err)
+	if disposition, err := EvaluateTransfer(local("MixedCase"), local("mixedcase"), false, TransformArchive); disposition != Proceed || !errors.Is(err, ErrUnsafe) {
+		t.Fatalf("expected case-insensitive collision, got %v, %v", disposition, err)
 	}
 	localCaseInsensitive = false
 	relLocal = func(string, string) (string, error) { return "", errors.New("rel") }
-	if err := ValidateTransfer(local("x"), local("y"), false); !errors.Is(err, ErrUnsafe) {
+	if _, err := EvaluateTransfer(local("x"), local("y"), false, TransformNone); !errors.Is(err, ErrUnsafe) {
 		t.Fatalf("expected relative path failure, got %v", err)
 	}
 	relLocal = originalRel
@@ -120,7 +125,7 @@ func TestSafeArchiveJoin(t *testing.T) {
 }
 
 func TestRemoteRootRelationship(t *testing.T) {
-	if err := ValidateTransfer(remote("me", "host", "/"), remote("me", "host", "/child"), true); !errors.Is(err, ErrUnsafe) {
+	if _, err := EvaluateTransfer(remote("me", "host", "/"), remote("me", "host", "/child"), true, TransformNone); !errors.Is(err, ErrUnsafe) {
 		t.Fatalf("expected root descendant rejection, got %v", err)
 	}
 }

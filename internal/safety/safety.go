@@ -16,6 +16,23 @@ import (
 // ErrUnsafe identifies a path relationship that could overwrite source data.
 var ErrUnsafe = errors.New("unsafe transfer path")
 
+// Transformation identifies whether transfer output differs from the source.
+type Transformation uint8
+
+const (
+	TransformNone Transformation = iota
+	TransformArchive
+	TransformExtract
+)
+
+// Disposition tells orchestration whether a safe transfer should run.
+type Disposition uint8
+
+const (
+	Proceed Disposition = iota
+	NoOp
+)
+
 var (
 	absLocal             = filepath.Abs
 	evalLocal            = filepath.EvalSymlinks
@@ -25,19 +42,23 @@ var (
 	relArchive           = filepath.Rel
 )
 
-// ValidateTransfer rejects equal endpoints and directory descendants.
-func ValidateTransfer(source, destination endpoint.Endpoint, sourceIsDirectory bool) error {
+// EvaluateTransfer returns a successful no-op for plain endpoint identity and
+// rejects transformed identity and directory descendants.
+func EvaluateTransfer(source, destination endpoint.Endpoint, sourceIsDirectory bool, transformation Transformation) (Disposition, error) {
 	same, descendant, err := relationship(source, destination)
 	if err != nil {
-		return fmt.Errorf("%w: canonicalize paths: %v", ErrUnsafe, err)
+		return Proceed, fmt.Errorf("%w: canonicalize paths: %v", ErrUnsafe, err)
 	}
 	if same {
-		return fmt.Errorf("%w: source and destination are identical", ErrUnsafe)
+		if transformation == TransformNone {
+			return NoOp, nil
+		}
+		return Proceed, fmt.Errorf("%w: transformed output collides with source", ErrUnsafe)
 	}
 	if sourceIsDirectory && descendant {
-		return fmt.Errorf("%w: destination is inside source", ErrUnsafe)
+		return Proceed, fmt.Errorf("%w: destination is inside source", ErrUnsafe)
 	}
-	return nil
+	return Proceed, nil
 }
 
 func relationship(source, destination endpoint.Endpoint) (bool, bool, error) {
@@ -50,6 +71,11 @@ func relationship(source, destination endpoint.Endpoint) (bool, bool, error) {
 		}
 		sourcePath, destinationPath := path.Clean(source.Path), path.Clean(destination.Path)
 		same := sourcePath == destinationPath
+		if source.PathFlavor == endpoint.PathWindows || destination.PathFlavor == endpoint.PathWindows {
+			same = strings.EqualFold(sourcePath, destinationPath)
+			destinationPath = strings.ToLower(destinationPath)
+			sourcePath = strings.ToLower(sourcePath)
+		}
 		prefix := sourcePath + "/"
 		if sourcePath == "/" {
 			prefix = "/"

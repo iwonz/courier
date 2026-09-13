@@ -61,10 +61,10 @@ The destination rules are deterministic:
 
 - an existing directory or a path ending in `/` receives the source under its source name;
 - every other destination is the exact final path;
-- an existing target tree is synchronized by staging the complete source, then replacing the target;
+- an existing final path is a collision and is never overwritten or merged; unrelated entries in a destination directory are preserved;
 - `--archive` transfers a verified `<source-name>.tar.gz` instead of the source tree.
 
-Courier never deletes the source. It rejects identical source/destination paths and copying a directory into itself. Files are staged under private partial names and committed only after preflight and transfer complete.
+Courier never deletes the source. An identical plain source/destination is a successful no-op; transformed identity and copying a directory into itself are rejected. Files are staged under private partial names and committed only into an absent final path after preflight and transfer complete.
 
 ## SSH
 

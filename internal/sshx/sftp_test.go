@@ -82,6 +82,50 @@ func TestSFTPBackendFailures(t *testing.T) {
 	}
 }
 
+func TestSFTPCommitAbsent(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		operations := &fakeSFTPOperations{lstat: func(string) (fs.FileInfo, error) { return nil, fs.ErrNotExist }}
+		backend := &SFTPBackend{operations: operations}
+		if err := backend.CommitAbsent("/stage", "/final"); err != nil || operations.renameCalls != 1 {
+			t.Fatalf("error=%v renameCalls=%d", err, operations.renameCalls)
+		}
+	})
+	t.Run("preflight collision", func(t *testing.T) {
+		operations := &fakeSFTPOperations{info: sshInfo{name: "final"}}
+		if err := (&SFTPBackend{operations: operations}).CommitAbsent("/stage", "/final"); !errors.Is(err, fsx.ErrDestinationExists) || operations.renameCalls != 0 {
+			t.Fatalf("error=%v renameCalls=%d", err, operations.renameCalls)
+		}
+	})
+	t.Run("preflight failure", func(t *testing.T) {
+		operations := &fakeSFTPOperations{err: errors.New("lstat")}
+		if err := (&SFTPBackend{operations: operations}).CommitAbsent("/stage", "/final"); err == nil {
+			t.Fatal("expected lstat error")
+		}
+	})
+	t.Run("late collision", func(t *testing.T) {
+		calls := 0
+		operations := &fakeSFTPOperations{
+			renameErr: errors.New("rename"),
+			lstat: func(string) (fs.FileInfo, error) {
+				calls++
+				if calls == 1 {
+					return nil, fs.ErrNotExist
+				}
+				return sshInfo{name: "final"}, nil
+			},
+		}
+		if err := (&SFTPBackend{operations: operations}).CommitAbsent("/stage", "/final"); !errors.Is(err, fsx.ErrDestinationExists) {
+			t.Fatalf("error=%v", err)
+		}
+	})
+	t.Run("rename failure", func(t *testing.T) {
+		operations := &fakeSFTPOperations{renameErr: errors.New("rename"), lstat: func(string) (fs.FileInfo, error) { return nil, fs.ErrNotExist }}
+		if err := (&SFTPBackend{operations: operations}).CommitAbsent("/stage", "/final"); err == nil || errors.Is(err, fsx.ErrDestinationExists) {
+			t.Fatalf("error=%v", err)
+		}
+	})
+}
+
 func TestNewSFTPBackend(t *testing.T) {
 	backend := NewSFTPBackend(nil)
 	if backend == nil {
@@ -129,16 +173,29 @@ type fakeSFTPOperations struct {
 	posixErr    error
 	chmodMode   fs.FileMode
 	renameCalls int
+	renameErr   error
+	lstat       func(string) (fs.FileInfo, error)
 }
 
-func (f *fakeSFTPOperations) Lstat(string) (fs.FileInfo, error)          { return f.info, f.err }
+func (f *fakeSFTPOperations) Lstat(name string) (fs.FileInfo, error) {
+	if f.lstat != nil {
+		return f.lstat(name)
+	}
+	return f.info, f.err
+}
 func (f *fakeSFTPOperations) ReadDir(string) ([]fs.FileInfo, error)      { return f.entries, f.err }
 func (f *fakeSFTPOperations) Open(string) (io.ReadCloser, error)         { return f.reader, f.err }
 func (f *fakeSFTPOperations) OpenFile(string, int) (fsx.Writable, error) { return f.writer, f.err }
 func (f *fakeSFTPOperations) MkdirAll(string) error                      { return f.err }
 func (f *fakeSFTPOperations) RemoveAll(string) error                     { return f.err }
 func (f *fakeSFTPOperations) PosixRename(string, string) error           { return f.posixErr }
-func (f *fakeSFTPOperations) Rename(string, string) error                { f.renameCalls++; return f.err }
+func (f *fakeSFTPOperations) Rename(string, string) error {
+	f.renameCalls++
+	if f.renameErr != nil {
+		return f.renameErr
+	}
+	return f.err
+}
 func (f *fakeSFTPOperations) Chmod(_ string, mode fs.FileMode) error {
 	f.chmodMode = mode
 	return f.chmodErr

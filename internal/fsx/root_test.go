@@ -64,6 +64,24 @@ func TestRootedLocal(t *testing.T) {
 	if err := backend.Rename(relative, renamed); err != nil {
 		t.Fatal(err)
 	}
+	committed := filepath.Join("missing", "committed")
+	if err := backend.CommitAbsent(renamed, committed); err != nil {
+		t.Fatal(err)
+	}
+	stageDirectory := filepath.Join("missing", "stage-directory")
+	if err := backend.Mkdir(stageDirectory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	child, err := backend.Create(filepath.Join(stageDirectory, "child"), 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := child.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := backend.CommitAbsent(stageDirectory, filepath.Join("missing", "committed-directory")); err != nil {
+		t.Fatal(err)
+	}
 	if err := backend.RemoveAll("missing"); err != nil {
 		t.Fatal(err)
 	}

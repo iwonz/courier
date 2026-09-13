@@ -7,17 +7,22 @@ Define filesystem and archive containment rules that prevent unsafe path access.
 
 ### Requirement: Self-copy prevention
 
-Courier SHALL reject a transfer when source and actual destination resolve to the same location.
+Courier SHALL treat a plain path-to-path operation whose source and actual destination resolve to the same location as a successful no-op, and SHALL reject the same identity when archive or extraction transformation is active.
 
 #### Scenario: Local symlink alias
 
-- **WHEN** source and destination resolve through symlinks to the same local path
-- **THEN** preflight fails before destination is modified
+- **WHEN** plain source and destination resolve through symlinks to the same local path
+- **THEN** preflight returns a successful no-op and performs no copy
 
 #### Scenario: Equivalent remote paths
 
-- **WHEN** normalized paths on the same remote identity are equal
-- **THEN** preflight fails before opening a remote writer
+- **WHEN** normalized paths on the same resolved remote identity are equal for a plain transfer
+- **THEN** preflight returns a successful no-op before opening a remote writer
+
+#### Scenario: Transformed identity
+
+- **WHEN** source and destination resolve to the same location with archive or extraction active
+- **THEN** preflight fails with an unsafe collision
 
 ### Requirement: Descendant-copy prevention
 

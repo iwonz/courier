@@ -17,10 +17,11 @@ import (
 	"github.com/iwonz/courier/internal/progress"
 )
 
-func TestLocalDirectorySynchronization(t *testing.T) {
+func TestLocalDirectoryNonDestructiveCopy(t *testing.T) {
 	root := t.TempDir()
 	source := filepath.Join(root, "source")
-	destination := filepath.Join(root, "destination")
+	container := filepath.Join(root, "container")
+	destination := filepath.Join(container, "destination")
 	if err := os.MkdirAll(filepath.Join(source, "nested"), 0o750); err != nil {
 		t.Fatal(err)
 	}
@@ -35,10 +36,10 @@ func TestLocalDirectorySynchronization(t *testing.T) {
 	if err := os.Symlink("nested/file.txt", filepath.Join(source, "link")); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll(destination, 0o755); err != nil {
+	if err := os.MkdirAll(container, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(destination, "stale"), []byte("remove"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(container, "unrelated"), []byte("preserve"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	current := time.Unix(100, 0)
@@ -62,8 +63,8 @@ func TestLocalDirectorySynchronization(t *testing.T) {
 	if target, err := os.Readlink(filepath.Join(destination, "link")); err != nil || target != filepath.Join("nested", "file.txt") {
 		t.Fatalf("link=%q err=%v", target, err)
 	}
-	if _, err := os.Stat(filepath.Join(destination, "stale")); !os.IsNotExist(err) {
-		t.Fatalf("stale destination remains: %v", err)
+	if data, err := os.ReadFile(filepath.Join(container, "unrelated")); err != nil || string(data) != "preserve" {
+		t.Fatalf("unrelated destination entry changed: %q, %v", data, err)
 	}
 	if _, err := os.Stat(source); err != nil {
 		t.Fatalf("source changed: %v", err)
@@ -81,9 +82,6 @@ func TestLocalFileAndCancellation(t *testing.T) {
 	if err := os.WriteFile(source, []byte(strings.Repeat("x", 128*1024)), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(destination, []byte("old"), 0o600); err != nil {
-		t.Fatal(err)
-	}
 	ctx, cancel := context.WithCancel(context.Background())
 	engine := Engine{Token: func() (string, error) { return "cancel", nil }, BufferSize: 2}
 	_, err := engine.Run(ctx, Request{SourceFS: fsx.Local{}, SourcePath: source, DestinationFS: fsx.Local{}, Destination: destination, Progress: func(event progress.Event) {
@@ -95,9 +93,8 @@ func TestLocalFileAndCancellation(t *testing.T) {
 	if !errors.As(err, &transferErr) || !errors.Is(err, context.Canceled) || transferErr.Stage != progress.StageTransfer || transferErr.Confirmed == 0 {
 		t.Fatalf("error=%v", err)
 	}
-	data, readErr := os.ReadFile(destination)
-	if readErr != nil || string(data) != "old" {
-		t.Fatalf("destination=%q err=%v", data, readErr)
+	if _, readErr := os.Lstat(destination); !os.IsNotExist(readErr) {
+		t.Fatalf("destination was committed after cancellation: %v", readErr)
 	}
 	assertNoTemporaryPaths(t, root)
 
@@ -131,6 +128,23 @@ func TestPreflightFailures(t *testing.T) {
 	}
 	if _, err := (Engine{}).Run(context.Background(), Request{SourceFS: backend, SourcePath: source, DestinationFS: backend, Destination: filepath.Join(root, "default-token")}); err != nil {
 		t.Fatalf("default token transfer: %v", err)
+	}
+	existingFile := filepath.Join(root, "existing-file")
+	if err := os.WriteFile(existingFile, []byte("keep"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	existingDirectory := filepath.Join(root, "existing-directory")
+	if err := os.Mkdir(existingDirectory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	existingLink := filepath.Join(root, "existing-link")
+	if err := os.Symlink("existing-file", existingLink); err != nil {
+		t.Fatal(err)
+	}
+	for _, existing := range []string{existingFile, existingDirectory, existingLink} {
+		if _, err := (Engine{}).Run(context.Background(), Request{SourceFS: backend, SourcePath: source, DestinationFS: backend, Destination: existing}); !errors.Is(err, fsx.ErrDestinationExists) {
+			t.Fatalf("expected collision for %q, got %v", existing, err)
+		}
 	}
 }
 
@@ -262,51 +276,18 @@ func TestRunDestinationFailures(t *testing.T) {
 			t.Fatal("expected destination error")
 		}
 	}
+	atomicFailure := commitBackend{stubBackend: stubBackend{Backend: fsx.Local{}}, err: errors.New("atomic commit")}
+	if _, err := (Engine{Token: func() (string, error) { return "atomic", nil }}).Run(context.Background(), Request{SourceFS: fsx.Local{}, SourcePath: source, DestinationFS: atomicFailure, Destination: filepath.Join(root, "atomic-out")}); err == nil {
+		t.Fatal("expected atomic commit error")
+	}
 }
 
 func TestCommitFailures(t *testing.T) {
-	exists := fakeInfo{mode: 0o600}
-	for _, test := range []struct {
-		name    string
-		backend stubBackend
-	}{
-		{"destination lstat", stubBackend{Backend: fsx.Local{}, lstat: func(string) (fs.FileInfo, error) { return nil, errors.New("lstat") }}},
-		{"remove backup", stubBackend{Backend: fsx.Local{}, lstat: func(string) (fs.FileInfo, error) { return exists, nil }, removeAll: func(string) error { return errors.New("remove") }}},
-		{"move old", stubBackend{Backend: fsx.Local{}, lstat: func(string) (fs.FileInfo, error) { return exists, nil }, rename: func(string, string) error { return errors.New("rename") }}},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			if err := commit(test.backend, "stage", "destination", "token"); err == nil {
-				t.Fatal("expected commit error")
-			}
-		})
+	if err := commit(commitBackend{err: errors.New("atomic")}, "stage", "destination"); err == nil {
+		t.Fatal("expected backend commit error")
 	}
-	for _, restoreFails := range []bool{false, true} {
-		calls := 0
-		backend := stubBackend{Backend: fsx.Local{}, lstat: func(string) (fs.FileInfo, error) { return exists, nil }, rename: func(string, string) error {
-			calls++
-			if calls == 2 || (calls == 3 && restoreFails) {
-				return errors.New("rename")
-			}
-			return nil
-		}}
-		if err := commit(backend, "stage", "destination", "token"); err == nil {
-			t.Fatal("expected stage/restore error")
-		}
-	}
-	calls := 0
-	removeCommitted := stubBackend{Backend: fsx.Local{}, lstat: func(string) (fs.FileInfo, error) { return exists, nil }, removeAll: func(string) error {
-		calls++
-		if calls == 2 {
-			return errors.New("remove committed")
-		}
-		return nil
-	}, rename: func(string, string) error { return nil }}
-	if err := commit(removeCommitted, "stage", "destination", "token"); err == nil {
-		t.Fatal("expected committed backup error")
-	}
-	absent := stubBackend{Backend: fsx.Local{}, lstat: func(string) (fs.FileInfo, error) { return nil, fs.ErrNotExist }, rename: func(string, string) error { return errors.New("rename absent") }}
-	if err := commit(absent, "stage", "destination", "token"); err == nil {
-		t.Fatal("expected absent rename error")
+	if err := commit(commitBackend{}, "stage", "destination"); err != nil {
+		t.Fatalf("backend commit error=%v", err)
 	}
 }
 
@@ -340,6 +321,13 @@ type fakeInfo struct {
 	mode fs.FileMode
 	size int64
 }
+
+type commitBackend struct {
+	stubBackend
+	err error
+}
+
+func (b commitBackend) CommitAbsent(string, string) error { return b.err }
 
 func (f fakeInfo) Name() string       { return "fake" }
 func (f fakeInfo) Size() int64        { return f.size }

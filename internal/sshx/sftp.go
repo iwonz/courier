@@ -97,6 +97,23 @@ func (s *SFTPBackend) Rename(oldPath, newPath string) error {
 	}
 	return s.operations.Rename(oldPath, newPath)
 }
+
+// CommitAbsent uses the standard SFTP v3 rename, whose contract requires the
+// destination not to exist, instead of the overwrite-capable POSIX extension.
+func (s *SFTPBackend) CommitAbsent(stagePath, destination string) error {
+	if _, err := s.operations.Lstat(destination); err == nil {
+		return fsx.ErrDestinationExists
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+	if err := s.operations.Rename(stagePath, destination); err != nil {
+		if _, collisionErr := s.operations.Lstat(destination); collisionErr == nil {
+			return errors.Join(fsx.ErrDestinationExists, err)
+		}
+		return err
+	}
+	return nil
+}
 func (s *SFTPBackend) Chmod(name string, mode fs.FileMode) error {
 	return s.operations.Chmod(name, mode.Perm())
 }

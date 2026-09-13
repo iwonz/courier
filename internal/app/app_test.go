@@ -45,6 +45,7 @@ func TestCommandsAndExitCodes(t *testing.T) {
 		{name: "unknown", args: []string{"unknown"}, code: ExitCLI, wantError: "unknown command"},
 		{name: "invalid transfer grammar", args: []string{"from", "a", "into", "b"}, code: ExitCLI, wantError: "expected: courier from"},
 		{name: "unsupported transfer route", args: []string{"from", "https://example.test/file", "to", "out"}, code: ExitCLI, wantError: "unsupported operation route"},
+		{name: "planned transfer route", args: []string{"from", "web://", "to", "out"}, code: ExitCLI, wantError: "planned but not shipped"},
 		{name: "duplicate archive", args: []string{"from", "a", "to", "b", "--archive", "--archive"}, code: ExitCLI, wantError: "value may only be set once"},
 		{name: "current update", args: []string{"update"}, code: ExitOK, wantOutput: "courier v1.2.3 is current"},
 	} {
@@ -84,6 +85,110 @@ func TestCommandsAndExitCodes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNoOpAndDestinationCollision(t *testing.T) {
+	t.Run("plain identity is a no-op", func(t *testing.T) {
+		called := false
+		dependencies := transferDependencies(t, func(_ context.Context, value endpoint.Endpoint) (*Resource, error) {
+			return &Resource{Endpoint: value, Backend: fsx.Local{}, Path: value.Path}, nil
+		})
+		dependencies.Transfer = func(context.Context, transfer.Request) (transfer.Result, error) {
+			called = true
+			return transfer.Result{}, nil
+		}
+		var stdout bytes.Buffer
+		code := Execute(context.Background(), NewRoot(dependencies), []string{"from", "same", "to", "same"}, &stdout, io.Discard)
+		if code != ExitOK || called || !strings.Contains(stdout.String(), "transferred: 0 bytes") {
+			t.Fatalf("code=%d called=%v stdout=%q", code, called, stdout.String())
+		}
+	})
+
+	t.Run("resolved SSH aliases are a no-op", func(t *testing.T) {
+		called := false
+		dependencies := transferDependencies(t, func(_ context.Context, value endpoint.Endpoint) (*Resource, error) {
+			value.Host = "canonical.example"
+			value.User = "same-user"
+			return &Resource{Endpoint: value, Backend: fsx.Local{}, Path: value.Path}, nil
+		})
+		dependencies.Transfer = func(context.Context, transfer.Request) (transfer.Result, error) {
+			called = true
+			return transfer.Result{}, nil
+		}
+		if code := Execute(context.Background(), NewRoot(dependencies), []string{"from", "first:/same", "to", "second:/same"}, io.Discard, io.Discard); code != ExitOK || called {
+			t.Fatalf("code=%d called=%v", code, called)
+		}
+	})
+
+	t.Run("container resolution is a no-op", func(t *testing.T) {
+		root := t.TempDir()
+		source := filepath.Join(root, "source")
+		if err := os.WriteFile(source, []byte("keep"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		called := false
+		dependencies := transferDependencies(t, func(_ context.Context, value endpoint.Endpoint) (*Resource, error) {
+			return &Resource{Endpoint: value, Backend: fsx.Local{}, Path: value.Path}, nil
+		})
+		dependencies.Transfer = func(context.Context, transfer.Request) (transfer.Result, error) {
+			called = true
+			return transfer.Result{}, nil
+		}
+		if code := Execute(context.Background(), NewRoot(dependencies), []string{"from", source, "to", root + string(filepath.Separator)}, io.Discard, io.Discard); code != ExitOK || called {
+			t.Fatalf("code=%d called=%v", code, called)
+		}
+	})
+
+	t.Run("archive identity is unsafe", func(t *testing.T) {
+		archiveCalled := false
+		dependencies := transferDependencies(t, func(_ context.Context, value endpoint.Endpoint) (*Resource, error) {
+			return &Resource{Endpoint: value, Backend: fsx.Local{}, Path: value.Path}, nil
+		})
+		dependencies.Archive = func(context.Context, fsx.Backend, string, string, string, progress.Sink) (*archive.Artifact, error) {
+			archiveCalled = true
+			return nil, nil
+		}
+		var stderr bytes.Buffer
+		code := Execute(context.Background(), NewRoot(dependencies), []string{"from", "same", "to", "same", "--archive"}, io.Discard, &stderr)
+		if code != ExitTransfer || archiveCalled || !strings.Contains(stderr.String(), "transformed output collides") {
+			t.Fatalf("code=%d archiveCalled=%v stderr=%q", code, archiveCalled, stderr.String())
+		}
+	})
+
+	t.Run("container child collision preserves entries", func(t *testing.T) {
+		root := t.TempDir()
+		source := filepath.Join(root, "source")
+		container := filepath.Join(root, "container")
+		if err := os.WriteFile(source, []byte("new"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Mkdir(container, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		collision := filepath.Join(container, "source")
+		unrelated := filepath.Join(container, "unrelated")
+		if err := os.WriteFile(collision, []byte("keep"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(unrelated, []byte("also keep"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		called := false
+		dependencies := transferDependencies(t, func(_ context.Context, value endpoint.Endpoint) (*Resource, error) {
+			return &Resource{Endpoint: value, Backend: fsx.Local{}, Path: value.Path}, nil
+		})
+		dependencies.Transfer = func(context.Context, transfer.Request) (transfer.Result, error) {
+			called = true
+			return transfer.Result{}, nil
+		}
+		var stderr bytes.Buffer
+		code := Execute(context.Background(), NewRoot(dependencies), []string{"from", source, "to", container + string(filepath.Separator)}, io.Discard, &stderr)
+		collisionData, collisionErr := os.ReadFile(collision)
+		unrelatedData, unrelatedErr := os.ReadFile(unrelated)
+		if code != ExitTransfer || called || collisionErr != nil || unrelatedErr != nil || string(collisionData) != "keep" || string(unrelatedData) != "also keep" || !strings.Contains(stderr.String(), "destination already exists") {
+			t.Fatalf("code=%d called=%v collision=%q,%v unrelated=%q,%v stderr=%q", code, called, collisionData, collisionErr, unrelatedData, unrelatedErr, stderr.String())
+		}
+	})
 }
 
 func TestAllTransferDirections(t *testing.T) {
@@ -191,7 +296,12 @@ func TestArchiveDestinationAndResolvedAliasSafety(t *testing.T) {
 
 func TestTransferFailurePathsAndCleanup(t *testing.T) {
 	validOpen := func(_ context.Context, value endpoint.Endpoint) (*Resource, error) {
-		return &Resource{Endpoint: value, Backend: lstatBackend{Backend: fsx.Local{}, lstat: func(string) (fs.FileInfo, error) { return fakeInfo{name: "file", size: 4}, nil }}, Path: value.Path}, nil
+		return &Resource{Endpoint: value, Backend: lstatBackend{Backend: fsx.Local{}, lstat: func(name string) (fs.FileInfo, error) {
+			if name == "out" {
+				return nil, fs.ErrNotExist
+			}
+			return fakeInfo{name: "file", size: 4}, nil
+		}}, Path: value.Path}, nil
 	}
 	for _, test := range []struct {
 		name      string
@@ -233,6 +343,21 @@ func TestTransferFailurePathsAndCleanup(t *testing.T) {
 				return &Resource{Endpoint: value, Backend: backend, Path: value.Path}, nil
 			}
 		}, wantCode: ExitTransfer, wantStage: "preflight", wantText: "destination stat"},
+		{name: "resolved destination stat", args: []string{"from", "in", "to", "out/"}, mutate: func(dependencies *Dependencies) {
+			dependencies.Open = func(_ context.Context, value endpoint.Endpoint) (*Resource, error) {
+				backend := lstatBackend{Backend: fsx.Local{}, lstat: func(name string) (fs.FileInfo, error) {
+					switch name {
+					case "in":
+						return fakeInfo{name: "in"}, nil
+					case "out/":
+						return nil, fs.ErrNotExist
+					default:
+						return nil, errors.New("resolved destination stat")
+					}
+				}}
+				return &Resource{Endpoint: value, Backend: backend, Path: value.Path}, nil
+			}
+		}, wantCode: ExitTransfer, wantStage: "preflight", wantText: "resolved destination stat"},
 		{name: "nameless source", args: []string{"from", "/", "to", "out/"}, wantCode: ExitTransfer, wantStage: "preflight", wantText: "no transferable name"},
 		{name: "typed transfer", args: []string{"from", "in", "to", "out"}, mutate: func(dependencies *Dependencies) {
 			dependencies.Transfer = func(context.Context, transfer.Request) (transfer.Result, error) {

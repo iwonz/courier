@@ -71,6 +71,11 @@ func (r *RootedLocal) RemoveAll(name string) error { return r.root.RemoveAll(nam
 func (r *RootedLocal) Rename(oldPath, newPath string) error {
 	return r.root.Rename(oldPath, newPath)
 }
+func (r *RootedLocal) Link(oldPath, newPath string) error { return r.root.Link(oldPath, newPath) }
+func (r *RootedLocal) Mkdir(name string, mode fs.FileMode) error {
+	return r.root.Mkdir(name, mode.Perm())
+}
+func (r *RootedLocal) Remove(name string) error { return r.root.Remove(name) }
 func (r *RootedLocal) Chmod(name string, mode fs.FileMode) error {
 	return r.root.Chmod(name, mode.Perm())
 }
@@ -83,3 +88,8 @@ func (r *RootedLocal) Readlink(name string) (string, error) {
 }
 func (*RootedLocal) Join(parts ...string) string { return filepath.Join(parts...) }
 func (*RootedLocal) Dir(name string) string      { return filepath.Dir(name) }
+
+// CommitAbsent commits a staged rooted object without replacing destination.
+func (r *RootedLocal) CommitAbsent(stagePath, destination string) error {
+	return commitAbsent(r, stagePath, destination)
+}
