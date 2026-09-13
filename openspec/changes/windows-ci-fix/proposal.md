@@ -6,7 +6,7 @@ The first native Windows run exposed tests that assumed POSIX path separators an
 
 ## What Changes
 
-- Express local destination expectations with host-native path semantics while retaining slash semantics for remote endpoints.
+- Express local destination and symlink expectations with host-native path semantics while retaining slash semantics for remote endpoints.
 - Normalize expanded local SSH identity paths on the host platform.
 - Assert POSIX permission bits only on operating systems that expose them consistently.
 - Inject the already-tested Windows updater handoff boundary when a test uses non-executable fixture bytes.

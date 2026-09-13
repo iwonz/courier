@@ -59,7 +59,7 @@ func TestLocalDirectorySynchronization(t *testing.T) {
 	if err != nil || runtime.GOOS != "windows" && info.Mode().Perm() != 0o640 || !info.ModTime().Equal(stamp) {
 		t.Fatalf("info=%v err=%v", info, err)
 	}
-	if target, err := os.Readlink(filepath.Join(destination, "link")); err != nil || target != "nested/file.txt" {
+	if target, err := os.Readlink(filepath.Join(destination, "link")); err != nil || target != filepath.Join("nested", "file.txt") {
 		t.Fatalf("link=%q err=%v", target, err)
 	}
 	if _, err := os.Stat(filepath.Join(destination, "stale")); !os.IsNotExist(err) {

@@ -344,14 +344,17 @@ func TestUpdaterDefaultRuntimeWindowsAndRunFailures(t *testing.T) {
 		updater := Updater{Version: "dev"}
 		if runtimeOS == "windows" {
 			updater.Handoff = func(staged, destination string, pid int) error {
-				if destination != target || pid <= 0 {
-					t.Fatalf("handoff destination=%q PID=%d", destination, pid)
+				if pid <= 0 {
+					t.Fatalf("handoff PID=%d", pid)
 				}
 				return os.Rename(staged, destination)
 			}
 		}
 		if _, err := updater.Run(context.Background()); err != nil {
 			t.Fatal(err)
+		}
+		if data, err := os.ReadFile(target); err != nil || string(data) != "new" {
+			t.Fatalf("target=%q err=%v", data, err)
 		}
 	})
 

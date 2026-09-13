@@ -3,7 +3,7 @@
 ## 1. Correct platform assumptions
 
 - [x] 1.1 Normalize explicit empty CLI arguments and expanded local SSH identity paths
-- [x] 1.2 Use host-native local destination expectations
+- [x] 1.2 Use host-native local destination and symlink expectations
 - [x] 1.3 Restrict exact POSIX permission assertions to supporting hosts
 - [x] 1.4 Isolate non-executable updater fixtures from the real Windows handoff
 

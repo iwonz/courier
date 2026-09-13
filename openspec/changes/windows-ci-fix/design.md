@@ -8,7 +8,7 @@ Courier preserves metadata where the host filesystem supports it. Windows does n
 
 ### Host-native local paths
 
-Local destination expectations use `filepath.Join`. Remote paths continue to use slash semantics. Expanded SSH identity files are local resources, so Courier cleans them with `filepath.Clean` after token and home expansion.
+Local destination and symlink-target expectations use `filepath.Join`. Remote paths continue to use slash semantics. Expanded SSH identity files are local resources, so Courier cleans them with `filepath.Clean` after token and home expansion. Updater assertions verify the installed file instead of comparing a pre-resolution path with the canonical path returned by Windows.
 
 ### Capability-aware metadata assertions
 

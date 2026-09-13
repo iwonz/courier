@@ -11,7 +11,7 @@ Courier SHALL run the complete first-party Go test suite on a native Windows run
 
 #### Scenario: Platform-specific representation
 
-- **WHEN** a test observes a local path or filesystem metadata on Windows
+- **WHEN** a test observes a local path, symlink target, or filesystem metadata on Windows
 - **THEN** it validates the Windows-supported representation without weakening content, integrity, safety, or cleanup assertions
 
 #### Scenario: Corrective branch validation
