@@ -6,10 +6,11 @@
 - [x] 1.2 Use host-native local destination and symlink expectations
 - [x] 1.3 Restrict exact POSIX permission assertions to supporting hosts
 - [x] 1.4 Isolate non-executable updater fixtures from the real Windows handoff
+- [x] 1.5 Cover successful child-process release on native Windows
 
 ## 2. Harden automation
 
-- [x] 2.1 Add a fail-fast reusable native Windows test and coverage script
+- [x] 2.1 Add a fail-fast reusable native Windows test and absolute-path coverage script
 - [x] 2.2 Use the same script in CI and release workflows
 - [x] 2.3 Run push CI for conventional `fix/**` branches
 

@@ -82,6 +82,13 @@ func TestLaunchUpdateHandoffAndPathValidation(t *testing.T) {
 	if err := defaultLaunch(filepath.Join(t.TempDir(), "missing")); err == nil {
 		t.Fatal("expected process start error")
 	}
+	currentTest, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := defaultLaunch(currentTest, "-test.run=^$"); err != nil {
+		t.Fatalf("release child process: %v", err)
+	}
 	isolateInternalHooks(t)
 	root := t.TempDir()
 	staged := filepath.Join(root, stagedPrefix+"x")

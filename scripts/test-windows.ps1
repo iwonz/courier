@@ -6,7 +6,7 @@ $Coverage = Join-Path $Repository "coverage-windows.out"
 
 Push-Location $Repository
 try {
-    & go test ./... -covermode=atomic -coverprofile=coverage-windows.out
+    & go test ./... -covermode=atomic "-coverprofile=$Coverage"
     if ($LASTEXITCODE -ne 0) {
         throw "Windows Go tests failed with exit code $LASTEXITCODE"
     }

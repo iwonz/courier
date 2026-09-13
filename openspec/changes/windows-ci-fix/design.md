@@ -20,10 +20,11 @@ The runtime-default updater test verifies platform asset and executable selectio
 
 ### Fail-fast reusable Windows runner
 
-One PowerShell script runs `go test`, stops immediately on a non-zero native command exit, validates exact aggregate statement coverage, and removes its coverage profile in `finally`. Both push CI and tag release gates invoke that script. Push CI includes `fix/**` branches so corrective work is validated before it advances to `main`.
+One PowerShell script runs `go test` with an absolute coverage-profile path, stops immediately on a non-zero native command exit, validates exact aggregate statement coverage, and removes its coverage profile in `finally`. Both push CI and tag release gates invoke that script. Push CI includes `fix/**` branches so corrective work is validated before it advances to `main`.
 
 ## Testing
 
 - Run the full local verification and GoReleaser snapshot gate.
 - Cross-compile Windows test binaries before pushing.
+- Cover both failure and successful process release in the platform-neutral update launcher.
 - Require a successful native Windows GitHub Actions job with exact 100% coverage and installer acceptance.
