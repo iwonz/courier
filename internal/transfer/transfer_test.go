@@ -14,7 +14,9 @@ import (
 	"time"
 
 	"github.com/iwonz/courier/internal/fsx"
+	"github.com/iwonz/courier/internal/operation"
 	"github.com/iwonz/courier/internal/progress"
+	"github.com/iwonz/courier/internal/selection"
 )
 
 func TestLocalDirectoryNonDestructiveCopy(t *testing.T) {
@@ -73,6 +75,46 @@ func TestLocalDirectoryNonDestructiveCopy(t *testing.T) {
 		t.Fatalf("events=%v", events)
 	}
 	assertNoTemporaryPaths(t, root)
+}
+
+func TestSelectedTransfer(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "source")
+	destination := filepath.Join(root, "destination")
+	if err := os.MkdirAll(filepath.Join(source, "private"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for name, value := range map[string]string{
+		"keep.txt":           "keep",
+		"drop.tmp":           "drop",
+		"private/hidden.txt": "hidden",
+		"courier-🚚.txt":      "unicode",
+	} {
+		if err := os.WriteFile(filepath.Join(source, filepath.FromSlash(name)), []byte(value), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	matcher, err := selection.Compile([]operation.SelectionRule{
+		{Kind: operation.SelectionGitignore, Value: "*.tmp"},
+		{Kind: operation.SelectionGitignore, Value: "private/"},
+	}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := (Engine{Token: func() (string, error) { return "selected", nil }}).Run(context.Background(), Request{SourceFS: fsx.Local{}, SourcePath: source, DestinationFS: fsx.Local{}, Destination: destination, Selector: matcher})
+	if err != nil || result.Bytes != int64(len("keep")+len("unicode")) {
+		t.Fatalf("result=%+v err=%v", result, err)
+	}
+	for _, name := range []string{"drop.tmp", "private"} {
+		if _, err := os.Lstat(filepath.Join(destination, name)); !os.IsNotExist(err) {
+			t.Fatalf("excluded path %q exists: %v", name, err)
+		}
+	}
+	for _, name := range []string{"keep.txt", "courier-🚚.txt"} {
+		if _, err := os.Lstat(filepath.Join(destination, name)); err != nil {
+			t.Fatalf("selected path %q missing: %v", name, err)
+		}
+	}
 }
 
 func TestLocalFileAndCancellation(t *testing.T) {

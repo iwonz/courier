@@ -16,6 +16,7 @@ import (
 	"github.com/iwonz/courier/internal/fsx"
 	"github.com/iwonz/courier/internal/progress"
 	"github.com/iwonz/courier/internal/safety"
+	"github.com/iwonz/courier/internal/selection"
 )
 
 type temporaryFile interface {
@@ -52,6 +53,11 @@ func (a *Artifact) Cleanup() error {
 
 // Create writes source and its root entry into a verified tar.gz file.
 func Create(ctx context.Context, backend fsx.Backend, sourcePath, sourceName, tempDirectory string, sink progress.Sink) (*Artifact, error) {
+	return CreateSelected(ctx, backend, sourcePath, sourceName, tempDirectory, selection.All(), sink)
+}
+
+// CreateSelected writes only objects accepted by selector.
+func CreateSelected(ctx context.Context, backend fsx.Backend, sourcePath, sourceName, tempDirectory string, selector selection.Selector, sink progress.Sink) (*Artifact, error) {
 	if backend == nil || sourcePath == "" || sourceName == "" || path.Base(sourceName) != sourceName {
 		return nil, errors.New("archive source and base name are required")
 	}
@@ -75,9 +81,13 @@ func Create(ctx context.Context, backend fsx.Backend, sourcePath, sourceName, te
 	}
 	tracker := progress.New(0, nil, sink)
 	tracker.Stage(progress.StageArchive)
+	if selector == nil {
+		all := selection.All()
+		selector = all
+	}
 	gzipWriter := gzip.NewWriter(file)
 	tarWriter := tar.NewWriter(gzipWriter)
-	if err := writeNode(ctx, backend, sourcePath, sourceName, tarWriter, tracker); err != nil {
+	if err := writeNodeSelected(ctx, backend, sourcePath, sourceName, "", tarWriter, tracker, selector); err != nil {
 		return nil, err
 	}
 	if err := closeTar(tarWriter); err != nil {
@@ -106,12 +116,19 @@ func Create(ctx context.Context, backend fsx.Backend, sourcePath, sourceName, te
 }
 
 func writeNode(ctx context.Context, backend fsx.Backend, sourcePath, entryName string, writer *tar.Writer, tracker *progress.Tracker) error {
+	return writeNodeSelected(ctx, backend, sourcePath, entryName, "", writer, tracker, selection.All())
+}
+
+func writeNodeSelected(ctx context.Context, backend fsx.Backend, sourcePath, entryName, relative string, writer *tar.Writer, tracker *progress.Tracker, selector selection.Selector) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 	info, err := backend.Lstat(sourcePath)
 	if err != nil {
 		return err
+	}
+	if relative != "" && !selector.Include(relative, info.IsDir()) {
+		return nil
 	}
 	link := ""
 	if info.Mode()&fs.ModeSymlink != 0 {
@@ -154,7 +171,7 @@ func writeNode(ctx context.Context, backend fsx.Backend, sourcePath, entryName s
 		return err
 	}
 	for _, entry := range entries {
-		if err := writeNode(ctx, backend, backend.Join(sourcePath, entry.Name()), path.Join(entryName, entry.Name()), writer, tracker); err != nil {
+		if err := writeNodeSelected(ctx, backend, backend.Join(sourcePath, entry.Name()), path.Join(entryName, entry.Name()), path.Join(relative, entry.Name()), writer, tracker, selector); err != nil {
 			return err
 		}
 	}

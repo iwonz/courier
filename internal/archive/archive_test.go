@@ -15,7 +15,9 @@ import (
 	"time"
 
 	"github.com/iwonz/courier/internal/fsx"
+	"github.com/iwonz/courier/internal/operation"
 	"github.com/iwonz/courier/internal/progress"
+	"github.com/iwonz/courier/internal/selection"
 )
 
 func TestCreateVerifyAndCleanup(t *testing.T) {
@@ -53,6 +55,59 @@ func TestCreateVerifyAndCleanup(t *testing.T) {
 	if _, err := os.Stat(artifact.Path); !os.IsNotExist(err) {
 		t.Fatalf("archive remains: %v", err)
 	}
+}
+
+func TestCreateSelected(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "source")
+	if err := os.Mkdir(source, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for name, value := range map[string]string{"keep.txt": "keep", "drop.tmp": "drop"} {
+		if err := os.WriteFile(filepath.Join(source, name), []byte(value), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	matcher, err := selection.Compile([]operation.SelectionRule{{Kind: operation.SelectionGitignore, Value: "*.tmp"}}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	artifact, err := CreateSelected(context.Background(), fsx.Local{}, source, "source", root, matcher, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = artifact.Cleanup() })
+	file, err := os.Open(artifact.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	gzipReader, err := gzip.NewReader(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer gzipReader.Close()
+	reader := tar.NewReader(gzipReader)
+	var names []string
+	for {
+		header, err := reader.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		names = append(names, header.Name)
+	}
+	if len(names) != 2 || names[0] != "source" || names[1] != "source/keep.txt" {
+		t.Fatalf("entries=%v", names)
+	}
+
+	artifact, err = CreateSelected(context.Background(), fsx.Local{}, source, "source", root, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = artifact.Cleanup()
 }
 
 func TestCreateInputAndCancellationErrors(t *testing.T) {

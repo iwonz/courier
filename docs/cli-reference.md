@@ -49,9 +49,9 @@ Contract version `0.8.0`; target release `0.2.0`. This file is generated from `d
 | planned | `--limit <N>` | false | `unlimited` | web-to-path, path-to-web, webhook-to-path | none |
 | planned | `--no-ui` | false | `false` | path-to-web | none |
 | planned | `--allow-ip <IP/CIDR>` | true | `none` | web-to-path, path-to-web, webhook-to-path | none |
-| planned | `--exclude <pattern>` | true | `none` | path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http | none |
-| planned | `--exclude-regex <regex>` | true | `none` | path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http | none |
-| planned | `--exclude-from <file>` | true | `none` | path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http | none |
+| shipped | `--exclude <pattern>` | true | `none` | path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http | none |
+| shipped | `--exclude-regex <regex>` | true | `none` | path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http | none |
+| shipped | `--exclude-from <file>` | true | `none` | path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http | none |
 | planned | `--max-file-size <size|unlimited>` | false | `10GiB` | web-to-path, webhook-to-path | none |
 | planned | `--max-extracted-size <size|unlimited>` | false | `100GiB` | path-to-path, web-to-path, webhook-to-path | none |
 | planned | `--upload-rate <rate|unlimited>` | false | `unlimited` | local-to-ssh, ssh-to-ssh, web-to-path, webhook-to-path, path-to-http | none |

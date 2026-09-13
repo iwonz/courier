@@ -55,6 +55,7 @@ courier from ./report.pdf to server:/srv/inbox/
 courier from root@203.0.113.10:/opt/node/data to ./backup/
 courier from source-server:/opt/node/data to backup-server:/srv/data/
 courier from ./data to ./backup/ --archive
+courier from ./data to ./backup/ --exclude '*.tmp' --exclude-from ./courier.ignore
 ```
 
 The destination rules are deterministic:
@@ -65,6 +66,8 @@ The destination rules are deterministic:
 - `--archive` transfers a verified `<source-name>.tar.gz` instead of the source tree.
 
 Courier never deletes the source. An identical plain source/destination is a successful no-op; transformed identity and copying a directory into itself are rejected. Files are staged under private partial names and committed only into an absent final path after preflight and transfer complete.
+
+Selection is shared by ordinary copy and archive creation. `--exclude` uses ordered gitignore syntax, `--exclude-regex` uses Go regular expressions, and `--exclude-from` expands a local gitignore-style rule file at its exact command-line position. The rule file is read before transfer endpoints are opened.
 
 ## SSH
 

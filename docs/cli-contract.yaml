@@ -26,7 +26,7 @@ commands:
     usage: courier from <source> to <destination> [options]
     status: shipped
     system: false
-    flags: [archive]
+    flags: [archive, exclude, exclude-regex, exclude-from]
   - name: servers
     path: servers
     usage: courier servers
@@ -143,21 +143,21 @@ flags:
     conflicts: []
   - name: exclude
     syntax: --exclude <pattern>
-    status: planned
+    status: shipped
     repeatable: true
     default: none
     applies_to: [path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http]
     conflicts: []
   - name: exclude-regex
     syntax: --exclude-regex <regex>
-    status: planned
+    status: shipped
     repeatable: true
     default: none
     applies_to: [path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http]
     conflicts: []
   - name: exclude-from
     syntax: --exclude-from <file>
-    status: planned
+    status: shipped
     repeatable: true
     default: none
     applies_to: [path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http]

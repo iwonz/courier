@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"path"
 	"time"
 
 	"github.com/iwonz/courier/internal/fsx"
 	"github.com/iwonz/courier/internal/progress"
+	"github.com/iwonz/courier/internal/selection"
 )
 
 const defaultBufferSize = 128 * 1024
@@ -25,6 +27,7 @@ type Request struct {
 	SourcePath    string
 	DestinationFS fsx.Backend
 	Destination   string
+	Selector      selection.Selector
 	Progress      progress.Sink
 }
 
@@ -63,7 +66,12 @@ func (e Engine) Run(ctx context.Context, request Request) (result Result, result
 	if err := ensureAbsent(request.DestinationFS, request.Destination); err != nil {
 		return Result{}, &Error{Stage: progress.StagePreflight, Cause: err}
 	}
-	total, err := scan(ctx, request.SourceFS, request.SourcePath)
+	selector := request.Selector
+	if selector == nil {
+		all := selection.All()
+		selector = all
+	}
+	total, err := scanSelected(ctx, request.SourceFS, request.SourcePath, "", selector)
 	if err != nil {
 		return Result{}, &Error{Stage: progress.StagePreflight, Cause: err}
 	}
@@ -102,7 +110,7 @@ func (e Engine) Run(ctx context.Context, request Request) (result Result, result
 	if bufferSize <= 0 {
 		bufferSize = defaultBufferSize
 	}
-	if err := copyNode(ctx, request.SourceFS, request.SourcePath, request.DestinationFS, stagePath, make([]byte, bufferSize), tracker); err != nil {
+	if err := copySelected(ctx, request.SourceFS, request.SourcePath, request.DestinationFS, stagePath, "", make([]byte, bufferSize), tracker, selector); err != nil {
 		return Result{}, transferError(tracker, progress.StageTransfer, err)
 	}
 	tracker.Stage(progress.StageCommit)
@@ -118,12 +126,19 @@ func transferError(tracker *progress.Tracker, stage progress.Stage, err error) *
 }
 
 func scan(ctx context.Context, backend fsx.Backend, name string) (int64, error) {
+	return scanSelected(ctx, backend, name, "", selection.All())
+}
+
+func scanSelected(ctx context.Context, backend fsx.Backend, name, relative string, selector selection.Selector) (int64, error) {
 	if err := ctx.Err(); err != nil {
 		return 0, err
 	}
 	info, err := backend.Lstat(name)
 	if err != nil {
 		return 0, err
+	}
+	if relative != "" && !selector.Include(relative, info.IsDir()) {
+		return 0, nil
 	}
 	if info.Mode().IsRegular() {
 		return info.Size(), nil
@@ -140,7 +155,7 @@ func scan(ctx context.Context, backend fsx.Backend, name string) (int64, error) 
 	}
 	var total int64
 	for _, entry := range entries {
-		size, err := scan(ctx, backend, backend.Join(name, entry.Name()))
+		size, err := scanSelected(ctx, backend, backend.Join(name, entry.Name()), path.Join(relative, entry.Name()), selector)
 		if err != nil {
 			return 0, err
 		}
@@ -150,12 +165,19 @@ func scan(ctx context.Context, backend fsx.Backend, name string) (int64, error) 
 }
 
 func copyNode(ctx context.Context, source fsx.Backend, sourcePath string, destination fsx.Backend, destinationPath string, buffer []byte, tracker *progress.Tracker) error {
+	return copySelected(ctx, source, sourcePath, destination, destinationPath, "", buffer, tracker, selection.All())
+}
+
+func copySelected(ctx context.Context, source fsx.Backend, sourcePath string, destination fsx.Backend, destinationPath, relative string, buffer []byte, tracker *progress.Tracker, selector selection.Selector) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 	info, err := source.Lstat(sourcePath)
 	if err != nil {
 		return err
+	}
+	if relative != "" && !selector.Include(relative, info.IsDir()) {
+		return nil
 	}
 	if info.Mode().IsRegular() {
 		return copyFile(ctx, source, sourcePath, destination, destinationPath, info, buffer, tracker)
@@ -178,7 +200,7 @@ func copyNode(ctx context.Context, source fsx.Backend, sourcePath string, destin
 		return err
 	}
 	for _, entry := range entries {
-		if err := copyNode(ctx, source, source.Join(sourcePath, entry.Name()), destination, destination.Join(destinationPath, entry.Name()), buffer, tracker); err != nil {
+		if err := copySelected(ctx, source, source.Join(sourcePath, entry.Name()), destination, destination.Join(destinationPath, entry.Name()), path.Join(relative, entry.Name()), buffer, tracker, selector); err != nil {
 			return err
 		}
 	}

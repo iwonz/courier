@@ -22,6 +22,7 @@ import (
 	"github.com/iwonz/courier/internal/progress"
 	"github.com/iwonz/courier/internal/report"
 	"github.com/iwonz/courier/internal/safety"
+	"github.com/iwonz/courier/internal/selection"
 	"github.com/iwonz/courier/internal/sshx"
 	"github.com/iwonz/courier/internal/transfer"
 	"github.com/iwonz/courier/internal/update"
@@ -51,7 +52,8 @@ type Dependencies struct {
 	Open         func(context.Context, endpoint.Endpoint) (*Resource, error)
 	OpenArtifact func(string) (fsx.Backend, string, func() error, error)
 	Transfer     func(context.Context, transfer.Request) (transfer.Result, error)
-	Archive      func(context.Context, fsx.Backend, string, string, string, progress.Sink) (*archive.Artifact, error)
+	Archive      func(context.Context, fsx.Backend, string, string, string, selection.Selector, progress.Sink) (*archive.Artifact, error)
+	Select       func([]operation.SelectionRule) (selection.Selector, error)
 	Update       func(context.Context) (update.Result, error)
 	Reporter     func(io.Writer, bool) *report.Reporter
 	Terminal     func(io.Writer) bool
@@ -155,7 +157,10 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 			return backend, relative, backend.Close, nil
 		},
 		Transfer: (transfer.Engine{}).Run,
-		Archive:  archive.Create,
+		Archive:  archive.CreateSelected,
+		Select: func(rules []operation.SelectionRule) (selection.Selector, error) {
+			return selection.Compile(rules, selection.OpenFile)
+		},
 		Update:   updater.Run,
 		Reporter: report.New,
 		Terminal: writerIsTerminal,
@@ -240,8 +245,8 @@ type transferOutcome struct {
 	result      transfer.Result
 }
 
-func runTransfer(ctx context.Context, dependencies Dependencies, plan operation.Plan, stdout, stderr io.Writer) error {
-	outcome, err := performTransfer(ctx, dependencies, plan, stderr)
+func runTransfer(ctx context.Context, dependencies Dependencies, plan operation.Plan, selector selection.Selector, stdout, stderr io.Writer) error {
+	outcome, err := performTransfer(ctx, dependencies, plan, selector, stderr)
 	if err != nil {
 		return err
 	}
@@ -249,7 +254,7 @@ func runTransfer(ctx context.Context, dependencies Dependencies, plan operation.
 	return nil
 }
 
-func performTransfer(ctx context.Context, dependencies Dependencies, plan operation.Plan, stderr io.Writer) (outcome transferOutcome, resultErr error) {
+func performTransfer(ctx context.Context, dependencies Dependencies, plan operation.Plan, selector selection.Selector, stderr io.Writer) (outcome transferOutcome, resultErr error) {
 	sourceEndpoint := plan.Source
 	destinationEndpoint := plan.Destination
 	archiveMode := plan.Options.Archive
@@ -343,7 +348,7 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 	transferSource := source
 	var artifact *archive.Artifact
 	if archiveMode {
-		artifact, err = dependencies.Archive(ctx, source.Backend, source.Path, source.Endpoint.Base(), dependencies.TempDir, reporter.Handle)
+		artifact, err = dependencies.Archive(ctx, source.Backend, source.Path, source.Endpoint.Base(), dependencies.TempDir, selector, reporter.Handle)
 		if err != nil {
 			return transferOutcome{}, transferCommandError(progress.StageArchive, err, 0)
 		}
@@ -365,7 +370,7 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 		}()
 		transferSource = &Resource{Backend: archiveBackend, Path: archivePath}
 	}
-	result, err := dependencies.Transfer(ctx, transfer.Request{SourceFS: transferSource.Backend, SourcePath: transferSource.Path, DestinationFS: destination.Backend, Destination: actualPath, Progress: reporter.Handle})
+	result, err := dependencies.Transfer(ctx, transfer.Request{SourceFS: transferSource.Backend, SourcePath: transferSource.Path, DestinationFS: destination.Backend, Destination: actualPath, Selector: selector, Progress: reporter.Handle})
 	if err != nil {
 		var transferErr *transfer.Error
 		if errors.As(err, &transferErr) {

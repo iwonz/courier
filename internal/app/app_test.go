@@ -17,8 +17,10 @@ import (
 	"github.com/iwonz/courier/internal/archive"
 	"github.com/iwonz/courier/internal/endpoint"
 	"github.com/iwonz/courier/internal/fsx"
+	"github.com/iwonz/courier/internal/operation"
 	"github.com/iwonz/courier/internal/progress"
 	"github.com/iwonz/courier/internal/report"
+	"github.com/iwonz/courier/internal/selection"
 	"github.com/iwonz/courier/internal/sshx"
 	"github.com/iwonz/courier/internal/transfer"
 	"github.com/iwonz/courier/internal/update"
@@ -144,7 +146,7 @@ func TestNoOpAndDestinationCollision(t *testing.T) {
 		dependencies := transferDependencies(t, func(_ context.Context, value endpoint.Endpoint) (*Resource, error) {
 			return &Resource{Endpoint: value, Backend: fsx.Local{}, Path: value.Path}, nil
 		})
-		dependencies.Archive = func(context.Context, fsx.Backend, string, string, string, progress.Sink) (*archive.Artifact, error) {
+		dependencies.Archive = func(context.Context, fsx.Backend, string, string, string, selection.Selector, progress.Sink) (*archive.Artifact, error) {
 			archiveCalled = true
 			return nil, nil
 		}
@@ -187,6 +189,66 @@ func TestNoOpAndDestinationCollision(t *testing.T) {
 		unrelatedData, unrelatedErr := os.ReadFile(unrelated)
 		if code != ExitTransfer || called || collisionErr != nil || unrelatedErr != nil || string(collisionData) != "keep" || string(unrelatedData) != "also keep" || !strings.Contains(stderr.String(), "destination already exists") {
 			t.Fatalf("code=%d called=%v collision=%q,%v unrelated=%q,%v stderr=%q", code, called, collisionData, collisionErr, unrelatedData, unrelatedErr, stderr.String())
+		}
+	})
+}
+
+func TestSelectionCommandPreflight(t *testing.T) {
+	t.Run("ordered compilation failure precedes endpoint opening", func(t *testing.T) {
+		opened := false
+		var got []operation.SelectionRule
+		dependencies := transferDependencies(t, func(context.Context, endpoint.Endpoint) (*Resource, error) {
+			opened = true
+			return nil, errors.New("must not open")
+		})
+		dependencies.Select = func(rules []operation.SelectionRule) (selection.Selector, error) {
+			got = append([]operation.SelectionRule(nil), rules...)
+			return nil, errors.New("selection compile")
+		}
+		args := []string{"from", "in", "to", "out", "--exclude", "*.tmp", "--exclude-from", "rules", "--exclude-regex", "^private/", "--exclude", "!keep.tmp"}
+		var stderr bytes.Buffer
+		code := Execute(context.Background(), NewRoot(dependencies), args, io.Discard, &stderr)
+		wantKinds := []operation.SelectionKind{operation.SelectionGitignore, operation.SelectionFile, operation.SelectionRegex, operation.SelectionGitignore}
+		if code != ExitCLI || opened || len(got) != len(wantKinds) || !strings.Contains(stderr.String(), "selection compile") {
+			t.Fatalf("code=%d opened=%v rules=%v stderr=%q", code, opened, got, stderr.String())
+		}
+		for index, kind := range wantKinds {
+			if got[index].Kind != kind || got[index].Position != index {
+				t.Fatalf("rules=%v", got)
+			}
+		}
+	})
+
+	t.Run("missing compiler", func(t *testing.T) {
+		dependencies := transferDependencies(t, nil)
+		var stderr bytes.Buffer
+		code := Execute(context.Background(), NewRoot(dependencies), []string{"from", "in", "to", "out", "--exclude", "*.tmp"}, io.Discard, &stderr)
+		if code != ExitCLI || !strings.Contains(stderr.String(), "selection dependencies are incomplete") {
+			t.Fatalf("code=%d stderr=%q", code, stderr.String())
+		}
+	})
+
+	t.Run("compiled selector reaches transfer", func(t *testing.T) {
+		root := t.TempDir()
+		source := filepath.Join(root, "source")
+		destination := filepath.Join(root, "destination")
+		if err := os.WriteFile(source, []byte("source"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		dependencies := transferDependencies(t, func(_ context.Context, value endpoint.Endpoint) (*Resource, error) {
+			return &Resource{Endpoint: value, Backend: fsx.Local{}, Path: value.Path}, nil
+		})
+		dependencies.Select = func([]operation.SelectionRule) (selection.Selector, error) {
+			return selection.All(), nil
+		}
+		dependencies.Transfer = func(_ context.Context, request transfer.Request) (transfer.Result, error) {
+			if request.Selector == nil || !request.Selector.Include("keep", false) {
+				t.Fatal("compiled selector was not propagated")
+			}
+			return transfer.Result{Bytes: 6, Destination: request.Destination}, nil
+		}
+		if code := Execute(context.Background(), NewRoot(dependencies), []string{"from", source, "to", destination, "--exclude", "*.tmp"}, io.Discard, io.Discard); code != ExitOK {
+			t.Fatalf("code=%d", code)
 		}
 	})
 }
@@ -431,7 +493,7 @@ func TestArchiveFailurePaths(t *testing.T) {
 
 	t.Run("archive creation", func(t *testing.T) {
 		dependencies := transferDependencies(t, open)
-		dependencies.Archive = func(context.Context, fsx.Backend, string, string, string, progress.Sink) (*archive.Artifact, error) {
+		dependencies.Archive = func(context.Context, fsx.Backend, string, string, string, selection.Selector, progress.Sink) (*archive.Artifact, error) {
 			return nil, errors.New("archive")
 		}
 		var stderr bytes.Buffer
@@ -457,7 +519,7 @@ func TestArchiveFailurePaths(t *testing.T) {
 			t.Fatal(err)
 		}
 		dependencies := transferDependencies(t, open)
-		dependencies.Archive = func(context.Context, fsx.Backend, string, string, string, progress.Sink) (*archive.Artifact, error) {
+		dependencies.Archive = func(context.Context, fsx.Backend, string, string, string, selection.Selector, progress.Sink) (*archive.Artifact, error) {
 			return &archive.Artifact{Path: artifactPath, Name: "source.tar.gz"}, nil
 		}
 		dependencies.OpenArtifact = func(string) (fsx.Backend, string, func() error, error) {
@@ -502,6 +564,10 @@ func TestDefaultDependenciesAndTerminalPrompt(t *testing.T) {
 	dependencies, err := DefaultDependencies(nil, io.Discard)
 	if err != nil {
 		t.Fatal(err)
+	}
+	selected, err := dependencies.Select([]operation.SelectionRule{{Kind: operation.SelectionRegex, Value: "secret"}})
+	if err != nil || selected.Include("secret.txt", false) {
+		t.Fatalf("default selector=%v err=%v", selected, err)
 	}
 	localPath := filepath.Join(t.TempDir(), "file")
 	local, err := dependencies.Open(context.Background(), endpoint.Endpoint{Path: localPath})
@@ -653,7 +719,7 @@ func transferDependencies(t *testing.T, open func(context.Context, endpoint.Endp
 			return fsx.Local{}, name, func() error { return nil }, nil
 		},
 		Transfer: (transfer.Engine{Token: func() (string, error) { return "test", nil }}).Run,
-		Archive:  archive.Create,
+		Archive:  archive.CreateSelected,
 		Reporter: report.New,
 		Terminal: func(io.Writer) bool { return false },
 		TempDir:  t.TempDir(),

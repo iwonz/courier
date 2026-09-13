@@ -7,12 +7,12 @@ Define recursive staged transfer, metadata preservation, retry, and cleanup beha
 
 ### Requirement: Recursive non-destructive copy
 
-Courier SHALL copy regular files, directories, and symlinks recursively into an absent final path while leaving source objects and unrelated destination entries unchanged.
+Courier SHALL copy selected regular files, directories, and symlinks recursively into an absent final path while leaving source objects, excluded objects, and unrelated destination entries unchanged.
 
 #### Scenario: Nested directory tree
 
-- **WHEN** the source contains nested directories, files, and a symlink and the final path is absent
-- **THEN** destination contains the same supported object types, content, and structure, source still exists, and sibling destination entries remain unchanged
+- **WHEN** the source contains selected and excluded nested objects and the final path is absent
+- **THEN** destination contains the selected supported object types, content, and structure, source still exists, and excluded and sibling destination entries remain unchanged
 
 ### Requirement: Metadata preservation
 
