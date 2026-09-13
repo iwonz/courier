@@ -1,45 +1,45 @@
 ## Context
 
-Проект должен оставаться автономным, кроссплатформенным и расширяемым. Начальный слой не принимает решений о SSH, файловых системах или rsync: он только связывает аргументы верхнего уровня с изолированными handlers.
+The project must remain self-contained, cross-platform, and extensible. The foundation makes no SSH, filesystem, or rsync decisions; it only maps top-level arguments to isolated handlers.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- минимальный Go entrypoint;
-- детерминированный реестр команд;
-- стабильная модель ошибок запуска;
-- внедряемые build metadata;
-- план последовательных OpenSpec-изменений.
+- minimal Go entrypoint;
+- deterministic command registry;
+- stable startup error model;
+- injectable build metadata;
+- a plan of sequential OpenSpec changes.
 
 **Non-Goals:**
 
-- реализация копирования и SSH в этом изменении;
-- публикация release artifacts.
+- transfer and SSH implementation;
+- release artifact publication.
 
 ## Decisions
 
-### Собственный малый command registry
+### Small first-party command registry
 
-Используется интерфейс `Command` и `Registry`, а не глобальный switch или тяжёлый CLI framework. Это сохраняет явные зависимости и делает parser полностью тестируемым.
+The `Command` and `Registry` interfaces replace a global switch or heavyweight CLI framework. Dependencies stay explicit and the parser remains fully testable.
 
-### Вывод и окружение внедряются
+### Output and environment are injected
 
-Handlers получают `io.Writer`, а entrypoint занимается только сигналами, exit code и сборкой зависимостей. Это позволяет тестировать команды без subprocess.
+Handlers receive `io.Writer` values, while the entrypoint only handles signals, exit codes, and dependency assembly. Commands can therefore be tested without subprocesses.
 
-### Накопительные task branches
+### Stacked task branches
 
-Каждая задача выполняется в `feat/NNN-kebab-case`, содержит свой путь `openspec/changes/<name>` и один conventional commit. Следующая ветка ответвляется от предыдущей; финальная ветка содержит всю проверяемую историю.
+Each task uses `feat/NNN-kebab-case`, contains its own `openspec/changes/<name>` path, and produces one conventional commit. Every next branch starts from the previous one, so the final branch contains the complete auditable history.
 
 ## Risks / Trade-offs
 
-- Собственный parser требует самостоятельно поддерживать help и валидацию; грамматика Courier мала и покрывается тестами.
-- Накопительные ветки удобны для итоговой сборки, но pull requests должны объединяться по порядку.
+- A first-party parser owns help and validation, but Courier's grammar is small and fully tested.
+- Stacked branches simplify final assembly, but pull requests must merge in order.
 
 ## Migration Plan
 
-Миграция не требуется: репозиторий новый. Откат выполняется удалением первого коммита.
+No migration is required for a new repository. Reverting the initial commit rolls back the change.
 
 ## Open Questions
 
-Нет.
+None.

@@ -1,16 +1,16 @@
 # Courier CLI
 
-Courier — расширяемая кроссплатформенная утилита для безопасного переноса файлов и каталогов между локальными и SSH endpoints.
+Courier is an extensible, cross-platform CLI for safely transferring files and directories between local and SSH endpoints.
 
 ```text
 courier from <source> to <destination> [flags]
 ```
 
-Проект разрабатывается spec-first: каждая задача имеет отдельный путь в `openspec/changes`, task branch и conventional commit. Полный roadmap находится в [docs/implementation-plan.md](docs/implementation-plan.md).
+The project is developed spec-first: every task has its own path under `openspec/changes`, task branch, and conventional commit. See [docs/implementation-plan.md](docs/implementation-plan.md) for the complete roadmap.
 
-## Разработка
+## Development
 
-Требуется Go 1.24 или новее.
+Go 1.24 or newer is required.
 
 ```sh
 go test ./...
@@ -18,6 +18,6 @@ go build -o bin/courier ./cmd/courier
 ./bin/courier help
 ```
 
-## Лицензия
+## License
 
 [MIT](LICENSE)

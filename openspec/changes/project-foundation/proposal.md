@@ -1,25 +1,25 @@
 ## Why
 
-Courier создаётся с нуля, поэтому сначала нужен воспроизводимый каркас проекта, единый контракт CLI и явный план поставки. Это позволит развивать перенос данных отдельными проверяемыми изменениями, не связывая публичный интерфейс с конкретным транспортом.
+Courier starts as a greenfield project, so it needs a reproducible foundation, a single CLI contract, and an explicit delivery plan. This enables independently verifiable transfer changes without coupling the public interface to a specific transport.
 
 ## What Changes
 
-- Создать Go-модуль и минимальный исполняемый файл `courier`.
-- Ввести реестр команд, позволяющий добавлять handlers без изменения parser ядра.
-- Добавить команды `help` и `version`, build metadata и базовые тесты.
-- Зафиксировать архитектурный план, правила веток и conventional commits.
-- Опубликовать проект под лицензией MIT.
+- Create the Go module and minimal `courier` executable.
+- Introduce a command registry that accepts new handlers without parser changes.
+- Add `help` and `version`, build metadata, and baseline tests.
+- Record the architecture plan, branch policy, and conventional commits.
+- License the project under MIT.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `cli-foundation`: запуск CLI, справка, версия и расширяемая регистрация команд.
+- `cli-foundation`: CLI startup, help, version output, and extensible command registration.
 
 ### Modified Capabilities
 
-Нет.
+None.
 
 ## Impact
 
-Добавляются корневые файлы Go-модуля, `cmd/courier`, внутренние пакеты `cli` и `buildinfo`, документация и лицензия. Внешние runtime-зависимости на этом этапе отсутствуют.
+Adds the root Go module files, `cmd/courier`, internal `cli` and `buildinfo` packages, documentation, and license. This change adds no external runtime dependencies.

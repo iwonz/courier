@@ -1,3 +1,3 @@
 # project-foundation
 
-Каркас Courier CLI, лицензия MIT и архитектурный план
+Courier CLI foundation, MIT license, and architecture plan
