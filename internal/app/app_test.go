@@ -444,6 +444,53 @@ func TestDefaultDependenciesAndTerminalPrompt(t *testing.T) {
 	}
 }
 
+func TestTerminalConfirmation(t *testing.T) {
+	originalTerminal := terminalAttached
+	t.Cleanup(func() { terminalAttached = originalTerminal })
+	terminalAttached = func(int) bool { return true }
+	if accepted, err := terminalConfirmation(nil, io.Discard)(context.Background(), "question"); err == nil || accepted {
+		t.Fatalf("missing terminal accepted=%v err=%v", accepted, err)
+	}
+	for _, test := range []struct {
+		answer string
+		want   bool
+	}{{"y\n", true}, {" YES \n", true}, {"no\n", false}, {"y", true}} {
+		name := filepath.Join(t.TempDir(), "answer")
+		if err := os.WriteFile(name, []byte(test.answer), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		input, err := os.Open(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var output bytes.Buffer
+		accepted, err := terminalConfirmation(input, &output)(context.Background(), "Deploy?")
+		_ = input.Close()
+		if err != nil || accepted != test.want || !strings.Contains(output.String(), "[y/N]") {
+			t.Fatalf("answer=%q accepted=%v output=%q err=%v", test.answer, accepted, output.String(), err)
+		}
+	}
+	name := filepath.Join(t.TempDir(), "closed")
+	input, err := os.Create(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = input.Close()
+	if _, err := terminalConfirmation(input, io.Discard)(context.Background(), "question"); err == nil {
+		t.Fatal("expected closed input error")
+	}
+	input, err = os.Open(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer input.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := terminalConfirmation(input, io.Discard)(ctx, "question"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected cancellation: %v", err)
+	}
+}
+
 func TestDefaultDependencyFailuresAndErrorHelpers(t *testing.T) {
 	originalHome, originalLoad := userHomeDirectory, loadSSHConfig
 	t.Cleanup(func() { userHomeDirectory, loadSSHConfig = originalHome, originalLoad })

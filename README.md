@@ -73,13 +73,17 @@ Remote endpoints use `[user@]host:/absolute/path`. `host` may be an alias from `
 
 Unknown and changed host keys fail closed. Add and verify host keys out of band before transferring; Courier never uses `InsecureIgnoreHostKey` and never accepts passwords through flags. Password and encrypted-key prompts require an interactive terminal and do not echo input.
 
+Native SFTP is always the normal transport. If an authenticated server genuinely has no SFTP subsystem, Courier explains the capability gap and asks before making any remote change. Explicit consent allows it to select an exact OS/architecture Courier helper, verify SHA-256 locally, upload through the verified SSH channel into a private temporary directory, verify SHA-256 remotely, and run the embedded SFTP server over that channel. The helper is never installed into `PATH`, never persists as a service, and is removed after success, error, or interruption. Non-interactive execution declines the fallback.
+
+Windows uses the native OpenSSH agent named pipe when `SSH_AUTH_SOCK` is not set. See [Security](docs/security.md) for trust boundaries, bootstrap details, and cleanup guarantees.
+
 ## Update
 
 ```sh
 courier update
 ```
 
-The updater compares the installed semantic version with the latest GitHub Release, selects the target archive, downloads it privately, verifies its SHA-256 entry from `checksums.txt`, extracts only the Courier executable, and replaces the installation through same-directory staging.
+The updater compares the installed semantic version with the latest GitHub Release, selects the target archive, downloads it privately, verifies its SHA-256 entry from `checksums.txt`, extracts only the Courier executable, and replaces the installation through same-directory staging. Windows uses a staged handoff process so the running executable exits before replacement, followed by a cleanup process that removes the handoff binary.
 
 ## Exit codes
 

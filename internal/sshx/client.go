@@ -30,6 +30,7 @@ type Factory struct {
 	DialContext  func(context.Context, string, string) (net.Conn, error)
 	DialAgent    func(string) (net.Conn, error)
 	NewSFTP      func(*ssh.Client) (*sftp.Client, error)
+	SFTPFallback func(context.Context, *Connection, *CapabilityError) (*sftp.Client, io.Closer, error)
 	ClientConfig func(Target, []ssh.AuthMethod) (*ssh.ClientConfig, error)
 }
 
@@ -46,11 +47,14 @@ func (e *CapabilityError) Unwrap() error { return e.Cause }
 
 // Connection owns SFTP and every SSH hop used to reach it.
 type Connection struct {
-	Target Target
-	SFTP   *sftp.Client
-	SSH    *ssh.Client
-	hops   []*ssh.Client
-	agents []io.Closer
+	Target               Target
+	SFTP                 *sftp.Client
+	SSH                  *ssh.Client
+	hops                 []*ssh.Client
+	agents               []io.Closer
+	helpers              []io.Closer
+	helperSessionFactory func() (helperSession, error)
+	helperCommandRunner  func(context.Context, string) ([]byte, error)
 }
 
 // Close releases SFTP, SSH hops in reverse order, and agent connections.
@@ -58,6 +62,9 @@ func (c *Connection) Close() error {
 	var result error
 	if c.SFTP != nil {
 		result = errors.Join(result, c.SFTP.Close())
+	}
+	for index := len(c.helpers) - 1; index >= 0; index-- {
+		result = errors.Join(result, c.helpers[index].Close())
 	}
 	for index := len(c.hops) - 1; index >= 0; index-- {
 		result = errors.Join(result, c.hops[index].Close())
@@ -70,7 +77,10 @@ func (c *Connection) Close() error {
 
 // Run executes a fixed remote capability probe with cancellation.
 func (c *Connection) Run(ctx context.Context, command string) ([]byte, error) {
-	if c.SSH == nil {
+	if c != nil && c.helperCommandRunner != nil {
+		return c.helperCommandRunner(ctx, command)
+	}
+	if c == nil || c.SSH == nil {
 		return nil, errors.New("SSH connection is closed")
 	}
 	session, err := c.SSH.NewSession()
@@ -139,8 +149,22 @@ func (f Factory) Open(ctx context.Context, alias, explicitUser string) (*Connect
 	}
 	connection.SFTP, err = newSFTP(client)
 	if err != nil {
-		_ = connection.Close()
-		return nil, &CapabilityError{Capability: "sftp", Cause: err}
+		capability := &CapabilityError{Capability: "sftp", Cause: err}
+		if f.SFTPFallback == nil {
+			_ = connection.Close()
+			return nil, capability
+		}
+		var runtime io.Closer
+		connection.SFTP, runtime, err = f.SFTPFallback(ctx, connection, capability)
+		if err != nil {
+			_ = connection.Close()
+			return nil, err
+		}
+		if connection.SFTP == nil || runtime == nil {
+			_ = connection.Close()
+			return nil, errors.New("SFTP fallback returned incomplete runtime")
+		}
+		connection.helpers = append(connection.helpers, runtime)
 	}
 	return connection, nil
 }
@@ -200,7 +224,7 @@ func (f Factory) authMethods(target Target) ([]ssh.AuthMethod, []io.Closer, erro
 	if f.AgentSocket != "" {
 		dialAgent := f.DialAgent
 		if dialAgent == nil {
-			dialAgent = func(name string) (net.Conn, error) { return net.DialTimeout("unix", name, 3*time.Second) }
+			dialAgent = defaultAgentDial
 		}
 		connection, err := dialAgent(f.AgentSocket)
 		if err == nil {

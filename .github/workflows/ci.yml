@@ -38,9 +38,19 @@ jobs:
           retention-days: 3
 
   powershell-installer:
-    name: PowerShell installer acceptance
+    name: Windows tests and PowerShell installer
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.25.5
+          cache: true
+      - name: Test Windows runtime with exact coverage
+        shell: pwsh
+        run: |
+          go test ./... -covermode=atomic -coverprofile=coverage-windows.out
+          $total = ((go tool cover -func=coverage-windows.out | Select-String '^total:').ToString() -split '\s+')[-1]
+          if ($total -ne '100.0%') { throw "Windows statement coverage is $total, expected 100.0%" }
       - shell: pwsh
         run: ./scripts/test-install.ps1

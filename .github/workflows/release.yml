@@ -53,10 +53,20 @@ jobs:
       - run: make verify GORELEASER=goreleaser
 
   powershell-installer:
-    name: Repeat PowerShell installer acceptance
+    name: Repeat Windows tests and PowerShell installer
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.25.5
+          cache: true
+      - name: Test Windows runtime with exact coverage
+        shell: pwsh
+        run: |
+          go test ./... -covermode=atomic -coverprofile=coverage-windows.out
+          $total = ((go tool cover -func=coverage-windows.out | Select-String '^total:').ToString() -split '\s+')[-1]
+          if ($total -ne '100.0%') { throw "Windows statement coverage is $total, expected 100.0%" }
       - shell: pwsh
         run: ./scripts/test-install.ps1
 
@@ -132,6 +142,13 @@ jobs:
             "courier_${version}_windows_arm64.tar.gz" \
             "courier_${version}_windows_amd64.zip" \
             "courier_${version}_windows_arm64.zip" \
+            "courier_${version}_freebsd_amd64.tar.gz" \
+            "courier_${version}_freebsd_arm64.tar.gz" \
+            "courier_${version}_openbsd_amd64.tar.gz" \
+            "courier_${version}_openbsd_arm64.tar.gz" \
+            "courier_${version}_netbsd_amd64.tar.gz" \
+            "courier_${version}_netbsd_arm64.tar.gz" \
+            "courier_${version}_dragonfly_amd64.tar.gz" \
             "courier_${version}_darwin_amd64" \
             "courier_${version}_darwin_arm64" \
             "courier_${version}_linux_amd64" \

@@ -67,6 +67,7 @@ type Updater struct {
 	GOARCH     string
 	Executable func() (string, error)
 	Rename     func(string, string) error
+	Handoff    func(string, string, int) error
 }
 
 // Result describes an update check or installation.
@@ -75,6 +76,14 @@ type Result struct {
 	From    string
 	To      string
 	Notes   string
+}
+
+// BinaryArtifact is a verified Courier executable extracted from one exact
+// GitHub Release. Call Cleanup when the executable is no longer needed.
+type BinaryArtifact struct {
+	Path    string
+	SHA256  string
+	Cleanup func() error
 }
 
 type githubRelease struct {
@@ -199,15 +208,78 @@ func (u Updater) Run(ctx context.Context) (Result, error) {
 	if err := partial.Close(); err != nil {
 		return Result{}, err
 	}
+	if goos == "windows" {
+		handoff := u.Handoff
+		if handoff == nil {
+			handoff = launchUpdateHandoff
+		}
+		if err := handoff(partialPath, target, currentProcessID()); err != nil {
+			return Result{}, fmt.Errorf("start Windows update handoff: %w", err)
+		}
+		committed = true
+		return result, nil
+	}
 	rename := u.Rename
 	if rename == nil {
-		rename = os.Rename
+		rename = replaceUpdateFile
 	}
 	if err := rename(partialPath, target); err != nil {
 		return Result{}, fmt.Errorf("replace executable: %w", err)
 	}
 	committed = true
 	return result, nil
+}
+
+// AcquireVersion downloads and verifies the Courier executable for one exact
+// semantic version and platform. It does not replace the running executable.
+func (u Updater) AcquireVersion(ctx context.Context, version, goos, goarch string) (*BinaryArtifact, error) {
+	tag := normalizeVersion(version)
+	if tag == "" {
+		return nil, fmt.Errorf("cannot acquire helper for non-release version %q", version)
+	}
+	repository := u.Repository
+	if repository == "" {
+		repository = "iwonz/courier"
+	}
+	client := u.Client
+	if client == nil {
+		client = http.DefaultClient
+	}
+	versionText := strings.TrimPrefix(tag, "v")
+	assetName := fmt.Sprintf("courier_%s_%s_%s.tar.gz", versionText, goos, goarch)
+	baseURL := "https://github.com/" + repository + "/releases/download/" + tag + "/"
+	temporaryDirectory, err := makeUpdateDirectory("", "courier-helper-download-*")
+	if err != nil {
+		return nil, err
+	}
+	cleanup := func() error { return removeUpdateDirectory(temporaryDirectory) }
+	fail := func(cause error) (*BinaryArtifact, error) {
+		return nil, errors.Join(cause, cleanup())
+	}
+	archivePath := filepath.Join(temporaryDirectory, assetName)
+	if err := u.download(ctx, client, baseURL+assetName, archivePath); err != nil {
+		return fail(err)
+	}
+	checksumPath := filepath.Join(temporaryDirectory, "checksums.txt")
+	if err := u.download(ctx, client, baseURL+"checksums.txt", checksumPath); err != nil {
+		return fail(err)
+	}
+	if err := verifyChecksum(archivePath, checksumPath, assetName); err != nil {
+		return fail(err)
+	}
+	binaryName := "courier"
+	if goos == "windows" {
+		binaryName += ".exe"
+	}
+	binaryPath := filepath.Join(temporaryDirectory, binaryName)
+	if err := extractBinary(archivePath, binaryPath, binaryName); err != nil {
+		return fail(err)
+	}
+	digest, err := fileDigest(binaryPath)
+	if err != nil {
+		return fail(err)
+	}
+	return &BinaryArtifact{Path: binaryPath, SHA256: digest, Cleanup: cleanup}, nil
 }
 
 func (u Updater) getJSON(ctx context.Context, client HTTPClient, url string, destination any) error {
@@ -309,6 +381,20 @@ func verifyChecksum(archivePath, checksumPath, assetName string) error {
 		return fmt.Errorf("checksum mismatch for %s", assetName)
 	}
 	return nil
+}
+
+func fileDigest(name string) (string, error) {
+	file, err := openChecksumFile(name)
+	if err != nil {
+		return "", err
+	}
+	hash := sha256.New()
+	_, copyErr := io.Copy(hash, file)
+	closeErr := file.Close()
+	if copyErr != nil || closeErr != nil {
+		return "", errors.Join(copyErr, closeErr)
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 func extractBinary(archivePath, destination, binaryName string) error {

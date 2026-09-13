@@ -45,6 +45,31 @@ builds:
         -X github.com/iwonz/courier/internal/buildinfo.Commit={{ .Commit }}
         -X github.com/iwonz/courier/internal/buildinfo.Date={{ .Date }}
 
+  - id: courier-helper-bsd
+    main: ./cmd/courier
+    binary: courier
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - freebsd
+      - openbsd
+      - netbsd
+      - dragonfly
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: dragonfly
+        goarch: arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - >-
+        -s -w
+        -X github.com/iwonz/courier/internal/buildinfo.Version={{ .Version }}
+        -X github.com/iwonz/courier/internal/buildinfo.Commit={{ .Commit }}
+        -X github.com/iwonz/courier/internal/buildinfo.Date={{ .Date }}
+
 archives:
   - id: courier-tar
     ids:
@@ -62,6 +87,16 @@ archives:
       - courier-windows
     formats:
       - zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+  - id: courier-bsd-tar
+    ids:
+      - courier-helper-bsd
+    formats:
+      - tar.gz
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - LICENSE

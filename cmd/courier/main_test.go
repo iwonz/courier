@@ -40,3 +40,27 @@ func TestDependencyFailure(t *testing.T) {
 		t.Fatalf("code=%d stderr=%q", code, stderr.String())
 	}
 }
+
+func TestInternalModes(t *testing.T) {
+	originalUpdate, originalHelper := runInternalUpdate, serveHelperSFTP
+	t.Cleanup(func() { runInternalUpdate, serveHelperSFTP = originalUpdate, originalHelper })
+	runInternalUpdate = func([]string) (bool, error) { return true, nil }
+	if code := run(context.Background(), []string{"internal"}, nil, io.Discard, io.Discard); code != app.ExitOK {
+		t.Fatalf("internal success code=%d", code)
+	}
+	runInternalUpdate = func([]string) (bool, error) { return true, errors.New("handoff") }
+	var stderr bytes.Buffer
+	if code := run(context.Background(), []string{"internal"}, nil, io.Discard, &stderr); code != app.ExitUpdate || !strings.Contains(stderr.String(), "handoff") {
+		t.Fatalf("internal failure code=%d stderr=%q", code, stderr.String())
+	}
+	runInternalUpdate = func([]string) (bool, error) { return false, nil }
+	serveHelperSFTP = func(io.Reader, io.Writer) error { return nil }
+	if code := run(context.Background(), []string{"_helper-sftp"}, nil, io.Discard, io.Discard); code != app.ExitOK {
+		t.Fatalf("helper success code=%d", code)
+	}
+	serveHelperSFTP = func(io.Reader, io.Writer) error { return errors.New("helper") }
+	stderr.Reset()
+	if code := run(context.Background(), []string{"_helper-sftp"}, nil, io.Discard, &stderr); code != app.ExitTransfer || !strings.Contains(stderr.String(), "helper") {
+		t.Fatalf("helper failure code=%d stderr=%q", code, stderr.String())
+	}
+}

@@ -47,6 +47,13 @@ for target_os in darwin linux windows; do
   done
 done
 
+for helper_os in freebsd openbsd netbsd; do
+  for helper_arch in amd64 arm64; do
+    require_file "dist/courier_${version}_${helper_os}_${helper_arch}.tar.gz"
+  done
+done
+require_file "dist/courier_${version}_dragonfly_amd64.tar.gz"
+
 for target_arch in amd64 arm64; do
   require_file "dist/courier_${version}_linux_${target_arch}.deb"
   require_file "dist/courier_${version}_linux_${target_arch}.rpm"

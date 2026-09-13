@@ -100,6 +100,41 @@ func TestNativeSSHAndSFTP(t *testing.T) {
 	}
 }
 
+func TestTemporaryHelperFallback(t *testing.T) {
+	server := newTestSSHServer(t, true, true)
+	server.mu.Lock()
+	server.disableSFTP = true
+	server.mu.Unlock()
+	factory := testFactory(t, server, "")
+	factory.SFTPFallback = func(ctx context.Context, connection *Connection, capability *CapabilityError) (*sftp.Client, io.Closer, error) {
+		if capability.Capability != "sftp" {
+			t.Fatalf("capability=%+v", capability)
+		}
+		binary := filepath.Join(t.TempDir(), "courier")
+		if err := os.WriteFile(binary, []byte("verified helper"), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		return DeployHelper(ctx, connection, Platform{OS: "linux", Arch: "amd64"}, binary, strings.Repeat("0", 64))
+	}
+	connection, err := factory.Open(context.Background(), "target", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	backend := NewSFTPBackend(connection.SFTP)
+	if err := backend.MkdirAll("/helper", 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := connection.Close(); err != nil {
+		t.Fatal(err)
+	}
+	server.mu.Lock()
+	uploads, cleanups := server.helperUploads, server.helperCleanups
+	server.mu.Unlock()
+	if uploads != 1 || cleanups != 1 {
+		t.Fatalf("uploads=%d cleanups=%d", uploads, cleanups)
+	}
+}
+
 func TestPasswordFallbackAndHostVerification(t *testing.T) {
 	server := newTestSSHServer(t, false, true)
 	factory := testFactory(t, server, "")
@@ -160,6 +195,10 @@ func TestProxyJump(t *testing.T) {
 }
 
 func TestConnectionRunFailures(t *testing.T) {
+	var nilConnection *Connection
+	if _, err := nilConnection.Run(context.Background(), "command"); err == nil {
+		t.Fatal("expected nil connection error")
+	}
 	empty := &Connection{}
 	if _, err := empty.Run(context.Background(), "command"); err == nil {
 		t.Fatal("expected closed error")
@@ -307,6 +346,21 @@ func TestPasswordPromptFailureAndSFTPCapability(t *testing.T) {
 			t.Fatalf("error=%v", err)
 		}
 	}
+	for _, fallback := range []func(context.Context, *Connection, *CapabilityError) (*sftp.Client, io.Closer, error){
+		func(context.Context, *Connection, *CapabilityError) (*sftp.Client, io.Closer, error) {
+			return nil, nil, errors.New("fallback")
+		},
+		func(context.Context, *Connection, *CapabilityError) (*sftp.Client, io.Closer, error) {
+			return nil, nil, nil
+		},
+	} {
+		factory = testFactory(t, server, "")
+		factory.NewSFTP = func(*ssh.Client) (*sftp.Client, error) { return nil, errors.New("no sftp") }
+		factory.SFTPFallback = fallback
+		if _, err := factory.Open(context.Background(), "target", ""); err == nil {
+			t.Fatal("expected fallback error")
+		}
+	}
 }
 
 func testFactory(t *testing.T, server *testSSHServer, knownOverride string) Factory {
@@ -361,6 +415,10 @@ type testSSHServer struct {
 	handlers       sftp.Handlers
 	done           chan struct{}
 	once           sync.Once
+	mu             sync.Mutex
+	disableSFTP    bool
+	helperUploads  int
+	helperCleanups int
 }
 
 func newTestSSHServer(t *testing.T, allowPublic, allowPassword bool) *testSSHServer {
@@ -465,6 +523,14 @@ func (s *testSSHServer) handleSession(channel ssh.Channel, requests <-chan *ssh.
 				_ = request.Reply(false, nil)
 				continue
 			}
+			s.mu.Lock()
+			disableSFTP := s.disableSFTP
+			s.mu.Unlock()
+			if disableSFTP {
+				_ = request.Reply(false, nil)
+				_ = channel.Close()
+				return
+			}
 			_ = request.Reply(true, nil)
 			server := sftp.NewRequestServer(channel, s.handlers)
 			_ = server.Serve()
@@ -474,6 +540,31 @@ func (s *testSSHServer) handleSession(channel ssh.Channel, requests <-chan *ssh.
 			var payload struct{ Command string }
 			_ = ssh.Unmarshal(request.Payload, &payload)
 			_ = request.Reply(true, nil)
+			if strings.Contains(payload.Command, "mkdir -m 700") && strings.Contains(payload.Command, "courier-helper-") {
+				_, _ = io.Copy(io.Discard, channel)
+				s.mu.Lock()
+				s.helperUploads++
+				s.mu.Unlock()
+				_, _ = channel.SendRequest("exit-status", false, ssh.Marshal(struct{ Status uint32 }{0}))
+				_ = channel.Close()
+				return
+			}
+			if strings.Contains(payload.Command, "_helper-sftp") {
+				server := sftp.NewRequestServer(channel, s.handlers)
+				_ = server.Serve()
+				_, _ = channel.SendRequest("exit-status", false, ssh.Marshal(struct{ Status uint32 }{0}))
+				_ = server.Close()
+				_ = channel.Close()
+				return
+			}
+			if strings.HasPrefix(payload.Command, "rm -rf -- ") && strings.Contains(payload.Command, "courier-helper-") {
+				s.mu.Lock()
+				s.helperCleanups++
+				s.mu.Unlock()
+				_, _ = channel.SendRequest("exit-status", false, ssh.Marshal(struct{ Status uint32 }{0}))
+				_ = channel.Close()
+				return
+			}
 			if payload.Command == "block" {
 				continue
 			}

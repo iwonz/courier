@@ -10,6 +10,8 @@ Courier release binaries are self-contained. Package managers and installers onl
 | Linux | amd64, arm64 | deb, rpm, apk, Arch package, npm ecosystem, Homebrew where casks are supported, POSIX installer, direct download |
 | Windows | amd64, arm64 | Winget, Scoop, npm ecosystem, PowerShell installer, direct download |
 
+Release archives are also built for FreeBSD, OpenBSD, and NetBSD on amd64/arm64 and DragonFly BSD on amd64. Courier uses these exact-platform archives for the temporary helper fallback when a BSD SSH endpoint lacks SFTP. They are published and checksummed with every release but are not currently distributed through the package-manager channels above.
+
 Native Linux package mapping:
 
 | Distribution | Artifact | Install command after download |
@@ -99,7 +101,7 @@ courier_<version>_windows_<arch>.zip
 checksums.txt
 ```
 
-`os` is `darwin`, `linux`, or `windows`; `arch` is `amd64` or `arm64`. Download the matching raw binary and checksum manifest from:
+For primary installations, `os` is `darwin`, `linux`, or `windows`; `arch` is `amd64` or `arm64`. BSD helper archives additionally use `freebsd`, `openbsd`, `netbsd`, or `dragonfly`. Download the matching artifact and checksum manifest from:
 
 ```text
 https://github.com/iwonz/courier/releases/download/v<version>/

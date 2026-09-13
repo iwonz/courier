@@ -205,6 +205,118 @@ func TestNormalizeVersion(t *testing.T) {
 	}
 }
 
+func TestAcquireVersion(t *testing.T) {
+	isolateUpdateHooks(t)
+	assetName := "courier_1.2.3_freebsd_arm64.tar.gz"
+	archive := releaseArchive(t, []tar.Header{{Name: "README.md", Typeflag: tar.TypeReg}, {Name: "courier", Mode: 0o700, Size: 6, Typeflag: tar.TypeReg}}, [][]byte{nil, []byte("helper")})
+	hash := sha256.Sum256(archive)
+	base := "https://github.com/custom/repo/releases/download/v1.2.3/"
+	client := &fakeHTTPClient{responses: map[string]fakeResponse{
+		base + assetName:       {body: archive},
+		base + "checksums.txt": {body: []byte(hex.EncodeToString(hash[:]) + "  " + assetName)},
+	}}
+	artifact, err := (Updater{Repository: "custom/repo", Client: client}).AcquireVersion(context.Background(), "1.2.3", "freebsd", "arm64")
+	if err != nil || len(artifact.SHA256) != 64 {
+		t.Fatalf("artifact=%+v err=%v", artifact, err)
+	}
+	if data, err := os.ReadFile(artifact.Path); err != nil || string(data) != "helper" {
+		t.Fatalf("data=%q err=%v", data, err)
+	}
+	directory := filepath.Dir(artifact.Path)
+	if err := artifact.Cleanup(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(directory); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("artifact directory remains: %v", err)
+	}
+
+	if _, err := (Updater{}).AcquireVersion(context.Background(), "dev", "linux", "amd64"); err == nil {
+		t.Fatal("expected immutable version error")
+	}
+}
+
+func TestAcquireVersionDefaultClientWindows(t *testing.T) {
+	isolateUpdateHooks(t)
+	assetName := "courier_1.0.0_windows_amd64.tar.gz"
+	archive := releaseArchive(t, []tar.Header{{Name: "courier.exe", Mode: 0o700, Size: 3, Typeflag: tar.TypeReg}}, [][]byte{[]byte("new")})
+	hash := sha256.Sum256(archive)
+	base := "https://github.com/iwonz/courier/releases/download/v1.0.0/"
+	client := &fakeHTTPClient{responses: map[string]fakeResponse{
+		base + assetName:       {body: archive},
+		base + "checksums.txt": {body: []byte(hex.EncodeToString(hash[:]) + "  " + assetName)},
+	}}
+	originalClient := http.DefaultClient
+	http.DefaultClient = &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) { return client.Do(request) })}
+	t.Cleanup(func() { http.DefaultClient = originalClient })
+	artifact, err := (Updater{}).AcquireVersion(context.Background(), "1.0.0", "windows", "amd64")
+	if err != nil || filepath.Base(artifact.Path) != "courier.exe" {
+		t.Fatalf("artifact=%+v err=%v", artifact, err)
+	}
+	if err := artifact.Cleanup(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAcquireVersionFailures(t *testing.T) {
+	assetName := "courier_1.0.0_linux_amd64.tar.gz"
+	base := "https://github.com/iwonz/courier/releases/download/v1.0.0/"
+	validArchive := releaseArchive(t, []tar.Header{{Name: "courier", Mode: 0o700, Size: 3, Typeflag: tar.TypeReg}}, [][]byte{[]byte("new")})
+	validHash := sha256.Sum256(validArchive)
+	validManifest := []byte(hex.EncodeToString(validHash[:]) + "  " + assetName)
+	for _, test := range []struct {
+		name   string
+		setup  func(*testing.T)
+		client *fakeHTTPClient
+	}{
+		{name: "temporary directory", setup: func(*testing.T) {
+			makeUpdateDirectory = func(string, string) (string, error) { return "", errors.New("mkdir") }
+		}, client: &fakeHTTPClient{}},
+		{name: "archive download", setup: func(*testing.T) {}, client: &fakeHTTPClient{responses: map[string]fakeResponse{base + assetName: {err: errors.New("download")}}}},
+		{name: "checksum download", setup: func(*testing.T) {}, client: &fakeHTTPClient{responses: map[string]fakeResponse{base + assetName: {body: validArchive}, base + "checksums.txt": {err: errors.New("download")}}}},
+		{name: "checksum", setup: func(*testing.T) {}, client: &fakeHTTPClient{responses: map[string]fakeResponse{base + assetName: {body: validArchive}, base + "checksums.txt": {body: []byte("bad")}}}},
+		{name: "extraction", setup: func(*testing.T) {}, client: &fakeHTTPClient{responses: map[string]fakeResponse{base + assetName: {body: []byte("bad")}, base + "checksums.txt": {body: checksumLine("bad", assetName)}}}},
+		{name: "digest", setup: func(*testing.T) {
+			openChecksumFile = func(name string) (io.ReadCloser, error) {
+				if filepath.Base(name) == "courier" {
+					return nil, errors.New("digest")
+				}
+				return os.Open(name)
+			}
+		}, client: &fakeHTTPClient{responses: map[string]fakeResponse{base + assetName: {body: validArchive}, base + "checksums.txt": {body: validManifest}}}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			isolateUpdateHooks(t)
+			test.setup(t)
+			if _, err := (Updater{Client: test.client}).AcquireVersion(context.Background(), "v1.0.0", "linux", "amd64"); err == nil {
+				t.Fatal("expected acquisition error")
+			}
+		})
+	}
+}
+
+func TestFileDigestFailures(t *testing.T) {
+	isolateUpdateHooks(t)
+	openChecksumFile = func(string) (io.ReadCloser, error) { return nil, errors.New("open") }
+	if _, err := fileDigest("file"); err == nil {
+		t.Fatal("expected open error")
+	}
+	openChecksumFile = func(string) (io.ReadCloser, error) { return &failingReadCloser{readErr: errors.New("read")}, nil }
+	if _, err := fileDigest("file"); err == nil {
+		t.Fatal("expected read error")
+	}
+	openChecksumFile = func(string) (io.ReadCloser, error) {
+		return &failingReadCloser{Reader: strings.NewReader("x"), closeErr: errors.New("close")}, nil
+	}
+	if _, err := fileDigest("file"); err == nil {
+		t.Fatal("expected close error")
+	}
+}
+
+func checksumLine(data string, name string) []byte {
+	hash := sha256.Sum256([]byte(data))
+	return []byte(hex.EncodeToString(hash[:]) + "  " + name)
+}
+
 func TestUpdaterDefaultRuntimeWindowsAndRunFailures(t *testing.T) {
 	t.Run("default client runtime and executable", func(t *testing.T) {
 		isolateUpdateHooks(t)
@@ -237,6 +349,12 @@ func TestUpdaterDefaultRuntimeWindowsAndRunFailures(t *testing.T) {
 	t.Run("windows asset", func(t *testing.T) {
 		isolateUpdateHooks(t)
 		updater, _, target := validUpdater(t, "windows", "amd64", "courier.exe")
+		updater.Handoff = func(staged, destination string, pid int) error {
+			if pid <= 0 {
+				t.Fatal("invalid handoff PID")
+			}
+			return os.Rename(staged, destination)
+		}
 		if _, err := updater.Run(context.Background()); err != nil {
 			t.Fatal(err)
 		}

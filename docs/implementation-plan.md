@@ -17,7 +17,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 - `go test ./...` and the race detector pass;
 - first-party Go package statement coverage is 100%;
 - `openspec validate --all --strict` passes;
-- binaries build for macOS, Linux, and Windows on amd64 and arm64;
+- primary binaries build for macOS, Linux, and Windows on amd64 and arm64, with exact-platform BSD helper archives;
 - tests use local fixtures or containers only and always register cleanup;
 - local and remote temporary artifacts are removed after success, failure, and cancellation;
 - installation and security documentation match the shipped CLI;

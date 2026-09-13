@@ -42,12 +42,14 @@ make verify
 The gate runs:
 
 1. `gofmt` verification and `go vet`;
-2. all Go tests with the race detector;
-3. exact 100% first-party Go statement coverage;
+2. all Go tests with the race detector on the primary quality runner;
+3. exact 100% first-party Go statement coverage on both Linux and Windows, including platform-specific agent and update code;
 4. local POSIX installer acceptance tests and npm package tests;
 5. GoReleaser configuration validation;
 6. `goreleaser release --snapshot --clean`;
 7. checksum and artifact-matrix verification.
+
+The artifact matrix includes the six primary macOS/Linux/Windows targets plus exact-platform BSD helper archives. Helper archives use the same `courier_<version>_<os>_<arch>.tar.gz` convention and are verified by the snapshot gate and post-publication workflow.
 
 The pinned GoReleaser binary is downloaded into `.cache/tools` only when absent and is verified against the upstream release checksum. No global GoReleaser installation is required.
 

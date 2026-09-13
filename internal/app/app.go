@@ -2,6 +2,7 @@
 package app
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -10,11 +11,13 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/iwonz/courier/internal/archive"
 	"github.com/iwonz/courier/internal/buildinfo"
 	"github.com/iwonz/courier/internal/endpoint"
 	"github.com/iwonz/courier/internal/fsx"
+	"github.com/iwonz/courier/internal/helper"
 	"github.com/iwonz/courier/internal/progress"
 	"github.com/iwonz/courier/internal/report"
 	"github.com/iwonz/courier/internal/safety"
@@ -108,12 +111,17 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 	if current, userErr := currentUser(); userErr == nil {
 		defaultUser = current.Username
 	}
+	githubToken := environmentValue("GITHUB_TOKEN")
+	updater := update.Updater{Repository: "iwonz/courier", Version: buildinfo.Version, Token: githubToken}
+	helperSource := helper.Source{Repository: "iwonz/courier", Version: buildinfo.Version, Token: githubToken}
+	helperManager := &helper.Manager{Confirm: terminalConfirmation(input, promptOutput), Acquire: helperSource.Acquire, Deploy: sshx.DeployHelper}
 	factory := sshx.Factory{
-		Config:      configuration,
-		DefaultUser: defaultUser,
-		KnownHosts:  filepath.Join(home, ".ssh", "known_hosts"),
-		AgentSocket: environmentValue("SSH_AUTH_SOCK"),
-		Prompt:      terminalPrompt(input, promptOutput),
+		Config:       configuration,
+		DefaultUser:  defaultUser,
+		KnownHosts:   filepath.Join(home, ".ssh", "known_hosts"),
+		AgentSocket:  sshx.AgentEndpoint(environmentValue("SSH_AUTH_SOCK")),
+		Prompt:       terminalPrompt(input, promptOutput),
+		SFTPFallback: helperManager.Fallback,
 	}
 	open := func(ctx context.Context, value endpoint.Endpoint) (*Resource, error) {
 		if !value.Remote {
@@ -136,7 +144,6 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 		effective.User = connection.Target.User
 		return &Resource{Endpoint: effective, Backend: sshx.NewSFTPBackend(connection.SFTP), Path: value.Path, Close: connection.Close}, nil
 	}
-	updater := update.Updater{Repository: "iwonz/courier", Version: buildinfo.Version, Token: environmentValue("GITHUB_TOKEN")}
 	return Dependencies{
 		Open: open,
 		OpenArtifact: func(name string) (fsx.Backend, string, func() error, error) {
@@ -153,6 +160,24 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 		Terminal: writerIsTerminal,
 		Build:    BuildIdentity{Version: buildinfo.Version, Commit: buildinfo.Commit, Date: buildinfo.Date},
 	}, nil
+}
+
+func terminalConfirmation(input *os.File, output io.Writer) helper.Confirm {
+	return func(ctx context.Context, question string) (bool, error) {
+		if input == nil || !terminalAttached(int(input.Fd())) {
+			return false, errors.New("interactive terminal is required for remote helper consent")
+		}
+		if err := ctx.Err(); err != nil {
+			return false, err
+		}
+		fmt.Fprintf(output, "%s [y/N] ", question)
+		answer, err := bufio.NewReader(input).ReadString('\n')
+		if err != nil && !errors.Is(err, io.EOF) {
+			return false, err
+		}
+		answer = strings.ToLower(strings.TrimSpace(answer))
+		return answer == "y" || answer == "yes", nil
+	}
 }
 
 func terminalPrompt(input *os.File, output io.Writer) sshx.SecretPrompt {
