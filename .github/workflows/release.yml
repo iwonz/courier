@@ -16,15 +16,12 @@ jobs:
       - name: Check required secrets
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
-          SCOOP_BUCKET_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
-          WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
         run: |
           if ! grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' <<<"$GITHUB_REF_NAME"; then
             echo "Release tags must use stable vMAJOR.MINOR.PATCH syntax" >&2
             exit 1
           fi
-          for name in NPM_TOKEN HOMEBREW_TAP_GITHUB_TOKEN SCOOP_BUCKET_GITHUB_TOKEN WINGET_GITHUB_TOKEN; do
+          for name in NPM_TOKEN; do
             if [ -z "${!name}" ]; then
               echo "Missing required GitHub Actions secret: $name" >&2
               exit 1
@@ -68,7 +65,7 @@ jobs:
         run: ./scripts/test-install.ps1
 
   publish:
-    name: GitHub, Homebrew, Scoop, and Winget
+    name: GitHub Release, Homebrew, and Scoop
     needs:
       - preflight
       - quality
@@ -91,9 +88,6 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
-          SCOOP_BUCKET_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
-          WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
 
   npm:
     name: npmjs @iwonz/courier
@@ -173,17 +167,12 @@ jobs:
           done
           echo "npm package did not become visible: @iwonz/courier@$version" >&2
           exit 1
-      - name: Verify Homebrew and Scoop catalogs
+      - name: Verify in-repository Homebrew and Scoop manifests
         env:
-          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
-          SCOOP_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
-        run: |
-          gh api repos/iwonz/homebrew-tap/contents/Casks/courier.rb --jq .sha >/dev/null
-          GH_TOKEN="$SCOOP_TOKEN" gh api repos/iwonz/scoop-bucket/contents/bucket/courier.json --jq .sha >/dev/null
-      - name: Verify Winget pull request
-        env:
-          GH_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           version="${GITHUB_REF_NAME#v}"
-          count=$(gh api "repos/microsoft/winget-pkgs/pulls?state=open&head=iwonz:courier-$version" --jq length)
-          [ "$count" -ge 1 ] || { echo "Winget pull request is missing for $version" >&2; exit 1; }
+          homebrew=$(gh api "repos/iwonz/courier/contents/Casks/courier.rb?ref=main" --jq .content | base64 --decode)
+          scoop=$(gh api "repos/iwonz/courier/contents/bucket/courier.json?ref=main" --jq .content | base64 --decode)
+          grep -Fq "version \"$version\"" <<<"$homebrew" || { echo "Homebrew manifest is not at $version" >&2; exit 1; }
+          grep -Fq "\"version\": \"$version\"" <<<"$scoop" || { echo "Scoop manifest is not at $version" >&2; exit 1; }

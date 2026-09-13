@@ -38,13 +38,11 @@ yarn dlx @iwonz/courier --help       # modern Yarn
 pnpm add --global @iwonz/courier
 pnpm dlx @iwonz/courier --help
 
-brew tap iwonz/tap
-brew install --cask iwonz/tap/courier
+brew tap iwonz/courier https://github.com/iwonz/courier
+brew install --cask iwonz/courier/courier
 
-scoop bucket add iwonz https://github.com/iwonz/scoop-bucket
-scoop install iwonz/courier
-
-winget install --exact --id iwonz.Courier
+scoop bucket add courier https://github.com/iwonz/courier
+scoop install courier/courier
 ```
 
 GoReleaser also publishes raw binaries, tar.gz archives, Windows zip archives, checksums, and deb/rpm/apk/Arch Linux packages on [GitHub Releases](https://github.com/iwonz/courier/releases). See [Installation](docs/installation.md) for the complete OS, architecture, distribution, direct-download, and verification matrix.

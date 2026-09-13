@@ -1,0 +1,22 @@
+{
+    "version": "0.1.0",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/iwonz/courier/releases/download/v0.1.0/courier_0.1.0_windows_amd64.zip",
+            "bin": [
+                "courier.exe"
+            ],
+            "hash": "3ce75b0ccd5975f908770bc57cd9992421142f5228571bdbc53e5e4ab45f5feb"
+        },
+        "arm64": {
+            "url": "https://github.com/iwonz/courier/releases/download/v0.1.0/courier_0.1.0_windows_arm64.zip",
+            "bin": [
+                "courier.exe"
+            ],
+            "hash": "23a63666440fe1f2a3972d0554ae70079cb625ef893d6816f0088c8e366322c9"
+        }
+    },
+    "homepage": "https://github.com/iwonz/courier",
+    "license": "MIT",
+    "description": "Safely transfer files and directories between local and SSH endpoints."
+}

@@ -63,6 +63,5 @@ done
 
 [ -f dist/homebrew/Casks/courier.rb ]
 [ -f dist/scoop/bucket/courier.json ]
-find dist/winget -name 'iwonz.Courier.installer.yaml' -type f | grep -q .
 
 printf '%s\n' "Verified Courier release artifact matrix for $version"

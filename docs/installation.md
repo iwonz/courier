@@ -8,7 +8,7 @@ Courier release binaries are self-contained. Package managers and installers onl
 |---|---|---|
 | macOS | amd64, arm64 | Homebrew, npm ecosystem, POSIX installer, direct download |
 | Linux | amd64, arm64 | deb, rpm, apk, Arch package, npm ecosystem, Homebrew where casks are supported, POSIX installer, direct download |
-| Windows | amd64, arm64 | Winget, Scoop, npm ecosystem, PowerShell installer, direct download |
+| Windows | amd64, arm64 | Scoop, npm ecosystem, PowerShell installer, direct download |
 
 Release archives are also built for FreeBSD, OpenBSD, and NetBSD on amd64/arm64 and DragonFly BSD on amd64. Courier uses these exact-platform archives for the temporary helper fallback when a BSD SSH endpoint lacks SFTP. They are published and checksummed with every release but are not currently distributed through the package-manager channels above.
 
@@ -66,28 +66,28 @@ The dependency-free postinstall script selects the host tar.gz archive, verifies
 ## Homebrew
 
 ```sh
-brew tap iwonz/tap
-brew install --cask iwonz/tap/courier
+brew tap iwonz/courier https://github.com/iwonz/courier
+brew install --cask iwonz/courier/courier
 ```
 
-GoReleaser updates `iwonz/homebrew-tap` after each release. The generated cask contains checksummed macOS amd64/arm64 assets and Linux assets for Homebrew environments that support binary casks.
+The explicit tap URL lets the `iwonz/courier` repository act as its own tap. GoReleaser updates `Casks/courier.rb` on `main` after each release. The generated cask contains checksummed macOS amd64/arm64 assets and Linux assets for Homebrew environments that support binary casks.
 
 ## Scoop
 
 ```powershell
-scoop bucket add iwonz https://github.com/iwonz/scoop-bucket
-scoop install iwonz/courier
+scoop bucket add courier https://github.com/iwonz/courier
+scoop install courier/courier
 ```
 
-The manifest selects the amd64 or arm64 Windows zip and verifies the GoReleaser-generated hash.
+The main Courier repository acts as the custom Scoop bucket. Its `bucket/courier.json` manifest selects the amd64 or arm64 Windows zip and verifies the GoReleaser-generated hash.
 
-## Winget
+To install the manifest directly without retaining a named bucket:
 
 ```powershell
-winget install --exact --id iwonz.Courier
+scoop install https://raw.githubusercontent.com/iwonz/courier/main/bucket/courier.json
 ```
 
-Each Courier release opens a manifest pull request against `microsoft/winget-pkgs`. A new version becomes available through Winget after the upstream review is merged.
+Winget is intentionally not a Courier catalog channel. Public Winget packages require versioned pull requests to the external `microsoft/winget-pkgs` repository, which conflicts with Courier's single-repository distribution model. Windows users can use Scoop, npm, the PowerShell installer, or a direct verified binary without that external review dependency.
 
 ## Direct download and verification
 

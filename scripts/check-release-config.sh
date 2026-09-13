@@ -12,7 +12,7 @@ case "$remote" in
   *) printf '%s\n' "origin must point to https://github.com/iwonz/courier" >&2; exit 1 ;;
 esac
 
-for repository in iwonz/courier iwonz/homebrew-tap iwonz/scoop-bucket iwonz/winget-pkgs; do
+for repository in iwonz/courier; do
   gh repo view "$repository" --json nameWithOwner >/dev/null || {
     printf '%s\n' "Required GitHub repository is unavailable: $repository" >&2
     exit 1
@@ -20,11 +20,11 @@ for repository in iwonz/courier iwonz/homebrew-tap iwonz/scoop-bucket iwonz/wing
 done
 
 configured=$(gh secret list --repo iwonz/courier --json name --jq '.[].name')
-for secret in NPM_TOKEN HOMEBREW_TAP_GITHUB_TOKEN SCOOP_BUCKET_GITHUB_TOKEN WINGET_GITHUB_TOKEN; do
+for secret in NPM_TOKEN; do
   printf '%s\n' "$configured" | grep -qx "$secret" || {
     printf '%s\n' "Missing GitHub Actions secret: $secret" >&2
     exit 1
   }
 done
 
-printf '%s\n' "Release repositories and GitHub secret names are configured."
+printf '%s\n' "Courier repository and GitHub secret names are configured."

@@ -160,8 +160,9 @@ homebrew_casks:
       - courier-tar
     repository:
       owner: iwonz
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+      name: courier
+      branch: main
+      token: "{{ .Env.GITHUB_TOKEN }}"
     directory: Casks
     binaries:
       - courier
@@ -176,43 +177,11 @@ scoops:
       - courier-windows-zip
     repository:
       owner: iwonz
-      name: scoop-bucket
-      token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
+      name: courier
+      branch: main
+      token: "{{ .Env.GITHUB_TOKEN }}"
     directory: bucket
     homepage: https://github.com/iwonz/courier
     description: Safely transfer files and directories between local and SSH endpoints.
     license: MIT
     commit_msg_template: "chore: update courier to {{ .Tag }}"
-
-winget:
-  - name: courier
-    ids:
-      - courier-windows-zip
-    publisher: iwonz
-    package_identifier: iwonz.Courier
-    package_name: Courier
-    short_description: Safely transfer files and directories between local and SSH endpoints.
-    description: An extensible standalone CLI for safe local and SSH file transfers.
-    license: MIT
-    license_url: https://github.com/iwonz/courier/blob/main/LICENSE
-    publisher_url: https://github.com/iwonz
-    publisher_support_url: https://github.com/iwonz/courier/issues
-    homepage: https://github.com/iwonz/courier
-    release_notes: "{{ .Changelog }}"
-    release_notes_url: "https://github.com/iwonz/courier/releases/tag/{{ .Tag }}"
-    tags:
-      - cli
-      - file-transfer
-      - sftp
-      - ssh
-    repository:
-      owner: iwonz
-      name: winget-pkgs
-      token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
-      pull_request:
-        enabled: true
-        base:
-          owner: microsoft
-          name: winget-pkgs
-          branch: master
-    commit_msg_template: "iwonz.Courier: {{ .Tag }}"

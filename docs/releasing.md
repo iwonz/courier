@@ -1,27 +1,18 @@
 # Release runbook
 
-Courier uses GoReleaser Community v2.18.1. A semantic Git tag is the only publication trigger. GitHub Actions repeats all quality gates before creating a GitHub Release, updating Homebrew and Scoop, opening the Winget pull request, and publishing npm.
+Courier uses GoReleaser Community v2.18.1. A semantic Git tag is the only publication trigger. GitHub Actions repeats all quality gates before creating a GitHub Release, updating the in-repository Homebrew and Scoop manifests, and publishing npm.
 
 ## One-time external setup
 
-Create these public repositories under the `iwonz` account:
-
-- `iwonz/homebrew-tap`, with default branch `main`;
-- `iwonz/scoop-bucket`, with default branch `main`;
-- `iwonz/winget-pkgs`, as a fork of `microsoft/winget-pkgs`.
-
-Ensure the GitHub repository Actions setting permits workflows to request read/write permissions. Create the public npm package scope access needed to publish `@iwonz/courier`.
+No catalog repository or upstream package-manager pull request is required. `iwonz/courier` is both the source repository and the custom Homebrew tap/Scoop bucket. Ensure its GitHub Actions setting permits workflows to request read/write permissions. Create the public npm package scope access needed to publish `@iwonz/courier`.
 
 Add these GitHub Actions repository secrets to `iwonz/courier`:
 
 | Secret | Required access |
 |---|---|
 | `NPM_TOKEN` | Publish `@iwonz/courier` on npmjs; use a granular access token with package read/write permission and bypass 2FA enabled |
-| `HOMEBREW_TAP_GITHUB_TOKEN` | Contents read/write on `iwonz/homebrew-tap` |
-| `SCOOP_BUCKET_GITHUB_TOKEN` | Contents read/write on `iwonz/scoop-bucket` |
-| `WINGET_GITHUB_TOKEN` | Contents read/write on the `iwonz/winget-pkgs` fork and permission to open the upstream pull request |
 
-`GITHUB_TOKEN` is supplied automatically by Actions for the Courier GitHub Release. Never commit or pass any token as a CLI argument.
+`GITHUB_TOKEN` is supplied automatically by Actions for the Courier GitHub Release and manifest commits. Never commit or pass any token as a CLI argument.
 
 An interactive `npm login` token is not a CI publication credential: npm accepts it for account queries but requires a one-time password for package writes. Create `NPM_TOKEN` in npm's granular access-token settings, scope it as narrowly as npm permits, enable package read/write and bypass 2FA, and send it to GitHub through the repository secret UI or standard input. Never paste it into source, workflow YAML, a command argument, or an issue.
 
@@ -70,11 +61,11 @@ Omit the version to be prompted:
 ./scripts/release.sh
 ```
 
-The command checks GitHub authentication, external repositories, GitHub secret names, origin, branch, clean state, tag uniqueness, and synchronization with `origin/main`. It then runs the full dry run, asks for final confirmation, creates one annotated `vMAJOR.MINOR.PATCH` tag, and pushes only that tag.
+The command checks GitHub authentication, the Courier repository, GitHub secret names, origin, branch, clean state, tag uniqueness, and synchronization with `origin/main`. It then runs the full dry run, asks for final confirmation, creates one annotated `vMAJOR.MINOR.PATCH` tag, and pushes only that tag.
 
 For deliberate non-interactive automation, set `COURIER_RELEASE_YES=1` and provide the version. This does not bypass any quality or repository preflight.
 
-GoReleaser generates release notes from conventional commits between tags. Never move or recreate a published tag. If a catalog or npm credential fails before that version is published, repair the secret and rerun the failed workflow for the existing tag. npm versions are immutable, so confirm publication status before rerunning a failed npm job.
+GoReleaser generates release notes from conventional commits between tags. It commits `Casks/courier.rb` and `bucket/courier.json` to `main` with the workflow's short-lived `GITHUB_TOKEN`; no personal GitHub token or additional repository is involved. Never move or recreate a published tag. If npm publication fails before that version is published, repair the secret and rerun the failed workflow for the existing tag. npm versions are immutable, so confirm publication status before rerunning a failed npm job.
 
 ## Publication order
 
@@ -84,13 +75,11 @@ The release workflow enforces this sequence:
 credentials + quality + PowerShell acceptance
                     |
                     v
-GitHub Release + Homebrew + Scoop + Winget PR
+GitHub Release + in-repository Homebrew/Scoop manifests
                     |
                     v
              npmjs publication
                     |
                     v
-       GitHub/npm visibility verification
+       GitHub/npm/manifest verification
 ```
-
-Winget availability remains asynchronous because Microsoft reviews and merges the generated upstream pull request.
