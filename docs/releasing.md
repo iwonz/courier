@@ -16,12 +16,14 @@ Add these GitHub Actions repository secrets to `iwonz/courier`:
 
 | Secret | Required access |
 |---|---|
-| `NPM_TOKEN` | Publish `@iwonz/courier` on npmjs; use a granular automation token |
+| `NPM_TOKEN` | Publish `@iwonz/courier` on npmjs; use a granular access token with package read/write permission and bypass 2FA enabled |
 | `HOMEBREW_TAP_GITHUB_TOKEN` | Contents read/write on `iwonz/homebrew-tap` |
 | `SCOOP_BUCKET_GITHUB_TOKEN` | Contents read/write on `iwonz/scoop-bucket` |
 | `WINGET_GITHUB_TOKEN` | Contents read/write on the `iwonz/winget-pkgs` fork and permission to open the upstream pull request |
 
 `GITHUB_TOKEN` is supplied automatically by Actions for the Courier GitHub Release. Never commit or pass any token as a CLI argument.
+
+An interactive `npm login` token is not a CI publication credential: npm accepts it for account queries but requires a one-time password for package writes. Create `NPM_TOKEN` in npm's granular access-token settings, scope it as narrowly as npm permits, enable package read/write and bypass 2FA, and send it to GitHub through the repository secret UI or standard input. Never paste it into source, workflow YAML, a command argument, or an issue.
 
 The local preflight checks repository visibility and secret names with GitHub CLI, but GitHub does not expose secret values. A workflow preflight checks that values are non-empty before publication jobs start.
 
@@ -72,7 +74,7 @@ The command checks GitHub authentication, external repositories, GitHub secret n
 
 For deliberate non-interactive automation, set `COURIER_RELEASE_YES=1` and provide the version. This does not bypass any quality or repository preflight.
 
-GoReleaser generates release notes from conventional commits between tags. Never move or recreate a published tag. If a catalog credential fails, repair the secret and rerun the failed workflow for the existing tag.
+GoReleaser generates release notes from conventional commits between tags. Never move or recreate a published tag. If a catalog or npm credential fails before that version is published, repair the secret and rerun the failed workflow for the existing tag. npm versions are immutable, so confirm publication status before rerunning a failed npm job.
 
 ## Publication order
 

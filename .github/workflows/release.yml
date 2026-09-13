@@ -185,5 +185,5 @@ jobs:
           GH_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
         run: |
           version="${GITHUB_REF_NAME#v}"
-          count=$(gh pr list --repo microsoft/winget-pkgs --head "iwonz:courier-$version" --state open --json number --jq length)
+          count=$(gh api "repos/microsoft/winget-pkgs/pulls?state=open&head=iwonz:courier-$version" --jq length)
           [ "$count" -ge 1 ] || { echo "Winget pull request is missing for $version" >&2; exit 1; }
