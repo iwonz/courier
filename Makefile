@@ -1,7 +1,7 @@
 GORELEASER_VERSION := v2.18.1
 GORELEASER ?= .cache/tools/goreleaser
 
-.PHONY: all fmt-check vet contract-check test npm-test goreleaser-check snapshot verify precommit hooks release clean
+.PHONY: all fmt-check vet contract-check test npm-test ui-test goreleaser-check snapshot verify precommit hooks release clean
 
 all: verify
 
@@ -24,6 +24,10 @@ npm-test:
 	npm test --prefix npm --loglevel=error
 	cd npm && npm pack --dry-run --loglevel=error >/dev/null
 
+ui-test:
+	npm ci --prefix web --ignore-scripts --no-audit --no-fund --loglevel=error
+	npm run verify --prefix web --loglevel=error
+
 goreleaser-check:
 	@if [ ! -x "$(GORELEASER)" ] && ! command -v "$(GORELEASER)" >/dev/null 2>&1; then \
 		GORELEASER_VERSION=$(GORELEASER_VERSION) ./scripts/install-goreleaser.sh; \
@@ -36,7 +40,7 @@ snapshot: goreleaser-check
 	./scripts/test-release-installer.sh
 	node ./scripts/test-npm-dist.js
 
-verify: test npm-test snapshot
+verify: test npm-test ui-test snapshot
 
 precommit: verify
 
@@ -47,4 +51,4 @@ release:
 	./scripts/release.sh $(VERSION)
 
 clean:
-	rm -rf dist .cache coverage.out coverage.html
+	rm -rf dist .cache coverage.out coverage.html web/ui/dist web/ui/coverage

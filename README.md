@@ -103,17 +103,19 @@ Failure output includes the stage, safe reason, and confirmed transferred bytes.
 
 ## Develop
 
-Go 1.25 or newer and Node.js 18 or newer are required for source and npm-package checks. GoReleaser Community is bootstrapped locally at its pinned checksum-verified version.
+Go 1.25 or newer and Node.js 24 or newer are required for source, npm-package, and shared UI checks. GoReleaser Community is bootstrapped locally at its pinned checksum-verified version.
 
 ```sh
 make hooks       # opt into the repository pre-commit quality gate
 make test        # formatting, vet, race detector, and exact 100% Go statement coverage
-make verify      # tests, npm checks, and goreleaser release --snapshot --clean
+make verify      # Go/UI tests, npm checks, and goreleaser release --snapshot --clean
 ```
 
 Development is spec-first: every task owns a path under `openspec/changes`, a conventional branch name, and one conventional commit. See the [implementation plan](docs/implementation-plan.md) and [release runbook](docs/releasing.md).
 
 The machine-readable [CLI contract](docs/cli-contract.yaml) is the source of truth for shipped and planned commands. Its generated [command reference](docs/cli-reference.md) is checked against the live Cobra tree during every verification run.
+
+Browser delivery pages, the administration interface, and the project landing page share the Lit-based [`@courier/ui`](web/ui) package. Its [UI architecture guide](docs/ui.md) documents assets, themes, localization, components, and the exact TypeScript coverage gate.
 
 ## License
 

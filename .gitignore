@@ -3,6 +3,9 @@
 /.cache/
 /coverage.out
 /coverage.html
+/web/**/node_modules/
+/web/ui/coverage/
+/web/ui/dist/
 *.test
 *.tmp
 .DS_Store

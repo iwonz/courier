@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "path": "tmp/courier-identity.html",
+    "sha256": "f388c10730f0def4015b15ba1ab75a9d181bd81963cad23061a2facad96ab0d5",
+    "disposition": "deleted after verified extraction"
+  },
+  "assets": [
+    {
+      "path": "courier-mascot.png",
+      "mediaType": "image/png",
+      "bytes": 836728,
+      "sha256": "3584d3ef4a6cba2ea45ca86497f5d1907bbe0b9693d1c6a76e1e5dd1d8a47559",
+      "use": "Courier robot pigeon identity artwork"
+    },
+    {
+      "path": "logo-on-dark.svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 2216,
+      "sha256": "321f4f0f02b0dbabd50d46c5a7c1e86506d336c3e056be0e66495346d287a4c6",
+      "use": "Courier lockup on graphite surfaces"
+    },
+    {
+      "path": "logo-on-light.svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 2216,
+      "sha256": "a1445f3e8880c46936ca25fd8c9a46045794e89925c933a002d2aacf19f903c3",
+      "use": "Courier lockup on paper surfaces"
+    },
+    {
+      "path": "readme-banner.png",
+      "mediaType": "image/png",
+      "bytes": 1311691,
+      "sha256": "866dd4ccc417198c351497bfa6a2daed6bc8e833a6142dcd6d0831cb90cf05d9",
+      "use": "Repository and documentation banner"
+    }
+  ],
+  "excluded": [
+    "AdGuard-injected scripts and remote resources",
+    "reference-page JavaScript and HTML",
+    "the obsolete mirror icon and mirror product messaging"
+  ]
+}
