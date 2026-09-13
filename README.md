@@ -117,6 +117,8 @@ The machine-readable [CLI contract](docs/cli-contract.yaml) is the source of tru
 
 Browser delivery pages, the administration interface, and the project landing page share the Lit-based [`@courier/ui`](web/ui) package. Its [UI architecture guide](docs/ui.md) documents assets, themes, localization, components, and the exact TypeScript coverage gate.
 
+See [Browser deliveries](docs/web-deliveries.md) for `web://` URLs, authentication, safe navigation, transactional uploads, and foreground/background lifecycle behavior.
+
 ## License
 
 [MIT](LICENSE)

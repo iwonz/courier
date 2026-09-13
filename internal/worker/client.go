@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -55,10 +56,14 @@ func (client Client) Hello(ctx context.Context) (HelloResponse, error) {
 }
 
 func (client Client) Register(ctx context.Context, item delivery.Delivery, foreground bool) (RegisterResponse, *Lease, error) {
+	return client.RegisterDefinition(ctx, item, foreground, nil)
+}
+
+func (client Client) RegisterDefinition(ctx context.Context, item delivery.Delivery, foreground bool, definition json.RawMessage) (RegisterResponse, *Lease, error) {
 	if err := client.Validate(); err != nil {
 		return RegisterResponse{}, nil, err
 	}
-	payload := RegisterRequest{Delivery: item}
+	payload := RegisterRequest{Delivery: item, RuntimeDefinition: append(json.RawMessage(nil), definition...)}
 	if foreground {
 		payload.LeaseID = delivery.NewID()
 	}

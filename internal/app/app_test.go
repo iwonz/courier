@@ -32,6 +32,10 @@ func TestCommandsAndExitCodes(t *testing.T) {
 		Update: func(context.Context) (update.Result, error) {
 			return update.Result{Current: true, From: "v1.2.3"}, nil
 		},
+		Web: func(_ context.Context, _ operation.Plan, output io.Writer) error {
+			_, err := io.WriteString(output, "delivery: http://127.0.0.1:8080/d/token/\n")
+			return err
+		},
 	}
 	for _, test := range []struct {
 		name       string
@@ -47,7 +51,8 @@ func TestCommandsAndExitCodes(t *testing.T) {
 		{name: "unknown", args: []string{"unknown"}, code: ExitCLI, wantError: "unknown command"},
 		{name: "invalid transfer grammar", args: []string{"from", "a", "into", "b"}, code: ExitCLI, wantError: "expected: courier from"},
 		{name: "unsupported transfer route", args: []string{"from", "https://example.test/file", "to", "out"}, code: ExitCLI, wantError: "unsupported operation route"},
-		{name: "planned transfer route", args: []string{"from", "web://", "to", "out"}, code: ExitCLI, wantError: "planned but not shipped"},
+		{name: "browser transfer route", args: []string{"from", "web://", "to", "out", "--background"}, code: ExitOK, wantOutput: "delivery: http://"},
+		{name: "planned transfer route", args: []string{"from", "webhook://", "to", "out"}, code: ExitCLI, wantError: "planned but not shipped"},
 		{name: "duplicate archive", args: []string{"from", "a", "to", "b", "--archive", "--archive"}, code: ExitCLI, wantError: "value may only be set once"},
 		{name: "current update", args: []string{"update"}, code: ExitOK, wantOutput: "courier v1.2.3 is current"},
 	} {

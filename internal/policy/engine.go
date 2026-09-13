@@ -101,23 +101,61 @@ func clonePolicy(policy delivery.Policy) delivery.Policy {
 }
 
 func (engine *Engine) Update(expected uint64, next delivery.Policy) error {
-	if err := next.Validate(); err != nil {
+	prepared, err := engine.PrepareUpdate(expected, next)
+	if err != nil {
 		return err
+	}
+	prepared.Commit()
+	return nil
+}
+
+// PreparedUpdate holds the policy engine write lock until the owner commits or
+// cancels the mutation. It lets the worker keep live and durable policy state
+// on the same optimistic revision.
+type PreparedUpdate struct {
+	engine    *Engine
+	next      delivery.Policy
+	admission *Admission
+	once      sync.Once
+}
+
+func (engine *Engine) PrepareUpdate(expected uint64, next delivery.Policy) (*PreparedUpdate, error) {
+	if err := next.Validate(); err != nil {
+		return nil, err
 	}
 	admission, _ := NewAdmission(next.AllowIP)
 	engine.mutex.Lock()
-	defer engine.mutex.Unlock()
-	if engine.policy.Version != expected || next.Version != expected+1 {
+	if err := validateUpdate(engine.policy, expected, next); err != nil {
+		engine.mutex.Unlock()
+		return nil, err
+	}
+	return &PreparedUpdate{engine: engine, next: clonePolicy(next), admission: admission}, nil
+}
+
+func (update *PreparedUpdate) Commit() { update.finish(true) }
+
+func (update *PreparedUpdate) Cancel() { update.finish(false) }
+
+func (update *PreparedUpdate) finish(commit bool) {
+	update.once.Do(func() {
+		if commit {
+			_ = update.engine.attempts.Update(update.next.AuthAttempts, update.next.AuthFailAction)
+			_ = update.engine.reservations.Update(update.next.DeliveryLimit, update.next.MaxFileSize)
+			_ = update.engine.rates.Update(update.next.UploadRate, update.next.DownloadRate)
+			update.engine.admission = update.admission
+			update.engine.policy = update.next
+		}
+		update.engine.mutex.Unlock()
+	})
+}
+
+func validateUpdate(current delivery.Policy, expected uint64, next delivery.Policy) error {
+	if current.Version != expected || next.Version != expected+1 {
 		return delivery.ErrRevisionConflict
 	}
-	if next.Auth != engine.policy.Auth {
+	if next.Auth != current.Auth {
 		return errors.New("authentication mode changes require new credential material")
 	}
-	_ = engine.attempts.Update(next.AuthAttempts, next.AuthFailAction)
-	_ = engine.reservations.Update(next.DeliveryLimit, next.MaxFileSize)
-	_ = engine.rates.Update(next.UploadRate, next.DownloadRate)
-	engine.admission = admission
-	engine.policy = clonePolicy(next)
 	return nil
 }
 
@@ -134,6 +172,7 @@ type Request struct {
 	Authentication Authentication
 	StateChanging  bool
 	Incoming       bool
+	Transfer       bool
 	DeclaredSize   int64
 }
 
@@ -148,6 +187,13 @@ func (authorization *Authorization) Consume(bytes int64) error {
 		return errors.New("authorization has no incoming reservation")
 	}
 	return authorization.reservation.Consume(bytes)
+}
+
+func (authorization *Authorization) Consumed() int64 {
+	if authorization.reservation == nil {
+		return 0
+	}
+	return authorization.reservation.Consumed()
 }
 
 func (authorization *Authorization) Wait(ctx context.Context, direction Direction, bytes int) error {
@@ -227,7 +273,7 @@ func (engine *Engine) Authorize(ctx context.Context, request Request) (*Authoriz
 	}
 	engine.attempts.Success(engine.id, address)
 	authorized.Session = issued
-	if request.Incoming {
+	if request.Incoming || request.Transfer {
 		authorized.reservation, err = engine.reservations.Reserve(request.DeclaredSize)
 		if err != nil {
 			return nil, err

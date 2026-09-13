@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -93,12 +94,13 @@ func CanonicalBind(value string) (string, error) {
 }
 
 type AcquireRequest struct {
-	Bind          string
-	Compatibility string
-	Route         delivery.Route
-	Policy        delivery.Policy
-	Foreground    bool
-	At            time.Time
+	Bind              string
+	Compatibility     string
+	Route             delivery.Route
+	Policy            delivery.Policy
+	Foreground        bool
+	At                time.Time
+	RuntimeDefinition json.RawMessage
 }
 
 func (request AcquireRequest) Validate() error {
@@ -107,6 +109,9 @@ func (request AcquireRequest) Validate() error {
 	}
 	if invalidCompatibility(request.Compatibility) || !request.Route.Valid() || request.At.IsZero() {
 		return fmt.Errorf("%w: invalid worker acquisition", delivery.ErrInvalid)
+	}
+	if len(request.RuntimeDefinition) > MaxRuntimeDefinition || len(request.RuntimeDefinition) != 0 && !json.Valid(request.RuntimeDefinition) {
+		return fmt.Errorf("%w: invalid runtime definition", delivery.ErrInvalid)
 	}
 	return request.Policy.Validate()
 }
@@ -130,15 +135,16 @@ type Acquired struct {
 }
 
 type Coordinator struct {
-	Store          *delivery.Store
-	StateDirectory string
-	Locks          BindLocker
-	Launch         LaunchFunc
-	Cleanup        CleanupFunc
-	Hello          func(context.Context, Client) error
-	Register       func(context.Context, Client, delivery.Delivery, bool) (*Lease, error)
-	RemoveEndpoint func(string) error
-	StaleProbe     func(error) bool
+	Store              *delivery.Store
+	StateDirectory     string
+	Locks              BindLocker
+	Launch             LaunchFunc
+	Cleanup            CleanupFunc
+	Hello              func(context.Context, Client) error
+	Register           func(context.Context, Client, delivery.Delivery, bool) (*Lease, error)
+	RegisterDefinition func(context.Context, Client, delivery.Delivery, bool, json.RawMessage) (*Lease, error)
+	RemoveEndpoint     func(string) error
+	StaleProbe         func(error) bool
 }
 
 func (coordinator *Coordinator) Acquire(ctx context.Context, request AcquireRequest) (result Acquired, resultErr error) {
@@ -232,10 +238,12 @@ func (coordinator *Coordinator) register(ctx context.Context, client Client, req
 	}
 	var lease *Lease
 	var err error
-	if coordinator.Register != nil {
+	if coordinator.RegisterDefinition != nil {
+		lease, err = coordinator.RegisterDefinition(ctx, client, item, request.Foreground, request.RuntimeDefinition)
+	} else if coordinator.Register != nil && len(request.RuntimeDefinition) == 0 {
 		lease, err = coordinator.Register(ctx, client, item, request.Foreground)
 	} else {
-		_, lease, err = client.Register(ctx, item, request.Foreground)
+		_, lease, err = client.RegisterDefinition(ctx, item, request.Foreground, request.RuntimeDefinition)
 	}
 	if err != nil {
 		return Acquired{}, err

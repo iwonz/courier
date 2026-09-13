@@ -3,10 +3,12 @@ package worker
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"io/fs"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,6 +20,7 @@ import (
 
 	"github.com/iwonz/courier/internal/delivery"
 	"github.com/iwonz/courier/internal/ipc"
+	"github.com/iwonz/courier/internal/webdelivery"
 )
 
 func validProcessConfig(t *testing.T, directory, bind string) processConfig {
@@ -48,6 +51,74 @@ func TestProcessConfigValidation(t *testing.T) {
 		if err := candidate.Validate(); !errors.Is(err, delivery.ErrInvalid) {
 			t.Fatalf("config=%+v err=%v", candidate, err)
 		}
+	}
+}
+
+func TestOwnedTemporaryCleanup(t *testing.T) {
+	originalDirectory, originalOpen := ownedTempDirectory, openTemporaryRoot
+	t.Cleanup(func() { ownedTempDirectory, openTemporaryRoot = originalDirectory, originalOpen })
+	directory := t.TempDir()
+	ownedTempDirectory = func() string { return directory }
+	name := ".courier-123456.tar.gz"
+	path := filepath.Join(directory, name)
+	if err := os.WriteFile(path, []byte("archive"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	temporary := delivery.OwnedTemp{Location: delivery.TempLocal, Path: path}
+	if err := cleanupOwnedTemp(context.Background(), temporary); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("temporary remains: %v", err)
+	}
+	if err := cleanupOwnedTemp(context.Background(), temporary); err != nil {
+		t.Fatalf("missing temporary is not idempotent: %v", err)
+	}
+
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := cleanupOwnedTemp(canceled, temporary); !errors.Is(err, context.Canceled) {
+		t.Fatalf("canceled cleanup=%v", err)
+	}
+	remote := temporary
+	remote.Location = delivery.TempRemote
+	if err := cleanupOwnedTemp(context.Background(), remote); !errors.Is(err, delivery.ErrInvalid) {
+		t.Fatalf("remote cleanup=%v", err)
+	}
+	outside := temporary
+	outside.Path = filepath.Join(t.TempDir(), name)
+	if err := cleanupOwnedTemp(context.Background(), outside); !errors.Is(err, delivery.ErrInvalid) {
+		t.Fatalf("outside cleanup=%v", err)
+	}
+	for _, invalid := range []string{"archive.tar.gz", ".courier-.tar.gz", ".courier-token.tar.gz"} {
+		if validOwnedArchiveName(invalid) {
+			t.Fatalf("invalid owned archive name accepted: %q", invalid)
+		}
+	}
+	if !validOwnedArchiveName(name) {
+		t.Fatalf("valid owned archive name rejected: %q", name)
+	}
+
+	want := errors.New("failure")
+	openTemporaryRoot = func(string) (temporaryRoot, error) { return nil, want }
+	if err := cleanupOwnedTemp(context.Background(), temporary); !errors.Is(err, want) {
+		t.Fatalf("open error=%v", err)
+	}
+	for _, test := range []struct {
+		name string
+		root *fakeTemporaryRoot
+	}{
+		{"lstat", &fakeTemporaryRoot{lstatErr: want}},
+		{"non-regular", &fakeTemporaryRoot{info: fakeProcessInfo{mode: fs.ModeDir}}},
+		{"remove", &fakeTemporaryRoot{info: fakeProcessInfo{mode: 0o600}, removeErr: want}},
+		{"close", &fakeTemporaryRoot{lstatErr: fs.ErrNotExist, closeErr: want}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			openTemporaryRoot = func(string) (temporaryRoot, error) { return test.root, nil }
+			if err := cleanupOwnedTemp(context.Background(), temporary); err == nil {
+				t.Fatal("cleanup failure ignored")
+			}
+		})
 	}
 }
 
@@ -237,8 +308,57 @@ func TestProcessLauncherEndToEnd(t *testing.T) {
 	item.ServerID = config.Launch.ServerID
 	item.CreatedAt = time.Now().UTC()
 	item.UpdatedAt = item.CreatedAt
-	if _, _, err := client.Register(context.Background(), item, false); err != nil {
+	source := t.TempDir()
+	if err := os.WriteFile(filepath.Join(source, "background.txt"), []byte("background"), 0o600); err != nil {
 		t.Fatal(err)
+	}
+	backgroundToken, err := webdelivery.NewToken(strings.NewReader(strings.Repeat("b", webdelivery.ResourceTokenBytes)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	backgroundDefinition, _ := json.Marshal(webdelivery.Definition{
+		Version: webdelivery.DefinitionVersion, Token: backgroundToken, Source: source, Destination: "web://",
+	})
+	if _, lease, err := client.RegisterDefinition(context.Background(), item, false, backgroundDefinition); err != nil || lease != nil {
+		t.Fatal(err)
+	}
+	httpClient := &http.Client{Timeout: 2 * time.Second}
+	fetch := func(token, name string) (int, string) {
+		response, requestErr := httpClient.Get("http://" + bind + "/d/" + token + "/api/v1/download?path=" + name)
+		if requestErr != nil {
+			t.Fatal(requestErr)
+		}
+		defer response.Body.Close()
+		body, readErr := io.ReadAll(response.Body)
+		if readErr != nil {
+			t.Fatal(readErr)
+		}
+		return response.StatusCode, string(body)
+	}
+	if status, body := fetch(backgroundToken, "background.txt"); status != http.StatusOK || body != "background" {
+		t.Fatalf("background delivery=%d %q", status, body)
+	}
+	foreground := item
+	foreground.ID = delivery.ID("00000000-0000-4000-8000-000000000098")
+	foreground.CreatedAt = time.Now().UTC()
+	foreground.UpdatedAt = foreground.CreatedAt
+	foregroundToken, err := webdelivery.NewToken(strings.NewReader(strings.Repeat("f", webdelivery.ResourceTokenBytes)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	foregroundDefinition, _ := json.Marshal(webdelivery.Definition{
+		Version: webdelivery.DefinitionVersion, Token: foregroundToken, Source: source, Destination: "web://",
+	})
+	if _, lease, err := client.RegisterDefinition(context.Background(), foreground, true, foregroundDefinition); err != nil || lease == nil {
+		t.Fatalf("foreground registration lease=%v err=%v", lease, err)
+	} else if err := lease.Release(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if status, _ := fetch(foregroundToken, "background.txt"); status != http.StatusNotFound {
+		t.Fatalf("released foreground delivery=%d", status)
+	}
+	if status, body := fetch(backgroundToken, "background.txt"); status != http.StatusOK || body != "background" {
+		t.Fatalf("background delivery after foreground release=%d %q", status, body)
 	}
 	if err := client.StopServer(context.Background()); err != nil {
 		t.Fatal(err)
@@ -444,6 +564,17 @@ func (info fakeProcessInfo) Mode() fs.FileMode { return info.mode }
 func (fakeProcessInfo) ModTime() time.Time     { return workerTime }
 func (info fakeProcessInfo) IsDir() bool       { return info.mode.IsDir() }
 func (fakeProcessInfo) Sys() any               { return nil }
+
+type fakeTemporaryRoot struct {
+	info      fs.FileInfo
+	lstatErr  error
+	removeErr error
+	closeErr  error
+}
+
+func (root *fakeTemporaryRoot) Lstat(string) (fs.FileInfo, error) { return root.info, root.lstatErr }
+func (root *fakeTemporaryRoot) Remove(string) error               { return root.removeErr }
+func (root *fakeTemporaryRoot) Close() error                      { return root.closeErr }
 
 type blockingListener struct {
 	closedChannel chan struct{}

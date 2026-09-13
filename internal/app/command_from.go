@@ -10,11 +10,48 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type transferFlagValues struct {
+	archive, extract, background, noUI                      operation.BoolValue
+	listen, auth, authAttempts, authFailAction, limit       operation.SingleValue
+	maxFileSize, maxExtractedSize, uploadRate, downloadRate operation.SingleValue
+	allowIP                                                 operation.RepeatedValue
+	selection                                               operation.OrderedValues
+}
+
+func (values *transferFlagValues) options() []operation.Option {
+	options := make([]operation.Option, 0, 16+len(values.selection.Options()))
+	appendBool := func(name operation.OptionName, value *operation.BoolValue) {
+		if parsed, explicit := value.Value(); explicit {
+			options = append(options, operation.Option{Name: name, Value: strconv.FormatBool(parsed)})
+		}
+	}
+	appendSingle := func(name operation.OptionName, value *operation.SingleValue) {
+		if parsed, explicit := value.Value(); explicit {
+			options = append(options, operation.Option{Name: name, Value: parsed})
+		}
+	}
+	appendBool(operation.OptionArchive, &values.archive)
+	appendBool(operation.OptionExtract, &values.extract)
+	appendSingle(operation.OptionListen, &values.listen)
+	appendBool(operation.OptionBackground, &values.background)
+	appendSingle(operation.OptionAuth, &values.auth)
+	appendSingle(operation.OptionAuthAttempts, &values.authAttempts)
+	appendSingle(operation.OptionAuthFailAction, &values.authFailAction)
+	appendSingle(operation.OptionLimit, &values.limit)
+	appendBool(operation.OptionNoUI, &values.noUI)
+	for _, value := range values.allowIP.Values() {
+		options = append(options, operation.Option{Name: operation.OptionAllowIP, Value: value})
+	}
+	appendSingle(operation.OptionMaxFileSize, &values.maxFileSize)
+	appendSingle(operation.OptionMaxExtractedSize, &values.maxExtractedSize)
+	appendSingle(operation.OptionUploadRate, &values.uploadRate)
+	appendSingle(operation.OptionDownloadRate, &values.downloadRate)
+	options = append(options, values.selection.Options()...)
+	return options
+}
+
 func newTransferCommand(dependencies Dependencies) *cobra.Command {
-	var archiveMode operation.BoolValue
-	var extractMode operation.BoolValue
-	var maxExtractedSize operation.SingleValue
-	var selectionValues operation.OrderedValues
+	values := &transferFlagValues{}
 	command := &cobra.Command{
 		Use:   "from <source> to <destination>",
 		Short: "Transfer a file or directory",
@@ -25,23 +62,9 @@ func newTransferCommand(dependencies Dependencies) *cobra.Command {
 			return nil
 		},
 		RunE: func(command *cobra.Command, args []string) error {
-			options := make([]operation.Option, 0, 3+len(selectionValues.Options()))
-			if value, explicit := archiveMode.Value(); explicit {
-				options = append(options, operation.Option{Name: operation.OptionArchive, Value: strconv.FormatBool(value)})
-			}
-			if value, explicit := extractMode.Value(); explicit {
-				options = append(options, operation.Option{Name: operation.OptionExtract, Value: strconv.FormatBool(value)})
-			}
-			if value, explicit := maxExtractedSize.Value(); explicit {
-				options = append(options, operation.Option{Name: operation.OptionMaxExtractedSize, Value: value})
-			}
-			options = append(options, selectionValues.Options()...)
-			plan, err := operation.Build(operation.Request{Source: args[0], Destination: args[2], Options: options})
+			plan, err := operation.Build(operation.Request{Source: args[0], Destination: args[2], Options: values.options()})
 			if err != nil {
 				return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: err}
-			}
-			if plan.Route != operation.RoutePathToPath {
-				return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: errors.New("requested route is planned but not shipped")}
 			}
 			selector := selection.Selector(selection.All())
 			if len(plan.Options.Selection) != 0 {
@@ -53,16 +76,43 @@ func newTransferCommand(dependencies Dependencies) *cobra.Command {
 					return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: err}
 				}
 			}
-			return runTransfer(command.Context(), dependencies, plan, selector, command.OutOrStdout(), command.ErrOrStderr())
+			switch plan.Route {
+			case operation.RoutePathToPath:
+				return runTransfer(command.Context(), dependencies, plan, selector, command.OutOrStdout(), command.ErrOrStderr())
+			case operation.RouteWebToPath, operation.RoutePathToWeb:
+				if dependencies.Web == nil {
+					return &commandError{code: ExitControl, stage: "control", cause: errors.New("web delivery dependencies are incomplete")}
+				}
+				if err := dependencies.Web(command.Context(), plan, command.OutOrStdout()); err != nil {
+					return &commandError{code: ExitControl, stage: "control", cause: err}
+				}
+				return nil
+			default:
+				return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: errors.New("requested route is planned but not shipped")}
+			}
 		},
 	}
-	command.Flags().Var(&archiveMode, "archive", "create and transfer <source-name>.tar.gz")
-	command.Flags().Lookup("archive").NoOptDefVal = "true"
-	command.Flags().Var(&extractMode, "extract", "extract a tar.gz archive into the destination root")
-	command.Flags().Lookup("extract").NoOptDefVal = "true"
-	command.Flags().Var(&maxExtractedSize, "max-extracted-size", "maximum expanded size or unlimited (default 100GiB)")
-	command.Flags().Var(selectionValues.For(operation.OptionExclude), "exclude", "exclude a gitignore pattern")
-	command.Flags().Var(selectionValues.For(operation.OptionExcludeRegex), "exclude-regex", "exclude paths matching a Go regular expression")
-	command.Flags().Var(selectionValues.For(operation.OptionExcludeFrom), "exclude-from", "read gitignore patterns from a local file")
+	boolFlag(command, &values.archive, "archive", "create and transfer <source-name>.tar.gz")
+	boolFlag(command, &values.extract, "extract", "extract a tar.gz archive into the destination root")
+	command.Flags().Var(&values.listen, "listen", "browser delivery bind address (default 127.0.0.1:8080)")
+	boolFlag(command, &values.background, "background", "keep the delivery active after this command exits")
+	command.Flags().Var(&values.auth, "auth", "authentication mode: none, basic, or password")
+	command.Flags().Var(&values.authAttempts, "auth-attempts", "failed authentication threshold (default 5)")
+	command.Flags().Var(&values.authFailAction, "auth-fail-action", "threshold action: ban or stop (default ban)")
+	command.Flags().Var(&values.limit, "limit", "maximum concurrent transfers or unlimited")
+	boolFlag(command, &values.noUI, "no-ui", "serve only the versioned data API")
+	command.Flags().Var(&values.allowIP, "allow-ip", "allow a peer IP or CIDR (repeatable)")
+	command.Flags().Var(values.selection.For(operation.OptionExclude), "exclude", "exclude a gitignore pattern")
+	command.Flags().Var(values.selection.For(operation.OptionExcludeRegex), "exclude-regex", "exclude paths matching a Go regular expression")
+	command.Flags().Var(values.selection.For(operation.OptionExcludeFrom), "exclude-from", "read gitignore patterns from a local file")
+	command.Flags().Var(&values.maxFileSize, "max-file-size", "maximum incoming file size or unlimited (default 10GiB)")
+	command.Flags().Var(&values.maxExtractedSize, "max-extracted-size", "maximum expanded size or unlimited (default 100GiB)")
+	command.Flags().Var(&values.uploadRate, "upload-rate", "aggregate upload rate or unlimited")
+	command.Flags().Var(&values.downloadRate, "download-rate", "aggregate download rate or unlimited")
 	return command
+}
+
+func boolFlag(command *cobra.Command, value *operation.BoolValue, name, usage string) {
+	command.Flags().Var(value, name, usage)
+	command.Flags().Lookup(name).NoOptDefVal = "true"
 }

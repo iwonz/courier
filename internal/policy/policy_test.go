@@ -509,7 +509,7 @@ func TestEngineAuthorizationAndUpdates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if authorization.Session != nil || authorization.Consume(3) != nil || authorization.Consume(1) == nil {
+	if authorization.Session != nil || authorization.Consume(3) != nil || authorization.Consumed() != 3 || authorization.Consume(1) == nil {
 		t.Fatal("unexpected Basic authorization reservation")
 	}
 	if err := authorization.Wait(context.Background(), Upload, 0); err != nil {
@@ -524,7 +524,7 @@ func TestEngineAuthorizationAndUpdates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if nonIncoming.Consume(0) == nil {
+	if nonIncoming.Consumed() != 0 || nonIncoming.Consume(0) == nil {
 		t.Fatal("non-incoming authorization must not consume")
 	}
 	nonIncoming.Release()
@@ -552,6 +552,17 @@ func TestEngineAuthorizationAndUpdates(t *testing.T) {
 	}
 	if err := engine.Update(configured.Version, next); err != nil {
 		t.Fatal(err)
+	}
+	canceledPolicy := engine.Policy()
+	canceledPolicy.Version++
+	prepared, err := engine.PrepareUpdate(next.Version, canceledPolicy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prepared.Cancel()
+	prepared.Commit()
+	if engine.Policy().Version != next.Version {
+		t.Fatal("canceled policy update changed live state")
 	}
 	if _, err := engine.Authorize(context.Background(), good); !errors.Is(err, ErrPeerDenied) {
 		t.Fatalf("updated admission not applied: %v", err)

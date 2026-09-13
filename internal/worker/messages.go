@@ -2,6 +2,7 @@
 package worker
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 )
 
 const MaxCompatibilityLength = 256
+const MaxRuntimeDefinition = 256 * 1024
 
 type HelloRequest struct {
 	ServerID      delivery.ID `json:"serverId"`
@@ -29,13 +31,17 @@ type HelloResponse struct {
 }
 
 type RegisterRequest struct {
-	Delivery delivery.Delivery `json:"delivery"`
-	LeaseID  delivery.ID       `json:"leaseId,omitempty"`
+	Delivery          delivery.Delivery `json:"delivery"`
+	LeaseID           delivery.ID       `json:"leaseId,omitempty"`
+	RuntimeDefinition json.RawMessage   `json:"runtimeDefinition,omitempty"`
 }
 
 func (request RegisterRequest) Validate() error {
 	if err := request.Delivery.Validate(); err != nil {
 		return err
+	}
+	if len(request.RuntimeDefinition) > MaxRuntimeDefinition || len(request.RuntimeDefinition) != 0 && !json.Valid(request.RuntimeDefinition) {
+		return fmt.Errorf("%w: invalid runtime definition", delivery.ErrInvalid)
 	}
 	if request.LeaseID != "" && !request.LeaseID.Valid() {
 		return fmt.Errorf("%w: invalid lease ID", ipc.ErrProtocol)

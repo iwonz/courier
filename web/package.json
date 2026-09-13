@@ -6,12 +6,13 @@
     "node": ">=24"
   },
   "workspaces": [
-    "ui"
+    "ui",
+    "data"
   ],
   "scripts": {
-    "build": "npm run build --workspace @courier/ui",
+    "build": "npm run build --workspace @courier/ui && npm run build --workspace @courier/data",
     "check:assets": "npm run check:assets --workspace @courier/ui",
-    "test": "npm run test --workspace @courier/ui",
-    "verify": "npm run check:assets && npm run test && npm run build"
+    "test": "npm run test --workspace @courier/ui && npm run test --workspace @courier/data",
+    "verify": "npm run check:assets && npm run test && npm run build && npm run check:embed --workspace @courier/data"
   }
 }

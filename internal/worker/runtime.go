@@ -27,6 +27,7 @@ type Runtime struct {
 
 	mutex        sync.Mutex
 	deliveries   map[delivery.ID]delivery.Delivery
+	ownedTemps   map[delivery.ID][]delivery.ID
 	leases       map[delivery.ID]leaseEntry
 	keepalives   map[delivery.ID]bool
 	subscribers  map[delivery.ID]chan ProgressEvent
@@ -35,6 +36,7 @@ type Runtime struct {
 	shutdown     chan struct{}
 	shutdownOnce sync.Once
 	connections  sync.WaitGroup
+	host         DeliveryHost
 }
 
 func NewRuntime(ctx context.Context, store *delivery.Store, server delivery.Server, compatibility string) (*Runtime, error) {
@@ -43,7 +45,7 @@ func NewRuntime(ctx context.Context, store *delivery.Store, server delivery.Serv
 	}
 	runtime := &Runtime{
 		store: store, server: server, compatibility: compatibility, now: time.Now,
-		deliveries: map[delivery.ID]delivery.Delivery{}, leases: map[delivery.ID]leaseEntry{},
+		deliveries: map[delivery.ID]delivery.Delivery{}, ownedTemps: map[delivery.ID][]delivery.ID{}, leases: map[delivery.ID]leaseEntry{},
 		keepalives: map[delivery.ID]bool{}, subscribers: map[delivery.ID]chan ProgressEvent{}, shutdown: make(chan struct{}),
 	}
 	if _, err := updateStore(ctx, store, func(registry *delivery.Registry) error {
@@ -66,6 +68,19 @@ func (runtime *Runtime) HasDeliveries() bool {
 	runtime.mutex.Lock()
 	defer runtime.mutex.Unlock()
 	return len(runtime.deliveries) != 0
+}
+
+func (runtime *Runtime) AttachHost(host DeliveryHost) error {
+	if host == nil {
+		return fmt.Errorf("%w: delivery host is required", delivery.ErrInvalid)
+	}
+	runtime.mutex.Lock()
+	defer runtime.mutex.Unlock()
+	if runtime.host != nil || runtime.listener != nil || len(runtime.deliveries) != 0 {
+		return fmt.Errorf("%w: delivery host cannot be attached", delivery.ErrInvalid)
+	}
+	runtime.host = host
+	return nil
 }
 
 func (runtime *Runtime) Run(listener net.Listener) error {
@@ -116,6 +131,9 @@ func (runtime *Runtime) Register(ctx context.Context, request RegisterRequest, c
 	if request.LeaseID != "" && connection == nil {
 		return RegisterResponse{}, fmt.Errorf("%w: foreground registration requires a connection", delivery.ErrInvalid)
 	}
+	if len(request.RuntimeDefinition) != 0 && runtime.host == nil {
+		return RegisterResponse{}, fmt.Errorf("%w: runtime definition requires a delivery host", delivery.ErrInvalid)
+	}
 
 	runtime.mutex.Lock()
 	defer runtime.mutex.Unlock()
@@ -131,16 +149,36 @@ func (runtime *Runtime) Register(ctx context.Context, request RegisterRequest, c
 		}
 	}
 	item := request.Delivery
+	hostRegistered := false
+	var ownedTemps []delivery.OwnedTemp
+	if runtime.host != nil && len(request.RuntimeDefinition) != 0 {
+		if err := runtime.host.Register(ctx, item, request.RuntimeDefinition); err != nil {
+			return RegisterResponse{}, err
+		}
+		hostRegistered = true
+		ownedTemps = runtime.host.OwnedTemps(item.ID)
+	}
 	if _, err := updateStore(ctx, runtime.store, func(registry *delivery.Registry) error {
 		if err := registry.RegisterDelivery(item); err != nil {
 			return err
 		}
+		for _, temporary := range ownedTemps {
+			if err := registry.AddOwnedTemp(temporary); err != nil {
+				return err
+			}
+		}
 		return registry.TransitionDelivery(item.ID, delivery.StateActive, item.UpdatedAt)
 	}); err != nil {
+		if hostRegistered {
+			err = errors.Join(err, runtime.host.Stop(context.Background(), item.ID))
+		}
 		return RegisterResponse{}, err
 	}
 	item.State = delivery.StateActive
 	runtime.deliveries[item.ID] = item
+	for _, temporary := range ownedTemps {
+		runtime.ownedTemps[item.ID] = append(runtime.ownedTemps[item.ID], temporary.ID)
+	}
 	if request.LeaseID != "" {
 		runtime.leases[request.LeaseID] = leaseEntry{deliveryID: item.ID, connection: connection}
 	}
@@ -197,11 +235,23 @@ func (runtime *Runtime) UpdatePolicy(ctx context.Context, request UpdatePolicyRe
 	if !exists {
 		return fmt.Errorf("%w: delivery %s", delivery.ErrNotFound, request.DeliveryID)
 	}
+	var commitPolicy, cancelPolicy func()
+	if runtime.host != nil {
+		var err error
+		commitPolicy, cancelPolicy, err = runtime.host.PreparePolicy(ctx, request.DeliveryID, request.ExpectedVersion, request.Policy)
+		if err != nil {
+			return err
+		}
+		defer cancelPolicy()
+	}
 	at := runtime.now().UTC()
 	if _, err := updateStore(ctx, runtime.store, func(registry *delivery.Registry) error {
 		return registry.UpdatePolicy(request.DeliveryID, request.ExpectedVersion, request.Policy, at)
 	}); err != nil {
 		return err
+	}
+	if commitPolicy != nil {
+		commitPolicy()
 	}
 	item.Policy = request.Policy
 	item.UpdatedAt = at
@@ -263,6 +313,14 @@ func (runtime *Runtime) StopDelivery(ctx context.Context, id delivery.ID, reason
 		runtime.mutex.Unlock()
 		return false, err
 	}
+	temporaryIDs := append([]delivery.ID(nil), runtime.ownedTemps[id]...)
+	var cleanupErr error
+	if runtime.host != nil {
+		cleanupErr = runtime.host.Stop(ctx, id)
+	}
+	if cleanupErr == nil && len(temporaryIDs) != 0 {
+		cleanupErr = runtime.removeOwnedTemps(ctx, temporaryIDs)
+	}
 	connections := runtime.removeDeliveryLocked(id)
 	if last {
 		runtime.server.State = delivery.StateStopped
@@ -271,7 +329,7 @@ func (runtime *Runtime) StopDelivery(ctx context.Context, id delivery.ID, reason
 	runtime.publishLocked()
 	runtime.mutex.Unlock()
 	closeConnections(connections)
-	return true, nil
+	return true, cleanupErr
 }
 
 func (runtime *Runtime) StopServer(ctx context.Context, reason delivery.TombstoneReason) error {
@@ -303,11 +361,28 @@ func (runtime *Runtime) StopServer(ctx context.Context, reason delivery.Tombston
 		runtime.mutex.Unlock()
 		return err
 	}
+	var cleanupErr error
+	cleanedTemps := make([]delivery.ID, 0)
+	for _, item := range items {
+		var stopErr error
+		if runtime.host != nil {
+			stopErr = runtime.host.Stop(ctx, item.ID)
+		}
+		cleanupErr = errors.Join(cleanupErr, stopErr)
+		if stopErr == nil {
+			cleanedTemps = append(cleanedTemps, runtime.ownedTemps[item.ID]...)
+		}
+	}
+	if len(cleanedTemps) != 0 {
+		tempErr := runtime.removeOwnedTemps(ctx, cleanedTemps)
+		cleanupErr = errors.Join(cleanupErr, tempErr)
+	}
 	connections := make([]net.Conn, 0, len(runtime.leases))
 	for _, lease := range runtime.leases {
 		connections = append(connections, lease.connection)
 	}
 	runtime.deliveries = map[delivery.ID]delivery.Delivery{}
+	runtime.ownedTemps = map[delivery.ID][]delivery.ID{}
 	runtime.leases = map[delivery.ID]leaseEntry{}
 	runtime.keepalives = map[delivery.ID]bool{}
 	runtime.server.State = delivery.StateStopped
@@ -315,7 +390,7 @@ func (runtime *Runtime) StopServer(ctx context.Context, reason delivery.Tombston
 	runtime.publishLocked()
 	runtime.mutex.Unlock()
 	closeConnections(connections)
-	return nil
+	return cleanupErr
 }
 
 func (runtime *Runtime) AcquireKeepalive() (delivery.ID, error) {
@@ -565,6 +640,7 @@ func (runtime *Runtime) deliveryHasLeaseLocked(id delivery.ID) bool {
 
 func (runtime *Runtime) removeDeliveryLocked(id delivery.ID) []net.Conn {
 	delete(runtime.deliveries, id)
+	delete(runtime.ownedTemps, id)
 	connections := []net.Conn{}
 	for leaseID, lease := range runtime.leases {
 		if lease.deliveryID == id {
@@ -573,6 +649,18 @@ func (runtime *Runtime) removeDeliveryLocked(id delivery.ID) []net.Conn {
 		}
 	}
 	return connections
+}
+
+func (runtime *Runtime) removeOwnedTemps(ctx context.Context, ids []delivery.ID) error {
+	_, err := updateStore(ctx, runtime.store, func(registry *delivery.Registry) error {
+		for _, id := range ids {
+			if err := registry.RemoveOwnedTemp(id); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
 }
 
 func (runtime *Runtime) requestShutdownLocked() {

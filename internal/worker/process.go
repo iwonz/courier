@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -37,6 +38,7 @@ var (
 	executablePath      = os.Executable
 	startCommand        = func(name string, arguments ...string) *exec.Cmd { return exec.Command(name, arguments...) }
 	listenData          = func(bind string) (net.Listener, error) { return net.Listen("tcp", bind) }
+	newProcessHost      = newWorkerWebHost
 	openWorkerStore     = delivery.OpenStore
 	listenControl       = ipc.Listen
 	readEnvironment     = os.Getenv
@@ -239,6 +241,21 @@ func runProcess(ctx context.Context, config processConfig) (resultErr error) {
 	if err != nil {
 		return err
 	}
+	host, err := newProcessHost(func(id delivery.ID) {
+		go func() { _, _ = runtime.StopDelivery(context.Background(), id, delivery.ReasonStopped) }()
+	})
+	if err != nil {
+		return err
+	}
+	if host == nil {
+		return fmt.Errorf("%w: process delivery host is required", delivery.ErrInvalid)
+	}
+	_ = runtime.AttachHost(host)
+	serveResult := make(chan error, 1)
+	go func() { serveResult <- host.Serve(data) }()
+	defer func() {
+		resultErr = errors.Join(resultErr, host.Close(context.Background()), <-serveResult)
+	}()
 	controlOwned = false
 	startup := time.AfterFunc(startupTimeout, func() {
 		if !runtime.HasDeliveries() {
@@ -259,7 +276,7 @@ func runProcess(ctx context.Context, config processConfig) (resultErr error) {
 func workerEnvironment(configPath string) []string {
 	allowed := map[string]bool{
 		"HOME": true, "USERPROFILE": true, "TMPDIR": true, "TMP": true, "TEMP": true,
-		"SYSTEMROOT": true, "WINDIR": true, "LANG": true, "LC_ALL": true,
+		"SYSTEMROOT": true, "WINDIR": true, "LANG": true, "LC_ALL": true, "SSH_AUTH_SOCK": true,
 	}
 	result := []string{workerConfigEnvironment + "=" + configPath}
 	for _, entry := range os.Environ() {
@@ -275,6 +292,65 @@ func DefaultCoordinator(store *delivery.Store, stateDirectory string) *Coordinat
 	launcher := ProcessLauncher{StateDirectory: stateDirectory}
 	return &Coordinator{
 		Store: store, StateDirectory: stateDirectory, Locks: FileBindLocker{Directory: stateDirectory},
-		Launch: launcher.Launch,
+		Launch: launcher.Launch, Cleanup: cleanupOwnedTemp,
 	}
+}
+
+type temporaryRoot interface {
+	Lstat(string) (fs.FileInfo, error)
+	Remove(string) error
+	Close() error
+}
+
+var (
+	ownedTempDirectory = os.TempDir
+	openTemporaryRoot  = func(path string) (temporaryRoot, error) { return os.OpenRoot(path) }
+)
+
+func cleanupOwnedTemp(ctx context.Context, temporary delivery.OwnedTemp) (resultErr error) {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if temporary.Location != delivery.TempLocal {
+		return fmt.Errorf("%w: remote temporary cleanup requires its owning transport", delivery.ErrInvalid)
+	}
+	directory := filepath.Clean(ownedTempDirectory())
+	path := filepath.Clean(temporary.Path)
+	name := filepath.Base(path)
+	if filepath.Dir(path) != directory || !validOwnedArchiveName(name) {
+		return fmt.Errorf("%w: temporary archive is outside the private cache", delivery.ErrInvalid)
+	}
+	root, err := openTemporaryRoot(directory)
+	if err != nil {
+		return err
+	}
+	defer func() { resultErr = errors.Join(resultErr, root.Close()) }()
+	info, err := root.Lstat(name)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() {
+		return fmt.Errorf("%w: temporary archive is not a regular file", delivery.ErrInvalid)
+	}
+	return root.Remove(name)
+}
+
+func validOwnedArchiveName(name string) bool {
+	const prefix, suffix = ".courier-", ".tar.gz"
+	if !strings.HasPrefix(name, prefix) || !strings.HasSuffix(name, suffix) {
+		return false
+	}
+	random := strings.TrimSuffix(strings.TrimPrefix(name, prefix), suffix)
+	if random == "" {
+		return false
+	}
+	for _, character := range random {
+		if character < '0' || character > '9' {
+			return false
+		}
+	}
+	return true
 }

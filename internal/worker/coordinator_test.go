@@ -454,7 +454,7 @@ func TestCoordinatorDefaultsAndStaleClassification(t *testing.T) {
 	}
 	defer store.Close()
 	coordinator := DefaultCoordinator(store, store.Directory())
-	if coordinator.Store != store || coordinator.Launch == nil || coordinator.Locks == nil {
+	if coordinator.Store != store || coordinator.Launch == nil || coordinator.Locks == nil || coordinator.Cleanup == nil {
 		t.Fatalf("default=%+v", coordinator)
 	}
 	if !staleProbeError(os.ErrNotExist) || !staleProbeError(syscall.ECONNREFUSED) || !staleProbeError(net.ErrClosed) || staleProbeError(context.DeadlineExceeded) {

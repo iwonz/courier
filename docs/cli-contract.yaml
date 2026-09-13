@@ -1,5 +1,5 @@
 schema_version: 1
-contract_version: 0.9.0
+contract_version: 0.10.0
 target_release: 0.2.0
 language: en
 
@@ -11,7 +11,7 @@ endpoint_kinds:
     status: shipped
     syntax: "[user@]host:/path or [user@]host:C:/path"
   - name: web
-    status: planned
+    status: shipped
     syntax: "web://"
   - name: webhook
     status: planned
@@ -26,7 +26,7 @@ commands:
     usage: courier from <source> to <destination> [options]
     status: shipped
     system: false
-    flags: [archive, extract, exclude, exclude-regex, exclude-from, max-extracted-size]
+    flags: [archive, extract, listen, background, auth, auth-attempts, auth-fail-action, limit, no-ui, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate, download-rate]
   - name: servers
     path: servers
     usage: courier servers
@@ -87,56 +87,56 @@ flags:
     conflicts: [archive]
   - name: listen
     syntax: --listen <host:port>
-    status: planned
+    status: shipped
     repeatable: false
     default: "127.0.0.1:8080"
     applies_to: [web-to-path, path-to-web, webhook-to-path, ui-start]
     conflicts: []
   - name: background
     syntax: --background
-    status: planned
+    status: shipped
     repeatable: false
     default: "false"
     applies_to: [web-to-path, path-to-web, webhook-to-path, ui-start]
     conflicts: []
   - name: auth
     syntax: --auth <none|basic|password>
-    status: planned
+    status: shipped
     repeatable: false
     default: none
     applies_to: [web-to-path, path-to-web, webhook-to-path, path-to-http]
     conflicts: []
   - name: auth-attempts
     syntax: --auth-attempts <N>
-    status: planned
+    status: shipped
     repeatable: false
     default: "5"
     applies_to: [web-to-path, path-to-web, webhook-to-path]
     conflicts: []
   - name: auth-fail-action
     syntax: --auth-fail-action <ban|stop>
-    status: planned
+    status: shipped
     repeatable: false
     default: ban
     applies_to: [web-to-path, path-to-web, webhook-to-path]
     conflicts: []
   - name: limit
     syntax: --limit <N>
-    status: planned
+    status: shipped
     repeatable: false
     default: unlimited
     applies_to: [web-to-path, path-to-web, webhook-to-path]
     conflicts: []
   - name: no-ui
     syntax: --no-ui
-    status: planned
+    status: shipped
     repeatable: false
     default: "false"
     applies_to: [path-to-web]
     conflicts: []
   - name: allow-ip
     syntax: --allow-ip <IP/CIDR>
-    status: planned
+    status: shipped
     repeatable: true
     default: none
     applies_to: [web-to-path, path-to-web, webhook-to-path]
@@ -164,7 +164,7 @@ flags:
     conflicts: []
   - name: max-file-size
     syntax: --max-file-size <size|unlimited>
-    status: planned
+    status: shipped
     repeatable: false
     default: 10GiB
     applies_to: [web-to-path, webhook-to-path]
@@ -178,14 +178,14 @@ flags:
     conflicts: []
   - name: upload-rate
     syntax: --upload-rate <rate|unlimited>
-    status: planned
+    status: shipped
     repeatable: false
     default: unlimited
     applies_to: [local-to-ssh, ssh-to-ssh, web-to-path, webhook-to-path, path-to-http]
     conflicts: []
   - name: download-rate
     syntax: --download-rate <rate|unlimited>
-    status: planned
+    status: shipped
     repeatable: false
     default: unlimited
     applies_to: [ssh-to-local, ssh-to-ssh, path-to-web]
@@ -205,12 +205,12 @@ routes:
     destination: [local, ssh]
     allowed_flags: [archive, extract, exclude, exclude-regex, exclude-from, max-extracted-size, upload-rate, download-rate]
   - name: web-to-path
-    status: planned
+    status: shipped
     source: [web]
     destination: [local, ssh]
     allowed_flags: [extract, listen, background, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
   - name: path-to-web
-    status: planned
+    status: shipped
     source: [local, ssh]
     destination: [web]
     allowed_flags: [archive, listen, background, auth, auth-attempts, auth-fail-action, limit, no-ui, allow-ip, exclude, exclude-regex, exclude-from, download-rate]

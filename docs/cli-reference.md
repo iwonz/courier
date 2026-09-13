@@ -1,6 +1,6 @@
 # Courier CLI reference
 
-Contract version `0.9.0`; target release `0.2.0`. This file is generated from `docs/cli-contract.yaml`.
+Contract version `0.10.0`; target release `0.2.0`. This file is generated from `docs/cli-contract.yaml`.
 
 ## Commands
 
@@ -21,7 +21,7 @@ Contract version `0.9.0`; target release `0.2.0`. This file is generated from `d
 |---|---|---|
 | shipped | `local` | ./path, /absolute/path, or an explicit Windows path |
 | shipped | `ssh` | [user@]host:/path or [user@]host:C:/path |
-| planned | `web` | web:// |
+| shipped | `web` | web:// |
 | planned | `webhook` | webhook:// |
 | planned | `http` | http://host/path or https://host/path |
 
@@ -30,8 +30,8 @@ Contract version `0.9.0`; target release `0.2.0`. This file is generated from `d
 | Status | Route | Source | Destination | Allowed options |
 |---|---|---|---|---|
 | shipped | `path-to-path` | local, ssh | local, ssh | `--archive`, `--extract`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-extracted-size`, `--upload-rate`, `--download-rate` |
-| planned | `web-to-path` | web | local, ssh | `--extract`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
-| planned | `path-to-web` | local, ssh | web | `--archive`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--no-ui`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--download-rate` |
+| shipped | `web-to-path` | web | local, ssh | `--extract`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
+| shipped | `path-to-web` | local, ssh | web | `--archive`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--no-ui`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--download-rate` |
 | planned | `webhook-to-path` | webhook | local, ssh | `--extract`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
 | planned | `path-to-http` | local, ssh | http | `--archive`, `--auth`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--upload-rate` |
 
@@ -41,21 +41,21 @@ Contract version `0.9.0`; target release `0.2.0`. This file is generated from `d
 |---|---|---:|---|---|---|
 | shipped | `--archive` | false | `false` | path-to-path, path-to-web, path-to-http | extract |
 | shipped | `--extract` | false | `false` | path-to-path, web-to-path, webhook-to-path | archive |
-| planned | `--listen <host:port>` | false | `127.0.0.1:8080` | web-to-path, path-to-web, webhook-to-path, ui-start | none |
-| planned | `--background` | false | `false` | web-to-path, path-to-web, webhook-to-path, ui-start | none |
-| planned | `--auth <none|basic|password>` | false | `none` | web-to-path, path-to-web, webhook-to-path, path-to-http | none |
-| planned | `--auth-attempts <N>` | false | `5` | web-to-path, path-to-web, webhook-to-path | none |
-| planned | `--auth-fail-action <ban|stop>` | false | `ban` | web-to-path, path-to-web, webhook-to-path | none |
-| planned | `--limit <N>` | false | `unlimited` | web-to-path, path-to-web, webhook-to-path | none |
-| planned | `--no-ui` | false | `false` | path-to-web | none |
-| planned | `--allow-ip <IP/CIDR>` | true | `none` | web-to-path, path-to-web, webhook-to-path | none |
+| shipped | `--listen <host:port>` | false | `127.0.0.1:8080` | web-to-path, path-to-web, webhook-to-path, ui-start | none |
+| shipped | `--background` | false | `false` | web-to-path, path-to-web, webhook-to-path, ui-start | none |
+| shipped | `--auth <none|basic|password>` | false | `none` | web-to-path, path-to-web, webhook-to-path, path-to-http | none |
+| shipped | `--auth-attempts <N>` | false | `5` | web-to-path, path-to-web, webhook-to-path | none |
+| shipped | `--auth-fail-action <ban|stop>` | false | `ban` | web-to-path, path-to-web, webhook-to-path | none |
+| shipped | `--limit <N>` | false | `unlimited` | web-to-path, path-to-web, webhook-to-path | none |
+| shipped | `--no-ui` | false | `false` | path-to-web | none |
+| shipped | `--allow-ip <IP/CIDR>` | true | `none` | web-to-path, path-to-web, webhook-to-path | none |
 | shipped | `--exclude <pattern>` | true | `none` | path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http | none |
 | shipped | `--exclude-regex <regex>` | true | `none` | path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http | none |
 | shipped | `--exclude-from <file>` | true | `none` | path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http | none |
-| planned | `--max-file-size <size|unlimited>` | false | `10GiB` | web-to-path, webhook-to-path | none |
+| shipped | `--max-file-size <size|unlimited>` | false | `10GiB` | web-to-path, webhook-to-path | none |
 | shipped | `--max-extracted-size <size|unlimited>` | false | `100GiB` | path-to-path, web-to-path, webhook-to-path | none |
-| planned | `--upload-rate <rate|unlimited>` | false | `unlimited` | local-to-ssh, ssh-to-ssh, web-to-path, webhook-to-path, path-to-http | none |
-| planned | `--download-rate <rate|unlimited>` | false | `unlimited` | ssh-to-local, ssh-to-ssh, path-to-web | none |
+| shipped | `--upload-rate <rate|unlimited>` | false | `unlimited` | local-to-ssh, ssh-to-ssh, web-to-path, webhook-to-path, path-to-http | none |
+| shipped | `--download-rate <rate|unlimited>` | false | `unlimited` | ssh-to-local, ssh-to-ssh, path-to-web | none |
 | planned | `--all` | false | `false` | servers-stop | none |
 
 ## Explicitly unsupported

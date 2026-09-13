@@ -19,6 +19,7 @@ import (
 	"github.com/iwonz/courier/internal/fsx"
 	"github.com/iwonz/courier/internal/helper"
 	"github.com/iwonz/courier/internal/operation"
+	"github.com/iwonz/courier/internal/policy"
 	"github.com/iwonz/courier/internal/progress"
 	"github.com/iwonz/courier/internal/report"
 	"github.com/iwonz/courier/internal/safety"
@@ -26,6 +27,7 @@ import (
 	"github.com/iwonz/courier/internal/sshx"
 	"github.com/iwonz/courier/internal/transfer"
 	"github.com/iwonz/courier/internal/update"
+	"github.com/iwonz/courier/internal/webdelivery"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/term"
@@ -50,17 +52,20 @@ type Resource struct {
 
 // Dependencies makes command orchestration locally testable.
 type Dependencies struct {
-	Open         func(context.Context, endpoint.Endpoint) (*Resource, error)
-	OpenArtifact func(string) (fsx.Backend, string, func() error, error)
-	Transfer     func(context.Context, transfer.Request) (transfer.Result, error)
-	Archive      func(context.Context, fsx.Backend, string, string, string, selection.Selector, progress.Sink) (*archive.Artifact, error)
-	Extract      func(context.Context, archive.ExtractionRequest) (archive.ExtractionResult, error)
-	Select       func([]operation.SelectionRule) (selection.Selector, error)
-	Update       func(context.Context) (update.Result, error)
-	Reporter     func(io.Writer, bool) *report.Reporter
-	Terminal     func(io.Writer) bool
-	TempDir      string
-	Build        BuildIdentity
+	Open           func(context.Context, endpoint.Endpoint) (*Resource, error)
+	OpenArtifact   func(string) (fsx.Backend, string, func() error, error)
+	Transfer       func(context.Context, transfer.Request) (transfer.Result, error)
+	Archive        func(context.Context, fsx.Backend, string, string, string, selection.Selector, progress.Sink) (*archive.Artifact, error)
+	Extract        func(context.Context, archive.ExtractionRequest) (archive.ExtractionResult, error)
+	Web            func(context.Context, operation.Plan, io.Writer) error
+	WebCredentials func(context.Context, operation.AuthMode) (policy.Credentials, error)
+	WebEndpoint    func(context.Context, endpoint.Endpoint) (webdelivery.EndpointRuntime, error)
+	Select         func([]operation.SelectionRule) (selection.Selector, error)
+	Update         func(context.Context) (update.Result, error)
+	Reporter       func(io.Writer, bool) *report.Reporter
+	Terminal       func(io.Writer) bool
+	TempDir        string
+	Build          BuildIdentity
 }
 
 // BuildIdentity is the version metadata rendered by the version command.
@@ -96,6 +101,7 @@ var (
 		return factory.Open(ctx, host, username)
 	}
 	detectSSHPlatform  = sshx.DetectPlatform
+	closeSSHConnection = (*sshx.Connection).Close
 	terminalAttached   = term.IsTerminal
 	readTerminalSecret = term.ReadPassword
 )
@@ -150,7 +156,7 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 		return &Resource{Endpoint: effective, Backend: sshx.NewSFTPBackend(connection.SFTP), Path: value.Path, Close: connection.Close}, nil
 	}
 	archiveRegistry := archive.DefaultRegistry()
-	return Dependencies{
+	dependencies := Dependencies{
 		Open: open,
 		OpenArtifact: func(name string) (fsx.Backend, string, func() error, error) {
 			backend, relative, err := openRootedPath(name)
@@ -165,11 +171,15 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 		Select: func(rules []operation.SelectionRule) (selection.Selector, error) {
 			return selection.Compile(rules, selection.OpenFile)
 		},
-		Update:   updater.Run,
-		Reporter: report.New,
-		Terminal: writerIsTerminal,
-		Build:    BuildIdentity{Version: buildinfo.Version, Commit: buildinfo.Commit, Date: buildinfo.Date},
-	}, nil
+		Update:         updater.Run,
+		Reporter:       report.New,
+		Terminal:       writerIsTerminal,
+		Build:          BuildIdentity{Version: buildinfo.Version, Commit: buildinfo.Commit, Date: buildinfo.Date},
+		WebCredentials: deliveryCredentialPrompt(input, promptOutput),
+		WebEndpoint:    endpointCredentialProvider(factory),
+	}
+	dependencies.Web = webRunner(dependencies.WebCredentials, dependencies.WebEndpoint)
+	return dependencies, nil
 }
 
 func terminalConfirmation(input *os.File, output io.Writer) helper.Confirm {
