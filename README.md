@@ -10,7 +10,7 @@ The project is developed spec-first: every task has its own path under `openspec
 
 ## Development
 
-Go 1.24 or newer is required.
+Go 1.25 or newer is required.
 
 ```sh
 go test ./...
