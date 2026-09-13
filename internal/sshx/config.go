@@ -117,7 +117,7 @@ func (c *Config) Resolve(alias, explicitUser, defaultUser, knownHosts string) (T
 		return Target{}, err
 	}
 	for index, identity := range identities {
-		identities[index] = expandTokens(identity, c.home, host, user, port)
+		identities[index] = filepath.Clean(expandTokens(identity, c.home, host, user, port))
 	}
 	proxyJump, err := get("ProxyJump")
 	if err != nil {

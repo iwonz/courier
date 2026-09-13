@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -37,7 +38,7 @@ func TestCreateVerifyAndCleanup(t *testing.T) {
 	if artifact.Name != "source.tar.gz" || artifact.Bytes == 0 || events[len(events)-1].Stage != progress.StageComplete {
 		t.Fatalf("artifact=%+v events=%v", artifact, events)
 	}
-	if info, err := os.Stat(artifact.Path); err != nil || info.Mode().Perm() != 0o600 {
+	if info, err := os.Stat(artifact.Path); err != nil || runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
 		t.Fatalf("info=%v err=%v", info, err)
 	}
 	if err := Verify(artifact.Path); err != nil {

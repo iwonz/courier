@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -40,7 +41,7 @@ func TestLocalBackend(t *testing.T) {
 		t.Fatal(err)
 	}
 	info, err := backend.Lstat(file)
-	if err != nil || info.Mode().Perm() != 0o640 || !info.ModTime().Equal(stamp) {
+	if err != nil || runtime.GOOS != "windows" && info.Mode().Perm() != 0o640 || !info.ModTime().Equal(stamp) {
 		t.Fatalf("info=%v err=%v", info, err)
 	}
 	reader, err := backend.Open(file)

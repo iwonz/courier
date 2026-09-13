@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"errors"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -56,11 +57,11 @@ func TestResolveDestination(t *testing.T) {
 		name        string
 		want        string
 	}{
-		{"./backup/", false, "", "backup/photos"},
+		{"./backup/", false, "", filepath.Join("backup", "photos")},
 		{`C:\backup\`, false, "", `C:\backup\photos`},
 		{"other:/backup/", false, "photos.tar.gz", "/backup/photos.tar.gz"},
 		{"./exact", false, "", "./exact"},
-		{"./existing", true, "", "existing/photos"},
+		{"./existing", true, "", filepath.Join("existing", "photos")},
 	} {
 		destination, _ := Parse(test.destination)
 		got, err := ResolveDestination(source, destination, test.isDir, test.name)

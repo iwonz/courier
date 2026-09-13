@@ -271,6 +271,9 @@ func newUpdateCommand(run func(context.Context) (update.Result, error)) *cobra.C
 
 // Execute runs a root with explicit arguments and stable exit-code mapping.
 func Execute(ctx context.Context, root *cobra.Command, args []string, stdout, stderr io.Writer) int {
+	if args == nil {
+		args = []string{}
+	}
 	root.SetArgs(args)
 	root.SetOut(stdout)
 	root.SetErr(stderr)

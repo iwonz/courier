@@ -341,7 +341,16 @@ func TestUpdaterDefaultRuntimeWindowsAndRunFailures(t *testing.T) {
 			t.Fatal(err)
 		}
 		currentExecutable = func() (string, error) { return target, nil }
-		if _, err := (Updater{Version: "dev"}).Run(context.Background()); err != nil {
+		updater := Updater{Version: "dev"}
+		if runtimeOS == "windows" {
+			updater.Handoff = func(staged, destination string, pid int) error {
+				if destination != target || pid <= 0 {
+					t.Fatalf("handoff destination=%q PID=%d", destination, pid)
+				}
+				return os.Rename(staged, destination)
+			}
+		}
+		if _, err := updater.Run(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 	})

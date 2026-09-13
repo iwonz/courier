@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -36,7 +37,7 @@ func TestRootedLocal(t *testing.T) {
 		t.Fatal(err)
 	}
 	info, err := backend.Lstat(relative)
-	if err != nil || info.Mode().Perm() != 0o640 {
+	if err != nil || runtime.GOOS != "windows" && info.Mode().Perm() != 0o640 {
 		t.Fatalf("info=%v err=%v", info, err)
 	}
 	entries, err := backend.ReadDir("missing")
