@@ -2,13 +2,15 @@ package app
 
 import (
 	"errors"
+	"strconv"
 
+	"github.com/iwonz/courier/internal/operation"
 	"github.com/iwonz/courier/internal/progress"
 	"github.com/spf13/cobra"
 )
 
 func newTransferCommand(dependencies Dependencies) *cobra.Command {
-	archiveMode := false
+	var archiveMode operation.BoolValue
 	command := &cobra.Command{
 		Use:   "from <source> to <destination>",
 		Short: "Transfer a file or directory",
@@ -19,9 +21,18 @@ func newTransferCommand(dependencies Dependencies) *cobra.Command {
 			return nil
 		},
 		RunE: func(command *cobra.Command, args []string) error {
-			return runTransfer(command.Context(), dependencies, args[0], args[2], archiveMode, command.OutOrStdout(), command.ErrOrStderr())
+			options := make([]operation.Option, 0, 1)
+			if value, explicit := archiveMode.Value(); explicit {
+				options = append(options, operation.Option{Name: operation.OptionArchive, Value: strconv.FormatBool(value)})
+			}
+			plan, err := operation.Build(operation.Request{Source: args[0], Destination: args[2], Options: options})
+			if err != nil {
+				return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: err}
+			}
+			return runTransfer(command.Context(), dependencies, plan, command.OutOrStdout(), command.ErrOrStderr())
 		},
 	}
-	command.Flags().BoolVar(&archiveMode, "archive", false, "create and transfer <source-name>.tar.gz")
+	command.Flags().Var(&archiveMode, "archive", "create and transfer <source-name>.tar.gz")
+	command.Flags().Lookup("archive").NoOptDefVal = "true"
 	return command
 }

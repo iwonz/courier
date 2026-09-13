@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iwonz/courier/internal/endpoint"
+	"github.com/iwonz/courier/internal/operation"
 	"github.com/spf13/cobra"
 )
 
@@ -79,9 +81,13 @@ func TestValidateFailures(t *testing.T) {
 		{"flag behavior", func(c *Contract) { c.Flags[0].AppliesTo = nil }},
 		{"unknown conflict", func(c *Contract) { c.Flags[0].Conflicts = []string{"missing"} }},
 		{"duplicate conflict", func(c *Contract) { c.Flags[0].Conflicts = []string{"archive", "archive"} }},
+		{"unknown applicability", func(c *Contract) { c.Flags[0].AppliesTo = []string{"missing"} }},
+		{"duplicate applicability", func(c *Contract) { c.Flags[0].AppliesTo = []string{"path-to-path", "path-to-path"} }},
 		{"source endpoint", func(c *Contract) { c.Routes[0].Source = []string{"missing"} }},
 		{"destination endpoint", func(c *Contract) { c.Routes[0].Destination = []string{"missing"} }},
 		{"route flag", func(c *Contract) { c.Routes[0].AllowedFlags = []string{"missing"} }},
+		{"inapplicable route flag", func(c *Contract) { c.Flags[0].AppliesTo = []string{"from"} }},
+		{"missing route flag", func(c *Contract) { c.Routes[0].AllowedFlags = nil }},
 		{"inventory", func(c *Contract) { c.Unsupported = nil }},
 	}
 	for _, test := range tests {
@@ -90,6 +96,54 @@ func TestValidateFailures(t *testing.T) {
 			test.mutate(&value)
 			if err := value.Validate(); err == nil {
 				t.Fatal("expected validation error")
+			}
+		})
+	}
+}
+
+func plannerContractAndMatrix() (Contract, operation.Matrix) {
+	value := validContract()
+	matrix := operation.Matrix{
+		EndpointKinds: []operation.MatrixEndpoint{{Kind: "local"}},
+		Routes:        []operation.RouteDefinition{{Route: operation.RoutePathToPath, Sources: []endpoint.Kind{endpoint.KindLocal}, Destinations: []endpoint.Kind{endpoint.KindLocal}}},
+		Options:       map[operation.OptionName][]string{operation.OptionArchive: {"path-to-path"}},
+		Allowed:       map[operation.Route][]operation.OptionName{operation.RoutePathToPath: {operation.OptionArchive}},
+	}
+	return value, matrix
+}
+
+func TestCheckPlanner(t *testing.T) {
+	value, matrix := plannerContractAndMatrix()
+	if err := value.CheckPlanner(matrix); err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name   string
+		mutate func(*Contract, *operation.Matrix)
+	}{
+		{"endpoint", func(_ *Contract, matrix *operation.Matrix) { matrix.EndpointKinds[0].Kind = "ssh" }},
+		{"duplicate route", func(_ *Contract, matrix *operation.Matrix) { matrix.Routes = append(matrix.Routes, matrix.Routes[0]) }},
+		{"missing route", func(_ *Contract, matrix *operation.Matrix) { matrix.Routes = nil }},
+		{"route source", func(_ *Contract, matrix *operation.Matrix) {
+			matrix.Routes[0].Sources = []endpoint.Kind{endpoint.KindSSH}
+		}},
+		{"route destination", func(_ *Contract, matrix *operation.Matrix) {
+			matrix.Routes[0].Destinations = []endpoint.Kind{endpoint.KindSSH}
+		}},
+		{"route option", func(_ *Contract, matrix *operation.Matrix) { matrix.Allowed[operation.RoutePathToPath] = nil }},
+		{"undocumented route", func(contract *Contract, _ *operation.Matrix) { contract.Routes = nil }},
+		{"missing option", func(_ *Contract, matrix *operation.Matrix) { delete(matrix.Options, operation.OptionArchive) }},
+		{"option scope", func(_ *Contract, matrix *operation.Matrix) {
+			matrix.Options[operation.OptionArchive] = []string{"path-to-web"}
+		}},
+		{"undocumented option", func(contract *Contract, _ *operation.Matrix) { contract.Flags = nil }},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			value, matrix := plannerContractAndMatrix()
+			test.mutate(&value, &matrix)
+			if err := value.CheckPlanner(matrix); err == nil {
+				t.Fatal("expected planner parity error")
 			}
 		})
 	}
@@ -104,6 +158,14 @@ func TestReferenceEmptyAndSystemValues(t *testing.T) {
 	reference := string(value.Reference())
 	if !strings.Contains(reference, "| system |") || !strings.Contains(reference, "| none |") || !strings.Contains(reference, "| archive |") {
 		t.Fatalf("reference=%s", reference)
+	}
+}
+
+func TestDirectionApplicability(t *testing.T) {
+	value := validContract()
+	value.Flags[0].AppliesTo = []string{"local-to-ssh"}
+	if err := value.Validate(); err != nil {
+		t.Fatal(err)
 	}
 }
 

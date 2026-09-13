@@ -123,6 +123,22 @@ func (c Contract) Validate() error {
 			return fmt.Errorf("flag %q: %w", flag.Name, err)
 		}
 	}
+	applicability := map[string]struct{}{
+		"local-to-local": {}, "local-to-ssh": {}, "ssh-to-local": {}, "ssh-to-ssh": {},
+	}
+	for name := range routes {
+		applicability[name] = struct{}{}
+	}
+	for name := range commands {
+		applicability[name] = struct{}{}
+	}
+	flagValues := make(map[string]Flag, len(c.Flags))
+	for _, flag := range c.Flags {
+		if err := references("applicability", flag.AppliesTo, applicability); err != nil {
+			return fmt.Errorf("flag %q: %w", flag.Name, err)
+		}
+		flagValues[flag.Name] = flag
+	}
 	for _, route := range c.Routes {
 		if err := references("source endpoint", route.Source, endpoints); err != nil {
 			return fmt.Errorf("route %q: %w", route.Name, err)
@@ -133,11 +149,47 @@ func (c Contract) Validate() error {
 		if err := references("allowed flag", route.AllowedFlags, flags); err != nil {
 			return fmt.Errorf("route %q: %w", route.Name, err)
 		}
+		for _, name := range route.AllowedFlags {
+			if !appliesToRoute(flagValues[name], route.Name) {
+				return fmt.Errorf("route %q allows inapplicable flag %q", route.Name, name)
+			}
+		}
+	}
+	allowedByRoute := make(map[string]map[string]bool, len(c.Routes))
+	for _, route := range c.Routes {
+		allowedByRoute[route.Name] = make(map[string]bool, len(route.AllowedFlags))
+		for _, name := range route.AllowedFlags {
+			allowedByRoute[route.Name][name] = true
+		}
+	}
+	for _, flag := range c.Flags {
+		for _, scope := range flag.AppliesTo {
+			route := scope
+			if isPathDirection(scope) {
+				route = "path-to-path"
+			}
+			if _, isRoute := routes[route]; isRoute && !allowedByRoute[route][flag.Name] {
+				return fmt.Errorf("flag %q applies to route %q but is not allowed by it", flag.Name, route)
+			}
+		}
 	}
 	if len(commands) == 0 || len(routes) == 0 || len(c.Unsupported) == 0 || len(c.Examples) == 0 {
 		return errors.New("contract inventory is incomplete")
 	}
 	return nil
+}
+
+func appliesToRoute(flag Flag, route string) bool {
+	for _, scope := range flag.AppliesTo {
+		if scope == route || route == "path-to-path" && isPathDirection(scope) {
+			return true
+		}
+	}
+	return false
+}
+
+func isPathDirection(value string) bool {
+	return value == "local-to-local" || value == "local-to-ssh" || value == "ssh-to-local" || value == "ssh-to-ssh"
 }
 
 type contractItem interface {

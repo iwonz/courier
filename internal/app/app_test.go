@@ -44,6 +44,8 @@ func TestCommandsAndExitCodes(t *testing.T) {
 		{name: "version args", args: []string{"version", "extra"}, code: ExitCLI, wantError: "stage: preflight"},
 		{name: "unknown", args: []string{"unknown"}, code: ExitCLI, wantError: "unknown command"},
 		{name: "invalid transfer grammar", args: []string{"from", "a", "into", "b"}, code: ExitCLI, wantError: "expected: courier from"},
+		{name: "unsupported transfer route", args: []string{"from", "https://example.test/file", "to", "out"}, code: ExitCLI, wantError: "unsupported operation route"},
+		{name: "duplicate archive", args: []string{"from", "a", "to", "b", "--archive", "--archive"}, code: ExitCLI, wantError: "value may only be set once"},
 		{name: "current update", args: []string{"update"}, code: ExitOK, wantOutput: "courier v1.2.3 is current"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -199,8 +201,8 @@ func TestTransferFailurePathsAndCleanup(t *testing.T) {
 		wantStage string
 		wantText  string
 	}{
-		{name: "invalid source", args: []string{"from", "", "to", "out"}, wantCode: ExitTransfer, wantStage: "preflight", wantText: "empty value"},
-		{name: "invalid destination", args: []string{"from", "in", "to", "bad\x00path"}, wantCode: ExitTransfer, wantStage: "preflight", wantText: "control character"},
+		{name: "invalid source", args: []string{"from", "", "to", "out"}, wantCode: ExitCLI, wantStage: "preflight", wantText: "empty value"},
+		{name: "invalid destination", args: []string{"from", "in", "to", "bad\x00path"}, wantCode: ExitCLI, wantStage: "preflight", wantText: "control character"},
 		{name: "incomplete", args: []string{"from", "in", "to", "out"}, mutate: func(dependencies *Dependencies) { dependencies.Transfer = nil }, wantCode: ExitTransfer, wantStage: "preflight", wantText: "incomplete"},
 		{name: "local open", args: []string{"from", "in", "to", "out"}, mutate: func(dependencies *Dependencies) {
 			dependencies.Open = func(context.Context, endpoint.Endpoint) (*Resource, error) { return nil, errors.New("local open") }

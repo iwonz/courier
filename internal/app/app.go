@@ -18,6 +18,7 @@ import (
 	"github.com/iwonz/courier/internal/endpoint"
 	"github.com/iwonz/courier/internal/fsx"
 	"github.com/iwonz/courier/internal/helper"
+	"github.com/iwonz/courier/internal/operation"
 	"github.com/iwonz/courier/internal/progress"
 	"github.com/iwonz/courier/internal/report"
 	"github.com/iwonz/courier/internal/safety"
@@ -239,24 +240,19 @@ type transferOutcome struct {
 	result      transfer.Result
 }
 
-func runTransfer(ctx context.Context, dependencies Dependencies, sourceText, destinationText string, archiveMode bool, stdout, stderr io.Writer) error {
-	outcome, err := performTransfer(ctx, dependencies, sourceText, destinationText, archiveMode, stderr)
+func runTransfer(ctx context.Context, dependencies Dependencies, plan operation.Plan, stdout, stderr io.Writer) error {
+	outcome, err := performTransfer(ctx, dependencies, plan, stderr)
 	if err != nil {
 		return err
 	}
-	report.Success(stdout, sourceText, outcome.destination, outcome.result.Bytes, outcome.result.Elapsed)
+	report.Success(stdout, plan.Source.Raw, outcome.destination, outcome.result.Bytes, outcome.result.Elapsed)
 	return nil
 }
 
-func performTransfer(ctx context.Context, dependencies Dependencies, sourceText, destinationText string, archiveMode bool, stderr io.Writer) (outcome transferOutcome, resultErr error) {
-	sourceEndpoint, err := endpoint.Parse(sourceText)
-	if err != nil {
-		return transferOutcome{}, transferCommandError(progress.StagePreflight, err, 0)
-	}
-	destinationEndpoint, err := endpoint.Parse(destinationText)
-	if err != nil {
-		return transferOutcome{}, transferCommandError(progress.StagePreflight, err, 0)
-	}
+func performTransfer(ctx context.Context, dependencies Dependencies, plan operation.Plan, stderr io.Writer) (outcome transferOutcome, resultErr error) {
+	sourceEndpoint := plan.Source
+	destinationEndpoint := plan.Destination
+	archiveMode := plan.Options.Archive
 	if dependencies.Open == nil || dependencies.Transfer == nil || dependencies.Reporter == nil || dependencies.Terminal == nil || archiveMode && (dependencies.Archive == nil || dependencies.OpenArtifact == nil) {
 		return transferOutcome{}, transferCommandError(progress.StagePreflight, errors.New("transfer dependencies are incomplete"), 0)
 	}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/iwonz/courier/internal/app"
 	"github.com/iwonz/courier/internal/contract"
+	"github.com/iwonz/courier/internal/operation"
 	"github.com/spf13/cobra"
 )
 
@@ -41,6 +42,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	if err := value.CheckCobra(root()); err != nil {
 		fmt.Fprintf(stderr, "check Cobra parity: %v\n", err)
+		return 1
+	}
+	if err := value.CheckPlanner(operation.ContractMatrix()); err != nil {
+		fmt.Fprintf(stderr, "check planner parity: %v\n", err)
 		return 1
 	}
 	reference := value.Reference()

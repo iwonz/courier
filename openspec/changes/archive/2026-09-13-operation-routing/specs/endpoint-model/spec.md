@@ -1,9 +1,4 @@
-# endpoint-model Specification
-
-## Purpose
-Define unambiguous local, SSH, service, and HTTP endpoint parsing plus path destination resolution.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Endpoint parsing
 
@@ -43,22 +38,3 @@ Courier SHALL classify local paths, SSH paths, exact `web://` and `webhook://` s
 
 - **WHEN** a valid endpoint contains Unicode or spaces in its path
 - **THEN** the path is retained byte-for-byte
-
-### Requirement: Destination semantics
-
-Courier SHALL place the result beneath destination using the source name when destination exists as a directory or has a trailing separator; otherwise it SHALL treat destination as the exact final path.
-
-#### Scenario: Directory destination
-
-- **WHEN** source is `/data/photos` and destination is `/backup/`
-- **THEN** actual destination is `/backup/photos`
-
-#### Scenario: Exact destination
-
-- **WHEN** destination `/backup/current` is not a directory and has no trailing separator
-- **THEN** actual destination is `/backup/current`
-
-#### Scenario: Archive output name
-
-- **WHEN** archive mode supplies output name `photos.tar.gz` for directory destination `/backup/`
-- **THEN** actual destination is `/backup/photos.tar.gz`

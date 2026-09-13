@@ -203,7 +203,7 @@ routes:
     status: shipped
     source: [local, ssh]
     destination: [local, ssh]
-    allowed_flags: [archive]
+    allowed_flags: [archive, extract, exclude, exclude-regex, exclude-from, max-extracted-size, upload-rate, download-rate]
   - name: web-to-path
     status: planned
     source: [web]
@@ -223,7 +223,7 @@ routes:
     status: planned
     source: [local, ssh]
     destination: [http]
-    allowed_flags: [archive, auth, exclude, exclude-regex, exclude-from, upload-rate, download-rate]
+    allowed_flags: [archive, auth, exclude, exclude-regex, exclude-from, upload-rate]
 
 unsupported:
   - courier servers list

@@ -13,15 +13,11 @@ import (
 )
 
 func toolContract() contract.Contract {
-	return contract.Contract{
-		Commands: []contract.Command{
-			{Name: "from", Path: "from", Status: "shipped", Flags: []string{"archive"}},
-			{Name: "help", Path: "help", Status: "system", System: true},
-			{Name: "update", Path: "update", Status: "shipped", System: true},
-			{Name: "version", Path: "version", Status: "shipped", System: true},
-		},
-		Flags: []contract.Flag{{Name: "archive"}},
+	value, err := contract.Load("../../docs/cli-contract.yaml")
+	if err != nil {
+		panic(err)
 	}
+	return value
 }
 
 func restoreGlobals(t *testing.T) {
@@ -118,5 +114,17 @@ func TestMain(t *testing.T) {
 	main()
 	if exited != 0 {
 		t.Fatalf("exit=%d", exited)
+	}
+}
+
+func TestRunPlannerFailure(t *testing.T) {
+	restoreGlobals(t)
+	value := toolContract()
+	value.EndpointKinds = append(value.EndpointKinds, contract.Endpoint{Name: "extra", Status: "planned", Syntax: "extra://"})
+	load = func(string) (contract.Contract, error) { return value, nil }
+	root = func() *cobra.Command { return app.NewRoot(app.Dependencies{}) }
+	var stderr bytes.Buffer
+	if code := run(nil, io.Discard, &stderr); code != 1 || !bytes.Contains(stderr.Bytes(), []byte("check planner parity")) {
+		t.Fatalf("code=%d stderr=%q", code, stderr.String())
 	}
 }

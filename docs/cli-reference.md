@@ -29,11 +29,11 @@ Contract version `0.8.0`; target release `0.2.0`. This file is generated from `d
 
 | Status | Route | Source | Destination | Allowed options |
 |---|---|---|---|---|
-| shipped | `path-to-path` | local, ssh | local, ssh | `--archive` |
+| shipped | `path-to-path` | local, ssh | local, ssh | `--archive`, `--extract`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-extracted-size`, `--upload-rate`, `--download-rate` |
 | planned | `web-to-path` | web | local, ssh | `--extract`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
 | planned | `path-to-web` | local, ssh | web | `--archive`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--no-ui`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--download-rate` |
 | planned | `webhook-to-path` | webhook | local, ssh | `--extract`, `--listen`, `--background`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
-| planned | `path-to-http` | local, ssh | http | `--archive`, `--auth`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--upload-rate`, `--download-rate` |
+| planned | `path-to-http` | local, ssh | http | `--archive`, `--auth`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--upload-rate` |
 
 ## Options
 
