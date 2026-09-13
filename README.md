@@ -136,6 +136,8 @@ See [Server control](docs/server-control.md) for authoritative inventory, UUID-s
 
 See [Administration UI](docs/admin-ui.md) for foreground/background startup, local API guards, live state, and optimistic policy editing.
 
+See [Project landing](docs/project-landing.md) for contract-backed static content, shared UI behavior, verification, and repository-owned GitHub Pages deployment.
+
 ## License
 
 [MIT](LICENSE)

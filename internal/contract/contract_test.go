@@ -161,6 +161,31 @@ func TestReferenceEmptyAndSystemValues(t *testing.T) {
 	}
 }
 
+func TestLandingProjection(t *testing.T) {
+	value := validContract()
+	value.EndpointKinds = append(value.EndpointKinds, Endpoint{Name: "future", Status: "planned", Syntax: "future://"})
+	value.Commands = append(value.Commands,
+		Command{Name: "help", Path: "help", Usage: "courier help", Status: "system", System: true},
+		Command{Name: "future", Path: "future", Usage: "courier future", Status: "planned"},
+	)
+	value.Flags = append(value.Flags, Flag{Name: "future", Syntax: "--future", Status: "planned", Default: "false", AppliesTo: []string{"path-to-path"}})
+	value.Routes = append(value.Routes, Route{Name: "future", Status: "planned", Source: []string{"local"}, Destination: []string{"local"}})
+	landing := value.Landing()
+	if len(landing.Endpoints) != 1 || len(landing.Commands) != 2 || len(landing.Flags) != 1 || len(landing.Routes) != 1 || !landing.Commands[1].System {
+		t.Fatalf("landing=%+v", landing)
+	}
+	encoded := string(value.LandingJSON())
+	if !strings.HasSuffix(encoded, "\n") || strings.Contains(encoded, "future") || !strings.Contains(encoded, `"contractVersion": "0.8.0"`) {
+		t.Fatalf("landing JSON=%s", encoded)
+	}
+	landing.Commands[0].Flags[0] = "changed"
+	landing.Routes[0].Source[0] = "changed"
+	landing.Flags[0].AppliesTo[0] = "changed"
+	if value.Commands[0].Flags[0] != "archive" || value.Routes[0].Source[0] != "local" || value.Flags[0].AppliesTo[0] != "path-to-path" {
+		t.Fatal("landing projection aliases contract slices")
+	}
+}
+
 func TestDirectionApplicability(t *testing.T) {
 	value := validContract()
 	value.Flags[0].AppliesTo = []string{"local-to-ssh"}

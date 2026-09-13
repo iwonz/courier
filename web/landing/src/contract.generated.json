@@ -1,0 +1,458 @@
+{
+  "contractVersion": "0.14.0",
+  "targetRelease": "0.2.0",
+  "endpoints": [
+    {
+      "name": "local",
+      "syntax": "./path, /absolute/path, or an explicit Windows path"
+    },
+    {
+      "name": "ssh",
+      "syntax": "[user@]host:/path or [user@]host:C:/path"
+    },
+    {
+      "name": "web",
+      "syntax": "web://"
+    },
+    {
+      "name": "webhook",
+      "syntax": "webhook://"
+    },
+    {
+      "name": "http",
+      "syntax": "http://host/path or https://host/path"
+    }
+  ],
+  "commands": [
+    {
+      "name": "from",
+      "usage": "courier from \u003csource\u003e to \u003cdestination\u003e [options]",
+      "system": false,
+      "flags": [
+        "archive",
+        "extract",
+        "listen",
+        "background",
+        "auth",
+        "auth-attempts",
+        "auth-fail-action",
+        "limit",
+        "no-ui",
+        "allow-ip",
+        "exclude",
+        "exclude-regex",
+        "exclude-from",
+        "max-file-size",
+        "max-extracted-size",
+        "upload-rate",
+        "download-rate"
+      ]
+    },
+    {
+      "name": "servers",
+      "usage": "courier servers",
+      "system": false,
+      "flags": null
+    },
+    {
+      "name": "servers-stop",
+      "usage": "courier servers stop \u003cuuid\u003e|--all",
+      "system": false,
+      "flags": [
+        "all"
+      ]
+    },
+    {
+      "name": "ui-start",
+      "usage": "courier ui start [options]",
+      "system": false,
+      "flags": [
+        "listen",
+        "background"
+      ]
+    },
+    {
+      "name": "ui-stop",
+      "usage": "courier ui stop",
+      "system": false,
+      "flags": null
+    },
+    {
+      "name": "help",
+      "usage": "courier help [command]",
+      "system": true,
+      "flags": null
+    },
+    {
+      "name": "version",
+      "usage": "courier version",
+      "system": true,
+      "flags": null
+    },
+    {
+      "name": "update",
+      "usage": "courier update",
+      "system": true,
+      "flags": null
+    }
+  ],
+  "flags": [
+    {
+      "name": "archive",
+      "syntax": "--archive",
+      "repeatable": false,
+      "default": "false",
+      "appliesTo": [
+        "path-to-path",
+        "path-to-web",
+        "path-to-http"
+      ],
+      "conflicts": [
+        "extract"
+      ]
+    },
+    {
+      "name": "extract",
+      "syntax": "--extract",
+      "repeatable": false,
+      "default": "false",
+      "appliesTo": [
+        "path-to-path",
+        "web-to-path",
+        "webhook-to-path"
+      ],
+      "conflicts": [
+        "archive"
+      ]
+    },
+    {
+      "name": "listen",
+      "syntax": "--listen \u003chost:port\u003e",
+      "repeatable": false,
+      "default": "127.0.0.1:8080",
+      "appliesTo": [
+        "web-to-path",
+        "path-to-web",
+        "webhook-to-path",
+        "ui-start"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "background",
+      "syntax": "--background",
+      "repeatable": false,
+      "default": "false",
+      "appliesTo": [
+        "web-to-path",
+        "path-to-web",
+        "webhook-to-path",
+        "ui-start"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "auth",
+      "syntax": "--auth \u003cnone|basic|password\u003e",
+      "repeatable": false,
+      "default": "none",
+      "appliesTo": [
+        "web-to-path",
+        "path-to-web",
+        "webhook-to-path",
+        "path-to-http"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "auth-attempts",
+      "syntax": "--auth-attempts \u003cN\u003e",
+      "repeatable": false,
+      "default": "5",
+      "appliesTo": [
+        "web-to-path",
+        "path-to-web",
+        "webhook-to-path"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "auth-fail-action",
+      "syntax": "--auth-fail-action \u003cban|stop\u003e",
+      "repeatable": false,
+      "default": "ban",
+      "appliesTo": [
+        "web-to-path",
+        "path-to-web",
+        "webhook-to-path"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "limit",
+      "syntax": "--limit \u003cN\u003e",
+      "repeatable": false,
+      "default": "unlimited",
+      "appliesTo": [
+        "web-to-path",
+        "path-to-web",
+        "webhook-to-path"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "no-ui",
+      "syntax": "--no-ui",
+      "repeatable": false,
+      "default": "false",
+      "appliesTo": [
+        "path-to-web"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "allow-ip",
+      "syntax": "--allow-ip \u003cIP/CIDR\u003e",
+      "repeatable": true,
+      "default": "none",
+      "appliesTo": [
+        "web-to-path",
+        "path-to-web",
+        "webhook-to-path"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "exclude",
+      "syntax": "--exclude \u003cpattern\u003e",
+      "repeatable": true,
+      "default": "none",
+      "appliesTo": [
+        "path-to-path",
+        "web-to-path",
+        "path-to-web",
+        "webhook-to-path",
+        "path-to-http"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "exclude-regex",
+      "syntax": "--exclude-regex \u003cregex\u003e",
+      "repeatable": true,
+      "default": "none",
+      "appliesTo": [
+        "path-to-path",
+        "web-to-path",
+        "path-to-web",
+        "webhook-to-path",
+        "path-to-http"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "exclude-from",
+      "syntax": "--exclude-from \u003cfile\u003e",
+      "repeatable": true,
+      "default": "none",
+      "appliesTo": [
+        "path-to-path",
+        "web-to-path",
+        "path-to-web",
+        "webhook-to-path",
+        "path-to-http"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "max-file-size",
+      "syntax": "--max-file-size \u003csize|unlimited\u003e",
+      "repeatable": false,
+      "default": "10GiB",
+      "appliesTo": [
+        "web-to-path",
+        "webhook-to-path"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "max-extracted-size",
+      "syntax": "--max-extracted-size \u003csize|unlimited\u003e",
+      "repeatable": false,
+      "default": "100GiB",
+      "appliesTo": [
+        "path-to-path",
+        "web-to-path",
+        "webhook-to-path"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "upload-rate",
+      "syntax": "--upload-rate \u003crate|unlimited\u003e",
+      "repeatable": false,
+      "default": "unlimited",
+      "appliesTo": [
+        "local-to-ssh",
+        "ssh-to-ssh",
+        "web-to-path",
+        "webhook-to-path",
+        "path-to-http"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "download-rate",
+      "syntax": "--download-rate \u003crate|unlimited\u003e",
+      "repeatable": false,
+      "default": "unlimited",
+      "appliesTo": [
+        "ssh-to-local",
+        "ssh-to-ssh",
+        "path-to-web"
+      ],
+      "conflicts": null
+    },
+    {
+      "name": "all",
+      "syntax": "--all",
+      "repeatable": false,
+      "default": "false",
+      "appliesTo": [
+        "servers-stop"
+      ],
+      "conflicts": null
+    }
+  ],
+  "routes": [
+    {
+      "name": "path-to-path",
+      "source": [
+        "local",
+        "ssh"
+      ],
+      "destination": [
+        "local",
+        "ssh"
+      ],
+      "allowedFlags": [
+        "archive",
+        "extract",
+        "exclude",
+        "exclude-regex",
+        "exclude-from",
+        "max-extracted-size",
+        "upload-rate",
+        "download-rate"
+      ]
+    },
+    {
+      "name": "web-to-path",
+      "source": [
+        "web"
+      ],
+      "destination": [
+        "local",
+        "ssh"
+      ],
+      "allowedFlags": [
+        "extract",
+        "listen",
+        "background",
+        "auth",
+        "auth-attempts",
+        "auth-fail-action",
+        "limit",
+        "allow-ip",
+        "exclude",
+        "exclude-regex",
+        "exclude-from",
+        "max-file-size",
+        "max-extracted-size",
+        "upload-rate"
+      ]
+    },
+    {
+      "name": "path-to-web",
+      "source": [
+        "local",
+        "ssh"
+      ],
+      "destination": [
+        "web"
+      ],
+      "allowedFlags": [
+        "archive",
+        "listen",
+        "background",
+        "auth",
+        "auth-attempts",
+        "auth-fail-action",
+        "limit",
+        "no-ui",
+        "allow-ip",
+        "exclude",
+        "exclude-regex",
+        "exclude-from",
+        "download-rate"
+      ]
+    },
+    {
+      "name": "webhook-to-path",
+      "source": [
+        "webhook"
+      ],
+      "destination": [
+        "local",
+        "ssh"
+      ],
+      "allowedFlags": [
+        "extract",
+        "listen",
+        "background",
+        "auth",
+        "auth-attempts",
+        "auth-fail-action",
+        "limit",
+        "allow-ip",
+        "exclude",
+        "exclude-regex",
+        "exclude-from",
+        "max-file-size",
+        "max-extracted-size",
+        "upload-rate"
+      ]
+    },
+    {
+      "name": "path-to-http",
+      "source": [
+        "local",
+        "ssh"
+      ],
+      "destination": [
+        "http"
+      ],
+      "allowedFlags": [
+        "archive",
+        "auth",
+        "exclude",
+        "exclude-regex",
+        "exclude-from",
+        "upload-rate"
+      ]
+    }
+  ],
+  "examples": [
+    "courier from ./report.pdf to server:/srv/inbox/",
+    "courier from root@203.0.113.10:/opt/node/data to ./backup/",
+    "courier from source-server:/opt/node/data to backup-server:/srv/data/",
+    "courier from ./data to ./backup/ --archive",
+    "courier from webhook:// to ./inbox/ --auth basic",
+    "courier from ./report.pdf to https://example.com/hooks/courier",
+    "courier servers",
+    "courier servers stop 550e8400-e29b-41d4-a716-446655440000",
+    "courier servers stop --all",
+    "courier ui start --background",
+    "courier ui stop"
+  ]
+}

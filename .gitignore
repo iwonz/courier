@@ -4,8 +4,9 @@
 /coverage.out
 /coverage.html
 /web/**/node_modules/
-/web/ui/coverage/
+/web/*/coverage/
 /web/ui/dist/
+/web/landing/dist/
 *.test
 *.tmp
 .DS_Store

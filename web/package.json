@@ -8,12 +8,13 @@
   "workspaces": [
     "ui",
     "data",
-    "admin"
+    "admin",
+    "landing"
   ],
   "scripts": {
-    "build": "npm run build --workspace @courier/ui && npm run build --workspace @courier/data && npm run build --workspace @courier/admin",
+    "build": "npm run build --workspace @courier/ui && npm run build --workspace @courier/data && npm run build --workspace @courier/admin && npm run build --workspace @courier/landing",
     "check:assets": "npm run check:assets --workspace @courier/ui",
-    "test": "npm run test --workspace @courier/ui && npm run test --workspace @courier/data && npm run test --workspace @courier/admin",
+    "test": "npm run test --workspace @courier/ui && npm run test --workspace @courier/data && npm run test --workspace @courier/admin && npm run test --workspace @courier/landing",
     "verify": "npm run check:assets && npm run test && npm run build && npm run check:embed --workspace @courier/data && npm run check:embed --workspace @courier/admin"
   }
 }

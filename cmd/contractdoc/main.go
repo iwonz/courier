@@ -24,7 +24,13 @@ var (
 const (
 	contractPath  = "docs/cli-contract.yaml"
 	referencePath = "docs/cli-reference.md"
+	landingPath   = "web/landing/src/contract.generated.json"
 )
+
+type generatedOutput struct {
+	path string
+	data []byte
+}
 
 func run(args []string, stdout, stderr io.Writer) int {
 	mode := "--check"
@@ -48,25 +54,29 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "check planner parity: %v\n", err)
 		return 1
 	}
-	reference := value.Reference()
+	outputs := []generatedOutput{{path: referencePath, data: value.Reference()}, {path: landingPath, data: value.LandingJSON()}}
 	if mode == "--write" {
-		if err := writeFile(referencePath, reference, 0o644); err != nil {
-			fmt.Fprintf(stderr, "write CLI reference: %v\n", err)
-			return 1
+		for _, output := range outputs {
+			if err := writeFile(output.path, output.data, 0o644); err != nil {
+				fmt.Fprintf(stderr, "write generated contract data %s: %v\n", output.path, err)
+				return 1
+			}
+			fmt.Fprintln(stdout, "generated", output.path)
 		}
-		fmt.Fprintln(stdout, "generated", referencePath)
 		return 0
 	}
-	current, err := readFile(referencePath)
-	if err != nil {
-		fmt.Fprintf(stderr, "read CLI reference: %v\n", err)
-		return 1
+	for _, output := range outputs {
+		current, err := readFile(output.path)
+		if err != nil {
+			fmt.Fprintf(stderr, "read generated contract data %s: %v\n", output.path, err)
+			return 1
+		}
+		if !bytes.Equal(current, output.data) {
+			fmt.Fprintf(stderr, "%s is stale; run: go run ./cmd/contractdoc --write\n", output.path)
+			return 1
+		}
 	}
-	if !bytes.Equal(current, reference) {
-		fmt.Fprintln(stderr, "CLI reference is stale; run: go run ./cmd/contractdoc --write")
-		return 1
-	}
-	fmt.Fprintln(stdout, "verified CLI contract and reference")
+	fmt.Fprintln(stdout, "verified CLI contract, reference, and landing data")
 	return 0
 }
 

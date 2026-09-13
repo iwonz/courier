@@ -51,4 +51,4 @@ release:
 	./scripts/release.sh $(VERSION)
 
 clean:
-	rm -rf dist .cache coverage.out coverage.html web/ui/dist web/ui/coverage
+	rm -rf dist .cache coverage.out coverage.html web/ui/dist web/ui/coverage web/data/coverage web/admin/coverage web/landing/dist web/landing/coverage
