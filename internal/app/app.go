@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/iwonz/courier/internal/admin"
 	"github.com/iwonz/courier/internal/archive"
 	"github.com/iwonz/courier/internal/buildinfo"
 	"github.com/iwonz/courier/internal/control"
@@ -67,6 +68,8 @@ type Dependencies struct {
 	Update              func(context.Context) (update.Result, error)
 	ListServers         func(context.Context) ([]control.ServerView, error)
 	StopServers         func(context.Context, control.StopRequest) (control.StopResult, error)
+	StartUI             func(context.Context, admin.StartRequest) (admin.StartResult, error)
+	StopUI              func(context.Context) (admin.StopResult, error)
 	Reporter            func(io.Writer, bool) *report.Reporter
 	Terminal            func(io.Writer) bool
 	TempDir             string
@@ -179,6 +182,8 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 		Update:              updater.Run,
 		ListServers:         listServers,
 		StopServers:         stopServers,
+		StartUI:             startUI,
+		StopUI:              stopUI,
 		Reporter:            report.New,
 		Terminal:            writerIsTerminal,
 		Build:               BuildIdentity{Version: buildinfo.Version, Commit: buildinfo.Commit, Date: buildinfo.Date},
@@ -230,6 +235,7 @@ func NewRoot(dependencies Dependencies) *cobra.Command {
 	return mustRoot(NewRootWithProviders(
 		ProviderFunc(func() *cobra.Command { return newTransferCommand(dependencies) }),
 		ProviderFunc(func() *cobra.Command { return newServersCommand(dependencies.ListServers, dependencies.StopServers) }),
+		ProviderFunc(func() *cobra.Command { return newUICommand(dependencies.StartUI, dependencies.StopUI) }),
 		ProviderFunc(func() *cobra.Command { return newVersionCommand(dependencies.Build) }),
 		ProviderFunc(func() *cobra.Command { return newUpdateCommand(dependencies.Update) }),
 	))

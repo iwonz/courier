@@ -518,6 +518,11 @@ func TestWorkerEnvironmentAndDetach(t *testing.T) {
 	if command.SysProcAttr == nil {
 		t.Fatal("detached process attributes missing")
 	}
+	command = exec.Command("ignored")
+	ConfigureDetached(command)
+	if command.SysProcAttr == nil {
+		t.Fatal("exported detached process attributes missing")
+	}
 	listener, err := listenData("127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)

@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/iwonz/courier/internal/admin"
 	"github.com/iwonz/courier/internal/app"
 	"github.com/iwonz/courier/internal/helper"
 	"github.com/iwonz/courier/internal/update"
@@ -18,6 +19,7 @@ var (
 	dependencyFactory = app.DefaultDependencies
 	exitProcess       = os.Exit
 	runInternalUpdate = update.RunInternal
+	runInternalAdmin  = admin.RunInternal
 	serveHelperSFTP   = helper.ServeSFTP
 	runInternalWorker = worker.RunInternal
 )
@@ -27,6 +29,13 @@ func run(ctx context.Context, args []string, input *os.File, stdout, stderr io.W
 		if err != nil {
 			fmt.Fprintf(stderr, "courier update handoff: %v\n", err)
 			return app.ExitUpdate
+		}
+		return app.ExitOK
+	}
+	if handled, err := runInternalAdmin(ctx, args); handled {
+		if err != nil {
+			fmt.Fprintf(stderr, "courier administration: %v\n", err)
+			return app.ExitControl
 		}
 		return app.ExitOK
 	}

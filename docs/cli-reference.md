@@ -1,6 +1,6 @@
 # Courier CLI reference
 
-Contract version `0.12.0`; target release `0.2.0`. This file is generated from `docs/cli-contract.yaml`.
+Contract version `0.13.0`; target release `0.2.0`. This file is generated from `docs/cli-contract.yaml`.
 
 ## Commands
 
@@ -9,8 +9,8 @@ Contract version `0.12.0`; target release `0.2.0`. This file is generated from `
 | shipped | `courier from <source> to <destination> [options]` | product |
 | shipped | `courier servers` | product |
 | shipped | `courier servers stop <uuid>|--all` | product |
-| planned | `courier ui start [options]` | product |
-| planned | `courier ui stop` | product |
+| shipped | `courier ui start [options]` | product |
+| shipped | `courier ui stop` | product |
 | system | `courier help [command]` | system |
 | system | `courier version` | system |
 | system | `courier update` | system |
@@ -83,4 +83,6 @@ courier from ./report.pdf to https://example.com/hooks/courier
 courier servers
 courier servers stop 550e8400-e29b-41d4-a716-446655440000
 courier servers stop --all
+courier ui start --background
+courier ui stop
 ```

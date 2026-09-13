@@ -28,7 +28,9 @@ type fakeClient struct {
 	snapshot        delivery.Snapshot
 	stopDeliveryErr error
 	stopServerErr   error
+	updatePolicyErr error
 	stoppedDelivery delivery.ID
+	updatedPolicy   worker.UpdatePolicyRequest
 	serverStops     int
 }
 
@@ -37,6 +39,10 @@ func (client *fakeClient) Hello(context.Context) (worker.HelloResponse, error) {
 }
 func (client *fakeClient) List(context.Context) (delivery.Snapshot, error) {
 	return client.snapshot, client.listErr
+}
+func (client *fakeClient) UpdatePolicy(_ context.Context, request worker.UpdatePolicyRequest) error {
+	client.updatedPolicy = request
+	return client.updatePolicyErr
 }
 func (client *fakeClient) StopDelivery(_ context.Context, id delivery.ID) error {
 	client.stoppedDelivery = id
@@ -155,6 +161,12 @@ func TestScopedStops(t *testing.T) {
 	if _, err := service.Stop(context.Background(), StopRequest{All: true, ID: serverA}); !errors.Is(err, delivery.ErrInvalid) {
 		t.Fatalf("all conflict=%v", err)
 	}
+	if _, err := service.Stop(context.Background(), StopRequest{All: true, Kind: delivery.TargetServer}); !errors.Is(err, delivery.ErrInvalid) {
+		t.Fatalf("all kind conflict=%v", err)
+	}
+	if _, err := service.Stop(context.Background(), StopRequest{Kind: "invalid", ID: serverA}); !errors.Is(err, delivery.ErrInvalid) {
+		t.Fatalf("invalid kind=%v", err)
+	}
 	if _, err := service.Stop(context.Background(), StopRequest{ID: "bad"}); !errors.Is(err, delivery.ErrInvalid) {
 		t.Fatalf("invalid UUID=%v", err)
 	}
@@ -169,6 +181,15 @@ func TestScopedStops(t *testing.T) {
 	result, err = service.Stop(context.Background(), StopRequest{ID: serverB})
 	if err != nil || result.Kind != delivery.TargetServer || result.StoppedServers != 1 || clients[serverB].serverStops != 1 {
 		t.Fatalf("server=%+v err=%v", result, err)
+	}
+	if _, err := service.Stop(context.Background(), StopRequest{ID: serverB, Kind: delivery.TargetDelivery}); !errors.Is(err, delivery.ErrNotFound) || clients[serverB].serverStops != 1 {
+		t.Fatalf("server as delivery=%v", err)
+	}
+	if _, err := service.Stop(context.Background(), StopRequest{ID: deliveryA, Kind: delivery.TargetServer}); !errors.Is(err, delivery.ErrNotFound) || clients[serverA].stoppedDelivery != deliveryA {
+		t.Fatalf("delivery as server=%v", err)
+	}
+	if _, err := service.Stop(context.Background(), StopRequest{ID: stoppedID, Kind: delivery.TargetServer}); !errors.Is(err, delivery.ErrNotFound) {
+		t.Fatalf("tombstone kind=%v", err)
 	}
 	unknown := delivery.ID("00000000-0000-4000-8000-000000000999")
 	if _, err := service.Stop(context.Background(), StopRequest{ID: unknown}); !errors.Is(err, delivery.ErrNotFound) {
@@ -251,5 +272,61 @@ func TestDefaultClientAndHelpers(t *testing.T) {
 	items := deliveriesFor(snapshot, serverA)
 	if len(items) != 2 || items[0].ID != deliveryA || items[1].ID != deliveryB {
 		t.Fatalf("sorted deliveries=%v", items)
+	}
+}
+
+func TestOptimisticPolicyUpdate(t *testing.T) {
+	service, snapshot := seededService(t)
+	client := &fakeClient{snapshot: snapshot}
+	service.Connect = func(delivery.Server) (WorkerClient, error) { return client, nil }
+	policy := delivery.DefaultPolicy()
+	policy.Version = 2
+	if err := service.UpdatePolicy(context.Background(), deliveryA, 1, policy); err != nil || client.updatedPolicy.DeliveryID != deliveryA || client.updatedPolicy.ExpectedVersion != 1 || client.updatedPolicy.Policy.Version != 2 {
+		t.Fatalf("update=%+v err=%v", client.updatedPolicy, err)
+	}
+
+	want := errors.New("update failure")
+	client.updatePolicyErr = want
+	if err := service.UpdatePolicy(context.Background(), deliveryA, 1, policy); !errors.Is(err, want) {
+		t.Fatalf("worker update error=%v", err)
+	}
+	client.updatePolicyErr = nil
+	client.helloErr = want
+	if err := service.UpdatePolicy(context.Background(), deliveryA, 1, policy); !errors.Is(err, want) {
+		t.Fatalf("authority error=%v", err)
+	}
+
+	for _, test := range []struct {
+		id       delivery.ID
+		expected uint64
+		policy   delivery.Policy
+	}{
+		{"bad", 1, policy},
+		{deliveryA, 0, policy},
+		{deliveryA, 1, delivery.DefaultPolicy()},
+	} {
+		if err := service.UpdatePolicy(context.Background(), test.id, test.expected, test.policy); !errors.Is(err, delivery.ErrInvalid) {
+			t.Fatalf("invalid update=%v", err)
+		}
+	}
+	invalidPolicy := policy
+	invalidPolicy.Auth = "invalid"
+	if err := service.UpdatePolicy(context.Background(), deliveryA, 1, invalidPolicy); !errors.Is(err, delivery.ErrInvalid) {
+		t.Fatalf("invalid policy=%v", err)
+	}
+	unknown := delivery.ID("00000000-0000-4000-8000-000000000999")
+	if err := service.UpdatePolicy(context.Background(), unknown, 1, policy); !errors.Is(err, delivery.ErrNotFound) {
+		t.Fatalf("unknown delivery=%v", err)
+	}
+
+	closed, err := delivery.OpenStore(filepath.Join(t.TempDir(), "closed"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := closed.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := (Service{Store: closed}).UpdatePolicy(context.Background(), deliveryA, 1, policy); err == nil {
+		t.Fatal("closed store accepted")
 	}
 }

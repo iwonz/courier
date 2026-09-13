@@ -1,5 +1,5 @@
 schema_version: 1
-contract_version: 0.12.0
+contract_version: 0.13.0
 target_release: 0.2.0
 language: en
 
@@ -42,13 +42,13 @@ commands:
   - name: ui-start
     path: ui start
     usage: courier ui start [options]
-    status: planned
+    status: shipped
     system: false
     flags: [listen, background]
   - name: ui-stop
     path: ui stop
     usage: courier ui stop
-    status: planned
+    status: shipped
     system: false
     flags: []
   - name: help
@@ -247,3 +247,5 @@ examples:
   - courier servers
   - courier servers stop 550e8400-e29b-41d4-a716-446655440000
   - courier servers stop --all
+  - courier ui start --background
+  - courier ui stop

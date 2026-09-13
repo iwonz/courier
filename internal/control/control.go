@@ -16,8 +16,36 @@ import (
 type WorkerClient interface {
 	Hello(context.Context) (worker.HelloResponse, error)
 	List(context.Context) (delivery.Snapshot, error)
+	UpdatePolicy(context.Context, worker.UpdatePolicyRequest) error
 	StopDelivery(context.Context, delivery.ID) error
 	StopServer(context.Context) error
+}
+
+// UpdatePolicy resolves the live delivery owner and applies an optimistic
+// policy update over the authoritative private IPC channel.
+func (service Service) UpdatePolicy(ctx context.Context, id delivery.ID, expected uint64, policy delivery.Policy) error {
+	if !id.Valid() || expected == 0 || policy.Version != expected+1 {
+		return fmt.Errorf("%w: invalid optimistic policy update", delivery.ErrInvalid)
+	}
+	if err := policy.Validate(); err != nil {
+		return err
+	}
+	snapshot, err := service.snapshot(ctx)
+	if err != nil {
+		return err
+	}
+	for _, item := range snapshot.Deliveries {
+		if item.ID != id {
+			continue
+		}
+		server, _ := serverByID(snapshot, item.ServerID)
+		client, _, _, err := service.authoritative(ctx, server, item.ID)
+		if err != nil {
+			return err
+		}
+		return client.UpdatePolicy(ctx, worker.UpdatePolicyRequest{DeliveryID: id, ExpectedVersion: expected, Policy: policy})
+	}
+	return fmt.Errorf("%w: delivery %s", delivery.ErrNotFound, id)
 }
 
 // ClientFactory binds a registry record to its private IPC client.
@@ -33,8 +61,9 @@ type ServerView struct {
 
 // StopRequest selects one UUID or every registered data server.
 type StopRequest struct {
-	ID  delivery.ID
-	All bool
+	ID   delivery.ID
+	All  bool
+	Kind delivery.TargetKind
 }
 
 // StopResult describes the scope actually selected by a stop operation.
@@ -85,8 +114,11 @@ func (service Service) List(ctx context.Context) ([]ServerView, error) {
 
 // Stop resolves and authoritatively stops one target or every data server.
 func (service Service) Stop(ctx context.Context, request StopRequest) (StopResult, error) {
+	if request.Kind != "" && request.Kind != delivery.TargetServer && request.Kind != delivery.TargetDelivery {
+		return StopResult{}, fmt.Errorf("%w: invalid stop target kind", delivery.ErrInvalid)
+	}
 	if request.All {
-		if request.ID != "" {
+		if request.ID != "" || request.Kind != "" {
 			return StopResult{}, fmt.Errorf("%w: --all conflicts with a UUID", delivery.ErrInvalid)
 		}
 		return service.stopAll(ctx)
@@ -100,11 +132,17 @@ func (service Service) Stop(ctx context.Context, request StopRequest) (StopResul
 	}
 	for _, tombstone := range snapshot.Tombstones {
 		if tombstone.TargetID == request.ID {
+			if request.Kind != "" && request.Kind != tombstone.Kind {
+				return StopResult{}, fmt.Errorf("%w: target %s", delivery.ErrNotFound, request.ID)
+			}
 			return StopResult{ID: request.ID, Kind: tombstone.Kind, AlreadyStopped: true}, nil
 		}
 	}
 	for _, server := range snapshot.Servers {
 		if server.ID == request.ID {
+			if request.Kind == delivery.TargetDelivery {
+				return StopResult{}, fmt.Errorf("%w: delivery %s", delivery.ErrNotFound, request.ID)
+			}
 			client, _, _, err := service.authoritative(ctx, server, "")
 			if err != nil {
 				return StopResult{}, err
@@ -118,6 +156,9 @@ func (service Service) Stop(ctx context.Context, request StopRequest) (StopResul
 	for _, item := range snapshot.Deliveries {
 		if item.ID != request.ID {
 			continue
+		}
+		if request.Kind == delivery.TargetServer {
+			return StopResult{}, fmt.Errorf("%w: server %s", delivery.ErrNotFound, request.ID)
 		}
 		server, _ := serverByID(snapshot, item.ServerID) // registry validation guarantees the owner
 		client, _, _, err := service.authoritative(ctx, server, item.ID)

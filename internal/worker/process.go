@@ -274,11 +274,17 @@ func runProcess(ctx context.Context, config processConfig) (resultErr error) {
 }
 
 func workerEnvironment(configPath string) []string {
+	return ProcessEnvironment(workerConfigEnvironment, configPath)
+}
+
+// ProcessEnvironment builds the minimal inherited environment shared by
+// Courier's detached internal processes.
+func ProcessEnvironment(name, value string) []string {
 	allowed := map[string]bool{
 		"HOME": true, "USERPROFILE": true, "TMPDIR": true, "TMP": true, "TEMP": true,
 		"SYSTEMROOT": true, "WINDIR": true, "LANG": true, "LC_ALL": true, "SSH_AUTH_SOCK": true,
 	}
-	result := []string{workerConfigEnvironment + "=" + configPath}
+	result := []string{name + "=" + value}
 	for _, entry := range os.Environ() {
 		name, _, found := strings.Cut(entry, "=")
 		if found && allowed[strings.ToUpper(name)] {

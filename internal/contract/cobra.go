@@ -40,7 +40,9 @@ func (c Contract) CheckCobra(root *cobra.Command) error {
 func collectCommands(parent *cobra.Command, prefix string, result map[string]*cobra.Command) {
 	for _, command := range parent.Commands() {
 		path := strings.TrimSpace(prefix + " " + command.Name())
-		result[path] = command
+		if command.Runnable() {
+			result[path] = command
+		}
 		collectCommands(command, path, result)
 	}
 }

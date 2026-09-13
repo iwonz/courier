@@ -172,7 +172,7 @@ func TestDirectionApplicability(t *testing.T) {
 func TestCheckCobra(t *testing.T) {
 	value := validContract()
 	root := &cobra.Command{Use: "courier"}
-	from := &cobra.Command{Use: "from"}
+	from := &cobra.Command{Use: "from", Run: func(*cobra.Command, []string) {}}
 	from.Flags().Bool("archive", false, "archive")
 	root.AddCommand(from)
 	if err := value.CheckCobra(root); err != nil {
@@ -195,7 +195,7 @@ func TestCheckCobra(t *testing.T) {
 	broken.Commands[0].Flags = nil
 	root = &cobra.Command{Use: "courier"}
 	parent := &cobra.Command{Use: "from"}
-	parent.AddCommand(&cobra.Command{Use: "child"})
+	parent.AddCommand(&cobra.Command{Use: "child", Run: func(*cobra.Command, []string) {}})
 	root.AddCommand(parent)
 	if err := broken.CheckCobra(root); err == nil {
 		t.Fatal("expected nested command mismatch")

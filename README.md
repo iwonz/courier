@@ -63,6 +63,9 @@ courier from ./data to https://example.com/hooks/courier --archive
 courier servers
 courier servers stop 550e8400-e29b-41d4-a716-446655440000
 courier servers stop --all
+courier ui start
+courier ui start --background --listen 127.0.0.1:9090
+courier ui stop
 ```
 
 The destination rules are deterministic:
@@ -129,6 +132,8 @@ See [Browser deliveries](docs/web-deliveries.md) for `web://` URLs, authenticati
 See [Webhook deliveries](docs/webhook-deliveries.md) for Courier's exact incoming and outgoing multipart profile, HTTP result semantics, and intentionally unsupported provider-specific behavior.
 
 See [Server control](docs/server-control.md) for authoritative inventory, UUID-scoped stopping, partial `--all` behavior, and the no-PID-signal trust boundary.
+
+See [Administration UI](docs/admin-ui.md) for foreground/background startup, local API guards, live state, and optimistic policy editing.
 
 ## License
 

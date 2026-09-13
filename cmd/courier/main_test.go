@@ -42,9 +42,9 @@ func TestDependencyFailure(t *testing.T) {
 }
 
 func TestInternalModes(t *testing.T) {
-	originalUpdate, originalHelper, originalWorker := runInternalUpdate, serveHelperSFTP, runInternalWorker
+	originalUpdate, originalAdmin, originalHelper, originalWorker := runInternalUpdate, runInternalAdmin, serveHelperSFTP, runInternalWorker
 	t.Cleanup(func() {
-		runInternalUpdate, serveHelperSFTP, runInternalWorker = originalUpdate, originalHelper, originalWorker
+		runInternalUpdate, runInternalAdmin, serveHelperSFTP, runInternalWorker = originalUpdate, originalAdmin, originalHelper, originalWorker
 	})
 	runInternalUpdate = func([]string) (bool, error) { return true, nil }
 	if code := run(context.Background(), []string{"internal"}, nil, io.Discard, io.Discard); code != app.ExitOK {
@@ -56,6 +56,16 @@ func TestInternalModes(t *testing.T) {
 		t.Fatalf("internal failure code=%d stderr=%q", code, stderr.String())
 	}
 	runInternalUpdate = func([]string) (bool, error) { return false, nil }
+	runInternalAdmin = func(context.Context, []string) (bool, error) { return true, nil }
+	if code := run(context.Background(), []string{"_admin"}, nil, io.Discard, io.Discard); code != app.ExitOK {
+		t.Fatalf("admin success code=%d", code)
+	}
+	runInternalAdmin = func(context.Context, []string) (bool, error) { return true, errors.New("admin") }
+	stderr.Reset()
+	if code := run(context.Background(), []string{"_admin"}, nil, io.Discard, &stderr); code != app.ExitControl || !strings.Contains(stderr.String(), "admin") {
+		t.Fatalf("admin failure code=%d stderr=%q", code, stderr.String())
+	}
+	runInternalAdmin = originalAdmin
 	serveHelperSFTP = func(io.Reader, io.Writer) error { return nil }
 	if code := run(context.Background(), []string{"_helper-sftp"}, nil, io.Discard, io.Discard); code != app.ExitOK {
 		t.Fatalf("helper success code=%d", code)

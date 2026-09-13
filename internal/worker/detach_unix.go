@@ -10,3 +10,7 @@ import (
 func configureDetached(command *exec.Cmd) {
 	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 }
+
+// ConfigureDetached applies Courier's platform-specific background process
+// attributes.
+func ConfigureDetached(command *exec.Cmd) { configureDetached(command) }

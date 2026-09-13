@@ -7,12 +7,13 @@
   },
   "workspaces": [
     "ui",
-    "data"
+    "data",
+    "admin"
   ],
   "scripts": {
-    "build": "npm run build --workspace @courier/ui && npm run build --workspace @courier/data",
+    "build": "npm run build --workspace @courier/ui && npm run build --workspace @courier/data && npm run build --workspace @courier/admin",
     "check:assets": "npm run check:assets --workspace @courier/ui",
-    "test": "npm run test --workspace @courier/ui && npm run test --workspace @courier/data",
-    "verify": "npm run check:assets && npm run test && npm run build && npm run check:embed --workspace @courier/data"
+    "test": "npm run test --workspace @courier/ui && npm run test --workspace @courier/data && npm run test --workspace @courier/admin",
+    "verify": "npm run check:assets && npm run test && npm run build && npm run check:embed --workspace @courier/data && npm run check:embed --workspace @courier/admin"
   }
 }
