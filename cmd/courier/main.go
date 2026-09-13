@@ -11,6 +11,7 @@ import (
 	"github.com/iwonz/courier/internal/app"
 	"github.com/iwonz/courier/internal/helper"
 	"github.com/iwonz/courier/internal/update"
+	"github.com/iwonz/courier/internal/worker"
 )
 
 var (
@@ -18,6 +19,7 @@ var (
 	exitProcess       = os.Exit
 	runInternalUpdate = update.RunInternal
 	serveHelperSFTP   = helper.ServeSFTP
+	runInternalWorker = worker.RunInternal
 )
 
 func run(ctx context.Context, args []string, input *os.File, stdout, stderr io.Writer) int {
@@ -32,6 +34,13 @@ func run(ctx context.Context, args []string, input *os.File, stdout, stderr io.W
 		if err := serveHelperSFTP(input, stdout); err != nil {
 			fmt.Fprintf(stderr, "courier helper: %v\n", err)
 			return app.ExitTransfer
+		}
+		return app.ExitOK
+	}
+	if handled, err := runInternalWorker(ctx, args); handled {
+		if err != nil {
+			fmt.Fprintf(stderr, "courier worker: %v\n", err)
+			return app.ExitControl
 		}
 		return app.ExitOK
 	}

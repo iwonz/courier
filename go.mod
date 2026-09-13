@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/go-git/go-git/v5 v5.16.3
+	github.com/gofrs/flock v0.12.1
 	github.com/google/uuid v1.6.0
 	github.com/kevinburke/ssh_config v1.6.0
 	github.com/pkg/sftp v1.13.10

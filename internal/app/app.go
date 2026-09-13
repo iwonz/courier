@@ -37,6 +37,7 @@ const (
 	ExitConnection = 10
 	ExitTransfer   = 20
 	ExitUpdate     = 30
+	ExitControl    = 40
 )
 
 // Resource is an opened endpoint backend with its bounded path.
