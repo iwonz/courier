@@ -1,0 +1,271 @@
+// Package transfer implements transport-neutral transactional tree copying.
+package transfer
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"io"
+	"io/fs"
+	"time"
+
+	"github.com/iwonz/courier/internal/fsx"
+	"github.com/iwonz/courier/internal/progress"
+)
+
+const defaultBufferSize = 128 * 1024
+
+var randomRead = rand.Read
+
+// Request describes a resolved source and exact destination.
+type Request struct {
+	SourceFS      fsx.Backend
+	SourcePath    string
+	DestinationFS fsx.Backend
+	Destination   string
+	Progress      progress.Sink
+}
+
+// Result summarizes a committed transfer.
+type Result struct {
+	Bytes       int64
+	Destination string
+	Elapsed     time.Duration
+}
+
+// Error records the failed stage and confirmed byte count.
+type Error struct {
+	Stage     progress.Stage
+	Confirmed int64
+	Cause     error
+}
+
+func (e *Error) Error() string {
+	return fmt.Sprintf("%s failed after %d confirmed bytes: %v", e.Stage, e.Confirmed, e.Cause)
+}
+
+func (e *Error) Unwrap() error { return e.Cause }
+
+// Engine controls deterministic dependencies used by the transfer algorithm.
+type Engine struct {
+	Token      func() (string, error)
+	Now        func() time.Time
+	BufferSize int
+}
+
+// Run scans, stages, and commits a transfer.
+func (e Engine) Run(ctx context.Context, request Request) (result Result, resultErr error) {
+	if request.SourceFS == nil || request.DestinationFS == nil || request.SourcePath == "" || request.Destination == "" {
+		return Result{}, &Error{Stage: progress.StagePreflight, Cause: errors.New("source and destination are required")}
+	}
+	total, err := scan(ctx, request.SourceFS, request.SourcePath)
+	if err != nil {
+		return Result{}, &Error{Stage: progress.StagePreflight, Cause: err}
+	}
+	tracker := progress.New(total, e.Now, request.Progress)
+	tokenFn := e.Token
+	if tokenFn == nil {
+		tokenFn = randomToken
+	}
+	token, err := tokenFn()
+	if err != nil {
+		return Result{}, &Error{Stage: progress.StagePreflight, Cause: err}
+	}
+	stagePath := request.Destination + ".courier-partial-" + token
+	cleanupStage := true
+	defer func() {
+		tracker.Stage(progress.StageCleanup)
+		if cleanupStage {
+			if cleanupErr := request.DestinationFS.RemoveAll(stagePath); cleanupErr != nil {
+				cleanupFailure := &Error{Stage: progress.StageCleanup, Confirmed: tracker.Snapshot().Current, Cause: cleanupErr}
+				resultErr = errors.Join(resultErr, cleanupFailure)
+			}
+		}
+		if resultErr == nil {
+			tracker.Stage(progress.StageComplete)
+			result = Result{Bytes: tracker.Snapshot().Current, Destination: request.Destination, Elapsed: tracker.Snapshot().Elapsed}
+		}
+	}()
+	if err := request.DestinationFS.RemoveAll(stagePath); err != nil {
+		return Result{}, transferError(tracker, progress.StageCleanup, err)
+	}
+	if err := request.DestinationFS.MkdirAll(request.DestinationFS.Dir(request.Destination), 0o700); err != nil {
+		return Result{}, transferError(tracker, progress.StagePreflight, err)
+	}
+	tracker.Stage(progress.StageTransfer)
+	bufferSize := e.BufferSize
+	if bufferSize <= 0 {
+		bufferSize = defaultBufferSize
+	}
+	if err := copyNode(ctx, request.SourceFS, request.SourcePath, request.DestinationFS, stagePath, make([]byte, bufferSize), tracker); err != nil {
+		return Result{}, transferError(tracker, progress.StageTransfer, err)
+	}
+	tracker.Stage(progress.StageCommit)
+	if err := commit(request.DestinationFS, stagePath, request.Destination, token); err != nil {
+		return Result{}, transferError(tracker, progress.StageCommit, err)
+	}
+	cleanupStage = false
+	return result, nil
+}
+
+func transferError(tracker *progress.Tracker, stage progress.Stage, err error) *Error {
+	return &Error{Stage: stage, Confirmed: tracker.Snapshot().Current, Cause: err}
+}
+
+func scan(ctx context.Context, backend fsx.Backend, name string) (int64, error) {
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+	info, err := backend.Lstat(name)
+	if err != nil {
+		return 0, err
+	}
+	if info.Mode().IsRegular() {
+		return info.Size(), nil
+	}
+	if info.Mode()&fs.ModeSymlink != 0 {
+		return 0, nil
+	}
+	if !info.IsDir() {
+		return 0, fmt.Errorf("unsupported source object %q (%s)", name, info.Mode())
+	}
+	entries, err := backend.ReadDir(name)
+	if err != nil {
+		return 0, err
+	}
+	var total int64
+	for _, entry := range entries {
+		size, err := scan(ctx, backend, backend.Join(name, entry.Name()))
+		if err != nil {
+			return 0, err
+		}
+		total += size
+	}
+	return total, nil
+}
+
+func copyNode(ctx context.Context, source fsx.Backend, sourcePath string, destination fsx.Backend, destinationPath string, buffer []byte, tracker *progress.Tracker) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	info, err := source.Lstat(sourcePath)
+	if err != nil {
+		return err
+	}
+	if info.Mode().IsRegular() {
+		return copyFile(ctx, source, sourcePath, destination, destinationPath, info, buffer, tracker)
+	}
+	if info.Mode()&fs.ModeSymlink != 0 {
+		target, err := source.Readlink(sourcePath)
+		if err != nil {
+			return err
+		}
+		return destination.Symlink(target, destinationPath)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("unsupported source object %q (%s)", sourcePath, info.Mode())
+	}
+	if err := destination.MkdirAll(destinationPath, 0o700); err != nil {
+		return err
+	}
+	entries, err := source.ReadDir(sourcePath)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if err := copyNode(ctx, source, source.Join(sourcePath, entry.Name()), destination, destination.Join(destinationPath, entry.Name()), buffer, tracker); err != nil {
+			return err
+		}
+	}
+	if err := destination.Chmod(destinationPath, info.Mode().Perm()); err != nil {
+		return err
+	}
+	return destination.Chtimes(destinationPath, info.ModTime(), info.ModTime())
+}
+
+func copyFile(ctx context.Context, source fsx.Backend, sourcePath string, destination fsx.Backend, destinationPath string, info fs.FileInfo, buffer []byte, tracker *progress.Tracker) (resultErr error) {
+	reader, err := source.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+	defer func() { resultErr = errors.Join(resultErr, reader.Close()) }()
+	writer, err := destination.Create(destinationPath, 0o600)
+	if err != nil {
+		return err
+	}
+	closed := false
+	defer func() {
+		if !closed {
+			resultErr = errors.Join(resultErr, writer.Close())
+		}
+	}()
+	progressWriter := &countingWriter{ctx: ctx, destination: writer, tracker: tracker}
+	if _, err := io.CopyBuffer(progressWriter, reader, buffer); err != nil {
+		return err
+	}
+	if err := writer.Sync(); err != nil {
+		return err
+	}
+	if err := writer.Close(); err != nil {
+		return err
+	}
+	closed = true
+	if err := destination.Chmod(destinationPath, info.Mode().Perm()); err != nil {
+		return err
+	}
+	return destination.Chtimes(destinationPath, info.ModTime(), info.ModTime())
+}
+
+type countingWriter struct {
+	ctx         context.Context
+	destination io.Writer
+	tracker     *progress.Tracker
+}
+
+func (w *countingWriter) Write(data []byte) (int, error) {
+	if err := w.ctx.Err(); err != nil {
+		return 0, err
+	}
+	written, err := w.destination.Write(data)
+	if written > 0 {
+		w.tracker.Add(int64(written))
+	}
+	return written, err
+}
+
+func commit(backend fsx.Backend, stagePath, destination, token string) error {
+	_, err := backend.Lstat(destination)
+	if errors.Is(err, fs.ErrNotExist) {
+		return backend.Rename(stagePath, destination)
+	}
+	if err != nil {
+		return err
+	}
+	backup := destination + ".courier-backup-" + token
+	if err := backend.RemoveAll(backup); err != nil {
+		return err
+	}
+	if err := backend.Rename(destination, backup); err != nil {
+		return err
+	}
+	if err := backend.Rename(stagePath, destination); err != nil {
+		if restoreErr := backend.Rename(backup, destination); restoreErr != nil {
+			return errors.Join(err, fmt.Errorf("restore previous destination: %w", restoreErr))
+		}
+		return err
+	}
+	if err := backend.RemoveAll(backup); err != nil {
+		return fmt.Errorf("remove committed backup %q: %w", backup, err)
+	}
+	return nil
+}
+
+func randomToken() (string, error) {
+	value := make([]byte, 8)
+	if _, err := randomRead(value); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(value), nil
+}
