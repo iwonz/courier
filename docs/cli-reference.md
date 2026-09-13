@@ -1,14 +1,14 @@
 # Courier CLI reference
 
-Contract version `0.11.0`; target release `0.2.0`. This file is generated from `docs/cli-contract.yaml`.
+Contract version `0.12.0`; target release `0.2.0`. This file is generated from `docs/cli-contract.yaml`.
 
 ## Commands
 
 | Status | Command | Kind |
 |---|---|---|
 | shipped | `courier from <source> to <destination> [options]` | product |
-| planned | `courier servers` | product |
-| planned | `courier servers stop <uuid>|--all` | product |
+| shipped | `courier servers` | product |
+| shipped | `courier servers stop <uuid>|--all` | product |
 | planned | `courier ui start [options]` | product |
 | planned | `courier ui stop` | product |
 | system | `courier help [command]` | system |
@@ -56,7 +56,7 @@ Contract version `0.11.0`; target release `0.2.0`. This file is generated from `
 | shipped | `--max-extracted-size <size|unlimited>` | false | `100GiB` | path-to-path, web-to-path, webhook-to-path | none |
 | shipped | `--upload-rate <rate|unlimited>` | false | `unlimited` | local-to-ssh, ssh-to-ssh, web-to-path, webhook-to-path, path-to-http | none |
 | shipped | `--download-rate <rate|unlimited>` | false | `unlimited` | ssh-to-local, ssh-to-ssh, path-to-web | none |
-| planned | `--all` | false | `false` | servers-stop | none |
+| shipped | `--all` | false | `false` | servers-stop | none |
 
 ## Explicitly unsupported
 
@@ -80,4 +80,7 @@ courier from source-server:/opt/node/data to backup-server:/srv/data/
 courier from ./data to ./backup/ --archive
 courier from webhook:// to ./inbox/ --auth basic
 courier from ./report.pdf to https://example.com/hooks/courier
+courier servers
+courier servers stop 550e8400-e29b-41d4-a716-446655440000
+courier servers stop --all
 ```

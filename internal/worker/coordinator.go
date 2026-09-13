@@ -97,6 +97,8 @@ type AcquireRequest struct {
 	Bind              string
 	Compatibility     string
 	Route             delivery.Route
+	Source            string
+	Destination       string
 	Policy            delivery.Policy
 	Foreground        bool
 	At                time.Time
@@ -109,6 +111,9 @@ func (request AcquireRequest) Validate() error {
 	}
 	if invalidCompatibility(request.Compatibility) || !request.Route.Valid() || request.At.IsZero() {
 		return fmt.Errorf("%w: invalid worker acquisition", delivery.ErrInvalid)
+	}
+	if (request.Source == "") != (request.Destination == "") || unsafeDisplayText(request.Source) || unsafeDisplayText(request.Destination) {
+		return fmt.Errorf("%w: invalid delivery endpoint metadata", delivery.ErrInvalid)
 	}
 	if len(request.RuntimeDefinition) > MaxRuntimeDefinition || len(request.RuntimeDefinition) != 0 && !json.Valid(request.RuntimeDefinition) {
 		return fmt.Errorf("%w: invalid runtime definition", delivery.ErrInvalid)
@@ -234,6 +239,7 @@ func (coordinator *Coordinator) hello(ctx context.Context, client Client) error 
 func (coordinator *Coordinator) register(ctx context.Context, client Client, request AcquireRequest, reused bool) (Acquired, error) {
 	item := delivery.Delivery{
 		ID: delivery.NewID(), ServerID: client.ServerID, Route: request.Route, State: delivery.StateStarting,
+		Source: request.Source, Destination: request.Destination,
 		Policy: request.Policy, CreatedAt: request.At.UTC(), UpdatedAt: request.At.UTC(),
 	}
 	var lease *Lease
@@ -249,6 +255,16 @@ func (coordinator *Coordinator) register(ctx context.Context, client Client, req
 		return Acquired{}, err
 	}
 	return Acquired{ServerID: client.ServerID, DeliveryID: item.ID, Reused: reused, Lease: lease}, nil
+}
+
+func unsafeDisplayText(value string) bool {
+	if value == "" {
+		return false
+	}
+	if strings.TrimSpace(value) != value {
+		return true
+	}
+	return strings.IndexFunc(value, func(character rune) bool { return character < 0x20 || character == 0x7f }) >= 0
 }
 
 func (coordinator *Coordinator) reconcileStale(ctx context.Context, snapshot delivery.Snapshot, server delivery.Server) error {

@@ -60,6 +60,7 @@ func acquireWebDelivery(ctx context.Context, plan operation.Plan, configured del
 	}
 	return newWebCoordinator(store, stateDirectory).Acquire(ctx, worker.AcquireRequest{
 		Bind: plan.Options.Listen, Compatibility: "web-v1/" + buildinfo.Version, Route: route,
+		Source: plan.Source.Raw, Destination: plan.Destination.Raw,
 		Policy: configured, Foreground: !plan.Options.Background, At: webNow().UTC(), RuntimeDefinition: runtimeDefinition,
 	})
 }

@@ -138,6 +138,7 @@ func TestRecordValidation(t *testing.T) {
 		func(value *Server) { value.ID = "bad" }, func(value *Server) { value.Bind = " " }, func(value *Server) { value.Bind = "localhost" },
 		func(value *Server) { value.Bind = "localhost:http" }, func(value *Server) { value.Bind = "localhost:0" }, func(value *Server) { value.ControlEndpoint = "bad\nvalue" },
 		func(value *Server) { value.ProcessID = 0 }, func(value *Server) { value.State = "bad" }, func(value *Server) { value.StartedAt = time.Time{} },
+		func(value *Server) { value.Compatibility = "bad\nvalue" },
 	} {
 		candidate := server
 		mutate(&candidate)
@@ -153,6 +154,7 @@ func TestRecordValidation(t *testing.T) {
 		func(value *Delivery) { value.ID = "bad" }, func(value *Delivery) { value.ServerID = "bad" }, func(value *Delivery) { value.Route = "bad" },
 		func(value *Delivery) { value.State = "bad" }, func(value *Delivery) { value.UpdatedAt = value.CreatedAt.Add(-time.Second) },
 		func(value *Delivery) { value.Policy.Version = 0 }, func(value *Delivery) { value.Counters.Read = -1 },
+		func(value *Delivery) { value.Source = "bad\x00value" },
 	} {
 		candidate := delivery
 		mutate(&candidate)

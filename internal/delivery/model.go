@@ -175,6 +175,7 @@ type Server struct {
 	ID              ID        `json:"id"`
 	Bind            string    `json:"bind"`
 	ControlEndpoint string    `json:"controlEndpoint"`
+	Compatibility   string    `json:"compatibility,omitempty"`
 	ProcessID       int       `json:"processId"`
 	State           State     `json:"state"`
 	StartedAt       time.Time `json:"startedAt"`
@@ -184,6 +185,9 @@ type Server struct {
 func (server Server) Validate() error {
 	if !server.ID.Valid() || invalidText(server.Bind) || invalidText(server.ControlEndpoint) || server.ProcessID <= 0 || !server.State.Valid() || invalidTimes(server.StartedAt, server.UpdatedAt) {
 		return fmt.Errorf("%w: invalid server", ErrInvalid)
+	}
+	if server.Compatibility != "" && (invalidText(server.Compatibility) || len(server.Compatibility) > 256) {
+		return fmt.Errorf("%w: invalid server compatibility", ErrInvalid)
 	}
 	_, port, err := net.SplitHostPort(server.Bind)
 	number, numberErr := strconv.ParseUint(port, 10, 16)
@@ -207,19 +211,24 @@ func (route Route) Valid() bool {
 }
 
 type Delivery struct {
-	ID        ID              `json:"id"`
-	ServerID  ID              `json:"serverId"`
-	Route     Route           `json:"route"`
-	State     State           `json:"state"`
-	Policy    Policy          `json:"policy"`
-	Counters  CounterSnapshot `json:"counters"`
-	CreatedAt time.Time       `json:"createdAt"`
-	UpdatedAt time.Time       `json:"updatedAt"`
+	ID          ID              `json:"id"`
+	ServerID    ID              `json:"serverId"`
+	Route       Route           `json:"route"`
+	Source      string          `json:"source,omitempty"`
+	Destination string          `json:"destination,omitempty"`
+	State       State           `json:"state"`
+	Policy      Policy          `json:"policy"`
+	Counters    CounterSnapshot `json:"counters"`
+	CreatedAt   time.Time       `json:"createdAt"`
+	UpdatedAt   time.Time       `json:"updatedAt"`
 }
 
 func (delivery Delivery) Validate() error {
 	if !delivery.ID.Valid() || !delivery.ServerID.Valid() || !delivery.Route.Valid() || !delivery.State.Valid() || invalidTimes(delivery.CreatedAt, delivery.UpdatedAt) {
 		return fmt.Errorf("%w: invalid delivery", ErrInvalid)
+	}
+	if delivery.Source != "" && invalidText(delivery.Source) || delivery.Destination != "" && invalidText(delivery.Destination) {
+		return fmt.Errorf("%w: invalid delivery endpoint metadata", ErrInvalid)
 	}
 	return errors.Join(delivery.Policy.Validate(), delivery.Counters.Validate())
 }

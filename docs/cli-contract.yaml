@@ -1,5 +1,5 @@
 schema_version: 1
-contract_version: 0.11.0
+contract_version: 0.12.0
 target_release: 0.2.0
 language: en
 
@@ -30,13 +30,13 @@ commands:
   - name: servers
     path: servers
     usage: courier servers
-    status: planned
+    status: shipped
     system: false
     flags: []
   - name: servers-stop
     path: servers stop
     usage: courier servers stop <uuid>|--all
-    status: planned
+    status: shipped
     system: false
     flags: [all]
   - name: ui-start
@@ -192,7 +192,7 @@ flags:
     conflicts: []
   - name: all
     syntax: --all
-    status: planned
+    status: shipped
     repeatable: false
     default: "false"
     applies_to: [servers-stop]
@@ -244,3 +244,6 @@ examples:
   - courier from ./data to ./backup/ --archive
   - courier from webhook:// to ./inbox/ --auth basic
   - courier from ./report.pdf to https://example.com/hooks/courier
+  - courier servers
+  - courier servers stop 550e8400-e29b-41d4-a716-446655440000
+  - courier servers stop --all

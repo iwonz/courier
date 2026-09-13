@@ -235,7 +235,7 @@ func runProcess(ctx context.Context, config processConfig) (resultErr error) {
 	now := time.Now().UTC()
 	server := delivery.Server{
 		ID: config.Launch.ServerID, Bind: config.Launch.Bind, ControlEndpoint: config.Launch.ControlEndpoint,
-		ProcessID: os.Getpid(), State: delivery.StateStarting, StartedAt: now, UpdatedAt: now,
+		Compatibility: config.Launch.Compatibility, ProcessID: os.Getpid(), State: delivery.StateStarting, StartedAt: now, UpdatedAt: now,
 	}
 	runtime, err := NewRuntime(ctx, store, server, config.Launch.Compatibility)
 	if err != nil {

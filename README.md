@@ -60,6 +60,9 @@ courier from ./data to ./backup/ --exclude '*.tmp' --exclude-from ./courier.igno
 courier from webhook:// to ./inbox/ --auth basic
 courier from ./report.pdf to https://example.com/hooks/courier
 courier from ./data to https://example.com/hooks/courier --archive
+courier servers
+courier servers stop 550e8400-e29b-41d4-a716-446655440000
+courier servers stop --all
 ```
 
 The destination rules are deterministic:
@@ -124,6 +127,8 @@ Browser delivery pages, the administration interface, and the project landing pa
 See [Browser deliveries](docs/web-deliveries.md) for `web://` URLs, authentication, safe navigation, transactional uploads, and foreground/background lifecycle behavior.
 
 See [Webhook deliveries](docs/webhook-deliveries.md) for Courier's exact incoming and outgoing multipart profile, HTTP result semantics, and intentionally unsupported provider-specific behavior.
+
+See [Server control](docs/server-control.md) for authoritative inventory, UUID-scoped stopping, partial `--all` behavior, and the no-PID-signal trust boundary.
 
 ## License
 

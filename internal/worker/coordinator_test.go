@@ -199,6 +199,25 @@ func TestCoordinatorReuseAndFailures(t *testing.T) {
 	if _, err := coordinator.Acquire(context.Background(), AcquireRequest{}); err == nil {
 		t.Fatal("invalid request accepted")
 	}
+	invalidMetadata := request
+	invalidMetadata.Source = "source"
+	if _, err := coordinator.Acquire(context.Background(), invalidMetadata); !errors.Is(err, delivery.ErrInvalid) {
+		t.Fatalf("unpaired endpoint metadata=%v", err)
+	}
+	invalidMetadata.Destination = "destination"
+	invalidMetadata.Source = " source"
+	if _, err := coordinator.Acquire(context.Background(), invalidMetadata); !errors.Is(err, delivery.ErrInvalid) {
+		t.Fatalf("whitespace endpoint metadata=%v", err)
+	}
+	invalidMetadata.Source = "source\x00"
+	if _, err := coordinator.Acquire(context.Background(), invalidMetadata); !errors.Is(err, delivery.ErrInvalid) {
+		t.Fatalf("control endpoint metadata=%v", err)
+	}
+	validMetadata := request
+	validMetadata.Source, validMetadata.Destination = "source", "destination"
+	if err := validMetadata.Validate(); err != nil {
+		t.Fatalf("valid endpoint metadata=%v", err)
+	}
 	locker.err = want
 	if _, err := coordinator.Acquire(context.Background(), request); !errors.Is(err, want) {
 		t.Fatalf("lock=%v", err)

@@ -15,6 +15,7 @@ import (
 
 	"github.com/iwonz/courier/internal/archive"
 	"github.com/iwonz/courier/internal/buildinfo"
+	"github.com/iwonz/courier/internal/control"
 	"github.com/iwonz/courier/internal/endpoint"
 	"github.com/iwonz/courier/internal/fsx"
 	"github.com/iwonz/courier/internal/helper"
@@ -64,6 +65,8 @@ type Dependencies struct {
 	DeliveryEndpoint    func(context.Context, endpoint.Endpoint) (webdelivery.EndpointRuntime, error)
 	Select              func([]operation.SelectionRule) (selection.Selector, error)
 	Update              func(context.Context) (update.Result, error)
+	ListServers         func(context.Context) ([]control.ServerView, error)
+	StopServers         func(context.Context, control.StopRequest) (control.StopResult, error)
 	Reporter            func(io.Writer, bool) *report.Reporter
 	Terminal            func(io.Writer) bool
 	TempDir             string
@@ -174,6 +177,8 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 			return selection.Compile(rules, selection.OpenFile)
 		},
 		Update:              updater.Run,
+		ListServers:         listServers,
+		StopServers:         stopServers,
 		Reporter:            report.New,
 		Terminal:            writerIsTerminal,
 		Build:               BuildIdentity{Version: buildinfo.Version, Commit: buildinfo.Commit, Date: buildinfo.Date},
@@ -224,6 +229,7 @@ func writerIsTerminal(output io.Writer) bool {
 func NewRoot(dependencies Dependencies) *cobra.Command {
 	return mustRoot(NewRootWithProviders(
 		ProviderFunc(func() *cobra.Command { return newTransferCommand(dependencies) }),
+		ProviderFunc(func() *cobra.Command { return newServersCommand(dependencies.ListServers, dependencies.StopServers) }),
 		ProviderFunc(func() *cobra.Command { return newVersionCommand(dependencies.Build) }),
 		ProviderFunc(func() *cobra.Command { return newUpdateCommand(dependencies.Update) }),
 	))
