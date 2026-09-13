@@ -1,0 +1,175 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]*.[0-9]*.[0-9]*"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Publication credentials
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required secrets
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          SCOOP_BUCKET_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
+          WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
+        run: |
+          if ! grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' <<<"$GITHUB_REF_NAME"; then
+            echo "Release tags must use stable vMAJOR.MINOR.PATCH syntax" >&2
+            exit 1
+          fi
+          for name in NPM_TOKEN HOMEBREW_TAP_GITHUB_TOKEN SCOOP_BUCKET_GITHUB_TOKEN WINGET_GITHUB_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "Missing required GitHub Actions secret: $name" >&2
+              exit 1
+            fi
+          done
+
+  quality:
+    name: Repeat quality and release dry run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.25.5
+          cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: v2.18.1
+          install-only: true
+      - run: make verify GORELEASER=goreleaser
+
+  powershell-installer:
+    name: Repeat PowerShell installer acceptance
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - shell: pwsh
+        run: ./scripts/test-install.ps1
+
+  publish:
+    name: GitHub, Homebrew, Scoop, and Winget
+    needs:
+      - preflight
+      - quality
+      - powershell-installer
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.25.5
+          cache: true
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: v2.18.1
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          SCOOP_BUCKET_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
+          WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
+
+  npm:
+    name: npmjs @iwonz/courier
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          scope: "@iwonz"
+      - name: Publish package matching the Git tag
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          npm version "$version" --no-git-tag-version --prefix npm
+          npm publish ./npm --access public --provenance
+
+  verify:
+    name: Verify published surfaces
+    needs: npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Verify GitHub Release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          assets=$(gh release view "$GITHUB_REF_NAME" --repo iwonz/courier --json assets --jq '.assets[].name')
+          for name in \
+            "courier_${version}_darwin_amd64.tar.gz" \
+            "courier_${version}_darwin_arm64.tar.gz" \
+            "courier_${version}_linux_amd64.tar.gz" \
+            "courier_${version}_linux_arm64.tar.gz" \
+            "courier_${version}_windows_amd64.tar.gz" \
+            "courier_${version}_windows_arm64.tar.gz" \
+            "courier_${version}_windows_amd64.zip" \
+            "courier_${version}_windows_arm64.zip" \
+            "courier_${version}_darwin_amd64" \
+            "courier_${version}_darwin_arm64" \
+            "courier_${version}_linux_amd64" \
+            "courier_${version}_linux_arm64" \
+            "courier_${version}_windows_amd64.exe" \
+            "courier_${version}_windows_arm64.exe" \
+            "courier_${version}_linux_amd64.deb" \
+            "courier_${version}_linux_arm64.deb" \
+            "courier_${version}_linux_amd64.rpm" \
+            "courier_${version}_linux_arm64.rpm" \
+            "courier_${version}_linux_amd64.apk" \
+            "courier_${version}_linux_arm64.apk" \
+            "courier_${version}_linux_amd64.pkg.tar.zst" \
+            "courier_${version}_linux_arm64.pkg.tar.zst" \
+            "checksums.txt"; do
+            grep -qx "$name" <<<"$assets" || { echo "Missing release asset: $name" >&2; exit 1; }
+          done
+      - name: Verify npm publication
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          for attempt in 1 2 3 4 5 6; do
+            published=$(npm view "@iwonz/courier@$version" version 2>/dev/null || true)
+            [ "$published" = "$version" ] && exit 0
+            sleep 10
+          done
+          echo "npm package did not become visible: @iwonz/courier@$version" >&2
+          exit 1
+      - name: Verify Homebrew and Scoop catalogs
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          SCOOP_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
+        run: |
+          gh api repos/iwonz/homebrew-tap/contents/Casks/courier.rb --jq .sha >/dev/null
+          GH_TOKEN="$SCOOP_TOKEN" gh api repos/iwonz/scoop-bucket/contents/bucket/courier.json --jq .sha >/dev/null
+      - name: Verify Winget pull request
+        env:
+          GH_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          count=$(gh pr list --repo microsoft/winget-pkgs --head "iwonz:courier-$version" --state open --json number --jq length)
+          [ "$count" -ge 1 ] || { echo "Winget pull request is missing for $version" >&2; exit 1; }

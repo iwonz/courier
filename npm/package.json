@@ -1,0 +1,42 @@
+{
+  "name": "@iwonz/courier",
+  "version": "0.0.0-development",
+  "description": "Standalone CLI for safe local and SSH file transfers",
+  "license": "MIT",
+  "author": "iwonz",
+  "homepage": "https://github.com/iwonz/courier#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iwonz/courier.git"
+  },
+  "bugs": {
+    "url": "https://github.com/iwonz/courier/issues"
+  },
+  "keywords": [
+    "cli",
+    "file-transfer",
+    "sftp",
+    "ssh",
+    "backup"
+  ],
+  "bin": {
+    "courier": "bin/courier.js"
+  },
+  "files": [
+    "bin/",
+    "install.js",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "postinstall": "node install.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

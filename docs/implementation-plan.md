@@ -10,6 +10,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 4 | `feat/004-native-ssh-transport` | `native-ssh-transport` | SSH config/auth/known_hosts/ProxyJump, SFTP, remote OS detection |
 | 5 | `feat/005-cli-update-reporting` | `cli-update-reporting` | `from … to …`, reporting, exit codes, self-update |
 | 6 | `feat/006-distribution-and-quality` | `distribution-and-quality` | GoReleaser, installers, npm/Brew, CI, integration and cleanup tests |
+| 7 | `feat/007-optional-remote-helper` | `optional-remote-helper` | Consent-gated helper fallback for genuine remote capability gaps and Windows runtime hardening |
 
 ## Definition of Done
 

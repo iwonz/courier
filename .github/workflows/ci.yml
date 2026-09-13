@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Tests, coverage, and release dry run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.25.5
+          cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: v2.18.1
+          install-only: true
+      - run: make verify GORELEASER=goreleaser
+      - uses: actions/upload-artifact@v7
+        with:
+          name: snapshot-artifacts
+          path: dist/
+          retention-days: 3
+
+  powershell-installer:
+    name: PowerShell installer acceptance
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - shell: pwsh
+        run: ./scripts/test-install.ps1

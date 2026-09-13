@@ -1,0 +1,183 @@
+version: 2
+
+project_name: courier
+
+metadata:
+  mod_timestamp: "{{ .CommitTimestamp }}"
+
+builds:
+  - id: courier-unix
+    main: ./cmd/courier
+    binary: courier
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - >-
+        -s -w
+        -X github.com/iwonz/courier/internal/buildinfo.Version={{ .Version }}
+        -X github.com/iwonz/courier/internal/buildinfo.Commit={{ .Commit }}
+        -X github.com/iwonz/courier/internal/buildinfo.Date={{ .Date }}
+
+  - id: courier-windows
+    main: ./cmd/courier
+    binary: courier
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - >-
+        -s -w
+        -X github.com/iwonz/courier/internal/buildinfo.Version={{ .Version }}
+        -X github.com/iwonz/courier/internal/buildinfo.Commit={{ .Commit }}
+        -X github.com/iwonz/courier/internal/buildinfo.Date={{ .Date }}
+
+archives:
+  - id: courier-tar
+    ids:
+      - courier-unix
+      - courier-windows
+    formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+  - id: courier-windows-zip
+    ids:
+      - courier-windows
+    formats:
+      - zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+  - id: courier-raw
+    ids:
+      - courier-unix
+      - courier-windows
+    formats:
+      - binary
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+nfpms:
+  - id: courier-linux-packages
+    ids:
+      - courier-unix
+    package_name: courier
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    vendor: iwonz
+    homepage: https://github.com/iwonz/courier
+    maintainer: iwonz
+    description: Safely transfer files and directories between local and SSH endpoints.
+    license: MIT
+    bindir: /usr/bin
+    section: utils
+    priority: optional
+    formats:
+      - deb
+      - rpm
+      - apk
+      - archlinux
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+changelog:
+  use: git
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+      - "Merge pull request"
+      - "Merge branch"
+
+release:
+  github:
+    owner: iwonz
+    name: courier
+  name_template: "Courier {{ .Tag }}"
+  draft: false
+  prerelease: auto
+
+homebrew_casks:
+  - name: courier
+    ids:
+      - courier-tar
+    repository:
+      owner: iwonz
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Casks
+    binaries:
+      - courier
+    homepage: https://github.com/iwonz/courier
+    description: Safely transfer files and directories between local and SSH endpoints.
+    license: MIT
+    commit_msg_template: "chore: update courier to {{ .Tag }}"
+
+scoops:
+  - name: courier
+    ids:
+      - courier-windows-zip
+    repository:
+      owner: iwonz
+      name: scoop-bucket
+      token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
+    directory: bucket
+    homepage: https://github.com/iwonz/courier
+    description: Safely transfer files and directories between local and SSH endpoints.
+    license: MIT
+    commit_msg_template: "chore: update courier to {{ .Tag }}"
+
+winget:
+  - name: courier
+    ids:
+      - courier-windows-zip
+    publisher: iwonz
+    package_identifier: iwonz.Courier
+    package_name: Courier
+    short_description: Safely transfer files and directories between local and SSH endpoints.
+    description: An extensible standalone CLI for safe local and SSH file transfers.
+    license: MIT
+    license_url: https://github.com/iwonz/courier/blob/main/LICENSE
+    publisher_url: https://github.com/iwonz
+    publisher_support_url: https://github.com/iwonz/courier/issues
+    homepage: https://github.com/iwonz/courier
+    release_notes: "{{ .Changelog }}"
+    release_notes_url: "https://github.com/iwonz/courier/releases/tag/{{ .Tag }}"
+    tags:
+      - cli
+      - file-transfer
+      - sftp
+      - ssh
+    repository:
+      owner: iwonz
+      name: winget-pkgs
+      token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
+      pull_request:
+        enabled: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
+    commit_msg_template: "iwonz.Courier: {{ .Tag }}"
