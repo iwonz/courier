@@ -66,11 +66,12 @@ The dependency-free postinstall script selects the host tar.gz archive, verifies
 ## Homebrew
 
 ```sh
+brew trust --cask iwonz/courier/courier
 brew tap iwonz/courier https://github.com/iwonz/courier
 brew install --cask iwonz/courier/courier
 ```
 
-The explicit tap URL lets the `iwonz/courier` repository act as its own tap. GoReleaser updates `Casks/courier.rb` on `main` after each release. The generated cask contains checksummed macOS amd64/arm64 assets and Linux assets for Homebrew environments that support binary casks.
+Homebrew 6 requires explicit trust before it evaluates any non-official cask. Courier trusts only the fully qualified cask, not every item the repository may contain. The explicit tap URL then lets the nonstandard `iwonz/courier` repository act as its own tap. GoReleaser updates `Casks/courier.rb` on `main` after each release. The generated cask contains checksummed macOS amd64/arm64 assets and Linux assets for Homebrew environments that support binary casks.
 
 ## Scoop
 

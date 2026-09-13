@@ -38,6 +38,7 @@ yarn dlx @iwonz/courier --help       # modern Yarn
 pnpm add --global @iwonz/courier
 pnpm dlx @iwonz/courier --help
 
+brew trust --cask iwonz/courier/courier
 brew tap iwonz/courier https://github.com/iwonz/courier
 brew install --cask iwonz/courier/courier
 
