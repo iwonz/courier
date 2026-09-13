@@ -108,6 +108,8 @@ make verify      # tests, npm checks, and goreleaser release --snapshot --clean
 
 Development is spec-first: every task owns a path under `openspec/changes`, a conventional branch name, and one conventional commit. See the [implementation plan](docs/implementation-plan.md) and [release runbook](docs/releasing.md).
 
+The machine-readable [CLI contract](docs/cli-contract.yaml) is the source of truth for shipped and planned commands. Its generated [command reference](docs/cli-reference.md) is checked against the live Cobra tree during every verification run.
+
 ## License
 
 [MIT](LICENSE)

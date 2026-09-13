@@ -199,74 +199,18 @@ func writerIsTerminal(output io.Writer) bool {
 
 // NewRoot builds the Cobra command tree without global state.
 func NewRoot(dependencies Dependencies) *cobra.Command {
-	root := &cobra.Command{
-		Use:           "courier",
-		Short:         "Safely transfer files and directories",
-		SilenceErrors: true,
-		SilenceUsage:  true,
-		Args:          cobra.NoArgs,
-		RunE: func(command *cobra.Command, _ []string) error {
-			return command.Help()
-		},
+	return mustRoot(NewRootWithProviders(
+		ProviderFunc(func() *cobra.Command { return newTransferCommand(dependencies) }),
+		ProviderFunc(func() *cobra.Command { return newVersionCommand(dependencies.Build) }),
+		ProviderFunc(func() *cobra.Command { return newUpdateCommand(dependencies.Update) }),
+	))
+}
+
+func mustRoot(root *cobra.Command, err error) *cobra.Command {
+	if err != nil {
+		panic(err)
 	}
-	root.AddCommand(newTransferCommand(dependencies), newVersionCommand(dependencies.Build), newUpdateCommand(dependencies.Update))
 	return root
-}
-
-func newTransferCommand(dependencies Dependencies) *cobra.Command {
-	archiveMode := false
-	command := &cobra.Command{
-		Use:   "from <source> to <destination>",
-		Short: "Transfer a file or directory",
-		Args: func(_ *cobra.Command, args []string) error {
-			if len(args) != 3 || args[1] != "to" {
-				return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: errors.New("expected: courier from <source> to <destination> [flags]")}
-			}
-			return nil
-		},
-		RunE: func(command *cobra.Command, args []string) error {
-			return runTransfer(command.Context(), dependencies, args[0], args[2], archiveMode, command.OutOrStdout(), command.ErrOrStderr())
-		},
-	}
-	command.Flags().BoolVar(&archiveMode, "archive", false, "create and transfer <source-name>.tar.gz")
-	return command
-}
-
-func newVersionCommand(identity BuildIdentity) *cobra.Command {
-	return &cobra.Command{
-		Use:   "version",
-		Short: "Print version, commit, and build date",
-		Args:  cobra.NoArgs,
-		Run: func(command *cobra.Command, _ []string) {
-			fmt.Fprintf(command.OutOrStdout(), "courier %s (commit %s, built %s)\n", identity.Version, identity.Commit, identity.Date)
-		},
-	}
-}
-
-func newUpdateCommand(run func(context.Context) (update.Result, error)) *cobra.Command {
-	return &cobra.Command{
-		Use:   "update",
-		Short: "Install the latest verified GitHub release",
-		Args:  cobra.NoArgs,
-		RunE: func(command *cobra.Command, _ []string) error {
-			if run == nil {
-				return &commandError{code: ExitUpdate, stage: "update", cause: errors.New("updater is unavailable")}
-			}
-			result, err := run(command.Context())
-			if err != nil {
-				return &commandError{code: ExitUpdate, stage: "update", cause: err}
-			}
-			if result.Current {
-				fmt.Fprintf(command.OutOrStdout(), "courier %s is current\n", result.From)
-			} else {
-				fmt.Fprintf(command.OutOrStdout(), "updated courier from %s to %s\n", result.From, result.To)
-				if result.Notes != "" {
-					fmt.Fprintln(command.OutOrStdout(), result.Notes)
-				}
-			}
-			return nil
-		},
-	}
 }
 
 // Execute runs a root with explicit arguments and stable exit-code mapping.

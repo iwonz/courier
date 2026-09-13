@@ -1,9 +1,4 @@
-# cli-foundation Specification
-
-## Purpose
-Define Courier's extensible command assembly, build identity, and help behavior.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Extensible command registry
 
@@ -23,15 +18,6 @@ Courier SHALL construct its Cobra tree from independently registered command pro
 
 - **WHEN** the first CLI argument does not name a registered command
 - **THEN** Courier returns a stable usage error and does not execute another handler
-
-### Requirement: Build identity
-
-Courier SHALL expose its semantic version, commit and build date through the `version` command, with development-safe defaults when linker metadata is absent.
-
-#### Scenario: Development build reports identity
-
-- **WHEN** a locally built binary runs `courier version`
-- **THEN** it prints a non-empty version, commit and build date
 
 ### Requirement: Help output
 

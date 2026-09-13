@@ -1,7 +1,7 @@
 GORELEASER_VERSION := v2.18.1
 GORELEASER ?= .cache/tools/goreleaser
 
-.PHONY: all fmt-check vet test npm-test goreleaser-check snapshot verify precommit hooks release clean
+.PHONY: all fmt-check vet contract-check test npm-test goreleaser-check snapshot verify precommit hooks release clean
 
 all: verify
 
@@ -12,7 +12,10 @@ fmt-check:
 vet:
 	go vet ./...
 
-test: fmt-check vet
+contract-check:
+	go run ./cmd/contractdoc --check
+
+test: fmt-check vet contract-check
 	go test -race ./... -covermode=atomic -coverprofile=coverage.out
 	@total="$$(go tool cover -func=coverage.out | awk '/^total:/ { print $$3 }')"; \
 	if [ "$$total" != "100.0%" ]; then printf '%s\n' "statement coverage is $$total, expected 100.0%" >&2; exit 1; fi

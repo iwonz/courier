@@ -1,0 +1,244 @@
+schema_version: 1
+contract_version: 0.8.0
+target_release: 0.2.0
+language: en
+
+endpoint_kinds:
+  - name: local
+    status: shipped
+    syntax: ./path, /absolute/path, or an explicit Windows path
+  - name: ssh
+    status: shipped
+    syntax: "[user@]host:/path or [user@]host:C:/path"
+  - name: web
+    status: planned
+    syntax: "web://"
+  - name: webhook
+    status: planned
+    syntax: "webhook://"
+  - name: http
+    status: planned
+    syntax: "http://host/path or https://host/path"
+
+commands:
+  - name: from
+    path: from
+    usage: courier from <source> to <destination> [options]
+    status: shipped
+    system: false
+    flags: [archive]
+  - name: servers
+    path: servers
+    usage: courier servers
+    status: planned
+    system: false
+    flags: []
+  - name: servers-stop
+    path: servers stop
+    usage: courier servers stop <uuid>|--all
+    status: planned
+    system: false
+    flags: [all]
+  - name: ui-start
+    path: ui start
+    usage: courier ui start [options]
+    status: planned
+    system: false
+    flags: [listen, background]
+  - name: ui-stop
+    path: ui stop
+    usage: courier ui stop
+    status: planned
+    system: false
+    flags: []
+  - name: help
+    path: help
+    usage: courier help [command]
+    status: system
+    system: true
+    flags: []
+  - name: version
+    path: version
+    usage: courier version
+    status: system
+    system: true
+    flags: []
+  - name: update
+    path: update
+    usage: courier update
+    status: system
+    system: true
+    flags: []
+
+flags:
+  - name: archive
+    syntax: --archive
+    status: shipped
+    repeatable: false
+    default: "false"
+    applies_to: [path-to-path, path-to-web, path-to-http]
+    conflicts: [extract]
+  - name: extract
+    syntax: --extract
+    status: planned
+    repeatable: false
+    default: "false"
+    applies_to: [path-to-path, web-to-path, webhook-to-path]
+    conflicts: [archive]
+  - name: listen
+    syntax: --listen <host:port>
+    status: planned
+    repeatable: false
+    default: "127.0.0.1:8080"
+    applies_to: [web-to-path, path-to-web, webhook-to-path, ui-start]
+    conflicts: []
+  - name: background
+    syntax: --background
+    status: planned
+    repeatable: false
+    default: "false"
+    applies_to: [web-to-path, path-to-web, webhook-to-path, ui-start]
+    conflicts: []
+  - name: auth
+    syntax: --auth <none|basic|password>
+    status: planned
+    repeatable: false
+    default: none
+    applies_to: [web-to-path, path-to-web, webhook-to-path, path-to-http]
+    conflicts: []
+  - name: auth-attempts
+    syntax: --auth-attempts <N>
+    status: planned
+    repeatable: false
+    default: "5"
+    applies_to: [web-to-path, path-to-web, webhook-to-path]
+    conflicts: []
+  - name: auth-fail-action
+    syntax: --auth-fail-action <ban|stop>
+    status: planned
+    repeatable: false
+    default: ban
+    applies_to: [web-to-path, path-to-web, webhook-to-path]
+    conflicts: []
+  - name: limit
+    syntax: --limit <N>
+    status: planned
+    repeatable: false
+    default: unlimited
+    applies_to: [web-to-path, path-to-web, webhook-to-path]
+    conflicts: []
+  - name: no-ui
+    syntax: --no-ui
+    status: planned
+    repeatable: false
+    default: "false"
+    applies_to: [path-to-web]
+    conflicts: []
+  - name: allow-ip
+    syntax: --allow-ip <IP/CIDR>
+    status: planned
+    repeatable: true
+    default: none
+    applies_to: [web-to-path, path-to-web, webhook-to-path]
+    conflicts: []
+  - name: exclude
+    syntax: --exclude <pattern>
+    status: planned
+    repeatable: true
+    default: none
+    applies_to: [path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http]
+    conflicts: []
+  - name: exclude-regex
+    syntax: --exclude-regex <regex>
+    status: planned
+    repeatable: true
+    default: none
+    applies_to: [path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http]
+    conflicts: []
+  - name: exclude-from
+    syntax: --exclude-from <file>
+    status: planned
+    repeatable: true
+    default: none
+    applies_to: [path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http]
+    conflicts: []
+  - name: max-file-size
+    syntax: --max-file-size <size|unlimited>
+    status: planned
+    repeatable: false
+    default: 10GiB
+    applies_to: [web-to-path, webhook-to-path]
+    conflicts: []
+  - name: max-extracted-size
+    syntax: --max-extracted-size <size|unlimited>
+    status: planned
+    repeatable: false
+    default: 100GiB
+    applies_to: [path-to-path, web-to-path, webhook-to-path]
+    conflicts: []
+  - name: upload-rate
+    syntax: --upload-rate <rate|unlimited>
+    status: planned
+    repeatable: false
+    default: unlimited
+    applies_to: [local-to-ssh, ssh-to-ssh, web-to-path, webhook-to-path, path-to-http]
+    conflicts: []
+  - name: download-rate
+    syntax: --download-rate <rate|unlimited>
+    status: planned
+    repeatable: false
+    default: unlimited
+    applies_to: [ssh-to-local, ssh-to-ssh, path-to-web]
+    conflicts: []
+  - name: all
+    syntax: --all
+    status: planned
+    repeatable: false
+    default: "false"
+    applies_to: [servers-stop]
+    conflicts: []
+
+routes:
+  - name: path-to-path
+    status: shipped
+    source: [local, ssh]
+    destination: [local, ssh]
+    allowed_flags: [archive]
+  - name: web-to-path
+    status: planned
+    source: [web]
+    destination: [local, ssh]
+    allowed_flags: [extract, listen, background, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
+  - name: path-to-web
+    status: planned
+    source: [local, ssh]
+    destination: [web]
+    allowed_flags: [archive, listen, background, auth, auth-attempts, auth-fail-action, limit, no-ui, allow-ip, exclude, exclude-regex, exclude-from, download-rate]
+  - name: webhook-to-path
+    status: planned
+    source: [webhook]
+    destination: [local, ssh]
+    allowed_flags: [extract, listen, background, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
+  - name: path-to-http
+    status: planned
+    source: [local, ssh]
+    destination: [http]
+    allowed_flags: [archive, auth, exclude, exclude-regex, exclude-from, upload-rate, download-rate]
+
+unsupported:
+  - courier servers list
+  - courier servers clean
+  - public worker commands
+  - --mirror
+  - --zip
+  - --unzip
+  - --archive --extract
+  - HTTP URL as a source
+  - web:// to web://
+  - webhook:// to web://
+
+examples:
+  - courier from ./report.pdf to server:/srv/inbox/
+  - courier from root@203.0.113.10:/opt/node/data to ./backup/
+  - courier from source-server:/opt/node/data to backup-server:/srv/data/
+  - courier from ./data to ./backup/ --archive
