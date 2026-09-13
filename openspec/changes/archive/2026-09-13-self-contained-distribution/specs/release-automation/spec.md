@@ -17,3 +17,8 @@ Courier SHALL provide one command that accepts or interactively requests a seman
 
 - **WHEN** the npm publication secret is not configured
 - **THEN** the local and workflow preflight identify the missing connection without embedding credentials in source
+
+#### Scenario: Missing catalog setup
+
+- **WHEN** the single Courier repository or in-repository manifest configuration is invalid
+- **THEN** documentation and workflow preflight identify the exact problem without requiring an external catalog repository or embedding credentials in source
