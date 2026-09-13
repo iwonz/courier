@@ -193,7 +193,7 @@ func TestPreflightFailures(t *testing.T) {
 func TestTransferErrorFormatting(t *testing.T) {
 	cause := errors.New("boom")
 	err := &Error{Stage: progress.StageCommit, Confirmed: 7, Cause: cause}
-	if !strings.Contains(err.Error(), "commit failed after 7") || !errors.Is(err, cause) {
+	if !strings.Contains(err.Error(), "commit failed after read=0 sent=0 confirmed=7") || !errors.Is(err, cause) {
 		t.Fatalf("error=%v", err)
 	}
 }

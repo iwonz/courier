@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -38,6 +39,16 @@ func TestDependencyFailure(t *testing.T) {
 	var stderr bytes.Buffer
 	if code := run(context.Background(), nil, nil, io.Discard, &stderr); code != app.ExitConnection || !strings.Contains(stderr.String(), "config") {
 		t.Fatalf("code=%d stderr=%q", code, stderr.String())
+	}
+}
+
+func TestInternalFailureRedactionAndInterruption(t *testing.T) {
+	var stderr bytes.Buffer
+	if code := internalFailure(&stderr, app.ExitControl, "control", fmt.Errorf("token=unsafe: %w", context.Canceled)); code != app.ExitInterrupted {
+		t.Fatalf("code=%d", code)
+	}
+	if output := stderr.String(); strings.Contains(output, "unsafe") || !strings.Contains(output, "token=[REDACTED]") {
+		t.Fatalf("stderr=%q", output)
 	}
 }
 

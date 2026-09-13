@@ -58,3 +58,12 @@ Courier SHALL treat stored process identifiers and endpoints as discovery metada
 
 - **WHEN** a registry record contains a PID that has been reused by another process
 - **THEN** later lifecycle logic does not treat that PID alone as proof of Courier ownership
+
+### Requirement: Bounded private operational history
+
+Courier SHALL store only validated, sanitized operational metadata in private immutable history entries and SHALL retain the newest 256 events by default.
+
+#### Scenario: Retention bound is exceeded
+
+- **WHEN** appending a valid event causes history to exceed its configured retention
+- **THEN** Courier removes only its oldest private history files, preserves deterministic chronological order, and synchronizes the state directory

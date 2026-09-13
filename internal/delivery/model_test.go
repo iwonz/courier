@@ -7,6 +7,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/iwonz/courier/internal/progress"
 )
 
 const (
@@ -130,6 +132,9 @@ func TestRecordValidation(t *testing.T) {
 	if err := (CounterSnapshot{Read: -1}).Validate(); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("counter=%v", err)
 	}
+	if err := (CounterSnapshot{Read: 1, Sent: 2}).Validate(); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("counter ordering=%v", err)
+	}
 	server := validServer()
 	if err := server.Validate(); err != nil {
 		t.Fatal(err)
@@ -202,7 +207,7 @@ func TestRecordValidation(t *testing.T) {
 	}
 
 	for _, kind := range []HistoryKind{HistoryRegistered, HistoryActivated, HistoryStopped, HistoryFailed} {
-		value := HistoryEvent{ID: thirdID, TargetID: deliveryID, Kind: kind, At: testTime}
+		value := HistoryEvent{ID: thirdID, TargetID: deliveryID, Kind: kind, At: testTime, Stage: progress.StageComplete, Message: "safe failure"}
 		if err := value.Validate(); err != nil {
 			t.Fatalf("history=%+v err=%v", value, err)
 		}
@@ -214,6 +219,8 @@ func TestRecordValidation(t *testing.T) {
 		{ID: thirdID, TargetID: deliveryID, Kind: HistoryStopped},
 		{ID: thirdID, TargetID: deliveryID, Kind: HistoryStopped, At: time.Unix(-1, 0)},
 		{ID: thirdID, TargetID: deliveryID, Kind: HistoryStopped, At: testTime, Counters: CounterSnapshot{Sent: -1}},
+		{ID: thirdID, TargetID: deliveryID, Kind: HistoryStopped, At: testTime, Stage: "unknown"},
+		{ID: thirdID, TargetID: deliveryID, Kind: HistoryStopped, At: testTime, Message: "password=unsafe"},
 	} {
 		if err := value.Validate(); !errors.Is(err, ErrInvalid) {
 			t.Fatalf("history=%+v err=%v", value, err)
@@ -229,7 +236,7 @@ func TestCountersConcurrentAndBounded(t *testing.T) {
 	if _, err := NewCounters(CounterSnapshot{Read: -1}); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("new counters=%v", err)
 	}
-	counters, err := NewCounters(CounterSnapshot{Read: 1, Sent: 2, Confirmed: 3})
+	counters, err := NewCounters(CounterSnapshot{Read: 3, Sent: 2, Confirmed: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,20 +248,23 @@ func TestCountersConcurrentAndBounded(t *testing.T) {
 			if err := counters.AddRead(1); err != nil {
 				t.Error(err)
 			}
-			if err := counters.AddSent(2); err != nil {
+			if err := counters.AddSent(1); err != nil {
 				t.Error(err)
 			}
-			if err := counters.AddConfirmed(3); err != nil {
+			if err := counters.AddConfirmed(1); err != nil {
 				t.Error(err)
 			}
 		}()
 	}
 	group.Wait()
-	if got := counters.Snapshot(); got != (CounterSnapshot{Read: 101, Sent: 202, Confirmed: 303}) {
+	if got := counters.Snapshot(); got != (CounterSnapshot{Read: 103, Sent: 102, Confirmed: 101}) {
 		t.Fatalf("snapshot=%+v", got)
 	}
 	if err := counters.AddRead(-1); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("negative=%v", err)
+	}
+	if err := newCountersForTest().AddSent(1); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("counter ordering=%v", err)
 	}
 	overflow, err := NewCounters(CounterSnapshot{Read: math.MaxInt64})
 	if err != nil {
@@ -263,6 +273,11 @@ func TestCountersConcurrentAndBounded(t *testing.T) {
 	if err := overflow.AddRead(1); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("overflow=%v", err)
 	}
+}
+
+func newCountersForTest() *Counters {
+	counters, _ := NewCounters(CounterSnapshot{})
+	return counters
 }
 
 func TestRegistryLifecycle(t *testing.T) {

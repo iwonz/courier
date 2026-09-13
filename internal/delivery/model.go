@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/iwonz/courier/internal/diagnostic"
+	"github.com/iwonz/courier/internal/progress"
 )
 
 const SchemaVersion = 1
@@ -165,8 +167,8 @@ type CounterSnapshot struct {
 }
 
 func (counter CounterSnapshot) Validate() error {
-	if counter.Read < 0 || counter.Sent < 0 || counter.Confirmed < 0 {
-		return fmt.Errorf("%w: counters must be non-negative", ErrInvalid)
+	if counter.Read < 0 || counter.Sent < 0 || counter.Confirmed < 0 || counter.Confirmed > counter.Sent || counter.Sent > counter.Read {
+		return fmt.Errorf("%w: counters require 0 <= confirmed <= sent <= read", ErrInvalid)
 	}
 	return nil
 }
@@ -302,6 +304,8 @@ type HistoryEvent struct {
 	TargetID ID              `json:"targetId"`
 	Kind     HistoryKind     `json:"kind"`
 	At       time.Time       `json:"at"`
+	Stage    progress.Stage  `json:"stage,omitempty"`
+	Message  string          `json:"message,omitempty"`
 	Counters CounterSnapshot `json:"counters"`
 }
 
@@ -309,6 +313,9 @@ func (event HistoryEvent) Validate() error {
 	validKind := event.Kind == HistoryRegistered || event.Kind == HistoryActivated || event.Kind == HistoryStopped || event.Kind == HistoryFailed
 	if !event.ID.Valid() || !event.TargetID.Valid() || !validKind || event.At.IsZero() || event.At.Before(time.Unix(0, 0)) {
 		return fmt.Errorf("%w: invalid history event", ErrInvalid)
+	}
+	if event.Stage != "" && !event.Stage.Valid() || event.Message != "" && (invalidText(event.Message) || len(event.Message) > 1024 || diagnostic.Redact(event.Message) != event.Message) {
+		return fmt.Errorf("%w: unsafe history diagnostics", ErrInvalid)
 	}
 	return event.Counters.Validate()
 }

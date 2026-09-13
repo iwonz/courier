@@ -14,6 +14,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/iwonz/courier/internal/progress"
 )
 
 func TestStoreRegistryAndHistory(t *testing.T) {
@@ -162,6 +164,74 @@ func TestConcurrentStoreRevisionCommit(t *testing.T) {
 	if successes != 1 || conflicts != 1 {
 		t.Fatalf("results=%v", errorsSeen)
 	}
+}
+
+func TestHistoryRetentionAndRedaction(t *testing.T) {
+	directory := filepath.Join(t.TempDir(), "state")
+	store, err := OpenStoreWithHistoryRetention(directory, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	ids := []ID{NewID(), NewID(), NewID()}
+	for index, id := range ids {
+		event := HistoryEvent{
+			ID: id, TargetID: deliveryID, Kind: HistoryFailed, At: testTime.Add(time.Duration(index) * time.Nanosecond),
+			Stage: progress.StageTransfer, Message: "https://user:pass@example.test/path?token=unsafe",
+			Counters: CounterSnapshot{Read: int64(index), Sent: int64(index), Confirmed: int64(index)},
+		}
+		if err := store.AppendHistory(context.Background(), event); err != nil {
+			t.Fatal(err)
+		}
+	}
+	history, err := store.History(context.Background())
+	if err != nil || len(history) != 2 || history[0].ID != ids[1] || history[1].ID != ids[2] {
+		t.Fatalf("history=%+v err=%v", history, err)
+	}
+	for _, event := range history {
+		if event.Message != "https://example.test/path" {
+			t.Fatalf("unsafe message persisted: %q", event.Message)
+		}
+	}
+	if _, err := OpenStoreWithHistoryRetention(filepath.Join(t.TempDir(), "invalid"), 0); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("retention=%v", err)
+	}
+}
+
+func TestHistoryRotationFailures(t *testing.T) {
+	first := historyFilename(HistoryEvent{ID: thirdID, At: testTime})
+	second := historyFilename(HistoryEvent{ID: fourthID, At: testTime.Add(time.Nanosecond)})
+	entries := []fs.DirEntry{fakeDirEntry{name: "unrelated"}, fakeDirEntry{name: second}, fakeDirEntry{name: first}}
+	want := errors.New("failure")
+	tests := []struct {
+		name      string
+		ctx       context.Context
+		retention int
+		root      *fakeStateRoot
+		want      error
+	}{
+		{"canceled", canceledContext(), 1, &fakeStateRoot{}, context.Canceled},
+		{"read directory", context.Background(), 1, &fakeStateRoot{readDirErr: want}, want},
+		{"default bound", context.Background(), 0, &fakeStateRoot{}, nil},
+		{"within bound", context.Background(), 2, &fakeStateRoot{entries: entries}, nil},
+		{"private check", context.Background(), 1, &fakeStateRoot{entries: entries, lstatErr: want}, want},
+		{"remove", context.Background(), 1, &fakeStateRoot{entries: entries, lstatInfo: fakeFileInfo{mode: 0o600}, removeErr: want}, want},
+		{"sync", context.Background(), 1, &fakeStateRoot{entries: entries, lstatInfo: fakeFileInfo{mode: 0o600}, syncErr: want}, want},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			store := &Store{root: test.root, historyRetention: test.retention}
+			if err := store.rotateHistory(test.ctx); !errors.Is(err, test.want) {
+				t.Fatalf("error=%v", err)
+			}
+		})
+	}
+}
+
+func canceledContext() context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	return ctx
 }
 
 func TestStoreCorruptionFailsClosed(t *testing.T) {

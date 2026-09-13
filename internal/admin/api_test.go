@@ -61,7 +61,7 @@ func adminViews() []control.ServerView {
 			},
 			Deliveries: []delivery.Delivery{{
 				ID: adminDeliveryID, ServerID: adminServerID, Route: delivery.RoutePathToWeb, Source: "./data", Destination: "web://",
-				State: delivery.StateActive, Policy: policy, Counters: delivery.CounterSnapshot{Read: 1, Sent: 2, Confirmed: 3}, CreatedAt: adminTestTime, UpdatedAt: adminTestTime,
+				State: delivery.StateActive, Policy: policy, Counters: delivery.CounterSnapshot{Read: 3, Sent: 2, Confirmed: 1}, CreatedAt: adminTestTime, UpdatedAt: adminTestTime,
 			}},
 		},
 		{Server: delivery.Server{ID: delivery.ID("00000000-0000-4000-8000-000000000603"), Bind: "127.0.0.1:8081", ProcessID: 43, State: delivery.StateFailed, StartedAt: adminTestTime, UpdatedAt: adminTestTime}},
@@ -96,7 +96,7 @@ func TestAPIInventoryAndAssets(t *testing.T) {
 		t.Fatalf("code=%d headers=%v", response.Code, response.Header())
 	}
 	body := response.Body.String()
-	for _, expected := range []string{string(adminServerID), string(adminDeliveryID), `"status":"live"`, `"status":"unreachable"`, `"auth":"password"`, `"confirmed":3`} {
+	for _, expected := range []string{string(adminServerID), string(adminDeliveryID), `"status":"live"`, `"status":"unreachable"`, `"auth":"password"`, `"confirmed":1`} {
 		if !strings.Contains(body, expected) {
 			t.Fatalf("missing %q in %s", expected, body)
 		}

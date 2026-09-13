@@ -24,6 +24,7 @@ import (
 	"github.com/iwonz/courier/internal/sshx"
 	"github.com/iwonz/courier/internal/transfer"
 	"github.com/iwonz/courier/internal/update"
+	"github.com/spf13/cobra"
 )
 
 func TestCommandsAndExitCodes(t *testing.T) {
@@ -99,6 +100,19 @@ func TestUnknownRuntimeRoute(t *testing.T) {
 	var commandErr *commandError
 	if !errors.As(err, &commandErr) || commandErr.code != ExitCLI {
 		t.Fatalf("unknown route=%v", err)
+	}
+}
+
+func TestExecuteInterrupted(t *testing.T) {
+	for _, err := range []error{
+		context.Canceled,
+		&commandError{code: ExitTransfer, stage: string(progress.StageTransfer), read: 3, sent: 2, confirmed: 1, cause: context.Canceled},
+	} {
+		root := &cobra.Command{Use: "courier", RunE: func(*cobra.Command, []string) error { return err }}
+		var stderr bytes.Buffer
+		if code := Execute(context.Background(), root, nil, io.Discard, &stderr); code != ExitInterrupted || !strings.Contains(stderr.String(), "result: failed") {
+			t.Fatalf("code=%d stderr=%q", code, stderr.String())
+		}
 	}
 }
 

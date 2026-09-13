@@ -37,12 +37,13 @@ import (
 )
 
 const (
-	ExitOK         = 0
-	ExitCLI        = 2
-	ExitConnection = 10
-	ExitTransfer   = 20
-	ExitUpdate     = 30
-	ExitControl    = 40
+	ExitOK          = 0
+	ExitCLI         = 2
+	ExitConnection  = 10
+	ExitTransfer    = 20
+	ExitUpdate      = 30
+	ExitControl     = 40
+	ExitInterrupted = 130
 )
 
 // Resource is an opened endpoint backend with its bounded path.
@@ -82,6 +83,8 @@ type BuildIdentity struct{ Version, Commit, Date string }
 type commandError struct {
 	code      int
 	stage     string
+	read      int64
+	sent      int64
 	confirmed int64
 	cause     error
 }
@@ -262,10 +265,16 @@ func Execute(ctx context.Context, root *cobra.Command, args []string, stdout, st
 	}
 	var commandErr *commandError
 	if errors.As(err, &commandErr) {
-		report.Failure(stderr, commandErr.stage, commandErr.cause, commandErr.confirmed)
+		report.FailureCounters(stderr, commandErr.stage, commandErr.cause, commandErr.read, commandErr.sent, commandErr.confirmed)
+		if errors.Is(err, context.Canceled) {
+			return ExitInterrupted
+		}
 		return commandErr.code
 	}
-	report.Failure(stderr, string(progress.StagePreflight), err, 0)
+	report.FailureCounters(stderr, string(progress.StagePreflight), err, 0, 0, 0)
+	if errors.Is(err, context.Canceled) {
+		return ExitInterrupted
+	}
 	return ExitCLI
 }
 
@@ -424,7 +433,7 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 	if err != nil {
 		var transferErr *transfer.Error
 		if errors.As(err, &transferErr) {
-			return transferOutcome{}, transferCommandError(transferErr.Stage, transferErr.Cause, transferErr.Confirmed)
+			return transferOutcome{}, &commandError{code: ExitTransfer, stage: string(transferErr.Stage), read: transferErr.Read, sent: transferErr.Sent, confirmed: transferErr.Confirmed, cause: transferErr.Cause}
 		}
 		return transferOutcome{}, transferCommandError(progress.StageTransfer, err, 0)
 	}
@@ -432,7 +441,7 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 }
 
 func transferCommandError(stage progress.Stage, cause error, confirmed int64) *commandError {
-	return &commandError{code: ExitTransfer, stage: string(stage), confirmed: confirmed, cause: cause}
+	return &commandError{code: ExitTransfer, stage: string(stage), read: confirmed, sent: confirmed, confirmed: confirmed, cause: cause}
 }
 
 func closeResources(resources ...*Resource) error {

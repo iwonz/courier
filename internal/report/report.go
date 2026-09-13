@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/iwonz/courier/internal/diagnostic"
 	"github.com/iwonz/courier/internal/progress"
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
@@ -19,14 +20,14 @@ type Reporter struct {
 	interactive bool
 	container   *mpb.Progress
 	bar         *mpb.Bar
-	stage       atomic.Value
+	event       atomic.Value
 	mutex       sync.Mutex
 }
 
 // New creates a terminal-aware progress renderer.
 func New(output io.Writer, interactive bool) *Reporter {
 	reporter := &Reporter{output: output, interactive: interactive}
-	reporter.stage.Store(string(progress.StagePreflight))
+	reporter.event.Store(progress.Event{Stage: progress.StagePreflight})
 	if interactive {
 		reporter.container = mpb.New(mpb.WithOutput(output), mpb.WithWidth(72))
 	}
@@ -37,9 +38,10 @@ func New(output io.Writer, interactive bool) *Reporter {
 func (r *Reporter) Handle(event progress.Event) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	r.stage.Store(string(event.Stage))
+	event = normalize(event)
+	r.event.Store(event)
 	if !r.interactive {
-		fmt.Fprintf(r.output, "stage=%s bytes=%d total=%d speed=%.0fB/s elapsed=%s\n", event.Stage, event.Current, event.Total, event.Speed, event.Elapsed.Round(time.Millisecond))
+		fmt.Fprintf(r.output, "stage=%s read=%d sent=%d confirmed=%d total=%d speed=%.0fB/s elapsed=%s\n", event.Stage, event.Read, event.Sent, event.Confirmed, event.Total, event.Speed, event.Elapsed.Round(time.Millisecond))
 		return
 	}
 	if r.bar == nil {
@@ -59,11 +61,12 @@ func (r *Reporter) Handle(event progress.Event) {
 	if event.Total > 0 {
 		r.bar.SetTotal(event.Total, false)
 	}
-	r.bar.SetCurrent(event.Current)
+	r.bar.SetCurrent(event.Confirmed)
 }
 
 func (r *Reporter) stagePrefix(decor.Statistics) string {
-	return r.stage.Load().(string) + " "
+	event := r.event.Load().(progress.Event)
+	return fmt.Sprintf("%s r=%d s=%d c=%d ", event.Stage, event.Read, event.Sent, event.Confirmed)
 }
 
 // Finish flushes terminal rendering.
@@ -86,5 +89,30 @@ func Success(output io.Writer, source, destination string, bytes int64, elapsed 
 
 // Failure writes a stable stage-aware error summary.
 func Failure(output io.Writer, stage string, reason error, confirmed int64) {
-	fmt.Fprintf(output, "stage: %s\nreason: %v\nconfirmed: %d bytes\nresult: failed\n", stage, reason, confirmed)
+	FailureCounters(output, stage, reason, confirmed, confirmed, confirmed)
+}
+
+// FailureCounters writes a sanitized failure with each accounting boundary.
+func FailureCounters(output io.Writer, stage string, reason error, read, sent, confirmed int64) {
+	if sent < confirmed {
+		sent = confirmed
+	}
+	if read < sent {
+		read = sent
+	}
+	fmt.Fprintf(output, "stage: %s\nreason: %s\nread: %d bytes\nsent: %d bytes\nconfirmed: %d bytes\nresult: failed\n", stage, diagnostic.Redact(reason.Error()), read, sent, confirmed)
+}
+
+func normalize(event progress.Event) progress.Event {
+	if event.Confirmed == 0 && event.Current != 0 {
+		event.Confirmed = event.Current
+	}
+	if event.Sent < event.Confirmed {
+		event.Sent = event.Confirmed
+	}
+	if event.Read < event.Sent {
+		event.Read = event.Sent
+	}
+	event.Current = event.Confirmed
+	return event
 }

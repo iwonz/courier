@@ -1,9 +1,4 @@
-# progress-events Specification
-
-## Purpose
-Define transport-independent progress stages and confirmed-byte accounting.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Structured progress
 

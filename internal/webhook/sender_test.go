@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"math"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -277,6 +278,14 @@ func TestMultipartAndPayloadFailures(t *testing.T) {
 	reader = &payloadReader{ctx: context.Background(), source: strings.NewReader("x"), tracker: progress.New(1, nil, nil), consumed: consumed}
 	if count, err := reader.Read(make([]byte, 2)); err != nil || count != 1 || consumed.Load() != 1 {
 		t.Fatalf("unlimited read=%d consumed=%d err=%v", count, consumed.Load(), err)
+	}
+	overflowTracker := progress.New(1, nil, nil)
+	if err := overflowTracker.AddRead(math.MaxInt64); err != nil {
+		t.Fatal(err)
+	}
+	reader = &payloadReader{ctx: context.Background(), source: strings.NewReader("x"), tracker: overflowTracker, consumed: consumed}
+	if count, err := reader.Read(make([]byte, 1)); err == nil || count != 0 {
+		t.Fatalf("overflow read=%d err=%v", count, err)
 	}
 
 	client := DefaultClient()

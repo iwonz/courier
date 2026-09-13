@@ -17,11 +17,15 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/iwonz/courier/internal/diagnostic"
 )
 
 const (
 	registryPrefix = "registry-"
 	historyPrefix  = "history-"
+	// DefaultHistoryRetention bounds private operational history growth.
+	DefaultHistoryRetention = 256
 )
 
 var (
@@ -80,14 +84,24 @@ func (root *osStateRoot) Sync() error {
 func (root *osStateRoot) Close() error { return root.root.Close() }
 
 type Store struct {
-	directory string
-	root      stateRoot
-	mutex     sync.Mutex
+	directory        string
+	root             stateRoot
+	historyRetention int
+	mutex            sync.Mutex
 }
 
 func OpenStore(directory string) (*Store, error) {
+	return OpenStoreWithHistoryRetention(directory, DefaultHistoryRetention)
+}
+
+// OpenStoreWithHistoryRetention opens a store with an explicit positive
+// history bound. It is primarily useful for constrained deployments and tests.
+func OpenStoreWithHistoryRetention(directory string, retention int) (*Store, error) {
 	if strings.TrimSpace(directory) == "" {
 		return nil, fmt.Errorf("%w: state directory is required", ErrInvalid)
+	}
+	if retention <= 0 {
+		return nil, fmt.Errorf("%w: history retention must be positive", ErrInvalid)
 	}
 	if info, err := lstatStateDirectory(directory); err == nil {
 		if !info.IsDir() || info.Mode()&fs.ModeSymlink != 0 {
@@ -113,7 +127,7 @@ func OpenStore(directory string) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Store{directory: directory, root: root}, nil
+	return &Store{directory: directory, root: root, historyRetention: retention}, nil
 }
 
 func (store *Store) Directory() string { return store.directory }
@@ -216,6 +230,7 @@ func (store *Store) Update(ctx context.Context, expected uint64, mutate func(*Re
 func (store *Store) AppendHistory(ctx context.Context, event HistoryEvent) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
+	event.Message = diagnostic.Redact(event.Message)
 	if err := event.Validate(); err != nil {
 		return err
 	}
@@ -223,7 +238,44 @@ func (store *Store) AppendHistory(ctx context.Context, event HistoryEvent) error
 	if err != nil {
 		return err
 	}
-	return store.writeImmutable(ctx, historyFilename(event), ".history-", data)
+	if err := store.writeImmutable(ctx, historyFilename(event), ".history-", data); err != nil {
+		return err
+	}
+	return store.rotateHistory(ctx)
+}
+
+func (store *Store) rotateHistory(ctx context.Context) error {
+	if err := store.ready(ctx); err != nil {
+		return err
+	}
+	entries, err := store.root.ReadDir()
+	if err != nil {
+		return err
+	}
+	names := make([]string, 0)
+	for _, entry := range entries {
+		if historyNamePattern.MatchString(entry.Name()) {
+			names = append(names, entry.Name())
+		}
+	}
+	sort.Strings(names)
+	retention := store.historyRetention
+	if retention <= 0 {
+		retention = DefaultHistoryRetention
+	}
+	remove := len(names) - retention
+	if remove <= 0 {
+		return nil
+	}
+	for _, name := range names[:remove] {
+		if _, err := store.readPrivate(name); err != nil {
+			return err
+		}
+		if err := store.root.Remove(name); err != nil {
+			return err
+		}
+	}
+	return store.root.Sync()
 }
 
 func (store *Store) History(ctx context.Context) ([]HistoryEvent, error) {

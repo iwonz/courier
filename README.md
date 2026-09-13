@@ -108,8 +108,9 @@ The updater compares the installed semantic version with the latest GitHub Relea
 | `20` | Preflight, archive, transfer, commit, or cleanup error |
 | `30` | Self-update error |
 | `40` | Registry, IPC, worker, or local control error |
+| `130` | Interrupted or canceled operation |
 
-Failure output includes the stage, safe reason, and confirmed transferred bytes. Credentials are never included.
+Failure output includes the stage, sanitized reason, and separate read, sent, and confirmed byte counts. Success uses only confirmed bytes. Credentials, URL user-info, and query secrets are never included. See [Operational reporting](docs/operational-reporting.md) for the accounting, progress, history, and exit-code contract.
 
 ## Develop
 

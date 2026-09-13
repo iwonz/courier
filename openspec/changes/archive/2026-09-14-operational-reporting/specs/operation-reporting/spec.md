@@ -1,9 +1,4 @@
-# operation-reporting Specification
-
-## Purpose
-Define safe, stable progress, success, failure, and exit-code reporting.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Interactive progress rendering
 
@@ -13,15 +8,6 @@ Courier SHALL render the current stage, read, sent, confirmed, total, speed, and
 
 - **WHEN** stderr is not a terminal
 - **THEN** each progress line uses stable named fields and contains no cursor-control sequences
-
-### Requirement: Success summary
-
-Courier SHALL print source, actual destination, confirmed transferred bytes, elapsed time, and successful result after commit.
-
-#### Scenario: Successful transfer
-
-- **WHEN** commit and cleanup complete
-- **THEN** the summary names the actual destination after directory/archive semantics
 
 ### Requirement: Error summary and exit codes
 
@@ -36,6 +22,8 @@ Courier SHALL print the failing stage, sanitized reason, and known byte counters
 
 - **WHEN** SSH setup fails before transfer
 - **THEN** Courier exits with the documented connection code and no credentials in output
+
+## ADDED Requirements
 
 ### Requirement: Unified final accounting
 

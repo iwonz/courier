@@ -162,6 +162,7 @@ func (sender Sender) Send(ctx context.Context, input Request) (result Result, re
 	if sendErr != nil || writeErr != nil || closeErr != nil {
 		return result, errors.Join(sendErr, writeErr, closeErr)
 	}
+	_ = tracker.AddConfirmed(result.Bytes)
 	tracker.Stage(progress.StageComplete)
 	return result, nil
 }
@@ -221,7 +222,9 @@ func (reader *payloadReader) Read(buffer []byte) (int, error) {
 	}
 	if count != 0 {
 		reader.consumed.Add(int64(count))
-		reader.tracker.Add(int64(count))
+		if progressErr := reader.tracker.AddCounters(int64(count), int64(count), 0); progressErr != nil {
+			return 0, progressErr
+		}
 	}
 	return count, err
 }

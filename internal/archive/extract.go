@@ -577,7 +577,7 @@ func (w *extractWriter) Write(data []byte) (int, error) {
 	}
 	written, err := w.destination.Write(data)
 	if written > 0 && w.tracker != nil {
-		w.tracker.Add(int64(written))
+		err = errors.Join(err, w.tracker.Add(int64(written)))
 	}
 	return written, err
 }

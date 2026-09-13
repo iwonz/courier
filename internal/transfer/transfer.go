@@ -41,12 +41,14 @@ type Result struct {
 // Error records the failed stage and confirmed byte count.
 type Error struct {
 	Stage     progress.Stage
+	Read      int64
+	Sent      int64
 	Confirmed int64
 	Cause     error
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("%s failed after %d confirmed bytes: %v", e.Stage, e.Confirmed, e.Cause)
+	return fmt.Sprintf("%s failed after read=%d sent=%d confirmed=%d bytes: %v", e.Stage, e.Read, e.Sent, e.Confirmed, e.Cause)
 }
 
 func (e *Error) Unwrap() error { return e.Cause }
@@ -90,7 +92,8 @@ func (e Engine) Run(ctx context.Context, request Request) (result Result, result
 		tracker.Stage(progress.StageCleanup)
 		if cleanupStage {
 			if cleanupErr := request.DestinationFS.RemoveAll(stagePath); cleanupErr != nil {
-				cleanupFailure := &Error{Stage: progress.StageCleanup, Confirmed: tracker.Snapshot().Current, Cause: cleanupErr}
+				snapshot := tracker.Snapshot()
+				cleanupFailure := &Error{Stage: progress.StageCleanup, Read: snapshot.Read, Sent: snapshot.Sent, Confirmed: snapshot.Confirmed, Cause: cleanupErr}
 				resultErr = errors.Join(resultErr, cleanupFailure)
 			}
 		}
@@ -122,7 +125,8 @@ func (e Engine) Run(ctx context.Context, request Request) (result Result, result
 }
 
 func transferError(tracker *progress.Tracker, stage progress.Stage, err error) *Error {
-	return &Error{Stage: stage, Confirmed: tracker.Snapshot().Current, Cause: err}
+	snapshot := tracker.Snapshot()
+	return &Error{Stage: stage, Read: snapshot.Read, Sent: snapshot.Sent, Confirmed: snapshot.Confirmed, Cause: err}
 }
 
 func scan(ctx context.Context, backend fsx.Backend, name string) (int64, error) {
@@ -255,7 +259,7 @@ func (w *countingWriter) Write(data []byte) (int, error) {
 	}
 	written, err := w.destination.Write(data)
 	if written > 0 {
-		w.tracker.Add(int64(written))
+		err = errors.Join(err, w.tracker.Add(int64(written)))
 	}
 	return written, err
 }

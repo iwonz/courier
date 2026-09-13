@@ -36,7 +36,7 @@ func commandServerViews() []control.ServerView {
 			{
 				ID: commandDeliveryID, ServerID: commandServerID, Route: delivery.RoutePathToWeb,
 				Source: "./data", Destination: "web://", State: delivery.StateActive, Policy: configured,
-				Counters: delivery.CounterSnapshot{Read: 1, Sent: 2, Confirmed: 3}, CreatedAt: at, UpdatedAt: at,
+				Counters: delivery.CounterSnapshot{Read: 3, Sent: 2, Confirmed: 1}, CreatedAt: at, UpdatedAt: at,
 			},
 			{
 				ID: delivery.ID("00000000-0000-4000-8000-000000000503"), ServerID: commandServerID,
@@ -112,7 +112,7 @@ func TestServerCommandRenderingAndOutputFailures(t *testing.T) {
 	output := renderServers(commandServerViews())
 	for _, expected := range []string{
 		"status: live", "source: ./data", "destination: web://", "auth=basic", "limit=2", "max-file-size=10737418240",
-		"allow-ip=127.0.0.1/32,2001:db8::/32", "read=1 sent=2 confirmed=3", "source: <unavailable>", "limit=unlimited", "2026-09-14T11:13:14.000000015Z",
+		"allow-ip=127.0.0.1/32,2001:db8::/32", "read=3 sent=2 confirmed=1", "source: <unavailable>", "limit=unlimited", "2026-09-14T11:13:14.000000015Z",
 	} {
 		if !strings.Contains(output, expected) {
 			t.Fatalf("missing %q in %q", expected, output)
