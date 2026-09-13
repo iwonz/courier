@@ -15,5 +15,5 @@
 ## 3. Verify and clean external state
 
 - [x] 3.1 Pass strict OpenSpec validation, workflow lint, and the complete local verification gate
-- [ ] 3.2 Publish a release with in-repository manifests
-- [ ] 3.3 Close the obsolete Winget pull request and delete auxiliary repositories and secrets
+- [x] 3.2 Publish a release with in-repository manifests
+- [x] 3.3 Close the obsolete Winget pull request and delete auxiliary repositories and secrets
