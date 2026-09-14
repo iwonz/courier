@@ -28,7 +28,7 @@ npm ci --prefix web --ignore-scripts --no-audit --no-fund
 cd web && npx playwright install chromium
 ```
 
-On Linux, use `npx playwright install --with-deps chromium` when the host also needs Chromium system libraries. GoReleaser and actionlint are version-pinned by the repository; Go downloads actionlint on first use, while the checksum-verified GoReleaser bootstrap stores its binary under ignored `.cache/tools`.
+On Linux, use `npx playwright install --with-deps chromium` when the host also needs Chromium system libraries. GoReleaser, actionlint, and ShellCheck are version-pinned by the repository. Go downloads actionlint on first use; checksum-verified GoReleaser and ShellCheck bootstraps store their binaries under ignored `.cache/tools`. This keeps embedded workflow-shell validation identical on developer macOS/Linux hosts and GitHub's Linux runner.
 
 ## Runtime and browser boundaries
 

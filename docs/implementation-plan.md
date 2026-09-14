@@ -33,6 +33,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 27 | `feat/027-project-landing` | `project-landing` | Static GitHub Pages landing generated from shipped contract data |
 | 28 | `test/028-cross-platform-acceptance` | `cross-platform-acceptance` | Route, security, platform, installer, performance, race, and browser acceptance suites |
 | 29 | `feat/029-pages-publication` | `pages-publication` | Automatic GitHub Pages deployment and guarded one-command republishing |
+| 30 | `fix/030-workflow-shellcheck` | `workflow-shellcheck-fix` | Pinned local ShellCheck parity and release-workflow lint correction |
 
 ## Definition of Done
 

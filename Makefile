@@ -2,6 +2,8 @@ GORELEASER_VERSION := v2.18.1
 GORELEASER ?= .cache/tools/goreleaser
 ACTIONLINT_VERSION := v1.7.12
 ACTIONLINT ?= go run github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VERSION)
+SHELLCHECK_VERSION := v0.11.0
+SHELLCHECK ?= .cache/tools/shellcheck
 OPENSPEC ?= openspec
 
 .PHONY: all fmt-check vet contract-check workflow-check openspec-check test npm-test ui-test browser-test pages-build pages-publish goreleaser-check snapshot package-test verify precommit hooks release clean
@@ -22,7 +24,10 @@ test: fmt-check vet contract-check
 	./scripts/test-runtime.sh --race
 
 workflow-check:
-	$(ACTIONLINT) -color
+	@if [ ! -x "$(SHELLCHECK)" ] && ! command -v "$(SHELLCHECK)" >/dev/null 2>&1; then \
+		SHELLCHECK_VERSION=$(SHELLCHECK_VERSION) ./scripts/install-shellcheck.sh; \
+	fi
+	$(ACTIONLINT) -shellcheck "$(SHELLCHECK)" -color
 
 openspec-check:
 	$(OPENSPEC) validate --all --strict --no-interactive
