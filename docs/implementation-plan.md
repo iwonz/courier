@@ -32,6 +32,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 26 | `feat/026-operational-reporting` | `operational-reporting` | Unified stages, counters, redacted diagnostics, history, and final exit-code mapping |
 | 27 | `feat/027-project-landing` | `project-landing` | Static GitHub Pages landing generated from shipped contract data |
 | 28 | `test/028-cross-platform-acceptance` | `cross-platform-acceptance` | Route, security, platform, installer, performance, race, and browser acceptance suites |
+| 29 | `feat/029-pages-publication` | `pages-publication` | Automatic GitHub Pages deployment and guarded one-command republishing |
 
 ## Definition of Done
 

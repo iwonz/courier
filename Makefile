@@ -4,7 +4,7 @@ ACTIONLINT_VERSION := v1.7.12
 ACTIONLINT ?= go run github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VERSION)
 OPENSPEC ?= openspec
 
-.PHONY: all fmt-check vet contract-check workflow-check openspec-check test npm-test ui-test browser-test goreleaser-check snapshot package-test verify precommit hooks release clean
+.PHONY: all fmt-check vet contract-check workflow-check openspec-check test npm-test ui-test browser-test pages-build pages-publish goreleaser-check snapshot package-test verify precommit hooks release clean
 
 all: verify
 
@@ -37,6 +37,14 @@ ui-test:
 
 browser-test: ui-test
 	npm run browser:test --prefix web --loglevel=error
+
+pages-build: contract-check
+	npm ci --prefix web --ignore-scripts --no-audit --no-fund --loglevel=error
+	npm run test --prefix web --workspace @courier/landing --loglevel=error
+	npm run build --prefix web --workspace @courier/landing --loglevel=error
+
+pages-publish:
+	./scripts/publish-pages.sh
 
 goreleaser-check:
 	@if [ ! -x "$(GORELEASER)" ] && ! command -v "$(GORELEASER)" >/dev/null 2>&1; then \

@@ -24,4 +24,18 @@ The page covers curl, wget, PowerShell, npm, npx, Yarn, pnpm, Homebrew, Scoop, d
 
 The landing's Vitest configuration requires 100% statements, branches, functions, and lines. The root web gate tests the UI kit and all three consumers, produces a deterministic production build, and is part of `make verify` and every GoReleaser dry run. Pinned Playwright acceptance also exercises the compiled landing in Chromium across both locales, all theme preferences, keyboard navigation, persisted selectors, and narrow/wide viewports.
 
-`.github/workflows/pages.yml` runs independently on `main` and by manual dispatch. Its build job has read-only repository access, verifies generated contract data, tests and builds the landing, and uploads only `web/landing/dist`. The deploy job alone receives `pages: write` and short-lived OIDC permission for the protected `github-pages` environment. No publication token is written into source or static assets.
+Build the current contract-backed production artifact locally with:
+
+```sh
+make pages-build
+```
+
+`.github/workflows/pages.yml` automatically runs after every push to `main` and can also be dispatched manually. Its build job has read-only repository access, calls the same `pages-build` target, and uploads only `web/landing/dist`. The deploy job alone receives `pages: write` and short-lived OIDC permission for the protected `github-pages` environment. No publication token is written into source or static assets.
+
+An authenticated maintainer can explicitly rebuild and republish the synchronized default branch with:
+
+```sh
+make pages-publish
+```
+
+The command requires `gh auth login`, a clean local `main` exactly matching `origin/main`, and no separate token argument. It verifies the local build, enables workflow-based Pages if necessary, dispatches the exact revision, waits for deployment, and prints the public URL: <https://iwonz.github.io/courier/>.

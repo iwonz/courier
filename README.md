@@ -120,6 +120,8 @@ Go 1.25 or newer and Node.js 24 or newer are required for source, npm-package, a
 make hooks       # opt into the repository pre-commit quality gate
 make test        # formatting, vet, race detector, exact Go coverage, and compiled runtime checks
 make verify      # full browser/package/platform-ready release-candidate dry run
+make pages-build # verify and build the current static landing
+make pages-publish # rebuild and publish synchronized main through GitHub Actions
 ```
 
 Development is spec-first: every task owns a path under `openspec/changes`, a conventional branch name, and one conventional commit. See the [implementation plan](docs/implementation-plan.md) and [release runbook](docs/releasing.md).
