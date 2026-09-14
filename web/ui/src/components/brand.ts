@@ -28,6 +28,7 @@ export class CourierBrand extends LitElement {
 export class CourierMascot extends LitElement {
   static properties = {
     alt: { type: String },
+    eager: { type: Boolean },
     source: { type: String },
   };
 
@@ -37,10 +38,11 @@ export class CourierMascot extends LitElement {
   `;
 
   alt = "";
+  eager = false;
   source = "";
 
   protected render() {
-    return html`<img src=${this.source} alt=${this.alt} decoding="async">`;
+    return html`<img part="image" src=${this.source} alt=${this.alt} decoding="async" loading=${this.eager ? "eager" : "lazy"} fetchpriority=${this.eager ? "high" : "auto"}>`;
   }
 }
 

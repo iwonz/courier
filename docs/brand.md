@@ -42,7 +42,19 @@ Do not use Relay:
 - as a child, toy, robot, superhero, soldier, or weapon-bearing character;
 - with third-party uniforms, delivery-company symbols, or another product's mascot treatment.
 
-The production asset is [`relay-mascot.png`](../web/ui/assets/relay-mascot.png). It is decorative in product UI unless surrounding editorial copy specifically describes Relay. The interface must remain complete when the asset is unavailable.
+[`relay-mascot.png`](../web/ui/assets/relay-mascot.png) is the canonical character reference. Product surfaces use context-specific scenes instead of repeating that neutral pose:
+
+| Role | Surface | Situation |
+|---|---|---|
+| Dispatch navigator | Landing hero | Plans a visible local-to-remote route |
+| Field installer | Landing installation | Fits the self-contained Courier capsule to available systems |
+| Route cartographer | Landing routing | Maps local, SSH, browser, and webhook endpoints |
+| Integrity inspector | Landing safety | Verifies the capsule before the commit gate |
+| Access controller | Delivery authentication | Presents a credential at a private checkpoint |
+| Operations controller | Administration | Observes routes and adjusts delivery policy from a control room |
+| Courier in flight | README | Carries a confirmed handoff from source to destination |
+
+Wardrobe and tools change only to explain the role. Relay's adult anatomy, graphite harness, cream capsule, signal-lime route tabs, orange beak, and editorial line work remain stable. Every scene is decorative in product UI unless surrounding editorial copy specifically describes Relay; the interface must remain complete when the image is unavailable.
 
 ## Visual language
 
@@ -77,6 +89,12 @@ The Courier mark is a source bracket, a parcel node, and a forward route combine
 ### Motion
 
 Motion confirms state changes and direction. Transitions remain short and interruptible. No essential information depends on animation. `prefers-reduced-motion` removes non-essential movement and smooth scrolling.
+
+### Controls
+
+Courier controls never expose unstyled browser chrome. Small fixed choices such as theme and locale use shared segmented radio groups with visible selection, arrow-key navigation, and one focus stop. Form inputs and selects keep dependable platform semantics but normalize appearance, spacing, indicators, hover, focus, and disabled states through the shared UI kit. Boolean policy values use a switch treatment; file selection uses a designed action surface while retaining a real keyboard-operable file input.
+
+Custom appearance must not recreate browser responsibilities badly. Labels remain programmatic, Enter and Space activate buttons, arrow keys move within segmented groups, validation remains available, and the orange focus ring is never removed.
 
 ## Communication system
 
@@ -129,4 +147,6 @@ Identity assets are local, checksum-recorded, and covered by the MIT license not
 
 ## Generated asset record
 
-Relay was produced with the built-in OpenAI image generation tool for this repository, then stored locally with transparency and deterministic digest verification. Final prompt summary: an original, adult courier pigeon in a compact graphite utility harness, carrying a sealed data capsule with sparse signal-lime route tabs and an orange beak accent; premium flat editorial and screen-print treatment; transparent background; strong small-size silhouette; no text, logo, watermark, weaponry, robot parts, childlike proportions, or third-party mascot imitation.
+Relay and every contextual scene were produced with the built-in OpenAI image generation tool for this repository using the canonical character as the identity reference. The family keeps an adult courier pigeon, compact graphite utility harness, sealed cream data capsule, sparse signal-lime route tabs, orange beak accent, and textured flat editorial/screen-print treatment. Role-specific prompts add dispatch, installation, routing, verification, access, operations, or in-flight tools and environments while prohibiting text, logos, watermarks, weaponry, robot parts, childlike proportions, security theater, and third-party mascot imitation.
+
+The auditable prompt summaries, roles, dimensions, byte counts, and SHA-256 digests are stored in [`web/ui/assets/provenance.json`](../web/ui/assets/provenance.json). Product illustrations use optimized local WebP delivery assets; no runtime surface fetches generated art remotely.

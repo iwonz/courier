@@ -24,10 +24,18 @@ it("renders generated install, command, route, option, and documentation section
   expect(text).toContain("path-to-path");
   expect(text).toContain("--archive");
   expect(element.shadowRoot?.querySelectorAll("section").length).toBe(7);
+  const illustrations = [...element.shadowRoot!.querySelectorAll("courier-mascot")];
+  await Promise.all(illustrations.map((illustration) => illustration.updateComplete));
+  expect(illustrations.map((illustration) => illustration.shadowRoot?.querySelector("img")?.src)).toEqual(expect.arrayContaining([
+    expect.stringContaining("relay-dispatch"), expect.stringContaining("relay-install"),
+    expect.stringContaining("relay-routing"), expect.stringContaining("relay-verify"),
+  ]));
+  expect(element.shadowRoot?.querySelector("courier-theme-selector")?.shadowRoot?.querySelector("select")).toBeNull();
 
   element.setLocale(new CustomEvent("courier-locale", { detail: "ru" }));
   await element.updateComplete;
   expect(element.shadowRoot?.textContent).toContain("Переносите файлы. Сохраняйте контроль.");
+  expect(element.shadowRoot?.textContent).toContain("инспектор целостности");
   element.remove();
 });
 

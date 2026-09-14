@@ -1,5 +1,9 @@
 # Courier CLI
 
+<p align="center">
+  <img src="web/ui/assets/readme-route-banner.webp" width="100%" alt="Relay carrying a verified data capsule from a local workstation to a remote server">
+</p>
+
 Courier is an extensible, cross-platform CLI for safely transferring files and directories across local, SSH, browser, and webhook endpoints.
 
 **Move files. Keep control.** Courier makes the route, destination, transfer state, and verified result explicit.

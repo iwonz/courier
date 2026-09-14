@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "source": {
     "path": "docs/brand.md#generated-asset-record",
     "disposition": "generated for Courier and retained locally"
@@ -17,7 +17,80 @@
       "mediaType": "image/png",
       "bytes": 808035,
       "sha256": "83a6fd19101ac110920c5bb385bf8884100542144cdf204f4939a9142a3e46ea",
-      "use": "Relay courier-pigeon field operator artwork"
+      "width": 928,
+      "height": 960,
+      "use": "Canonical Relay courier-pigeon character reference",
+      "prompt": "Adult courier pigeon in a compact graphite utility harness carrying a sealed cream data capsule with sparse signal-lime tabs; transparent editorial screen-print cutout; no text, logo, weaponry, robot parts, childlike proportions, or third-party mascot imitation."
+    },
+    {
+      "path": "relay-dispatch.webp",
+      "mediaType": "image/webp",
+      "bytes": 278468,
+      "sha256": "523a7a48ded12c0357b9c9d607160b41314bed7ae1be589ede408176973a28ff",
+      "width": 1254,
+      "height": 1254,
+      "use": "Landing hero dispatch navigator scene",
+      "prompt": "Relay actively routes a sealed data capsule from a compact local terminal to a remote server beacon along one signal-lime line; transparent mature editorial illustration based on the canonical character."
+    },
+    {
+      "path": "relay-install.webp",
+      "mediaType": "image/webp",
+      "bytes": 193214,
+      "sha256": "20d7897a8dd2ae0130236daac1f0a44d14447c97461cc80280cdf32e2bea22aa",
+      "width": 1536,
+      "height": 1024,
+      "use": "Landing field installer scene",
+      "prompt": "Relay as a field installer places a sealed capsule into a terminal cradle beside an open graphite tool case and generic platform devices; mature graphite editorial vignette without text or logos."
+    },
+    {
+      "path": "relay-routing.webp",
+      "mediaType": "image/webp",
+      "bytes": 398046,
+      "sha256": "ed31f20a829e22c4e8f5404cbe8904b2701d182839350c9c89ef10e8f6a1cc4d",
+      "width": 1536,
+      "height": 1024,
+      "use": "Landing route cartographer scene",
+      "prompt": "Relay maps one signal-lime route among abstract local, server, browser, and webhook endpoints at a folding field table; calm technical screen-print vignette without labels or product logos."
+    },
+    {
+      "path": "relay-verify.webp",
+      "mediaType": "image/webp",
+      "bytes": 291710,
+      "sha256": "76581002f28e8a8e038af2d7fca034fbf8d4ab96623b9688eb9c27687bde83e2",
+      "width": 1536,
+      "height": 1024,
+      "use": "Landing integrity inspector scene",
+      "prompt": "Relay as an integrity inspector scans a sealed capsule with a signal-lime checksum lamp beside a mechanical commit gate; methodical mature editorial vignette without text or security theater."
+    },
+    {
+      "path": "relay-access.webp",
+      "mediaType": "image/webp",
+      "bytes": 202564,
+      "sha256": "24850df15fb8d8192df9856a797ddccb8f2d17ac1c83b1aacfd7fbe8d89a1de2",
+      "width": 1233,
+      "height": 1276,
+      "use": "Delivery authentication access-controller scene",
+      "prompt": "Relay calmly presents a blank credential tile to a delivery checkpoint scanner; transparent mature editorial cutout with no password, secret, biometric imagery, text, or logos."
+    },
+    {
+      "path": "relay-operations.webp",
+      "mediaType": "image/webp",
+      "bytes": 230902,
+      "sha256": "4b11d2111e21a340a26c06013c863ecfa9e0ba5992da3851f1993ddb7c948ceb",
+      "width": 1536,
+      "height": 1024,
+      "use": "Administration operations-controller scene",
+      "prompt": "Relay operates an abstract network control console with route dials, healthy status lights, a headset, and blank clipboard; mature graphite editorial vignette without real metadata or legible UI."
+    },
+    {
+      "path": "readme-route-banner.webp",
+      "mediaType": "image/webp",
+      "bytes": 301712,
+      "sha256": "8e0d7cec6c0546b6dd5840e008d5cec878153feba7f82166efcfef7a017786af",
+      "width": 2172,
+      "height": 724,
+      "use": "Full-width README route panorama",
+      "prompt": "Extremely wide 3:1 panorama of Relay flying a sealed capsule along a signal-lime route from a local workstation outpost to a remote server station across a graphite dusk network landscape; no text or logos."
     },
     {
       "path": "logo-on-dark.svg",

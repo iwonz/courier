@@ -3,6 +3,7 @@ import { CourierBrand, CourierMascot, CourierRoute, CourierStatus } from "./comp
 import { CourierLocaleSelector } from "./components/locale-selector";
 import { CourierPanel } from "./components/panel";
 import { CourierProgress } from "./components/progress";
+import { CourierSegmentedControl } from "./components/segmented-control";
 import { CourierThemeSelector } from "./components/theme-selector";
 import { CourierIcon } from "./icons";
 
@@ -20,6 +21,7 @@ const elements = {
   "courier-panel": CourierPanel,
   "courier-progress": CourierProgress,
   "courier-route": CourierRoute,
+  "courier-segmented-control": CourierSegmentedControl,
   "courier-status": CourierStatus,
   "courier-theme-selector": CourierThemeSelector,
 } as const;

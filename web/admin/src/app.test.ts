@@ -62,9 +62,18 @@ it("loads, renders, receives events, localizes, and disconnects", async () => {
   expect(element.shadowRoot?.textContent).toContain("server-a");
   expect(element.shadowRoot?.textContent).toContain("Unreachable");
   expect(element.shadowRoot?.textContent).toContain("Unavailable");
+  const forms = [...element.shadowRoot!.querySelectorAll("form")];
+  expect((forms[0]!.elements.namedItem("auth") as HTMLSelectElement).value).toBe("none");
+  expect((forms[0]!.elements.namedItem("failAction") as HTMLSelectElement).value).toBe("ban");
+  expect((forms[1]!.elements.namedItem("auth") as HTMLSelectElement).value).toBe("password");
+  expect((forms[1]!.elements.namedItem("failAction") as HTMLSelectElement).value).toBe("stop");
+  expect((forms[1]!.elements.namedItem("noUi") as HTMLInputElement).checked).toBe(true);
   eventListener!(new MessageEvent("snapshot", { data: JSON.stringify({ servers: [] }) }));
   await element.updateComplete;
   expect(element.shadowRoot?.textContent).toContain("No live Courier servers");
+  const operationsArt = element.shadowRoot?.querySelector("courier-mascot");
+  await operationsArt?.updateComplete;
+  expect(operationsArt?.shadowRoot?.querySelector("img")?.src).toContain("relay-operations");
   element.setLocale(new CustomEvent("courier-locale", { detail: "ru" }));
   await element.updateComplete;
   expect(element.shadowRoot?.textContent).toContain("Активные серверы Courier");

@@ -1,6 +1,6 @@
 import { LitElement, css, html, nothing } from "lit";
-import { browserLocale, browserThemeState, defineCourierElements, type Locale, type ThemeState } from "@courier/ui";
-import { relayMascotSource } from "@courier/ui/relay";
+import { browserLocale, browserThemeState, defineCourierElements, formControlStyles, type Locale, type ThemeState } from "@courier/ui";
+import { relayAccessSource } from "@courier/ui/relay-delivery";
 import { childPath, downloadURL, loadMetadata, login, parentPath, upload, type Entry, type Metadata } from "./api";
 import { dataText } from "./catalog";
 
@@ -14,7 +14,7 @@ export class CourierDataApp extends LitElement {
     csrf: { state: true },
   };
 
-  static styles = css`
+  static styles = [formControlStyles, css`
     :host {
       display: block;
       min-height: 100vh;
@@ -42,12 +42,12 @@ export class CourierDataApp extends LitElement {
     .access-copy { display: grid; align-content: center; gap: 1rem; padding: clamp(1.5rem, 5vw, 3.5rem); }
     .access-art { position: relative; min-height: 24rem; overflow: hidden; background: var(--courier-graphite-900); }
     .access-art::before { content: ""; position: absolute; inset: 0; opacity: 0.15; background-image: linear-gradient(rgb(243 244 233 / 0.2) 1px, transparent 1px), linear-gradient(90deg, rgb(243 244 233 / 0.2) 1px, transparent 1px); background-size: 2rem 2rem; }
-    .access-art courier-mascot { position: absolute; right: -16%; bottom: -7%; width: 125%; }
+    .access-art courier-mascot { position: absolute; right: -15%; bottom: -2%; width: 130%; }
     .error { padding: 0.85rem 1rem; border-left: 3px solid var(--courier-warning); color: var(--courier-color-text); background: color-mix(in srgb, var(--courier-warning) 12%, transparent); }
     form { display: grid; gap: 0.75rem; }
     .signin { grid-template-columns: minmax(0, 1fr) auto; }
-    input { width: 100%; min-width: 0; min-height: 2.75rem; padding: 0 0.8rem; border: 1px solid var(--courier-color-border-strong); border-radius: var(--courier-radius-sm); color: var(--courier-color-text); background: var(--courier-color-surface); font: inherit; }
-    input:focus-visible, button.link:focus-visible, a:focus-visible { outline: 3px solid var(--courier-beak); outline-offset: 2px; }
+    .field { display: grid; min-width: 0; gap: 0.35rem; color: var(--courier-color-muted); font-family: var(--courier-font-mono); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    button.link:focus-visible, a:focus-visible { outline: 3px solid var(--courier-beak); outline-offset: 2px; }
     .route-overview { display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-md); background: var(--courier-color-surface); }
     .delivery-panel { display: grid; gap: 1.25rem; padding: clamp(1.25rem, 4vw, 2rem); border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-lg); background: var(--courier-color-surface-raised); box-shadow: var(--courier-shadow); }
     .delivery-title { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
@@ -56,8 +56,7 @@ export class CourierDataApp extends LitElement {
     a, button.link { color: var(--courier-color-text); font-weight: 750; }
     button.link { appearance: none; padding: 0; border: 0; background: transparent; font: inherit; text-decoration: underline; cursor: pointer; }
     .upload-zone { display: grid; gap: 0.75rem; padding: clamp(1.25rem, 4vw, 2rem); border: 1px dashed var(--courier-color-border-strong); border-radius: var(--courier-radius-md); background: var(--courier-color-surface); }
-    .upload-zone label { display: grid; gap: 0.5rem; font-weight: 800; }
-    .upload-zone input { min-height: auto; padding: 0.75rem; }
+    .upload-zone .courier-file-action { justify-self: start; }
     ul { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--courier-color-border); }
     li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 0.8rem; align-items: center; min-height: 3.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--courier-color-border); }
     li courier-icon { color: var(--courier-color-muted); }
@@ -68,13 +67,14 @@ export class CourierDataApp extends LitElement {
       header { align-items: flex-start; padding: 1rem 0; }
       nav { justify-content: flex-end; }
       .access { grid-template-columns: 1fr; }
-      .access-art { display: none; }
+      .access-art { min-height: 18rem; }
+      .access-art courier-mascot { right: -4%; bottom: -8%; width: 106%; }
       .signin { grid-template-columns: 1fr; }
       li { grid-template-columns: auto minmax(0, 1fr) auto; }
       li .size { display: none; }
       .delivery-title { display: grid; }
     }
-  `;
+  `];
 
   private locale: Locale = browserLocale();
   private metadata?: Metadata;
@@ -169,10 +169,10 @@ export class CourierDataApp extends LitElement {
                 <h2>${this.t("accessTitle")}</h2>
                 <p class="muted">${this.t("accessHelp")}</p>
                 <p class="error" role="alert">${this.t("failed")}</p>
-                <form class="signin" @submit=${this.signIn}><input name="password" type="password" autocomplete="current-password" placeholder=${this.t("password")}><courier-button type="submit" variant="primary">${this.t("signIn")}</courier-button></form>
+                <form class="signin" @submit=${this.signIn}><label class="field"><span>${this.t("password")}</span><input name="password" type="password" autocomplete="current-password" placeholder=${this.t("password")}></label><courier-button type="submit" variant="primary">${this.t("signIn")}</courier-button></form>
                 <courier-button @click=${this.refresh}>${this.t("retry")}</courier-button>
               </div>
-              <div class="access-art"><courier-mascot alt="" .source=${relayMascotSource}></courier-mascot></div>
+              <div class="access-art"><courier-mascot alt="" .source=${relayAccessSource}></courier-mascot></div>
             </div>
           ` : nothing}
           ${this.metadata ? html`
@@ -180,7 +180,7 @@ export class CourierDataApp extends LitElement {
             <section class="delivery-panel">
               <div class="delivery-title"><div><span class="eyebrow">${this.t("manifest")}</span><h2>${this.metadata.name}</h2></div><courier-status tone="signal">${this.t("ready")}</courier-status></div>
               ${this.metadata.type === "upload" ? html`
-                <div class="upload-zone"><h2>${this.t("uploadTitle")}</h2><p class="muted">${this.t("uploadHelp")}</p><label>${this.t("upload")}<input type="file" @change=${this.sendFile}></label></div>
+                <div class="upload-zone"><h2>${this.t("uploadTitle")}</h2><p class="muted">${this.t("uploadHelp")}</p><label class="courier-file-action"><courier-icon name="upload"></courier-icon><span>${this.t("upload")}</span><input type="file" @change=${this.sendFile}></label></div>
               ` : html`
                 ${this.metadata.type === "file" ? html`<div class="toolbar"><courier-icon name="download"></courier-icon><a href=${downloadURL(this.metadata.path)}>${this.t("download")}</a></div>` : html`
                   <div class="toolbar"><a href=${downloadURL(this.metadata.path, true)}>${this.t("downloadAll")}</a>${this.metadata.path ? html`<button class="link" @click=${(event: Event) => this.openDirectory(event, parentPath(this.metadata!.path))}>${this.t("up")}</button>` : nothing}</div>

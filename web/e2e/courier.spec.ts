@@ -6,24 +6,24 @@ const adminURL = "http://127.0.0.1:4175/";
 const secretMarker = "COURIER_SECRET_MUST_NOT_RENDER";
 
 async function selectTheme(page: Page, root: string, preference: "system" | "light" | "dark"): Promise<void> {
-  await page.locator(`${root} courier-theme-selector select`).selectOption(preference);
+  await page.locator(`${root} courier-theme-selector courier-segmented-control button[data-value="${preference}"]`).click();
   await expect(page.locator("html")).toHaveAttribute("data-courier-theme-preference", preference);
   await expect.poll(() => page.evaluate(() => localStorage.getItem("courier.theme"))).toBe(preference);
 }
 
 async function selectRussian(page: Page, root: string): Promise<void> {
-  await page.locator(`${root} courier-locale-selector select`).selectOption("ru");
+  await page.locator(`${root} courier-locale-selector courier-segmented-control button[data-value="ru"]`).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem("courier.locale"))).toBe("ru");
 }
 
 async function exerciseThemes(page: Page, root: string): Promise<void> {
   await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
-  await selectTheme(page, root, "system");
-  await expect(page.locator("html")).toHaveAttribute("data-courier-theme", "dark");
   for (const preference of ["light", "dark"] as const) {
     await selectTheme(page, root, preference);
     await expect(page.locator("html")).toHaveAttribute("data-courier-theme", preference);
   }
+  await selectTheme(page, root, "system");
+  await expect(page.locator("html")).toHaveAttribute("data-courier-theme", "dark");
 }
 
 test("landing covers locales, themes, keyboard, and responsive layouts", async ({ page }) => {
@@ -32,11 +32,25 @@ test("landing covers locales, themes, keyboard, and responsive layouts", async (
   await expect(page.locator(`${root} h1`)).toHaveText("Move files. Keep control.");
   await expect(page.locator(`${root} main`)).toBeVisible();
   await expect(page.locator(`${root} footer`)).toBeVisible();
-  await expect(page.locator(`${root} courier-mascot img`).first()).toBeVisible();
+  const mascotImages = page.locator(`${root} courier-mascot img`);
+  await expect(mascotImages).toHaveCount(4);
+  for (const mascotImage of await mascotImages.all()) {
+    await mascotImage.scrollIntoViewIfNeeded();
+    await expect(mascotImage).toBeVisible();
+    await expect.poll(() => mascotImage.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+  }
   await expect(page.locator(`${root} courier-route`).first()).toBeVisible();
   await expect(page.locator(`${root} code`).filter({ hasText: "npm install --global @iwonz/courier" })).toBeVisible();
 
   await exerciseThemes(page, root);
+  await expect(page.locator(`${root} courier-theme-selector select`)).toHaveCount(0);
+  const selectedTheme = page.locator(`${root} courier-theme-selector courier-segmented-control button[aria-checked="true"]`);
+  await selectedTheme.focus();
+  await selectedTheme.press("End");
+  await expect(page.locator("html")).toHaveAttribute("data-courier-theme-preference", "dark");
+  await page.locator(`${root} courier-theme-selector courier-segmented-control button[aria-checked="true"]`).focus();
+  await page.locator(`${root} courier-theme-selector courier-segmented-control button[aria-checked="true"]`).press("Home");
+  await expect(page.locator("html")).toHaveAttribute("data-courier-theme-preference", "system");
 
   await selectRussian(page, root);
   await expect(page.locator(`${root} h2`).filter({ hasText: "Установить Courier" })).toBeVisible();
@@ -67,6 +81,7 @@ test("protected data metadata never renders before authentication", async ({ pag
   const password = page.locator(`${root} input[type="password"]`);
   await expect(password).toBeVisible();
   await expect(page.locator(`${root} courier-mascot img`)).toBeVisible();
+  await expect(page.locator(`${root} courier-mascot img`)).toHaveAttribute("src", /relay-access/);
   await expect(page.locator(root)).not.toContainText(secretMarker);
   await exerciseThemes(page, root);
   await password.focus();
@@ -116,6 +131,8 @@ test("admin renders secret-free state with localized controls", async ({ page })
   const root = "courier-admin-app";
   await expect(page.locator(root)).toContainText("127.0.0.1:8080");
   await expect(page.locator(`${root} .metrics`)).toContainText("Active deliveries");
+  await expect(page.locator(`${root} form select`).first()).toHaveCSS("appearance", "none");
+  await expect(page.locator(`${root} form input[type="checkbox"]`).first()).toHaveCSS("appearance", "none");
   await expect(page.locator(root)).not.toContainText(secretMarker);
   await exerciseThemes(page, root);
   const refresh = page.locator(`${root} nav courier-button button`).first();

@@ -3,7 +3,10 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
-    alias: { "@courier/ui": fileURLToPath(new URL("../ui/src/index.ts", import.meta.url)) },
+    alias: {
+      "@courier/ui/relay-admin": fileURLToPath(new URL("../ui/src/relay-admin.ts", import.meta.url)),
+      "@courier/ui": fileURLToPath(new URL("../ui/src/index.ts", import.meta.url)),
+    },
   },
   test: {
     environment: "jsdom",

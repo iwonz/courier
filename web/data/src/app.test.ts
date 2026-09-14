@@ -63,6 +63,9 @@ it("renders login failure, signs in, and retries", async () => {
   document.body.append(element);
   await flush(element);
   expect(element.shadowRoot?.textContent).toContain("authorization is required");
+  const accessArt = element.shadowRoot?.querySelector("courier-mascot");
+  await accessArt?.updateComplete;
+  expect(accessArt?.shadowRoot?.querySelector("img")?.src).toContain("relay-access");
   const form = element.shadowRoot?.querySelector("form") as HTMLFormElement;
   (form.querySelector("input") as HTMLInputElement).value = "secret";
   await element.signIn({ preventDefault: vi.fn(), currentTarget: form } as unknown as SubmitEvent);
@@ -91,6 +94,7 @@ it("renders an upload-only delivery", async () => {
   document.body.append(element);
   await flush(element);
   expect(element.shadowRoot?.querySelector('input[type="file"]')).not.toBeNull();
+  expect(element.shadowRoot?.querySelector(".courier-file-action courier-icon")).not.toBeNull();
   expect(element.shadowRoot?.textContent).not.toContain("This directory is empty");
 });
 

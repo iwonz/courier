@@ -1,5 +1,6 @@
 import { LitElement, css, html, nothing } from "lit";
-import { browserLocale, browserThemeState, defineCourierElements, type Locale, type ThemeState } from "@courier/ui";
+import { browserLocale, browserThemeState, defineCourierElements, formControlStyles, type Locale, type ThemeState } from "@courier/ui";
+import { relayOperationsSource } from "@courier/ui/relay-admin";
 import { loadServers, savePolicy, stopTarget, subscribeSnapshots, type Delivery, type Policy, type Server, type Snapshot } from "./api";
 import { adminText } from "./catalog";
 
@@ -13,7 +14,7 @@ export class CourierAdminApp extends LitElement {
     conflict: { state: true },
   };
 
-  static styles = css`
+  static styles = [formControlStyles, css`
     :host {
       display: block;
       min-height: 100vh;
@@ -61,10 +62,12 @@ export class CourierAdminApp extends LitElement {
     dd { margin: 0; overflow-wrap: anywhere; }
     form { display: grid; grid-template-columns: repeat(4, minmax(9rem, 1fr)) auto; gap: 0.75rem; align-items: end; }
     label { display: grid; gap: 0.35rem; color: var(--courier-color-muted); font-family: var(--courier-font-mono); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em; }
-    input, select { width: 100%; min-width: 0; min-height: 2.75rem; padding: 0 0.6rem; border: 1px solid var(--courier-color-border-strong); border-radius: var(--courier-radius-sm); color: var(--courier-color-text); background: var(--courier-color-surface-raised); font: inherit; }
-    label.checkbox { grid-template-columns: auto 1fr; align-items: center; align-content: center; }
-    label.checkbox input { width: 1.1rem; min-height: 1.1rem; }
-    input:focus-visible, select:focus-visible { outline: 3px solid var(--courier-beak); outline-offset: 2px; }
+    label.checkbox { grid-template-columns: auto 1fr; align-items: center; align-content: center; min-height: 2.75rem; }
+    .state-brief { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.7fr); min-height: 20rem; overflow: hidden; border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-lg); background: var(--courier-color-surface-raised); box-shadow: var(--courier-shadow); }
+    .state-copy { display: grid; align-content: center; justify-items: start; gap: 1rem; padding: clamp(1.5rem, 5vw, 3rem); }
+    .state-art { position: relative; min-height: 20rem; overflow: hidden; background: var(--courier-graphite-900); }
+    .state-art courier-mascot { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .state-art courier-mascot::part(image) { width: 100%; height: 100%; object-fit: cover; }
     .empty, .loading { display: grid; min-height: 13rem; place-items: center; border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-md); color: var(--courier-color-muted); background: var(--courier-color-surface-raised); font-family: var(--courier-font-mono); }
     @media (max-width: 64rem) { form { grid-template-columns: repeat(2, minmax(10rem, 1fr)); } }
     @media (max-width: 44rem) {
@@ -76,8 +79,10 @@ export class CourierAdminApp extends LitElement {
       form { grid-template-columns: 1fr; }
       dl { grid-template-columns: 1fr; }
       dt { margin-top: 0.3rem; }
+      .state-brief { grid-template-columns: 1fr; }
+      .state-art { min-height: 15rem; }
     }
-  `;
+  `];
 
   private locale: Locale = browserLocale();
   private snapshot?: Snapshot;
@@ -165,10 +170,10 @@ export class CourierAdminApp extends LitElement {
         </dl>
         <span class="label">${this.t("policy")}</span>
         <form @submit=${(event: SubmitEvent) => this.save(event, item)}>
-          <label>${this.t("authentication")}<select name="auth"><option selected=${item.policy.auth === "none"}>none</option><option selected=${item.policy.auth === "basic"}>basic</option><option selected=${item.policy.auth === "password"}>password</option></select></label>
+          <label>${this.t("authentication")}<select name="auth"><option ?selected=${item.policy.auth === "none"}>none</option><option ?selected=${item.policy.auth === "basic"}>basic</option><option ?selected=${item.policy.auth === "password"}>password</option></select></label>
           <label>${this.t("attempts")}<input name="attempts" type="number" min="1" .value=${String(item.policy.authAttempts)}></label>
-          <label>${this.t("failAction")}<select name="failAction"><option selected=${item.policy.authFailAction === "ban"}>ban</option><option selected=${item.policy.authFailAction === "stop"}>stop</option></select></label>
-          <label class="checkbox"><input name="noUi" type="checkbox" ?checked=${item.policy.noUi}> ${this.t("noUi")}</label>
+          <label>${this.t("failAction")}<select name="failAction"><option ?selected=${item.policy.authFailAction === "ban"}>ban</option><option ?selected=${item.policy.authFailAction === "stop"}>stop</option></select></label>
+          <label class="checkbox"><input name="noUi" type="checkbox" ?checked=${item.policy.noUi}><span>${this.t("noUi")}</span></label>
           <courier-button type="submit" variant="primary">${this.t("save")}</courier-button>
         </form>
       </article>
@@ -207,9 +212,9 @@ export class CourierAdminApp extends LitElement {
             <div class="metric"><strong>${deliveries}</strong><span>${this.t("deliveriesMetric")}</span></div>
             <div class="metric"><strong>${confirmed}</strong><span>${this.t("confirmedMetric")}</span></div>
           </div>
-          ${this.failed ? html`<div class="notice error"><p role="alert">${this.t("failed")}</p><courier-button @click=${this.refresh}>${this.t("retry")}</courier-button></div>` : nothing}
+          ${this.failed ? html`<div class="state-brief"><div class="state-copy"><span class="eyebrow">${this.t("unreachable")}</span><p role="alert">${this.t("failed")}</p><courier-button @click=${this.refresh}>${this.t("retry")}</courier-button></div><div class="state-art"><courier-mascot alt="" .source=${relayOperationsSource}></courier-mascot></div></div>` : nothing}
           ${this.conflict ? html`<div class="notice"><p role="alert">${this.t("conflict")}</p><courier-button @click=${this.refresh}>${this.t("refresh")}</courier-button></div>` : nothing}
-          ${this.snapshot ? servers.length === 0 ? html`<div class="empty">${this.t("empty")}</div>` : html`<div class="server-list">${servers.map((server) => this.server(server))}</div>` : !this.failed ? html`<div class="loading"><courier-status>${this.t("loading")}</courier-status></div>` : nothing}
+          ${this.snapshot ? servers.length === 0 ? html`<div class="state-brief"><div class="state-copy"><span class="eyebrow">${this.t("live")}</span><p>${this.t("empty")}</p></div><div class="state-art"><courier-mascot alt="" .source=${relayOperationsSource}></courier-mascot></div></div>` : html`<div class="server-list">${servers.map((server) => this.server(server))}</div>` : !this.failed ? html`<div class="loading"><courier-status>${this.t("loading")}</courier-status></div>` : nothing}
         </div>
       </main>
     `;

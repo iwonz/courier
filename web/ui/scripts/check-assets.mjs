@@ -7,8 +7,28 @@ const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const assetRoot = resolve(packageRoot, "assets");
 const manifest = JSON.parse(await readFile(resolve(assetRoot, "provenance.json"), "utf8"));
 
-if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.assets) || manifest.assets.length === 0) {
+if (manifest.schemaVersion !== 2 || !Array.isArray(manifest.assets) || manifest.assets.length === 0) {
   throw new Error("asset provenance manifest is invalid");
+}
+
+function uint24(data, offset) {
+  return data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16);
+}
+
+function rasterDimensions(data, mediaType) {
+  if (mediaType === "image/png") {
+    if (data.toString("hex", 0, 8) !== "89504e470d0a1a0a") throw new Error("invalid PNG header");
+    return { width: data.readUInt32BE(16), height: data.readUInt32BE(20) };
+  }
+  if (data.toString("ascii", 0, 4) !== "RIFF" || data.toString("ascii", 8, 12) !== "WEBP") throw new Error("invalid WebP header");
+  const chunk = data.toString("ascii", 12, 16);
+  if (chunk === "VP8X") return { width: uint24(data, 24) + 1, height: uint24(data, 27) + 1 };
+  if (chunk === "VP8 ") return { width: data.readUInt16LE(26) & 0x3fff, height: data.readUInt16LE(28) & 0x3fff };
+  if (chunk === "VP8L") {
+    const bits = data.readUInt32LE(21);
+    return { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 };
+  }
+  throw new Error(`unsupported WebP chunk: ${chunk}`);
 }
 
 const expected = new Set(["provenance.json"]);
@@ -21,6 +41,15 @@ for (const asset of manifest.assets) {
   const digest = createHash("sha256").update(data).digest("hex");
   if (data.length !== asset.bytes || digest !== asset.sha256) {
     throw new Error(`asset integrity mismatch: ${asset.path}`);
+  }
+  if (asset.mediaType === "image/png" || asset.mediaType === "image/webp") {
+    if (!asset.prompt || !Number.isInteger(asset.width) || !Number.isInteger(asset.height)) {
+      throw new Error(`raster provenance is incomplete: ${asset.path}`);
+    }
+    const dimensions = rasterDimensions(data, asset.mediaType);
+    if (dimensions.width !== asset.width || dimensions.height !== asset.height) {
+      throw new Error(`asset dimensions mismatch: ${asset.path}`);
+    }
   }
 }
 

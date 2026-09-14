@@ -16,7 +16,9 @@ Installation commands and repository links are static reviewed content. Download
 
 ## Application
 
-The landing is a workspace peer of the embedded data and administration applications. It imports `@courier/ui` for the shared field-manual/control-room identity, Relay mascot, route grammar, graphite/signal-lime tokens, persisted `system`/`light`/`dark` themes, reduced-motion handling, and the English/Russian locale selector. English is the fallback and supported browser languages select Russian on first use.
+The landing is a workspace peer of the embedded data and administration applications. It imports `@courier/ui` for the shared field-manual/control-room identity, contextual Relay scenes, route grammar, graphite/signal-lime tokens, persisted `system`/`light`/`dark` themes, reduced-motion handling, and English/Russian segmented selectors. English is the fallback and supported browser languages select Russian on first use.
+
+The hero depicts Relay planning a dispatch. Installation, routing, and safety each use a separate role-specific briefing illustration; dense command and option tables remain art-free. The README uses the repository-local 3:1 route panorama as a full-width introduction. All images are optional to comprehension, optimized as WebP where appropriate, and loaded lazily except for the hero.
 
 The page covers curl, wget, PowerShell, npm, npx, Yarn, pnpm, Homebrew, Scoop, direct binaries, checksums, Deb, RPM, APK, and Arch packages. It lists the supported distributions and renders only the generated shipped CLI surface.
 

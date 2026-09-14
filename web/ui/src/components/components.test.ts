@@ -4,10 +4,14 @@ import { CourierBrand, CourierMascot, CourierRoute, CourierStatus } from "./bran
 import { CourierLocaleSelector } from "./locale-selector";
 import { CourierPanel } from "./panel";
 import { CourierProgress, progressRatio } from "./progress";
+import { CourierSegmentedControl, nextSegmentIndex } from "./segmented-control";
 import { CourierThemeSelector } from "./theme-selector";
 import { defineCourierElements, type ElementRegistry } from "../define";
 import { CourierIcon, iconNames, resolveIcon } from "../icons";
-import { relayMascotSource } from "../assets";
+import { relayOperationsSource } from "../relay-admin";
+import { relayAccessSource } from "../relay-delivery";
+import { relayDispatchSource, relayInstallSource, relayRoutingSource, relayVerifySource } from "../relay-landing";
+import { relayMascotSource } from "../relay-mascot";
 
 beforeAll(() => defineCourierElements());
 
@@ -28,10 +32,10 @@ describe("element registry", () => {
     };
     defineCourierElements(registry);
     expect([...values.keys()].sort()).toEqual([
-      "courier-brand", "courier-button", "courier-icon", "courier-locale-selector", "courier-mascot", "courier-panel", "courier-progress", "courier-route", "courier-status", "courier-theme-selector",
+      "courier-brand", "courier-button", "courier-icon", "courier-locale-selector", "courier-mascot", "courier-panel", "courier-progress", "courier-route", "courier-segmented-control", "courier-status", "courier-theme-selector",
     ]);
     defineCourierElements(registry);
-    expect(values.size).toBe(10);
+    expect(values.size).toBe(11);
   });
 });
 
@@ -73,11 +77,23 @@ describe("shared components", () => {
 
     const mascot = document.createElement("courier-mascot") as CourierMascot;
     mascot.alt = "Relay";
+    mascot.eager = true;
     mascot.source = relayMascotSource;
     document.body.append(mascot);
     await mascot.updateComplete;
     expect(mascot.shadowRoot?.querySelector("img")?.alt).toBe("Relay");
     expect(mascot.shadowRoot?.querySelector("img")?.src).toContain("relay-mascot");
+    expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("loading")).toBe("eager");
+    expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("high");
+    mascot.eager = false;
+    await mascot.updateComplete;
+    expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("loading")).toBe("lazy");
+    expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("auto");
+
+    expect([
+      relayAccessSource, relayDispatchSource, relayInstallSource,
+      relayOperationsSource, relayRoutingSource, relayVerifySource,
+    ].every((source) => source.includes("relay-") || source.includes("readme-route"))).toBe(true);
 
     const route = document.createElement("courier-route") as CourierRoute;
     route.source = "./data";
@@ -144,6 +160,39 @@ describe("shared components", () => {
 });
 
 describe("preference selectors", () => {
+  it("moves through branded segments with radio keyboard behavior", async () => {
+    expect(nextSegmentIndex("ArrowLeft", 0, 3)).toBe(2);
+    expect(nextSegmentIndex("ArrowUp", 1, 3)).toBe(0);
+    expect(nextSegmentIndex("ArrowRight", 2, 3)).toBe(0);
+    expect(nextSegmentIndex("ArrowDown", 0, 3)).toBe(1);
+    expect(nextSegmentIndex("Home", 2, 3)).toBe(0);
+    expect(nextSegmentIndex("End", 0, 3)).toBe(2);
+    expect(nextSegmentIndex("Tab", 0, 3)).toBeUndefined();
+    expect(nextSegmentIndex("ArrowRight", 0, 0)).toBeUndefined();
+
+    const control = document.createElement("courier-segmented-control") as CourierSegmentedControl;
+    control.label = "Mode";
+    control.value = "one";
+    control.options = [{ value: "one", label: "One" }, { value: "two", label: "Two" }];
+    const changes: string[] = [];
+    control.addEventListener("courier-segment-change", (event) => changes.push((event as CustomEvent<string>).detail));
+    document.body.append(control);
+    await control.updateComplete;
+    const buttons = [...control.shadowRoot!.querySelectorAll("button")];
+    expect(buttons[0].getAttribute("aria-checked")).toBe("true");
+    buttons[0].click();
+    expect(changes).toEqual([]);
+    buttons[0].removeAttribute("data-value");
+    buttons[0].click();
+    expect(changes).toEqual([]);
+    buttons[0].dataset.value = "one";
+    buttons[0].dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
+    buttons[0].dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    await control.updateComplete;
+    expect(changes).toEqual(["two"]);
+    expect(control.value).toBe("two");
+  });
+
   it("persists theme changes and follows system state", async () => {
     const listeners = new Set<() => void>();
     const media = {
@@ -159,13 +208,13 @@ describe("preference selectors", () => {
     document.body.append(selector);
     await selector.updateComplete;
     expect(document.documentElement.dataset.courierTheme).toBe("dark");
-    const select = selector.shadowRoot?.querySelector("select") as HTMLSelectElement;
-    select.value = "light";
-    select.dispatchEvent(new Event("change"));
+    const control = selector.shadowRoot?.querySelector("courier-segmented-control") as CourierSegmentedControl;
+    await control.updateComplete;
+    (control.shadowRoot?.querySelector('button[data-value="light"]') as HTMLButtonElement).click();
     await selector.updateComplete;
     expect(detail).toBe("light");
     expect(localStorage.getItem("courier.theme")).toBe("light");
-    expect(selector.shadowRoot?.querySelector("label")?.textContent).toContain("Тема");
+    expect(control.label).toBe("Тема");
     selector.remove();
     expect(listeners.size).toBe(0);
 
@@ -181,9 +230,8 @@ describe("preference selectors", () => {
     document.body.append(selector);
     await selector.updateComplete;
     expect(selector.locale).toBe("ru");
-    const select = selector.shadowRoot?.querySelector("select") as HTMLSelectElement;
-    select.value = "unsupported";
-    select.dispatchEvent(new Event("change"));
+    const control = selector.shadowRoot?.querySelector("courier-segmented-control") as CourierSegmentedControl;
+    control.dispatchEvent(new CustomEvent("courier-segment-change", { detail: "unsupported", bubbles: true }));
     await selector.updateComplete;
     expect(selector.locale).toBe("en");
     expect(detail).toBe("en");
@@ -191,8 +239,7 @@ describe("preference selectors", () => {
 
     const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
     Object.defineProperty(globalThis, "localStorage", { configurable: true, get: () => { throw new Error("blocked"); } });
-    select.value = "ru";
-    expect(() => select.dispatchEvent(new Event("change"))).not.toThrow();
+    expect(() => control.dispatchEvent(new CustomEvent("courier-segment-change", { detail: "ru", bubbles: true }))).not.toThrow();
     if (descriptor) {
       Object.defineProperty(globalThis, "localStorage", descriptor);
     }
