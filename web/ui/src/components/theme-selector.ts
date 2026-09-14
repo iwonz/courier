@@ -32,12 +32,13 @@ export class CourierThemeSelector extends LitElement {
 
   protected render() {
     return html`<courier-segmented-control
+      icon-only
       .label=${translate(this.locale, "theme.label")}
       .value=${this.preference}
       .options=${[
-        { value: "system", label: translate(this.locale, "theme.system") },
-        { value: "light", label: translate(this.locale, "theme.light") },
-        { value: "dark", label: translate(this.locale, "theme.dark") },
+        { value: "system", label: translate(this.locale, "theme.system"), icon: "system" },
+        { value: "light", label: translate(this.locale, "theme.light"), icon: "sun" },
+        { value: "dark", label: translate(this.locale, "theme.dark"), icon: "moon" },
       ]}
       @courier-segment-change=${this.change}
     ></courier-segmented-control>`;

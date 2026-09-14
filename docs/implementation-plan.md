@@ -39,6 +39,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 33 | `fix/033-windows-pipe-test-lifecycle` | `windows-pipe-test-lifecycle` | Unique bounded Windows named-pipe acceptance and failure-safe cleanup |
 | 34 | `feat/034-brand-identity-system` | `brand-identity-system` | Mature brand manual, Relay mascot, shared visual system, and redesigned browser surfaces |
 | 35 | `feat/035-illustrated-interface-system` | `illustrated-interface-system` | Branded control grammar, contextual Relay scenes, and full-width README panorama |
+| 36 | `feat/036-interactive-landing-system` | `interactive-landing-system` | Icon-only preferences, Relay product mark, compact install channels, interactive route explorer, and unified CLI reference |
 
 ## Definition of Done
 

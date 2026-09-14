@@ -8,9 +8,9 @@
     {
       "path": "courier-mark.svg",
       "mediaType": "image/svg+xml",
-      "bytes": 240,
-      "sha256": "142c4cddde82398a634fc258f3d1164aeffe01d9e26df2f8dab132852a49899c",
-      "use": "Courier square route mark and browser favicon"
+      "bytes": 583,
+      "sha256": "843431cd21093ee60301a64ed1f90ea1fb916d0e35e226332794396a16a13142",
+      "use": "Courier square Relay mascot mark and browser favicon"
     },
     {
       "path": "relay-mascot.png",
@@ -95,15 +95,15 @@
     {
       "path": "logo-on-dark.svg",
       "mediaType": "image/svg+xml",
-      "bytes": 2216,
-      "sha256": "321f4f0f02b0dbabd50d46c5a7c1e86506d336c3e056be0e66495346d287a4c6",
+      "bytes": 761,
+      "sha256": "ca4e0905a6feee27df664a1467238fc79015552b953cfc26ef2d03649b15e0ad",
       "use": "Courier lockup on graphite surfaces"
     },
     {
       "path": "logo-on-light.svg",
       "mediaType": "image/svg+xml",
-      "bytes": 2216,
-      "sha256": "a1445f3e8880c46936ca25fd8c9a46045794e89925c933a002d2aacf19f903c3",
+      "bytes": 761,
+      "sha256": "7490daf23f7ebab8e420cc63a93464c54c81c78930980a1be3e42b3f71786f07",
       "use": "Courier lockup on paper surfaces"
     }
   ],

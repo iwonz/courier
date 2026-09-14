@@ -26,11 +26,12 @@ export class CourierLocaleSelector extends LitElement {
 
   protected render() {
     return html`<courier-segmented-control
+      icon-only
       .label=${translate(this.locale, "locale.label")}
       .value=${this.locale}
       .options=${[
-        { value: "en", label: translate(this.locale, "locale.en") },
-        { value: "ru", label: translate(this.locale, "locale.ru") },
+        { value: "en", label: translate(this.locale, "locale.en"), icon: "language-en" },
+        { value: "ru", label: translate(this.locale, "locale.ru"), icon: "language-ru" },
       ]}
       data-storage-key=${localeStorageKey}
       @courier-segment-change=${this.change}

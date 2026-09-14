@@ -1,18 +1,4 @@
-# project-landing Specification
-
-## Purpose
-Define the contract-backed, shared-kit Courier project site and its least-privilege publication as a repository-owned GitHub Pages artifact.
-
-## Requirements
-
-### Requirement: Shared-kit static landing
-
-Courier SHALL provide a responsive static Lit application built from the shared UI kit with English fallback, Russian localization, accessible system/light/dark controls, reduced-motion support, and semantic keyboard navigation.
-
-#### Scenario: A Russian-language browser visits for the first time
-
-- **WHEN** the browser language resolves to Russian and no selector preference exists
-- **THEN** the landing renders the Russian catalog while the same shipped contract data and installation commands remain available
+## MODIFIED Requirements
 
 ### Requirement: Installation and release guidance
 
@@ -22,30 +8,6 @@ The landing SHALL present supported one-command installers, npm-compatible clien
 
 - **WHEN** the installation section is opened on any supported viewport
 - **THEN** every repository-owned command or GitHub Release destination uses the available width, remains fully reachable by keyboard, and does not force document overflow
-
-### Requirement: Repository-owned Pages deployment
-
-Courier SHALL automatically publish the deterministic landing artifact after every push to `main` through GitHub Actions Pages deployment with least-privilege permissions, no external repository, and no `gh-pages` maintenance branch. Courier SHALL also provide one Make command that builds a clean synchronized `main`, dispatches the same workflow, waits for completion, and reports the public URL.
-
-#### Scenario: Main passes the landing gate
-
-- **WHEN** the Pages workflow builds a synchronized contract and tested production landing
-- **THEN** it uploads and deploys only the static artifact through the GitHub Pages environment
-
-#### Scenario: Main changes
-
-- **WHEN** any revision is pushed to `main`
-- **THEN** the Pages workflow verifies the synchronized contract, tests and builds the production landing, and deploys only its static artifact
-
-#### Scenario: A maintainer explicitly republishes
-
-- **WHEN** an authenticated maintainer runs the publication Make command from clean local `main` matching `origin/main`
-- **THEN** Courier builds locally, enables workflow-based Pages if absent, dispatches the exact main revision, waits for the new run to succeed, and reports the Pages URL
-
-#### Scenario: Local state is not publishable
-
-- **WHEN** the publication command runs from a feature branch, dirty worktree, or main revision different from `origin/main`
-- **THEN** it fails before changing Pages configuration or dispatching a workflow
 
 ### Requirement: Brand-led product narrative
 
@@ -69,6 +31,8 @@ The project landing and repository README SHALL use responsive, context-specific
 
 - **WHEN** GitHub renders the README
 - **THEN** a locally versioned, full-width, text-free Courier route panorama introduces the project and remains legible in light and dark GitHub themes
+
+## ADDED Requirements
 
 ### Requirement: Contract-backed interactive route illustration
 

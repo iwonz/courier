@@ -31,9 +31,12 @@ test("landing covers locales, themes, keyboard, and responsive layouts", async (
   const root = "courier-landing-app";
   await expect(page.locator(`${root} h1`)).toHaveText("Move files. Keep control.");
   await expect(page.locator(`${root} main`)).toBeVisible();
-  await expect(page.locator(`${root} footer`)).toBeVisible();
+  await expect(page.locator(`${root} footer`)).toHaveCount(0);
+  await expect(page.locator(`${root} section`)).toHaveCount(3);
+  await expect(page.locator(`${root} .facts, ${root} #safety, ${root} #examples, ${root} #docs`)).toHaveCount(0);
+  await expect(page.locator(`${root} .github-link`)).toBeVisible();
   const mascotImages = page.locator(`${root} courier-mascot img`);
-  await expect(mascotImages).toHaveCount(4);
+  await expect(mascotImages).toHaveCount(3);
   for (const mascotImage of await mascotImages.all()) {
     await mascotImage.scrollIntoViewIfNeeded();
     await expect(mascotImage).toBeVisible();
@@ -44,6 +47,10 @@ test("landing covers locales, themes, keyboard, and responsive layouts", async (
 
   await exerciseThemes(page, root);
   await expect(page.locator(`${root} courier-theme-selector select`)).toHaveCount(0);
+  await expect(page.locator(`${root} courier-theme-selector courier-segmented-control legend`)).toHaveClass(/sr-only/);
+  await expect(page.locator(`${root} courier-locale-selector courier-segmented-control legend`)).toHaveClass(/sr-only/);
+  await expect(page.locator(`${root} courier-theme-selector courier-segmented-control button span`)).toHaveCount(0);
+  await expect(page.locator(`${root} courier-locale-selector courier-segmented-control button span`)).toHaveCount(0);
   const selectedTheme = page.locator(`${root} courier-theme-selector courier-segmented-control button[aria-checked="true"]`);
   await selectedTheme.focus();
   await selectedTheme.press("End");
@@ -51,6 +58,14 @@ test("landing covers locales, themes, keyboard, and responsive layouts", async (
   await page.locator(`${root} courier-theme-selector courier-segmented-control button[aria-checked="true"]`).focus();
   await page.locator(`${root} courier-theme-selector courier-segmented-control button[aria-checked="true"]`).press("Home");
   await expect(page.locator("html")).toHaveAttribute("data-courier-theme-preference", "system");
+
+  const routeCommand = page.locator(`${root} .command-shape`);
+  await page.locator(`${root} .endpoint-group`).first().locator('button[data-endpoint="web"]').hover();
+  await expect(routeCommand).toContainText("web:// to relay@host:/srv/destination/");
+  const localDestination = page.locator(`${root} .endpoint-group`).last().locator('button[data-endpoint="local"]');
+  await localDestination.focus();
+  await expect(routeCommand).toContainText("web:// to ./backup/");
+  await expect(page.locator(`${root} .endpoint-group`).last().locator('button[data-endpoint="web"]')).toHaveAttribute("aria-disabled", "true");
 
   await selectRussian(page, root);
   await expect(page.locator(`${root} h2`).filter({ hasText: "Установить Courier" })).toBeVisible();
@@ -66,6 +81,11 @@ test("landing covers locales, themes, keyboard, and responsive layouts", async (
   for (const viewport of [{ width: 360, height: 740 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
     await expect(page.locator(`${root} nav`)).toBeVisible();
+    const channelCommandsFit = await page.locator(`${root} .channel pre`).evaluateAll((commands) => commands.every((command) => {
+      const bounds = command.getBoundingClientRect();
+      return bounds.left >= 0 && bounds.right <= innerWidth && command.clientWidth > 0;
+    }));
+    expect(channelCommandsFit).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
 });

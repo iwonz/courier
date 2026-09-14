@@ -17,8 +17,13 @@ export class CourierBrand extends LitElement {
   protected render() {
     return html`<span class="lockup">
       <svg viewBox="0 0 40 40" aria-hidden="true">
-        <rect x="1" y="1" width="38" height="38" rx="4" fill="var(--courier-color-inverse, #151714)"></rect>
-        <path d="M10 9v22h8v-4h-4V13h4V9zm8 7h8v8h-8zm7-5 8 9-8 9v-6h-1v-6h1z" fill="var(--courier-color-accent, #d4ff45)"></path>
+        <rect x="1" y="1" width="38" height="38" rx="4" fill="var(--courier-graphite-900, #151714)" stroke="var(--courier-color-border-strong, #8e9587)"></rect>
+        <path d="M10 30c-1.5-3.2-1.4-7 .3-10.2C12.5 15.5 16.4 12 21.5 12c3.8 0 7 1.8 8.8 4.7l-2.5 3.6c1 2.8.8 6.4-.7 9.7H10z" fill="var(--courier-paper-50, #f3f4e9)"></path>
+        <path d="m29 15 8 3.1-8 4z" fill="var(--courier-beak, #ff8758)"></path>
+        <circle cx="24" cy="16" r="2.2" fill="var(--courier-graphite-900, #151714)"></circle>
+        <circle cx="24" cy="16" r=".8" fill="var(--courier-color-accent, #d4ff45)"></circle>
+        <path d="M10 25h18.2c.1 1.7-.3 3.5-1.1 5H10c-.6-1.6-.8-3.3-.7-5z" fill="var(--courier-color-accent, #d4ff45)"></path>
+        <path d="M15 25v5m8-5v5" stroke="var(--courier-graphite-900, #151714)" stroke-width="1.2"></path>
       </svg>
       <span class="words"><strong>Courier</strong><small>${this.product}</small></span>
     </span>`;

@@ -82,9 +82,9 @@ Courier uses system-resident fonts and ships no remote font dependency. Display 
 
 ### Shape and composition
 
-The layout uses a disciplined grid, visible registration lines, route nodes, compact status dots, and framed operational panels. Corners are slightly rounded rather than pill-shaped. Shadows are restrained. Route arrows and the square Courier mark provide motion; decorative gradients, glass surfaces, neon glow, and floating 3D objects do not.
+The layout uses a disciplined grid, visible registration lines, route nodes, compact status dots, and framed operational panels. Corners are slightly rounded rather than pill-shaped. Shadows are restrained. Route lines and Relay's directional posture provide motion; decorative gradients, glass surfaces, neon glow, and floating 3D objects do not.
 
-The Courier mark is a source bracket, a parcel node, and a forward route combined in one square. It may appear without the wordmark at favicon or compact-control sizes. Do not rotate it, add speed lines, recolor individual shapes arbitrarily, or place it on insufficient contrast.
+The Courier mark is a compact profile of Relay with the orange beak, alert eye, and signal-lime capsule harness retained at favicon size. It may appear without the wordmark in compact contexts. Do not rotate it, add speed lines, recolor individual features arbitrarily, or place it on insufficient contrast.
 
 ### Motion
 
@@ -92,7 +92,7 @@ Motion confirms state changes and direction. Transitions remain short and interr
 
 ### Controls
 
-Courier controls never expose unstyled browser chrome. Small fixed choices such as theme and locale use shared segmented radio groups with visible selection, arrow-key navigation, and one focus stop. Form inputs and selects keep dependable platform semantics but normalize appearance, spacing, indicators, hover, focus, and disabled states through the shared UI kit. Boolean policy values use a switch treatment; file selection uses a designed action surface while retaining a real keyboard-operable file input.
+Courier controls never expose unstyled browser chrome. Small fixed choices such as theme and locale use icon-only shared segmented radio groups with localized programmatic names, visible selection, arrow-key navigation, and one focus stop. Form inputs and selects keep dependable platform semantics but normalize appearance, spacing, indicators, hover, focus, and disabled states through the shared UI kit. Boolean policy values use a switch treatment; file selection uses a designed action surface while retaining a real keyboard-operable file input.
 
 Custom appearance must not recreate browser responsibilities badly. Labels remain programmatic, Enter and Space activate buttons, arrow keys move within segmented groups, validation remains available, and the orange focus ring is never removed.
 

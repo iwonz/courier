@@ -74,6 +74,7 @@ describe("shared components", () => {
     await brand.updateComplete;
     expect(brand.shadowRoot?.textContent).toContain("Courier");
     expect(brand.shadowRoot?.textContent).toContain("Operations");
+    expect(brand.shadowRoot?.querySelectorAll("svg path").length).toBeGreaterThan(3);
 
     const mascot = document.createElement("courier-mascot") as CourierMascot;
     mascot.alt = "Relay";
@@ -156,6 +157,12 @@ describe("shared components", () => {
     await icon.updateComplete;
     expect(icon.shadowRoot?.querySelector("svg")?.getAttribute("role")).toBe("img");
     expect(icon.shadowRoot?.querySelector("svg")?.getAttribute("aria-label")).toBe("Verified");
+    icon.name = "language-en";
+    await icon.updateComplete;
+    expect(icon.shadowRoot?.querySelector("text")?.textContent).toBe("EN");
+    icon.name = "language-ru";
+    await icon.updateComplete;
+    expect(icon.shadowRoot?.querySelector("text")?.textContent).toBe("RU");
   });
 });
 
@@ -210,6 +217,11 @@ describe("preference selectors", () => {
     expect(document.documentElement.dataset.courierTheme).toBe("dark");
     const control = selector.shadowRoot?.querySelector("courier-segmented-control") as CourierSegmentedControl;
     await control.updateComplete;
+    expect(control.iconOnly).toBe(true);
+    expect(control.shadowRoot?.querySelector("legend")?.classList.contains("sr-only")).toBe(true);
+    expect(control.shadowRoot?.querySelectorAll("button courier-icon")).toHaveLength(3);
+    expect(control.shadowRoot?.querySelector("button span")).toBeNull();
+    expect(control.shadowRoot?.querySelector('button[data-value="system"]')?.getAttribute("aria-label")).toBe("Системная");
     (control.shadowRoot?.querySelector('button[data-value="light"]') as HTMLButtonElement).click();
     await selector.updateComplete;
     expect(detail).toBe("light");
@@ -231,6 +243,10 @@ describe("preference selectors", () => {
     await selector.updateComplete;
     expect(selector.locale).toBe("ru");
     const control = selector.shadowRoot?.querySelector("courier-segmented-control") as CourierSegmentedControl;
+    await control.updateComplete;
+    expect(control.iconOnly).toBe(true);
+    expect(control.shadowRoot?.querySelectorAll("button courier-icon")).toHaveLength(2);
+    expect(control.shadowRoot?.querySelector('button[data-value="en"]')?.getAttribute("aria-label")).toBe("Английский");
     control.dispatchEvent(new CustomEvent("courier-segment-change", { detail: "unsupported", bubbles: true }));
     await selector.updateComplete;
     expect(selector.locale).toBe("en");
