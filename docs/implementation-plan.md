@@ -36,6 +36,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 30 | `fix/030-workflow-shellcheck` | `workflow-shellcheck-fix` | Pinned local ShellCheck parity and release-workflow lint correction |
 | 31 | `fix/031-windows-directory-sync` | `windows-directory-sync-fix` | Platform-correct registry durability and fail-fast Windows tests |
 | 32 | `fix/032-windows-native-acceptance` | `windows-native-acceptance-fix` | Windows named-pipe identity, rooted paths, archive links, and permission expectations |
+| 33 | `fix/033-windows-pipe-test-lifecycle` | `windows-pipe-test-lifecycle` | Unique bounded Windows named-pipe acceptance and failure-safe cleanup |
 
 ## Definition of Done
 

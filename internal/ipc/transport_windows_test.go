@@ -8,6 +8,7 @@ import (
 	"net"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/iwonz/courier/internal/delivery"
 )
@@ -16,7 +17,7 @@ func TestWindowsTransport(t *testing.T) {
 	if _, err := ControlEndpoint("", delivery.ID("bad")); !errors.Is(err, ErrProtocol) {
 		t.Fatalf("bad ID=%v", err)
 	}
-	endpoint, err := ControlEndpoint("ignored", requestID)
+	endpoint, err := ControlEndpoint("ignored", delivery.NewID())
 	if err != nil || !strings.HasPrefix(endpoint, `\\.\pipe\courier-`) {
 		t.Fatalf("endpoint=%q err=%v", endpoint, err)
 	}
@@ -30,6 +31,9 @@ func TestWindowsTransport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = listener.Close() })
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	accepted := make(chan error, 1)
 	go func() {
 		connection, acceptErr := listener.Accept()
@@ -38,13 +42,18 @@ func TestWindowsTransport(t *testing.T) {
 		}
 		accepted <- acceptErr
 	}()
-	connection, err := Dial(context.Background(), endpoint)
+	connection, err := Dial(ctx, endpoint)
 	if err != nil {
 		t.Fatal(err)
 	}
 	_ = connection.Close()
-	if err := <-accepted; err != nil {
-		t.Fatal(err)
+	select {
+	case err := <-accepted:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-ctx.Done():
+		t.Fatalf("accept did not complete: %v", ctx.Err())
 	}
 	if err := listener.Close(); err != nil {
 		t.Fatal(err)

@@ -30,7 +30,7 @@ cd web && npx playwright install chromium
 
 On Linux, use `npx playwright install --with-deps chromium` when the host also needs Chromium system libraries. GoReleaser, actionlint, and ShellCheck are version-pinned by the repository. Go downloads actionlint on first use; checksum-verified GoReleaser and ShellCheck bootstraps store their binaries under ignored `.cache/tools`. This keeps embedded workflow-shell validation identical on developer macOS/Linux hosts and GitHub's Linux runner.
 
-Native Windows acceptance uses the current-process pseudo token to scope named-pipe ACLs, converts rooted `fs.FS` directory names to slash form, converts local relative symlink targets to portable tar form, and checks POSIX permission bits only on filesystems that expose them. These adaptations do not weaken endpoint identity, archive traversal checks, or private-file policy on supported platforms.
+Native Windows acceptance uses the current-process pseudo token to scope named-pipe ACLs, assigns each pipe handshake a unique valid endpoint, bounds both sides of that handshake, and registers listener cleanup before connecting. It also converts rooted `fs.FS` directory names to slash form, converts local relative symlink targets to portable tar form, and checks POSIX permission bits only on filesystems that expose them. These adaptations do not weaken endpoint identity, archive traversal checks, or private-file policy on supported platforms.
 
 ## Runtime and browser boundaries
 

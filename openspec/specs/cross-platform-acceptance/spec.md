@@ -25,7 +25,7 @@ Courier SHALL verify large synthetic streams with bounded buffers, observable ba
 
 ### Requirement: Cross-platform release acceptance
 
-Courier SHALL run compiled runtime suites on Linux, macOS, and Windows, cross-build the declared primary and BSD helper artifacts, and install matching release packages in isolated Ubuntu, Debian, Arch Linux, Manjaro, Fedora, RHEL-compatible, and Alpine containers. Native Windows acceptance SHALL exercise owner-scoped named pipes using the current-process identity, rooted filesystem operations across the native-path and `fs.FS` path dialects, portable archive symlink targets, and platform-supported metadata semantics.
+Courier SHALL run compiled runtime suites on Linux, macOS, and Windows, cross-build the declared primary and BSD helper artifacts, and install matching release packages in isolated Ubuntu, Debian, Arch Linux, Manjaro, Fedora, RHEL-compatible, and Alpine containers. Native Windows acceptance SHALL exercise owner-scoped named pipes using the current-process identity, a unique valid endpoint per test run, bounded connection contexts, cleanup registered before the handshake, rooted filesystem operations across the native-path and `fs.FS` path dialects, portable archive symlink targets, and platform-supported metadata semantics.
 
 #### Scenario: A distribution package check exits
 
@@ -41,6 +41,11 @@ Courier SHALL run compiled runtime suites on Linux, macOS, and Windows, cross-bu
 
 - **WHEN** Courier resolves the named-pipe security principal
 - **THEN** it queries the supported current-process token and grants pipe access only to that user SID
+
+#### Scenario: Windows pipe acceptance stalls
+
+- **WHEN** a native named-pipe test cannot complete its client-server handshake
+- **THEN** its bounded context terminates the attempt and pre-registered cleanup releases the listener and accept goroutine without waiting for the package timeout
 
 ### Requirement: Real-browser acceptance
 
