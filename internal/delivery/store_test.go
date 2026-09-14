@@ -578,9 +578,7 @@ func TestWriteImmutableFailureCleanup(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = closedRoot.Close()
-	if err := (&osStateRoot{root: closedRoot}).Sync(); err == nil {
-		t.Fatal("closed root sync succeeded")
-	}
+	assertClosedRootSync(t, closedRoot)
 }
 
 func reflectSnapshots(left, right Snapshot) bool {

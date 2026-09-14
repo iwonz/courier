@@ -42,6 +42,8 @@ A registry update uses this no-replace protocol:
 
 Revision filenames contain a fixed-width sequence. A concurrent writer cannot replace an existing revision; it receives a revision conflict and must reload. Interrupted temporary files do not supersede the previous complete revision. History uses the same private immutable commit protocol and is ordered by timestamp and event UUID when read.
 
+Courier flushes each immutable state file before committing it. It also synchronizes the containing directory on operating systems that expose portable directory `fsync` semantics. Windows does not support `Sync` on an `os.File` opened for a directory, so the post-commit directory flush is a documented best-effort boundary there; an unsupported directory flush never turns a successfully flushed no-replace state commit into `Access is denied`.
+
 State objects must be private regular files on systems with POSIX permission bits. Symlinks, malformed JSON, unknown JSON fields, filename/content mismatches, invalid references, and invalid lifecycle or policy values fail closed.
 
 ## Trust and cleanup boundaries

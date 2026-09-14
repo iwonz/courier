@@ -34,6 +34,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 28 | `test/028-cross-platform-acceptance` | `cross-platform-acceptance` | Route, security, platform, installer, performance, race, and browser acceptance suites |
 | 29 | `feat/029-pages-publication` | `pages-publication` | Automatic GitHub Pages deployment and guarded one-command republishing |
 | 30 | `fix/030-workflow-shellcheck` | `workflow-shellcheck-fix` | Pinned local ShellCheck parity and release-workflow lint correction |
+| 31 | `fix/031-windows-directory-sync` | `windows-directory-sync-fix` | Platform-correct registry durability and fail-fast Windows tests |
 
 ## Definition of Done
 

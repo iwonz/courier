@@ -769,6 +769,7 @@ func TestUpdateStoreRetriesConflict(t *testing.T) {
 	}()
 	<-entered
 	if _, err := second.Update(context.Background(), 0, func(*delivery.Registry) error { return nil }); err != nil {
+		close(release)
 		t.Fatal(err)
 	}
 	close(release)
@@ -790,9 +791,11 @@ func TestUpdateStoreRetriesConflict(t *testing.T) {
 	<-entered
 	current, err := second.Load(context.Background())
 	if err != nil {
+		close(release)
 		t.Fatal(err)
 	}
 	if _, err := second.Update(context.Background(), current.Revision, func(*delivery.Registry) error { return nil }); err != nil {
+		close(release)
 		t.Fatal(err)
 	}
 	close(release)

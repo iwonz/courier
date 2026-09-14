@@ -74,14 +74,8 @@ func (root *osStateRoot) CommitAbsent(temporary, final string) error {
 	return root.root.Link(temporary, final)
 }
 func (root *osStateRoot) Remove(name string) error { return root.root.Remove(name) }
-func (root *osStateRoot) Sync() error {
-	directory, err := root.root.Open(".")
-	if err != nil {
-		return err
-	}
-	return errors.Join(directory.Sync(), directory.Close())
-}
-func (root *osStateRoot) Close() error { return root.root.Close() }
+func (root *osStateRoot) Sync() error              { return syncStateDirectory(root.root) }
+func (root *osStateRoot) Close() error             { return root.root.Close() }
 
 type Store struct {
 	directory        string
