@@ -1,17 +1,23 @@
 {
   "schemaVersion": 1,
   "source": {
-    "path": "tmp/courier-identity.html",
-    "sha256": "f388c10730f0def4015b15ba1ab75a9d181bd81963cad23061a2facad96ab0d5",
-    "disposition": "deleted after verified extraction"
+    "path": "docs/brand.md#generated-asset-record",
+    "disposition": "generated for Courier and retained locally"
   },
   "assets": [
     {
-      "path": "courier-mascot.png",
+      "path": "courier-mark.svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 240,
+      "sha256": "142c4cddde82398a634fc258f3d1164aeffe01d9e26df2f8dab132852a49899c",
+      "use": "Courier square route mark and browser favicon"
+    },
+    {
+      "path": "relay-mascot.png",
       "mediaType": "image/png",
-      "bytes": 836728,
-      "sha256": "3584d3ef4a6cba2ea45ca86497f5d1907bbe0b9693d1c6a76e1e5dd1d8a47559",
-      "use": "Courier robot pigeon identity artwork"
+      "bytes": 808035,
+      "sha256": "83a6fd19101ac110920c5bb385bf8884100542144cdf204f4939a9142a3e46ea",
+      "use": "Relay courier-pigeon field operator artwork"
     },
     {
       "path": "logo-on-dark.svg",
@@ -26,18 +32,11 @@
       "bytes": 2216,
       "sha256": "a1445f3e8880c46936ca25fd8c9a46045794e89925c933a002d2aacf19f903c3",
       "use": "Courier lockup on paper surfaces"
-    },
-    {
-      "path": "readme-banner.png",
-      "mediaType": "image/png",
-      "bytes": 1311691,
-      "sha256": "866dd4ccc417198c351497bfa6a2daed6bc8e833a6142dcd6d0831cb90cf05d9",
-      "use": "Repository and documentation banner"
     }
   ],
   "excluded": [
     "AdGuard-injected scripts and remote resources",
     "reference-page JavaScript and HTML",
-    "the obsolete mirror icon and mirror product messaging"
+    "the obsolete mirror icon, robot mascot, banner, and mirror product messaging"
   ]
 }

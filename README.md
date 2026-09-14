@@ -2,6 +2,8 @@
 
 Courier is an extensible, cross-platform CLI for safely transferring files and directories across local, SSH, browser, and webhook endpoints.
 
+**Move files. Keep control.** Courier makes the route, destination, transfer state, and verified result explicit.
+
 ```text
 courier from <source> to <destination> [flags]
 ```
@@ -129,6 +131,8 @@ Development is spec-first: every task owns a path under `openspec/changes`, a co
 The machine-readable [CLI contract](docs/cli-contract.yaml) is the source of truth for shipped and planned commands. Its generated [command reference](docs/cli-reference.md) is checked against the live Cobra tree during every verification run.
 
 Browser delivery pages, the administration interface, and the project landing page share the Lit-based [`@courier/ui`](web/ui) package. Its [UI architecture guide](docs/ui.md) documents assets, themes, localization, components, and the exact TypeScript coverage gate.
+
+The [brand system](docs/brand.md) defines Courier's positioning, Relay mascot, visual language, operational vocabulary, accessibility rules, and approved communication patterns.
 
 See [Browser deliveries](docs/web-deliveries.md) for `web://` URLs, authentication, safe navigation, transactional uploads, and foreground/background lifecycle behavior.
 

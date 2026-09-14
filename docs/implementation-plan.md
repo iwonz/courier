@@ -37,6 +37,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 31 | `fix/031-windows-directory-sync` | `windows-directory-sync-fix` | Platform-correct registry durability and fail-fast Windows tests |
 | 32 | `fix/032-windows-native-acceptance` | `windows-native-acceptance-fix` | Windows named-pipe identity, rooted paths, archive links, and permission expectations |
 | 33 | `fix/033-windows-pipe-test-lifecycle` | `windows-pipe-test-lifecycle` | Unique bounded Windows named-pipe acceptance and failure-safe cleanup |
+| 34 | `feat/034-brand-identity-system` | `brand-identity-system` | Mature brand manual, Relay mascot, shared visual system, and redesigned browser surfaces |
 
 ## Definition of Done
 

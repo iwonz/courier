@@ -20,23 +20,23 @@ export class CourierProgress extends LitElement {
     :host {
       display: grid;
       gap: var(--courier-space-2, 0.5rem);
-      color: var(--courier-text, #151714);
+      color: var(--courier-color-text, #151714);
       font-family: var(--courier-font-sans, sans-serif);
     }
     .track {
       overflow: hidden;
-      height: 0.625rem;
-      border: 1px solid var(--courier-line, #c7ccc0);
-      border-radius: 999px;
-      background: var(--courier-surface, #fff);
+      height: 0.5rem;
+      border: 1px solid var(--courier-color-border, #c8cdbf);
+      border-radius: var(--courier-radius-xs, 0.125rem);
+      background: var(--courier-color-field, #e7e9dc);
     }
     .fill {
       height: 100%;
-      background: var(--courier-signal, #d4ff45);
+      background: var(--courier-color-accent, #d4ff45);
       transform-origin: left;
       transition: transform var(--courier-duration, 160ms) var(--courier-ease, ease);
     }
-    output { color: var(--courier-muted, #51574d); font-family: var(--courier-font-mono, monospace); }
+    output { color: var(--courier-color-muted, #596054); font-family: var(--courier-font-mono, monospace); font-size: 0.75rem; }
   `;
 
   value = 0;

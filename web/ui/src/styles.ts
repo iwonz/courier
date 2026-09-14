@@ -2,28 +2,37 @@ import { css } from "lit";
 
 export const controlStyles = css`
   :host {
-    color: var(--courier-text, #151714);
+    color: var(--courier-color-text, #151714);
     font-family: var(--courier-font-sans, sans-serif);
   }
 
   button,
   select {
     min-height: 2.75rem;
-    border: 1px solid var(--courier-line, #c7ccc0);
+    border: 1px solid var(--courier-color-border, #c8cdbf);
     border-radius: var(--courier-radius-sm, 0.25rem);
     color: inherit;
-    background: var(--courier-surface, #fff);
+    background: var(--courier-color-surface-raised, #fff);
     font: inherit;
   }
 
   button {
     padding: 0.625rem 1rem;
+    box-shadow: 0 1px 0 rgb(16 18 15 / 0.08);
     cursor: pointer;
-    transition: background var(--courier-duration, 160ms) var(--courier-ease, ease);
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    transition: background var(--courier-duration, 160ms) var(--courier-ease, ease), border-color var(--courier-duration, 160ms) var(--courier-ease, ease), transform var(--courier-duration, 160ms) var(--courier-ease, ease);
   }
 
   button:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--courier-signal, #d4ff45) 24%, var(--courier-surface, #fff));
+    border-color: var(--courier-color-border-strong, #8e9587);
+    background: color-mix(in srgb, var(--courier-color-accent, #d4ff45) 18%, var(--courier-color-surface-raised, #fff));
+    transform: translateY(-1px);
+  }
+
+  button:active:not(:disabled) {
+    transform: translateY(0);
   }
 
   button:disabled {
@@ -46,10 +55,11 @@ export const fieldStyles = css`
   label {
     display: grid;
     gap: var(--courier-space-1, 0.25rem);
-    color: var(--courier-muted, #51574d);
-    font-size: 0.8125rem;
+    color: var(--courier-color-muted, #596054);
+    font-family: var(--courier-font-mono, monospace);
+    font-size: 0.6875rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 `;

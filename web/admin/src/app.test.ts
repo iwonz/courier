@@ -61,13 +61,13 @@ it("loads, renders, receives events, localizes, and disconnects", async () => {
   const element = await mount();
   expect(element.shadowRoot?.textContent).toContain("server-a");
   expect(element.shadowRoot?.textContent).toContain("Unreachable");
-  expect(element.shadowRoot?.textContent).toContain("<unavailable>");
+  expect(element.shadowRoot?.textContent).toContain("Unavailable");
   eventListener!(new MessageEvent("snapshot", { data: JSON.stringify({ servers: [] }) }));
   await element.updateComplete;
-  expect(element.shadowRoot?.textContent).toContain("No Courier data servers found");
+  expect(element.shadowRoot?.textContent).toContain("No live Courier servers");
   element.setLocale(new CustomEvent("courier-locale", { detail: "ru" }));
   await element.updateComplete;
-  expect(element.shadowRoot?.textContent).toContain("Серверы данных Courier");
+  expect(element.shadowRoot?.textContent).toContain("Активные серверы Courier");
   element.remove();
   expect(eventClose).toHaveBeenCalledOnce();
   new CourierAdminApp().disconnectedCallback();

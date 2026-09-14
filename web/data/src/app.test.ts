@@ -5,7 +5,7 @@ import { CourierDataApp } from "./app";
 const flush = async (element: CourierDataApp): Promise<void> => {
   await vi.waitFor(async () => {
     await element.updateComplete;
-    expect(element.shadowRoot?.textContent).not.toContain("Loading delivery…");
+    expect(element.shadowRoot?.textContent).not.toContain("Preparing the delivery route…");
   });
 };
 
@@ -30,24 +30,24 @@ it("defines once, loads, localizes, and disconnects", async () => {
   const element = new CourierDataApp();
   document.body.append(element);
   await flush(element);
-  expect(element.shadowRoot?.textContent).toContain("Download archive");
+  expect(element.shadowRoot?.textContent).toContain("Download as archive");
   expect([...element.shadowRoot!.querySelectorAll("a")].some((link) => link.getAttribute("href")?.includes("file.txt"))).toBe(true);
   const folder = [...element.shadowRoot!.querySelectorAll("button.link")].find((button) => button.textContent === "folder") as HTMLButtonElement;
   folder.click();
   await vi.waitFor(async () => {
     await element.updateComplete;
-    expect(element.shadowRoot?.textContent).toContain("Up");
+    expect(element.shadowRoot?.textContent).toContain("Parent directory");
   });
-  const up = [...element.shadowRoot!.querySelectorAll("button.link")].find((button) => button.textContent === "Up") as HTMLButtonElement;
+  const up = [...element.shadowRoot!.querySelectorAll("button.link")].find((button) => button.textContent === "Parent directory") as HTMLButtonElement;
   up.click();
   await vi.waitFor(async () => {
     await element.updateComplete;
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(element.shadowRoot?.textContent).toContain("This directory is empty");
+    expect(element.shadowRoot?.textContent).toContain("No entries are available");
   });
   element.setLocale(new CustomEvent("courier-locale", { detail: "ru" }));
   await element.updateComplete;
-  expect(element.shadowRoot?.textContent).toContain("Каталог пуст");
+  expect(element.shadowRoot?.textContent).toContain("нет доступных объектов");
   element.remove();
   new CourierDataApp().disconnectedCallback();
 });
@@ -69,7 +69,7 @@ it("renders login failure, signs in, and retries", async () => {
   await element.updateComplete;
   expect(element.shadowRoot?.querySelector("a")?.href).toContain("archive=tar.gz");
   await element.refresh();
-  expect(element.shadowRoot?.textContent).toContain("empty");
+  expect(element.shadowRoot?.textContent).toContain("No entries are available");
 });
 
 it("handles login and upload errors plus empty selections", async () => {
@@ -99,7 +99,7 @@ it("renders a shared file as one download", async () => {
   const element = new CourierDataApp();
   document.body.append(element);
   await flush(element);
-  expect(element.shadowRoot?.querySelector("a")?.textContent).toBe("Download");
+  expect(element.shadowRoot?.querySelector("a")?.textContent).toBe("Download file");
   expect(element.shadowRoot?.textContent).not.toContain("This directory is empty");
 });
 

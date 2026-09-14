@@ -1,4 +1,5 @@
 import { CourierButton } from "./components/button";
+import { CourierBrand, CourierMascot, CourierRoute, CourierStatus } from "./components/brand";
 import { CourierLocaleSelector } from "./components/locale-selector";
 import { CourierPanel } from "./components/panel";
 import { CourierProgress } from "./components/progress";
@@ -11,11 +12,15 @@ export interface ElementRegistry {
 }
 
 const elements = {
+  "courier-brand": CourierBrand,
   "courier-button": CourierButton,
   "courier-icon": CourierIcon,
   "courier-locale-selector": CourierLocaleSelector,
+  "courier-mascot": CourierMascot,
   "courier-panel": CourierPanel,
   "courier-progress": CourierProgress,
+  "courier-route": CourierRoute,
+  "courier-status": CourierStatus,
   "courier-theme-selector": CourierThemeSelector,
 } as const;
 

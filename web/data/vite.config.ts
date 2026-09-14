@@ -4,7 +4,10 @@ import { defineConfig } from "vite";
 export default defineConfig({
   base: "/",
   resolve: {
-    alias: { "@courier/ui": fileURLToPath(new URL("../ui/src/index.ts", import.meta.url)) },
+    alias: {
+      "@courier/ui/relay": fileURLToPath(new URL("../ui/src/assets.ts", import.meta.url)),
+      "@courier/ui": fileURLToPath(new URL("../ui/src/index.ts", import.meta.url)),
+    },
   },
   build: {
     outDir: "../../internal/webdelivery/assets",

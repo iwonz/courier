@@ -29,17 +29,19 @@ async function exerciseThemes(page: Page, root: string): Promise<void> {
 test("landing covers locales, themes, keyboard, and responsive layouts", async ({ page }) => {
   await page.goto(landingURL);
   const root = "courier-landing-app";
-  await expect(page.locator(`${root} h1`)).toHaveText("Courier CLI");
+  await expect(page.locator(`${root} h1`)).toHaveText("Move files. Keep control.");
   await expect(page.locator(`${root} main`)).toBeVisible();
   await expect(page.locator(`${root} footer`)).toBeVisible();
+  await expect(page.locator(`${root} courier-mascot img`).first()).toBeVisible();
+  await expect(page.locator(`${root} courier-route`).first()).toBeVisible();
   await expect(page.locator(`${root} code`).filter({ hasText: "npm install --global @iwonz/courier" })).toBeVisible();
 
   await exerciseThemes(page, root);
 
   await selectRussian(page, root);
-  await expect(page.locator(`${root} h2`).filter({ hasText: "Установка" })).toBeVisible();
+  await expect(page.locator(`${root} h2`).filter({ hasText: "Установить Courier" })).toBeVisible();
   await page.reload();
-  await expect(page.locator(`${root} h2`).filter({ hasText: "Установка" })).toBeVisible();
+  await expect(page.locator(`${root} h2`).filter({ hasText: "Установить Courier" })).toBeVisible();
 
   const installLink = page.locator(`${root} a[href="#install"]`).first();
   await installLink.focus();
@@ -64,6 +66,7 @@ test("protected data metadata never renders before authentication", async ({ pag
   const root = "courier-data-app";
   const password = page.locator(`${root} input[type="password"]`);
   await expect(password).toBeVisible();
+  await expect(page.locator(`${root} courier-mascot img`)).toBeVisible();
   await expect(page.locator(root)).not.toContainText(secretMarker);
   await exerciseThemes(page, root);
   await password.focus();
@@ -112,6 +115,7 @@ test("admin renders secret-free state with localized controls", async ({ page })
   await page.goto(adminURL);
   const root = "courier-admin-app";
   await expect(page.locator(root)).toContainText("127.0.0.1:8080");
+  await expect(page.locator(`${root} .metrics`)).toContainText("Active deliveries");
   await expect(page.locator(root)).not.toContainText(secretMarker);
   await exerciseThemes(page, root);
   const refresh = page.locator(`${root} nav courier-button button`).first();
@@ -136,9 +140,9 @@ test.describe("browser language negotiation", () => {
     await page.route("**/api/v1/servers", (route) => route.fulfill({ status: 200, contentType: "application/json", body: '{"servers":[]}' }));
     await page.route("**/api/v1/events", (route) => route.fulfill({ status: 200, contentType: "text/event-stream", body: "" }));
     for (const [url, root, text] of [
-      [landingURL, "courier-landing-app", "Установка"],
+      [landingURL, "courier-landing-app", "Установить Courier"],
       [dataURL, "courier-data-app", "требуется авторизация"],
-      [adminURL, "courier-admin-app", "Серверы данных Courier"],
+      [adminURL, "courier-admin-app", "Активные серверы Courier"],
     ] as const) {
       await page.goto(url);
       await expect(page.locator(root)).toContainText(text);

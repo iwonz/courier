@@ -1,11 +1,13 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { CourierButton } from "./button";
+import { CourierBrand, CourierMascot, CourierRoute, CourierStatus } from "./brand";
 import { CourierLocaleSelector } from "./locale-selector";
 import { CourierPanel } from "./panel";
 import { CourierProgress, progressRatio } from "./progress";
 import { CourierThemeSelector } from "./theme-selector";
 import { defineCourierElements, type ElementRegistry } from "../define";
 import { CourierIcon, iconNames, resolveIcon } from "../icons";
+import { relayMascotSource } from "../assets";
 
 beforeAll(() => defineCourierElements());
 
@@ -26,10 +28,10 @@ describe("element registry", () => {
     };
     defineCourierElements(registry);
     expect([...values.keys()].sort()).toEqual([
-      "courier-button", "courier-icon", "courier-locale-selector", "courier-panel", "courier-progress", "courier-theme-selector",
+      "courier-brand", "courier-button", "courier-icon", "courier-locale-selector", "courier-mascot", "courier-panel", "courier-progress", "courier-route", "courier-status", "courier-theme-selector",
     ]);
     defineCourierElements(registry);
-    expect(values.size).toBe(6);
+    expect(values.size).toBe(10);
   });
 });
 
@@ -38,11 +40,13 @@ describe("shared components", () => {
     const button = document.createElement("courier-button") as CourierButton;
     button.variant = "primary";
     button.disabled = true;
+    button.type = "submit";
     button.textContent = "Send";
     document.body.append(button);
     await button.updateComplete;
     const nativeButton = button.shadowRoot?.querySelector("button");
     expect(nativeButton?.disabled).toBe(true);
+    expect(nativeButton?.type).toBe("submit");
     expect(button.getAttribute("variant")).toBe("primary");
 
     const panel = document.createElement("courier-panel") as CourierPanel;
@@ -52,6 +56,44 @@ describe("shared components", () => {
     await panel.updateComplete;
     expect(panel.shadowRoot?.querySelector("h2")?.textContent).toBe("Delivery");
     expect(panel.shadowRoot?.querySelector("section")?.getAttribute("aria-labelledby")).toBe("courier-panel-heading");
+
+    panel.heading = "";
+    await panel.updateComplete;
+    expect(panel.shadowRoot?.querySelector("h2")).toBeNull();
+    expect(panel.shadowRoot?.querySelector("section")?.hasAttribute("aria-labelledby")).toBe(false);
+  });
+
+  it("renders the shared identity, mascot, route, and status grammar", async () => {
+    const brand = document.createElement("courier-brand") as CourierBrand;
+    brand.product = "Operations";
+    document.body.append(brand);
+    await brand.updateComplete;
+    expect(brand.shadowRoot?.textContent).toContain("Courier");
+    expect(brand.shadowRoot?.textContent).toContain("Operations");
+
+    const mascot = document.createElement("courier-mascot") as CourierMascot;
+    mascot.alt = "Relay";
+    mascot.source = relayMascotSource;
+    document.body.append(mascot);
+    await mascot.updateComplete;
+    expect(mascot.shadowRoot?.querySelector("img")?.alt).toBe("Relay");
+    expect(mascot.shadowRoot?.querySelector("img")?.src).toContain("relay-mascot");
+
+    const route = document.createElement("courier-route") as CourierRoute;
+    route.source = "./data";
+    route.destination = "server:/data";
+    document.body.append(route);
+    await route.updateComplete;
+    expect(route.shadowRoot?.textContent).toContain("./data");
+    expect(route.shadowRoot?.textContent).toContain("server:/data");
+
+    const status = document.createElement("courier-status") as CourierStatus;
+    status.tone = "signal";
+    status.textContent = "Ready";
+    document.body.append(status);
+    await status.updateComplete;
+    expect(status.getAttribute("tone")).toBe("signal");
+    expect(status.shadowRoot?.querySelector("slot")).not.toBeNull();
   });
 
   it("normalizes progress and renders localized or explicit labels", async () => {
