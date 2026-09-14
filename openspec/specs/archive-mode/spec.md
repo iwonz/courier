@@ -25,7 +25,7 @@ Courier SHALL fully read and validate gzip and tar structure, entry paths, and p
 
 ### Requirement: Safe archive entries
 
-Courier SHALL reject path traversal, duplicate normalized paths, unsafe symlink targets, unsupported types, and structurally conflicting source objects while producing, validating, or extracting an archive.
+Courier SHALL reject path traversal, duplicate normalized paths, unsafe symlink targets, unsupported types, and structurally conflicting source objects while producing, validating, or extracting an archive. A safe relative symlink read from a local Windows filesystem SHALL be converted from native separators to POSIX tar separators before the same validation is applied.
 
 #### Scenario: Unsafe entry name
 
@@ -36,6 +36,11 @@ Courier SHALL reject path traversal, duplicate normalized paths, unsafe symlink 
 
 - **WHEN** a symlink target resolves outside its top-level archive entry
 - **THEN** inspection fails before destination staging
+
+#### Scenario: Windows relative symlink target
+
+- **WHEN** a local Windows source symlink safely targets a sibling below the same top-level source entry
+- **THEN** Courier stores the equivalent slash-separated relative link in the POSIX tar header and verification succeeds
 
 ### Requirement: Extensible archive codec registry
 

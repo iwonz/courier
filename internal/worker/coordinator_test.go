@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"testing"
 	"time"
@@ -132,7 +133,7 @@ func TestEnsurePrivateLockDirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(directory)
-	if err != nil || info.Mode().Perm() != 0o700 {
+	if err != nil || runtime.GOOS != "windows" && info.Mode().Perm() != 0o700 {
 		t.Fatalf("mode=%v err=%v", info.Mode(), err)
 	}
 }

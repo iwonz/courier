@@ -30,6 +30,8 @@ cd web && npx playwright install chromium
 
 On Linux, use `npx playwright install --with-deps chromium` when the host also needs Chromium system libraries. GoReleaser, actionlint, and ShellCheck are version-pinned by the repository. Go downloads actionlint on first use; checksum-verified GoReleaser and ShellCheck bootstraps store their binaries under ignored `.cache/tools`. This keeps embedded workflow-shell validation identical on developer macOS/Linux hosts and GitHub's Linux runner.
 
+Native Windows acceptance uses the current-process pseudo token to scope named-pipe ACLs, converts rooted `fs.FS` directory names to slash form, converts local relative symlink targets to portable tar form, and checks POSIX permission bits only on filesystems that expose them. These adaptations do not weaken endpoint identity, archive traversal checks, or private-file policy on supported platforms.
+
 ## Runtime and browser boundaries
 
 Black-box command tests compose the public Cobra tree with isolated local and mapped SSH backends. They cover all four path directions, Unicode and spaces, archive/extraction round trips, successful identity no-ops, collision preservation, interruption, confirmed-byte reporting, and staging cleanup. Native SSH/SFTP tests continue to use an in-process authenticated server so cryptography, host keys, SFTP, and helper behavior stay within the same Go gate.

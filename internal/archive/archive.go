@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
 	"sync"
 
 	"github.com/iwonz/courier/internal/fsx"
@@ -140,6 +141,7 @@ func writeNodeSelected(ctx context.Context, backend fsx.Backend, sourcePath, ent
 		if err != nil {
 			return err
 		}
+		link = filepath.ToSlash(link)
 	}
 	header, err := tar.FileInfoHeader(info, link)
 	if err != nil {

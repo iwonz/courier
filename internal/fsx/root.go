@@ -58,7 +58,7 @@ func (r *RootedLocal) Close() error { return r.root.Close() }
 
 func (r *RootedLocal) Lstat(name string) (fs.FileInfo, error) { return r.root.Lstat(name) }
 func (r *RootedLocal) ReadDir(name string) ([]fs.DirEntry, error) {
-	return fs.ReadDir(r.root.FS(), name)
+	return fs.ReadDir(r.root.FS(), filepath.ToSlash(name))
 }
 func (r *RootedLocal) Open(name string) (io.ReadCloser, error) { return r.root.Open(name) }
 func (r *RootedLocal) Create(name string, mode fs.FileMode) (Writable, error) {

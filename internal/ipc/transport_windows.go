@@ -14,7 +14,7 @@ import (
 
 var (
 	currentUserSID = func() (string, error) {
-		user, err := windows.Token(0).GetTokenUser()
+		user, err := windows.GetCurrentProcessToken().GetTokenUser()
 		if err != nil {
 			return "", err
 		}

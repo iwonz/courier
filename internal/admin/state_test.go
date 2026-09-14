@@ -120,7 +120,7 @@ func TestAdminStateRoundTripAndLock(t *testing.T) {
 		t.Fatalf("loaded=%+v err=%v", loaded, err)
 	}
 	info, err := os.Stat(StatePath(directory))
-	if err != nil || info.Mode().Perm() != 0o600 {
+	if err != nil || runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
 		t.Fatalf("mode=%v err=%v", info.Mode(), err)
 	}
 	if err := removeState(directory, delivery.NewID()); !errors.Is(err, delivery.ErrRevisionConflict) {
