@@ -86,6 +86,10 @@ html {
   scroll-behavior: smooth;
 }
 
+html.courier-landing {
+  scroll-snap-type: y mandatory;
+}
+
 body {
   margin: 0;
   color: var(--courier-color-text);

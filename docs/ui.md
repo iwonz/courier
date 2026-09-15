@@ -9,7 +9,7 @@ The visual and verbal rules are defined in the [Courier brand system](brand.md).
 The public TypeScript entry point exports:
 
 - `defineCourierElements` for idempotent custom-element registration;
-- brand, contextual mascot, status, route, button, panel, progress, icon, segmented-control, theme-selector, and locale-selector components;
+- brand, responsive contextual mascot, status, route, button, panel, progress, icon, segmented-control, theme-selector, and locale-selector components;
 - shared form-control styles for normalized inputs, selects, switches, and file actions;
 - typed theme state and browser adapters;
 - typed English and Russian catalogs, browser-language negotiation, and translation helpers.
@@ -28,7 +28,7 @@ English is the fallback locale. Initial selection checks persisted preference an
 
 ## Assets and provenance
 
-Retained Courier-owned assets live in [`web/ui/assets`](../web/ui/assets) beside `provenance.json`. The manifest records the source context, every asset's media type, role, dimensions, byte count, SHA-256 digest, and prompt summary. The verification script reads PNG and WebP headers and rejects missing, extra, changed, duplicate, dimension-mismatched, incomplete, or executable asset content. The compact SVG mark is a native vector profile of Relay, not the former source-arrow symbol. The canonical raster Relay reference anchors a contextual family for dispatch, installation, routing, verification, access control, administration operations, and the README panorama. All illustrations are non-essential: headings, controls, routes, and states remain complete if an image cannot load.
+Retained Courier-owned assets live in [`web/ui/assets`](../web/ui/assets) beside `provenance.json`. The manifest records the source context, every asset's media type, role, dimensions, byte count, SHA-256 digest, and prompt summary. The verification script reads PNG and WebP headers and rejects missing, extra, changed, duplicate, dimension-mismatched, incomplete, or executable asset content. The compact transparent PNG mark is a generated profile of Relay, not the former source-arrow symbol. The canonical raster Relay reference anchors a contextual family for dispatch, installation, routing, verification, access control, administration operations, and the README panorama. `courier-mascot` accepts an optional portrait source and renders it through `<picture>` below the shared mobile breakpoint, allowing a scene to change composition without duplicating component logic. All illustrations are non-essential: headings, controls, routes, and states remain complete if an image cannot load.
 
 No reference HTML or JavaScript is shipped. Browser-injected AdGuard resources, obsolete mirror artwork and messaging, and remote resources were excluded. [`NOTICE.md`](../web/ui/NOTICE.md) records the asset license context.
 

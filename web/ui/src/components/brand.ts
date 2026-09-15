@@ -1,4 +1,5 @@
 import { LitElement, css, html } from "lit";
+import relayMark from "../../assets/relay-mark.png";
 
 export class CourierBrand extends LitElement {
   static properties = { product: { type: String } };
@@ -6,7 +7,7 @@ export class CourierBrand extends LitElement {
   static styles = css`
     :host { display: inline-flex; min-width: 0; color: var(--courier-color-text, #151714); font-family: var(--courier-font-sans, sans-serif); }
     .lockup { display: inline-flex; min-width: 0; align-items: center; gap: 0.625rem; color: inherit; }
-    svg { flex: 0 0 auto; width: 2.25rem; height: 2.25rem; }
+    img { flex: 0 0 auto; width: 2.5rem; height: 2.5rem; object-fit: contain; filter: drop-shadow(0 0.3rem 0.45rem rgb(16 18 15 / 0.16)); }
     .words { display: grid; line-height: 1; }
     strong { font-family: var(--courier-font-display, sans-serif); font-size: 1.125rem; font-weight: 850; letter-spacing: -0.04em; }
     small { margin-top: 0.25rem; color: var(--courier-color-muted, #596054); font-family: var(--courier-font-mono, monospace); font-size: 0.625rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
@@ -16,16 +17,8 @@ export class CourierBrand extends LitElement {
 
   protected render() {
     return html`<span class="lockup">
-      <svg viewBox="0 0 40 40" aria-hidden="true">
-        <rect x="1" y="1" width="38" height="38" rx="4" fill="var(--courier-graphite-900, #151714)" stroke="var(--courier-color-border-strong, #8e9587)"></rect>
-        <path d="M10 30c-1.5-3.2-1.4-7 .3-10.2C12.5 15.5 16.4 12 21.5 12c3.8 0 7 1.8 8.8 4.7l-2.5 3.6c1 2.8.8 6.4-.7 9.7H10z" fill="var(--courier-paper-50, #f3f4e9)"></path>
-        <path d="m29 15 8 3.1-8 4z" fill="var(--courier-beak, #ff8758)"></path>
-        <circle cx="24" cy="16" r="2.2" fill="var(--courier-graphite-900, #151714)"></circle>
-        <circle cx="24" cy="16" r=".8" fill="var(--courier-color-accent, #d4ff45)"></circle>
-        <path d="M10 25h18.2c.1 1.7-.3 3.5-1.1 5H10c-.6-1.6-.8-3.3-.7-5z" fill="var(--courier-color-accent, #d4ff45)"></path>
-        <path d="M15 25v5m8-5v5" stroke="var(--courier-graphite-900, #151714)" stroke-width="1.2"></path>
-      </svg>
-      <span class="words"><strong>Courier</strong><small>${this.product}</small></span>
+      <img part="mark" src=${relayMark} alt="" decoding="async">
+      <span class="words" part="words"><strong>Courier</strong><small part="product">${this.product}</small></span>
     </span>`;
   }
 }
@@ -34,20 +27,23 @@ export class CourierMascot extends LitElement {
   static properties = {
     alt: { type: String },
     eager: { type: Boolean },
+    mobileSource: { type: String, attribute: "mobile-source" },
     source: { type: String },
   };
 
   static styles = css`
     :host { display: block; }
+    picture { display: contents; }
     img { display: block; width: 100%; height: auto; filter: drop-shadow(0 1.5rem 2rem rgb(16 18 15 / 0.18)); }
   `;
 
   alt = "";
   eager = false;
+  mobileSource = "";
   source = "";
 
   protected render() {
-    return html`<img part="image" src=${this.source} alt=${this.alt} decoding="async" loading=${this.eager ? "eager" : "lazy"} fetchpriority=${this.eager ? "high" : "auto"}>`;
+    return html`<picture>${this.mobileSource ? html`<source media="(max-width: 44rem)" srcset=${this.mobileSource}>` : ""}<img part="image" src=${this.source} alt=${this.alt} decoding="async" loading=${this.eager ? "eager" : "lazy"} fetchpriority=${this.eager ? "high" : "auto"}></picture>`;
   }
 }
 

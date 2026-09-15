@@ -5,6 +5,7 @@ export interface SegmentOption {
   readonly value: string;
   readonly label: string;
   readonly icon?: IconName;
+  readonly symbol?: string;
 }
 
 export function nextSegmentIndex(key: string, index: number, length: number): number | undefined {
@@ -44,6 +45,7 @@ export class CourierSegmentedControl extends LitElement {
     button { appearance: none; display: inline-flex; min-width: 0; min-height: 2.25rem; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.45rem 0.68rem; overflow: hidden; border: 1px solid transparent; border-radius: calc(var(--courier-radius-md, 0.625rem) - 3px); color: var(--courier-color-muted, #596054); background: transparent; font: inherit; font-size: 0.75rem; font-weight: 780; line-height: 1; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; transition: color var(--courier-duration, 160ms) var(--courier-ease, ease), background var(--courier-duration, 160ms) var(--courier-ease, ease), transform var(--courier-duration, 160ms) var(--courier-ease, ease); }
     :host([icon-only]) button { width: 2.25rem; padding: 0.45rem; }
     courier-icon { width: 1.05rem; height: 1.05rem; }
+    .symbol { font-family: system-ui, sans-serif; font-size: 1.05rem; line-height: 1; }
     button:hover { color: var(--courier-color-text, #151714); background: color-mix(in srgb, var(--courier-color-surface-raised, #fff) 72%, transparent); }
     button.selected { border-color: color-mix(in srgb, var(--courier-color-accent, #d4ff45) 64%, var(--courier-color-border, #c8cdbf)); color: var(--courier-color-accent-ink, #151714); background: var(--courier-color-accent, #d4ff45); box-shadow: 0 1px 0 rgb(16 18 15 / 0.12); }
     button:active { transform: translateY(1px); }
@@ -94,7 +96,7 @@ export class CourierSegmentedControl extends LitElement {
             tabindex=${selected ? 0 : -1}
             @click=${this.activate}
             @keydown=${this.move}
-          >${option.icon ? html`<courier-icon name=${option.icon}></courier-icon>` : ""}${this.iconOnly ? "" : html`<span>${option.label}</span>`}</button>`;
+          >${option.icon ? html`<courier-icon name=${option.icon}></courier-icon>` : ""}${option.symbol ? html`<span class="symbol" aria-hidden="true">${option.symbol}</span>` : ""}${this.iconOnly ? "" : html`<span>${option.label}</span>`}</button>`;
         })}
       </div>
     </fieldset>`;

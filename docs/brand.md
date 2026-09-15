@@ -46,10 +46,10 @@ Do not use Relay:
 
 | Role | Surface | Situation |
 |---|---|---|
-| Dispatch navigator | Landing hero | Plans a visible local-to-remote route |
-| Field installer | Landing installation | Fits the self-contained Courier capsule to available systems |
-| Route cartographer | Landing routing | Maps local, SSH, browser, and webhook endpoints |
-| Integrity inspector | Landing safety | Verifies the capsule before the commit gate |
+| Dispatch navigator | Landing hero | Plans a visible local-to-remote route across a full dispatch landscape |
+| Route cartographer | Landing routing | Maps local, SSH, browser, and webhook endpoints around the route explorer |
+| Field installer | Landing installation | Fits the self-contained Courier capsule to available systems around the channel chooser |
+| Integrity inspector | Landing command reference | Verifies the capsule beside the generated command and option registry |
 | Access controller | Delivery authentication | Presents a credential at a private checkpoint |
 | Operations controller | Administration | Observes routes and adjusts delivery policy from a control room |
 | Courier in flight | README | Carries a confirmed handoff from source to destination |
@@ -82,7 +82,7 @@ Courier uses system-resident fonts and ships no remote font dependency. Display 
 
 ### Shape and composition
 
-The layout uses a disciplined grid, visible registration lines, route nodes, compact status dots, and framed operational panels. Corners are slightly rounded rather than pill-shaped. Shadows are restrained. Route lines and Relay's directional posture provide motion; decorative gradients, glass surfaces, neon glow, and floating 3D objects do not.
+The layout uses a disciplined grid, visible registration lines, route nodes, compact status dots, and framed operational panels. Corners are slightly rounded rather than pill-shaped. Shadows are restrained. Route lines and Relay's directional posture provide motion. Full-bleed editorial scenes may form an environmental backdrop; restrained translucent instrument panels can align with deliberately composed equipment bays, but floating glass cards, decorative gradients, neon spectacle, and detached 3D objects do not define the system.
 
 The Courier mark is a compact profile of Relay with the orange beak, alert eye, and signal-lime capsule harness retained at favicon size. It may appear without the wordmark in compact contexts. Do not rotate it, add speed lines, recolor individual features arbitrarily, or place it on insufficient contrast.
 
@@ -134,7 +134,7 @@ Avoid unsupported guarantees, breathless superlatives, fake urgency, blame, joke
 
 ## Product surfaces
 
-- **Landing:** a dispatch brief. Lead with the promise, one valid installation command, the route model, and evidence for safety and distribution.
+- **Landing:** an immersive dispatch brief. Lead with the promise alone, then give routing, installation, and the generated command registry one full viewport each. Every scene is composed around its working interface rather than placed beside it as a decorative tile.
 - **Delivery UI:** a transfer terminal. Preserve focus on authentication, destination contents, and the single next action. Protected metadata appears only after authorization.
 - **Administration UI:** an operations control room. Prioritize live state, bindings, delivery identity, confirmed counters, policy changes, and explicit stop actions.
 - **CLI and documentation:** use the same route, delivery, verification, collision, and confirmed-byte vocabulary. Decorative identity never interferes with copy-and-paste commands.
@@ -147,6 +147,6 @@ Identity assets are local, checksum-recorded, and covered by the MIT license not
 
 ## Generated asset record
 
-Relay and every contextual scene were produced with the built-in OpenAI image generation tool for this repository using the canonical character as the identity reference. The family keeps an adult courier pigeon, compact graphite utility harness, sealed cream data capsule, sparse signal-lime route tabs, orange beak accent, and textured flat editorial/screen-print treatment. Role-specific prompts add dispatch, installation, routing, verification, access, operations, or in-flight tools and environments while prohibiting text, logos, watermarks, weaponry, robot parts, childlike proportions, security theater, and third-party mascot imitation.
+Relay and every contextual scene were produced with the built-in OpenAI image generation tool for this repository using the canonical character as the identity reference. The family keeps an adult courier pigeon, compact graphite utility harness, sealed cream data capsule, sparse signal-lime route tabs, orange beak accent, and textured flat editorial/screen-print treatment. Landing scenes have separately composed wide and portrait variants: neither mobile delivery nor desktop delivery is an automatic crop of the other. Their equipment bays, route tables, and headline space are planned around the overlaid interface. Role-specific prompts add dispatch, installation, routing, verification, access, operations, or in-flight tools and environments while prohibiting text, logos, watermarks, weaponry, robot parts, childlike proportions, security theater, and third-party mascot imitation.
 
 The auditable prompt summaries, roles, dimensions, byte counts, and SHA-256 digests are stored in [`web/ui/assets/provenance.json`](../web/ui/assets/provenance.json). Product illustrations use optimized local WebP delivery assets; no runtime surface fetches generated art remotely.

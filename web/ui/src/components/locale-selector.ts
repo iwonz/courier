@@ -30,8 +30,8 @@ export class CourierLocaleSelector extends LitElement {
       .label=${translate(this.locale, "locale.label")}
       .value=${this.locale}
       .options=${[
-        { value: "en", label: translate(this.locale, "locale.en"), icon: "language-en" },
-        { value: "ru", label: translate(this.locale, "locale.ru"), icon: "language-ru" },
+        { value: "en", label: translate(this.locale, "locale.en"), symbol: "🇬🇧" },
+        { value: "ru", label: translate(this.locale, "locale.ru"), symbol: "🇷🇺" },
       ]}
       data-storage-key=${localeStorageKey}
       @courier-segment-change=${this.change}

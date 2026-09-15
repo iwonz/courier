@@ -32,25 +32,27 @@ test("landing covers locales, themes, keyboard, and responsive layouts", async (
   await expect(page.locator(`${root} h1`)).toHaveText("Move files. Keep control.");
   await expect(page.locator(`${root} main`)).toBeVisible();
   await expect(page.locator(`${root} footer`)).toHaveCount(0);
-  await expect(page.locator(`${root} section`)).toHaveCount(3);
+  await expect(page.locator(`${root} section`)).toHaveCount(4);
   await expect(page.locator(`${root} .facts, ${root} #safety, ${root} #examples, ${root} #docs`)).toHaveCount(0);
   await expect(page.locator(`${root} .github-link`)).toBeVisible();
   const mascotImages = page.locator(`${root} courier-mascot img`);
-  await expect(mascotImages).toHaveCount(3);
+  await expect(mascotImages).toHaveCount(4);
   for (const mascotImage of await mascotImages.all()) {
     await mascotImage.scrollIntoViewIfNeeded();
     await expect(mascotImage).toBeVisible();
     await expect.poll(() => mascotImage.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   }
-  await expect(page.locator(`${root} courier-route`).first()).toBeVisible();
-  await expect(page.locator(`${root} code`).filter({ hasText: "npm install --global @iwonz/courier" })).toBeVisible();
+  await expect(page.locator(`${root} courier-route`)).toHaveCount(0);
+  await expect(page.locator(`${root} .install-readout code`)).toContainText("curl -fsSL");
 
   await exerciseThemes(page, root);
   await expect(page.locator(`${root} courier-theme-selector select`)).toHaveCount(0);
   await expect(page.locator(`${root} courier-theme-selector courier-segmented-control legend`)).toHaveClass(/sr-only/);
   await expect(page.locator(`${root} courier-locale-selector courier-segmented-control legend`)).toHaveClass(/sr-only/);
   await expect(page.locator(`${root} courier-theme-selector courier-segmented-control button span`)).toHaveCount(0);
-  await expect(page.locator(`${root} courier-locale-selector courier-segmented-control button span`)).toHaveCount(0);
+  const localeSymbols = page.locator(`${root} courier-locale-selector courier-segmented-control button .symbol`);
+  await expect(localeSymbols).toHaveCount(2);
+  await expect(localeSymbols).toHaveText(["🇬🇧", "🇷🇺"]);
   const selectedTheme = page.locator(`${root} courier-theme-selector courier-segmented-control button[aria-checked="true"]`);
   await selectedTheme.focus();
   await selectedTheme.press("End");
@@ -67,25 +69,58 @@ test("landing covers locales, themes, keyboard, and responsive layouts", async (
   await expect(routeCommand).toContainText("web:// to ./backup/");
   await expect(page.locator(`${root} .endpoint-group`).last().locator('button[data-endpoint="web"]')).toHaveAttribute("aria-disabled", "true");
 
+  const npmChannel = page.locator(`${root} .install-channel[data-channel="npm"]`);
+  await npmChannel.hover();
+  await expect(page.locator(`${root} .install-readout code`)).toHaveText("npm install --global @iwonz/courier");
+
   await selectRussian(page, root);
   await expect(page.locator(`${root} h2`).filter({ hasText: "Установить Courier" })).toBeVisible();
   await page.reload();
   await expect(page.locator(`${root} h2`).filter({ hasText: "Установить Courier" })).toBeVisible();
 
-  const installLink = page.locator(`${root} a[href="#install"]`).first();
-  await installLink.focus();
-  await expect(installLink).toBeFocused();
-  await installLink.press("Enter");
-  await expect(page).toHaveURL(/#install$/);
+  for (const target of ["routes", "install", "cli"] as const) {
+    const link = page.locator(`${root} nav a[href="#${target}"]`);
+    await link.focus();
+    await expect(link).toBeFocused();
+    await link.press("Enter");
+    await expect(page).toHaveURL(new RegExp(`#${target}$`));
+    await expect.poll(() => page.locator(`${root} #${target}`).evaluate((section) => Math.abs(section.getBoundingClientRect().top))).toBeLessThan(2);
+  }
 
   for (const viewport of [{ width: 360, height: 740 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
+    const expectedSceneSource = viewport.width <= 704 ? "mobile" : "wide";
+    await expect.poll(() => page.locator(`${root} courier-mascot img`).evaluateAll((images, expected) => images.every((image) => (image as HTMLImageElement).currentSrc.includes(expected)), expectedSceneSource)).toBe(true);
     await expect(page.locator(`${root} nav`)).toBeVisible();
-    const channelCommandsFit = await page.locator(`${root} .channel pre`).evaluateAll((commands) => commands.every((command) => {
-      const bounds = command.getBoundingClientRect();
-      return bounds.left >= 0 && bounds.right <= innerWidth && command.clientWidth > 0;
-    }));
-    expect(channelCommandsFit).toBe(true);
+    for (const target of ["hero", "routes", "install", "cli"] as const) {
+      await page.locator(`${root} #${target}`).evaluate((section) => section.scrollIntoView({ block: "start" }));
+      const geometry = await page.locator(`${root} #${target}`).evaluate((section, sectionId) => {
+        const bounds = section.getBoundingClientRect();
+        const background = section.querySelector(sectionId === "hero" ? ".hero-visual" : ".slide-art")!.getBoundingClientRect();
+        return {
+          sectionHeight: bounds.height,
+          backgroundLeft: background.left,
+          backgroundRight: background.right,
+          backgroundTop: background.top,
+          backgroundBottom: background.bottom,
+          currentSource: (section.querySelector("courier-mascot")!.shadowRoot!.querySelector("img") as HTMLImageElement).currentSrc,
+        };
+      }, target);
+      expect(geometry.sectionHeight).toBeGreaterThanOrEqual(viewport.height);
+      expect(Math.abs(geometry.backgroundLeft)).toBeLessThan(2);
+      expect(Math.abs(geometry.backgroundRight - viewport.width)).toBeLessThan(2);
+      expect(Math.abs(geometry.backgroundTop)).toBeLessThan(2);
+      expect(Math.abs(geometry.backgroundBottom - viewport.height)).toBeLessThan(2);
+      expect(geometry.currentSource).toContain(expectedSceneSource);
+    }
+    for (const channel of ["curl", "wget", "PowerShell", "npm", "npx", "Yarn", "pnpm", "Homebrew", "Scoop"] as const) {
+      await page.locator(`${root} .install-channel[data-channel="${channel}"]`).focus();
+      const commandFits = await page.locator(`${root} .install-readout code`).evaluate((command) => {
+        const bounds = command.getBoundingClientRect();
+        return bounds.left >= 0 && bounds.right <= innerWidth && command.scrollWidth <= command.clientWidth + 1;
+      });
+      expect(commandFits).toBe(true);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
 });

@@ -40,6 +40,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 34 | `feat/034-brand-identity-system` | `brand-identity-system` | Mature brand manual, Relay mascot, shared visual system, and redesigned browser surfaces |
 | 35 | `feat/035-illustrated-interface-system` | `illustrated-interface-system` | Branded control grammar, contextual Relay scenes, and full-width README panorama |
 | 36 | `feat/036-interactive-landing-system` | `interactive-landing-system` | Icon-only preferences, Relay product mark, compact install channels, interactive route explorer, and unified CLI reference |
+| 37 | `feat/037-immersive-landing-sections` | `immersive-landing-sections` | Full-bleed responsive Relay scenes, four snap sections, blended masthead, and scene-aware interactions |
 
 ## Definition of Done
 

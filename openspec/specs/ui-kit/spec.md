@@ -102,7 +102,12 @@ Courier SHALL use role-specific Relay illustrations that preserve the character 
 
 ### Requirement: Compact icon preference controls
 
-Courier SHALL render theme and locale selectors as shared icon-only segmented radiogroups without visible group or option labels while retaining localized accessible names, selected state, persisted preference, roving focus, and arrow/Home/End keyboard behavior.
+Courier SHALL render theme and locale selectors as shared icon-only segmented radiogroups without visible group or option labels while retaining localized accessible names, selected state, persisted preference, roving focus, and arrow/Home/End keyboard behavior. Locale options SHALL use native flag emoji as their visible symbols.
+
+#### Scenario: A user operates a locale selector
+
+- **WHEN** the user points to, focuses, or navigates an English or Russian locale option
+- **THEN** a flag emoji identifies the option visually while its localized name and radio state remain available programmatically
 
 #### Scenario: A user operates an icon preference selector
 
@@ -111,9 +116,9 @@ Courier SHALL render theme and locale selectors as shared icon-only segmented ra
 
 ### Requirement: Relay compact mark
 
-Courier SHALL use a recognizable, repository-local Relay mascot symbol as its compact product mark across browser components, favicons, and light/dark lockups.
+Courier SHALL use a recognizable, repository-local, generated Relay mascot image as its compact product mark across browser components and favicons.
 
 #### Scenario: A compact Courier identity is rendered
 
 - **WHEN** the wordmark has limited space or a favicon is displayed
-- **THEN** the mark depicts Relay with sufficient light/dark contrast rather than an abstract route arrow
+- **THEN** the locally stored transparent mark depicts Relay with sufficient light/dark contrast and no remote image dependency

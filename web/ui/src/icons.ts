@@ -1,7 +1,7 @@
 import { LitElement, css, html } from "lit";
 
 export const iconNames = [
-  "apple", "archive", "copy", "download", "folder", "github", "homebrew", "language-en", "language-ru", "linux", "moon", "npm", "package", "parcel", "pnpm", "receipt", "retry", "route", "scoop", "server", "shield", "sun", "system", "terminal", "upload", "windows", "yarn",
+  "apple", "archive", "copy", "download", "folder", "github", "homebrew", "linux", "moon", "npm", "package", "parcel", "pnpm", "receipt", "retry", "route", "scoop", "server", "shield", "sun", "system", "terminal", "upload", "windows", "yarn",
 ] as const;
 export type IconName = typeof iconNames[number];
 
@@ -13,8 +13,6 @@ const paths: Record<IconName, string> = {
   folder: "M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3",
   github: "M9 19c-5 1-5-2-7-3m14 6v-3.6c0-1 .1-1.7-.4-2.2 3.2-.4 6.4-1.6 6.4-7.1 0-1.6-.6-3-1.7-4 .2-.5.7-2.3-.2-4.6 0 0-1.4-.5-4.7 1.7a16 16 0 0 0-8.6 0C6.4 1 5 1.5 5 1.5 4.1 3.8 4.6 5.6 4.8 6.1a7 7 0 0 0-1.7 4c0 5.5 3.2 6.7 6.4 7.1-.4.4-.8 1.1-.8 2.2V23",
   homebrew: "M6 4h11l-1 15H8zM17 7h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2M5 22h13",
-  "language-en": "M3 4h18v14H9l-4 3v-3H3z",
-  "language-ru": "M3 4h18v14H9l-4 3v-3H3z",
   linux: "M12 2c-3 0-4 3-4 6-2 2-3 5-3 8l3-1 1 5 3-2 3 2 1-5 3 1c0-3-1-6-3-8 0-3-1-6-4-6zM9 8h.01M15 8h.01M10 11h4",
   moon: "M20 16a8 8 0 0 1-12-10 8 8 0 1 0 12 10z",
   npm: "M2 6h20v12H2zM6 15V9h5v6m0-6h4v6m0-6h3v6",
@@ -35,8 +33,6 @@ const paths: Record<IconName, string> = {
   yarn: "M12 3a9 9 0 1 0 9 9M8 16c4-1 7-4 9-8m-8 1c3 1 5 4 5 8m-5-5c-1-3 0-5 2-6",
 };
 
-const badges: Partial<Record<IconName, string>> = { "language-en": "EN", "language-ru": "RU" };
-
 export function resolveIcon(name: string): IconName {
   return iconNames.includes(name as IconName) ? name as IconName : "parcel";
 }
@@ -55,7 +51,6 @@ export class CourierIcon extends LitElement {
       color: currentColor;
     }
     svg { width: 100%; height: 100%; }
-    text { fill: currentColor; stroke: none; font-family: var(--courier-font-mono, monospace); font-size: 6px; font-weight: 850; letter-spacing: -0.04em; text-anchor: middle; }
   `;
 
   name = "parcel";
@@ -73,6 +68,6 @@ export class CourierIcon extends LitElement {
       role=${this.label ? "img" : "presentation"}
       aria-hidden=${this.label ? "false" : "true"}
       aria-label=${this.label || undefined}
-    ><path d=${paths[name]}></path><text x="12" y="13.1">${badges[name] ?? ""}</text></svg>`;
+    ><path d=${paths[name]}></path></svg>`;
   }
 }

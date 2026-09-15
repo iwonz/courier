@@ -10,7 +10,16 @@ import { defineCourierElements, type ElementRegistry } from "../define";
 import { CourierIcon, iconNames, resolveIcon } from "../icons";
 import { relayOperationsSource } from "../relay-admin";
 import { relayAccessSource } from "../relay-delivery";
-import { relayDispatchSource, relayInstallSource, relayRoutingSource, relayVerifySource } from "../relay-landing";
+import {
+  relayCliMobileSource,
+  relayCliSource,
+  relayHeroMobileSource,
+  relayHeroSource,
+  relayInstallMobileSource,
+  relayInstallSource,
+  relayRoutingMobileSource,
+  relayRoutingSource,
+} from "../relay-landing";
 import { relayMascotSource } from "../relay-mascot";
 
 beforeAll(() => defineCourierElements());
@@ -74,11 +83,13 @@ describe("shared components", () => {
     await brand.updateComplete;
     expect(brand.shadowRoot?.textContent).toContain("Courier");
     expect(brand.shadowRoot?.textContent).toContain("Operations");
-    expect(brand.shadowRoot?.querySelectorAll("svg path").length).toBeGreaterThan(3);
+    expect(brand.shadowRoot?.querySelector("img")?.src).toContain("relay-mark");
+    expect(brand.shadowRoot?.querySelector("img")?.alt).toBe("");
 
     const mascot = document.createElement("courier-mascot") as CourierMascot;
     mascot.alt = "Relay";
     mascot.eager = true;
+    mascot.mobileSource = relayHeroMobileSource;
     mascot.source = relayMascotSource;
     document.body.append(mascot);
     await mascot.updateComplete;
@@ -86,14 +97,18 @@ describe("shared components", () => {
     expect(mascot.shadowRoot?.querySelector("img")?.src).toContain("relay-mascot");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("loading")).toBe("eager");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("high");
+    expect(mascot.shadowRoot?.querySelector("source")?.srcset).toContain("relay-hero-mobile");
+    mascot.mobileSource = "";
     mascot.eager = false;
     await mascot.updateComplete;
+    expect(mascot.shadowRoot?.querySelector("source")).toBeNull();
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("loading")).toBe("lazy");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("auto");
 
     expect([
-      relayAccessSource, relayDispatchSource, relayInstallSource,
-      relayOperationsSource, relayRoutingSource, relayVerifySource,
+      relayAccessSource, relayCliMobileSource, relayCliSource,
+      relayHeroMobileSource, relayHeroSource, relayInstallMobileSource,
+      relayInstallSource, relayOperationsSource, relayRoutingMobileSource, relayRoutingSource,
     ].every((source) => source.includes("relay-") || source.includes("readme-route"))).toBe(true);
 
     const route = document.createElement("courier-route") as CourierRoute;
@@ -157,12 +172,6 @@ describe("shared components", () => {
     await icon.updateComplete;
     expect(icon.shadowRoot?.querySelector("svg")?.getAttribute("role")).toBe("img");
     expect(icon.shadowRoot?.querySelector("svg")?.getAttribute("aria-label")).toBe("Verified");
-    icon.name = "language-en";
-    await icon.updateComplete;
-    expect(icon.shadowRoot?.querySelector("text")?.textContent).toBe("EN");
-    icon.name = "language-ru";
-    await icon.updateComplete;
-    expect(icon.shadowRoot?.querySelector("text")?.textContent).toBe("RU");
   });
 });
 
@@ -245,7 +254,8 @@ describe("preference selectors", () => {
     const control = selector.shadowRoot?.querySelector("courier-segmented-control") as CourierSegmentedControl;
     await control.updateComplete;
     expect(control.iconOnly).toBe(true);
-    expect(control.shadowRoot?.querySelectorAll("button courier-icon")).toHaveLength(2);
+    expect(control.shadowRoot?.querySelectorAll("button courier-icon")).toHaveLength(0);
+    expect([...control.shadowRoot!.querySelectorAll("button .symbol")].map((symbol) => symbol.textContent)).toEqual(["🇬🇧", "🇷🇺"]);
     expect(control.shadowRoot?.querySelector('button[data-value="en"]')?.getAttribute("aria-label")).toBe("Английский");
     control.dispatchEvent(new CustomEvent("courier-segment-change", { detail: "unsupported", bubbles: true }));
     await selector.updateComplete;

@@ -6,11 +6,14 @@
   },
   "assets": [
     {
-      "path": "courier-mark.svg",
-      "mediaType": "image/svg+xml",
-      "bytes": 583,
-      "sha256": "843431cd21093ee60301a64ed1f90ea1fb916d0e35e226332794396a16a13142",
-      "use": "Courier square Relay mascot mark and browser favicon"
+      "path": "relay-mark.png",
+      "mediaType": "image/png",
+      "bytes": 291367,
+      "sha256": "9e777a3f37e3e928a9f48fce4f86098c7dc79a42b61c76a4e5fed8d2846783e0",
+      "width": 512,
+      "height": 512,
+      "use": "Generated compact Relay application mark, wordmark companion, and browser favicon",
+      "prompt": "Compact head-and-upper-chest portrait of the canonical adult Relay courier pigeon in three-quarter profile, preserving graphite plumage, alert orange eye and beak, graphite harness, cream capsule, and one signal-lime route tab; mature flat editorial screen-print treatment, transparent background, readable at 24–40 pixels, no badge, arrow, text, logo, watermark, toy styling, robot parts, or third-party references."
     },
     {
       "path": "relay-mascot.png",
@@ -23,44 +26,84 @@
       "prompt": "Adult courier pigeon in a compact graphite utility harness carrying a sealed cream data capsule with sparse signal-lime tabs; transparent editorial screen-print cutout; no text, logo, weaponry, robot parts, childlike proportions, or third-party mascot imitation."
     },
     {
-      "path": "relay-dispatch.webp",
+      "path": "relay-hero-wide.webp",
       "mediaType": "image/webp",
-      "bytes": 278468,
-      "sha256": "523a7a48ded12c0357b9c9d607160b41314bed7ae1be589ede408176973a28ff",
-      "width": 1254,
-      "height": 1254,
-      "use": "Landing hero dispatch navigator scene",
-      "prompt": "Relay actively routes a sealed data capsule from a compact local terminal to a remote server beacon along one signal-lime line; transparent mature editorial illustration based on the canonical character."
+      "bytes": 392214,
+      "sha256": "04e41e6b251b71649ffdc919219652aa98d311501d96fdd429af64465ef3a7e6",
+      "width": 1672,
+      "height": 941,
+      "use": "Full-bleed desktop dispatch hero with intentional headline space",
+      "prompt": "Wide purpose-composed Courier dispatch panorama: canonical Relay plans one protected delivery beside a rugged route terminal and transport case; warm-paper negative space at left, Relay at right, one signal-lime route, mature utilitarian editorial screen-print treatment, no text, logos, watermarks, robots, weapons, or framed tile."
     },
     {
-      "path": "relay-install.webp",
+      "path": "relay-hero-mobile.webp",
       "mediaType": "image/webp",
-      "bytes": 193214,
-      "sha256": "20d7897a8dd2ae0130236daac1f0a44d14447c97461cc80280cdf32e2bea22aa",
-      "width": 1536,
-      "height": 1024,
-      "use": "Landing field installer scene",
-      "prompt": "Relay as a field installer places a sealed capsule into a terminal cradle beside an open graphite tool case and generic platform devices; mature graphite editorial vignette without text or logos."
+      "bytes": 450228,
+      "sha256": "bcb96330a416a88909aac57c4874d1501ee504792052f57640122d5ddbf33163",
+      "width": 1024,
+      "height": 1536,
+      "use": "Full-bleed mobile dispatch hero with portrait headline space",
+      "prompt": "Portrait counterpart of the approved Courier dispatch panorama: calm upper headline space, canonical Relay and route terminal across the lower scene, one diagonal signal-lime route, mature utilitarian editorial screen-print treatment, full bleed, no text, logos, watermarks, or framed tile."
     },
     {
-      "path": "relay-routing.webp",
+      "path": "relay-routing-wide.webp",
       "mediaType": "image/webp",
-      "bytes": 398046,
-      "sha256": "ed31f20a829e22c4e8f5404cbe8904b2701d182839350c9c89ef10e8f6a1cc4d",
-      "width": 1536,
-      "height": 1024,
-      "use": "Landing route cartographer scene",
-      "prompt": "Relay maps one signal-lime route among abstract local, server, browser, and webhook endpoints at a folding field table; calm technical screen-print vignette without labels or product logos."
+      "bytes": 450624,
+      "sha256": "fd2a5a30b64ee0209751e8ac42cd476568ba6978ec82a627c64f294b6c0ce6bd",
+      "width": 1672,
+      "height": 941,
+      "use": "Full-bleed desktop route-cartographer scene composed around the route explorer",
+      "prompt": "Wide purpose-composed Courier routing panorama: canonical Relay maps abstract local, remote, browser, and webhook nodes at a field station; Relay left, quieter right control area framed by the map and route lines, graphite dusk editorial screen-print treatment, full bleed, no text, logos, watermarks, or framed tile."
     },
     {
-      "path": "relay-verify.webp",
+      "path": "relay-routing-mobile.webp",
       "mediaType": "image/webp",
-      "bytes": 291710,
-      "sha256": "76581002f28e8a8e038af2d7fca034fbf8d4ab96623b9688eb9c27687bde83e2",
-      "width": 1536,
-      "height": 1024,
-      "use": "Landing integrity inspector scene",
-      "prompt": "Relay as an integrity inspector scans a sealed capsule with a signal-lime checksum lamp beside a mechanical commit gate; methodical mature editorial vignette without text or security theater."
+      "bytes": 435486,
+      "sha256": "518caeb5aef199fa8d798223f8fcc8d951b0d69f60fd7c20b6a25b03ac0477ce",
+      "width": 1024,
+      "height": 1536,
+      "use": "Full-bleed mobile route-cartographer scene composed around the route explorer",
+      "prompt": "Portrait counterpart of the approved Courier route-cartographer panorama: calm heading zone, canonical Relay and field table around a quieter central route-control bay, restrained signal-lime network, mature editorial screen-print treatment, full bleed, no text, logos, watermarks, or framed tile."
+    },
+    {
+      "path": "relay-install-wide.webp",
+      "mediaType": "image/webp",
+      "bytes": 295132,
+      "sha256": "736124f9c8b90bac28b846c31cd8dd70565bff20a65266cd4451f96233c7ca22",
+      "width": 1672,
+      "height": 941,
+      "use": "Full-bleed desktop field-installation scene composed around the channel chooser",
+      "prompt": "Wide purpose-composed Courier installation panorama: canonical Relay seats a sealed capsule into a universal terminal cradle; Relay left, calm graphite deployment bay at right framed by field equipment, mature editorial screen-print treatment, full bleed, no text, OS marks, logos, watermarks, or framed tile."
+    },
+    {
+      "path": "relay-install-mobile.webp",
+      "mediaType": "image/webp",
+      "bytes": 341132,
+      "sha256": "d2ab379fab7b6ffdd5eac301b7071e563609589ca4a282b934127996b665ab74",
+      "width": 1024,
+      "height": 1536,
+      "use": "Full-bleed mobile field-installation scene composed around the channel chooser",
+      "prompt": "Portrait counterpart of the approved Courier installation panorama: calm heading zone, canonical Relay loading a capsule at lower left, tall graphite equipment bay for the channel chooser, mature editorial screen-print treatment, full bleed, no text, OS marks, logos, watermarks, or framed tile."
+    },
+    {
+      "path": "relay-cli-wide.webp",
+      "mediaType": "image/webp",
+      "bytes": 285154,
+      "sha256": "b4587c7ed1d978dfed4add3fa7a1446c7a1b831e8788fc4337027f3eb20e683c",
+      "width": 1672,
+      "height": 941,
+      "use": "Full-bleed desktop integrity scene composed around the CLI registry",
+      "prompt": "Wide purpose-composed Courier integrity panorama: canonical Relay verifies a capsule through a checksum gate; Relay left, recessed graphite control-board bay at right for the registry, mature editorial screen-print treatment, full bleed, no text, logos, watermarks, security theater, or framed tile."
+    },
+    {
+      "path": "relay-cli-mobile.webp",
+      "mediaType": "image/webp",
+      "bytes": 329006,
+      "sha256": "93edf8b8da4e9fef20649fadfdbacb32b15ab0f0f581dd56b3b29c589bb6bfa6",
+      "width": 1024,
+      "height": 1536,
+      "use": "Full-bleed mobile integrity scene composed around the CLI registry",
+      "prompt": "Portrait counterpart of the approved Courier integrity panorama: calm heading zone, canonical Relay and checksum scanner at lower left, tall recessed control-board bay for the registry, mature editorial screen-print treatment, full bleed, no text, logos, watermarks, security theater, or framed tile."
     },
     {
       "path": "relay-access.webp",
@@ -95,16 +138,16 @@
     {
       "path": "logo-on-dark.svg",
       "mediaType": "image/svg+xml",
-      "bytes": 761,
-      "sha256": "ca4e0905a6feee27df664a1467238fc79015552b953cfc26ef2d03649b15e0ad",
-      "use": "Courier lockup on graphite surfaces"
+      "bytes": 336,
+      "sha256": "c936b0c83fbd01072288f9c04857821a4e79656b2d15a971f28024fcc97a4149",
+      "use": "Courier lockup on graphite surfaces using the generated Relay mark"
     },
     {
       "path": "logo-on-light.svg",
       "mediaType": "image/svg+xml",
-      "bytes": 761,
-      "sha256": "7490daf23f7ebab8e420cc63a93464c54c81c78930980a1be3e42b3f71786f07",
-      "use": "Courier lockup on paper surfaces"
+      "bytes": 336,
+      "sha256": "95cdd5c828febbd518d861b2c0fa0a68ef5631a813913f8593862aa72c520ce9",
+      "use": "Courier lockup on paper surfaces using the generated Relay mark"
     }
   ],
   "excluded": [
