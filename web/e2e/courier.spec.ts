@@ -26,103 +26,175 @@ async function exerciseThemes(page: Page, root: string): Promise<void> {
   await expect(page.locator("html")).toHaveAttribute("data-courier-theme", "dark");
 }
 
-test("landing covers locales, themes, keyboard, and responsive layouts", async ({ page }) => {
+test("landing preserves interaction and geometry across routes, channels, locales, themes, and viewports", async ({ page }) => {
+  const externalRequests: string[] = [];
+  page.on("request", (request) => {
+    const url = request.url();
+    if (url.startsWith("http") && !url.startsWith("http://127.0.0.1:4173")) externalRequests.push(url);
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(landingURL);
   const root = "courier-landing-app";
+
   await expect(page.locator(`${root} h1`)).toHaveText("Move files. Keep control.");
-  await expect(page.locator(`${root} main`)).toBeVisible();
-  await expect(page.locator(`${root} footer`)).toHaveCount(0);
   await expect(page.locator(`${root} section`)).toHaveCount(4);
-  await expect(page.locator(`${root} .facts, ${root} #safety, ${root} #examples, ${root} #docs`)).toHaveCount(0);
-  await expect(page.locator(`${root} .github-link`)).toBeVisible();
-  const mascotImages = page.locator(`${root} courier-mascot img`);
-  await expect(mascotImages).toHaveCount(4);
-  for (const mascotImage of await mascotImages.all()) {
-    await mascotImage.scrollIntoViewIfNeeded();
-    await expect(mascotImage).toBeVisible();
-    await expect.poll(() => mascotImage.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+  await expect(page.locator(`${root} footer, ${root} #hero button, ${root} #hero [aria-pressed]`)).toHaveCount(0);
+  await expect(page.locator(`${root} .hero-node.source`)).toHaveText("Source");
+  await expect(page.locator(`${root} .hero-node.destination`)).toHaveText("Destination");
+  await expect(page.locator(`${root} .hero-route path`).first()).toHaveAttribute("d", / C /);
+  await expect(page.locator(`${root} .route-connector path`)).toHaveAttribute("d", / C /);
+  await expect(page.locator(`${root} courier-scene`)).toHaveCount(4);
+  await expect(page.locator(`${root} courier-scene .base img`)).toHaveCount(4);
+  for (const image of await page.locator(`${root} courier-scene .base img`).all()) {
+    await expect.poll(() => image.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBe(true);
   }
-  await expect(page.locator(`${root} courier-route`)).toHaveCount(0);
-  await expect(page.locator(`${root} .install-readout code`)).toContainText("curl -fsSL");
+  await expect(page.locator(root)).not.toContainText("Remote");
+
+  const heroScene = page.locator(`${root} #hero courier-scene`);
+  const baseTransform = await heroScene.locator(".base").evaluate((node) => getComputedStyle(node).transform);
+  const beforePointer = await heroScene.evaluate((node) => getComputedStyle(node).getPropertyValue("--scene-pointer-x"));
+  await page.mouse.move(1040, 520);
+  await expect.poll(() => heroScene.evaluate((node) => node.style.getPropertyValue("--scene-pointer-x"))).not.toBe("");
+  expect(await heroScene.locator(".base").evaluate((node) => getComputedStyle(node).transform)).toBe(baseTransform);
+  expect(await heroScene.evaluate((node) => getComputedStyle(node).getPropertyValue("--scene-pointer-x"))).not.toBe(beforePointer);
+
+  const routeCommand = page.locator(`${root} .command-shape`);
+  const webSource = page.locator(`${root} .source-endpoints button[data-endpoint="web"]`);
+  const initialRoute = await routeCommand.textContent();
+  await webSource.hover();
+  await expect(routeCommand).toHaveText(initialRoute!);
+  await webSource.focus();
+  await expect(routeCommand).toHaveText(initialRoute!);
+  await webSource.press("Enter");
+  await expect(routeCommand).toContainText("web://");
+  await expect(page.locator(`${root} .destination-endpoints button[data-endpoint="web"]`)).toBeDisabled();
+
+  const installCommand = page.locator(`${root} .install-readout code`);
+  const npmChannel = page.locator(`${root} .install-channel[data-channel="npm"]`);
+  const initialInstall = await installCommand.textContent();
+  await npmChannel.hover();
+  await expect(installCommand).toHaveText(initialInstall!);
+  await npmChannel.focus();
+  await expect(installCommand).toHaveText(initialInstall!);
+  await npmChannel.press("Enter");
+  await expect(installCommand).toHaveText("npm install --global @iwonz/courier");
+
+  const checkbox = page.locator(`${root} courier-checkbox input`);
+  await expect(checkbox).toBeChecked();
+  await expect(checkbox).toBeDisabled();
+  const allOptionCount = await page.locator(`${root} .option-row`).count();
+  const uiStart = page.locator(`${root} .command-row[data-command="ui-start"]`);
+  await uiStart.focus();
+  await uiStart.press("Enter");
+  await expect(checkbox).toBeEnabled();
+  await expect(page.locator(`${root} .option-row code`)).toHaveText(["--listen <host:port>", "--background"]);
+  await page.locator(`${root} courier-checkbox label`).click();
+  await expect(checkbox).not.toBeChecked();
+  await expect(page.locator(`${root} .option-row`)).toHaveCount(allOptionCount);
+  await uiStart.press("Enter");
+  await expect(checkbox).toBeChecked();
+  await expect(checkbox).toBeDisabled();
+  await page.locator(`${root} .command-row[data-command="servers"]`).click();
+  await expect(page.locator(`${root} .empty-state`)).toHaveText("This command has no options.");
+  await page.locator(`${root} .command-row[data-command="servers-stop"]`).click();
+  await expect(page.locator(`${root} .option-row code`)).toHaveText(["--all"]);
+
+  const routePanel = page.locator(`${root} .route-explorer`);
+  const routeReadout = page.locator(`${root} .route-readout`);
+  const routePanelBox = (await routePanel.boundingBox())!;
+  const routeReadoutBox = (await routeReadout.boundingBox())!;
+  for (const source of ["local", "ssh", "web", "webhook"] as const) {
+    await page.locator(`${root} .source-endpoints button[data-endpoint="${source}"]`).click();
+    for (const destination of ["local", "ssh", "web", "http"] as const) {
+      const button = page.locator(`${root} .destination-endpoints button[data-endpoint="${destination}"]`);
+      if (await button.isEnabled()) {
+        await button.click();
+        const panel = (await routePanel.boundingBox())!;
+        const readout = (await routeReadout.boundingBox())!;
+        expect(Math.abs(panel.width - routePanelBox.width)).toBeLessThanOrEqual(1);
+        expect(Math.abs(panel.height - routePanelBox.height)).toBeLessThanOrEqual(1);
+        expect(Math.abs(readout.width - routeReadoutBox.width)).toBeLessThanOrEqual(1);
+        expect(Math.abs(readout.height - routeReadoutBox.height)).toBeLessThanOrEqual(1);
+      }
+    }
+  }
+
+  const installPanel = page.locator(`${root} .install-board`);
+  const installReadout = page.locator(`${root} .install-readout`);
+  const installPanelBox = (await installPanel.boundingBox())!;
+  const installReadoutBox = (await installReadout.boundingBox())!;
+  for (const channel of ["curl", "wget", "PowerShell", "npm", "npx", "Yarn", "pnpm", "Homebrew", "Scoop"] as const) {
+    await page.locator(`${root} .install-channel[data-channel="${channel}"]`).click();
+    const panel = (await installPanel.boundingBox())!;
+    const readout = (await installReadout.boundingBox())!;
+    expect(Math.abs(panel.width - installPanelBox.width)).toBeLessThanOrEqual(1);
+    expect(Math.abs(panel.height - installPanelBox.height)).toBeLessThanOrEqual(1);
+    expect(Math.abs(readout.width - installReadoutBox.width)).toBeLessThanOrEqual(1);
+    expect(Math.abs(readout.height - installReadoutBox.height)).toBeLessThanOrEqual(1);
+  }
+  await expect(page.locator(`${root} .install-channel courier-brand-icon`)).toHaveCount(9);
 
   await exerciseThemes(page, root);
   await expect(page.locator(`${root} courier-theme-selector select`)).toHaveCount(0);
-  await expect(page.locator(`${root} courier-theme-selector courier-segmented-control legend`)).toHaveClass(/sr-only/);
-  await expect(page.locator(`${root} courier-locale-selector courier-segmented-control legend`)).toHaveClass(/sr-only/);
-  await expect(page.locator(`${root} courier-theme-selector courier-segmented-control button span`)).toHaveCount(0);
   const localeSymbols = page.locator(`${root} courier-locale-selector courier-segmented-control button .symbol`);
-  await expect(localeSymbols).toHaveCount(2);
   await expect(localeSymbols).toHaveText(["🇬🇧", "🇷🇺"]);
-  const selectedTheme = page.locator(`${root} courier-theme-selector courier-segmented-control button[aria-checked="true"]`);
-  await selectedTheme.focus();
-  await selectedTheme.press("End");
-  await expect(page.locator("html")).toHaveAttribute("data-courier-theme-preference", "dark");
-  await page.locator(`${root} courier-theme-selector courier-segmented-control button[aria-checked="true"]`).focus();
-  await page.locator(`${root} courier-theme-selector courier-segmented-control button[aria-checked="true"]`).press("Home");
-  await expect(page.locator("html")).toHaveAttribute("data-courier-theme-preference", "system");
-
-  const routeCommand = page.locator(`${root} .command-shape`);
-  await page.locator(`${root} .endpoint-group`).first().locator('button[data-endpoint="web"]').hover();
-  await expect(routeCommand).toContainText("web:// to relay@host:/srv/destination/");
-  const localDestination = page.locator(`${root} .endpoint-group`).last().locator('button[data-endpoint="local"]');
-  await localDestination.focus();
-  await expect(routeCommand).toContainText("web:// to ./backup/");
-  await expect(page.locator(`${root} .endpoint-group`).last().locator('button[data-endpoint="web"]')).toHaveAttribute("aria-disabled", "true");
-
-  const npmChannel = page.locator(`${root} .install-channel[data-channel="npm"]`);
-  await npmChannel.hover();
-  await expect(page.locator(`${root} .install-readout code`)).toHaveText("npm install --global @iwonz/courier");
+  const reducedScene = page.locator(`${root} #hero courier-scene`);
+  await page.mouse.move(120, 360);
+  expect(await reducedScene.locator(".base").evaluate((node) => getComputedStyle(node).transform)).toBe("none");
 
   await selectRussian(page, root);
   await expect(page.locator(`${root} h2`).filter({ hasText: "Установить Courier" })).toBeVisible();
+  await expect(page.locator(`${root} .source-endpoints .label`)).toHaveText("Source");
+  await expect(page.locator(`${root} .destination-endpoints .label`)).toHaveText("Destination");
+  await expect(page.locator(root)).not.toContainText("Remote");
   await page.reload();
   await expect(page.locator(`${root} h2`).filter({ hasText: "Установить Courier" })).toBeVisible();
 
-  for (const target of ["routes", "install", "cli"] as const) {
-    const link = page.locator(`${root} nav a[href="#${target}"]`);
-    await link.focus();
-    await expect(link).toBeFocused();
-    await link.press("Enter");
-    await expect(page).toHaveURL(new RegExp(`#${target}$`));
-    await expect.poll(() => page.locator(`${root} #${target}`).evaluate((section) => Math.abs(section.getBoundingClientRect().top))).toBeLessThan(2);
-  }
-
-  for (const viewport of [{ width: 360, height: 740 }, { width: 1440, height: 900 }]) {
+  for (const viewport of [
+    { width: 320, height: 568 },
+    { width: 360, height: 740 },
+    { width: 390, height: 844 },
+    { width: 1024, height: 600 },
+    { width: 1440, height: 900 },
+  ]) {
     await page.setViewportSize(viewport);
     const expectedSceneSource = viewport.width <= 704 ? "mobile" : "wide";
-    await expect.poll(() => page.locator(`${root} courier-mascot img`).evaluateAll((images, expected) => images.every((image) => (image as HTMLImageElement).currentSrc.includes(expected)), expectedSceneSource)).toBe(true);
-    await expect(page.locator(`${root} nav`)).toBeVisible();
+    await expect.poll(() => page.locator(`${root} courier-scene .base img`).evaluateAll((images, expected) => images.every((image) => (image as HTMLImageElement).currentSrc.includes(expected)), expectedSceneSource)).toBe(true);
     for (const target of ["hero", "routes", "install", "cli"] as const) {
       await page.locator(`${root} #${target}`).evaluate((section) => section.scrollIntoView({ block: "start" }));
-      const geometry = await page.locator(`${root} #${target}`).evaluate((section, sectionId) => {
+      await expect.poll(() => page.locator(`${root} #${target}`).evaluate((section) => Math.abs(section.getBoundingClientRect().top))).toBeLessThan(2);
+      const geometry = await page.locator(`${root} #${target}`).evaluate((section) => {
         const bounds = section.getBoundingClientRect();
-        const background = section.querySelector(sectionId === "hero" ? ".hero-visual" : ".slide-art")!.getBoundingClientRect();
-        return {
-          sectionHeight: bounds.height,
-          backgroundLeft: background.left,
-          backgroundRight: background.right,
-          backgroundTop: background.top,
-          backgroundBottom: background.bottom,
-          currentSource: (section.querySelector("courier-mascot")!.shadowRoot!.querySelector("img") as HTMLImageElement).currentSrc,
-        };
-      }, target);
-      expect(geometry.sectionHeight).toBeGreaterThanOrEqual(viewport.height);
-      expect(Math.abs(geometry.backgroundLeft)).toBeLessThan(2);
-      expect(Math.abs(geometry.backgroundRight - viewport.width)).toBeLessThan(2);
-      expect(Math.abs(geometry.backgroundTop)).toBeLessThan(2);
-      expect(Math.abs(geometry.backgroundBottom - viewport.height)).toBeLessThan(2);
-      expect(geometry.currentSource).toContain(expectedSceneSource);
-    }
-    for (const channel of ["curl", "wget", "PowerShell", "npm", "npx", "Yarn", "pnpm", "Homebrew", "Scoop"] as const) {
-      await page.locator(`${root} .install-channel[data-channel="${channel}"]`).focus();
-      const commandFits = await page.locator(`${root} .install-readout code`).evaluate((command) => {
-        const bounds = command.getBoundingClientRect();
-        return bounds.left >= 0 && bounds.right <= innerWidth && command.scrollWidth <= command.clientWidth + 1;
+        const scene = section.querySelector("courier-scene")!.getBoundingClientRect();
+        const header = section.getRootNode() instanceof ShadowRoot ? (section.getRootNode() as ShadowRoot).querySelector(".masthead-wrap")!.getBoundingClientRect() : new DOMRect();
+        return { bounds, scene, header, visualHeight: visualViewport?.height ?? innerHeight, overflow: document.documentElement.scrollWidth - innerWidth };
       });
-      expect(commandFits).toBe(true);
+      expect(Math.abs(geometry.bounds.height - viewport.height)).toBeLessThanOrEqual(1);
+      expect(Math.abs(geometry.scene.left)).toBeLessThan(2);
+      expect(Math.abs(geometry.scene.right - viewport.width)).toBeLessThan(2);
+      expect(Math.abs(geometry.scene.top)).toBeLessThan(2);
+      expect(Math.abs(geometry.scene.bottom - viewport.height)).toBeLessThan(2);
+      expect(geometry.header.top).toBeGreaterThanOrEqual(-0.5);
+      expect(geometry.header.bottom).toBeLessThanOrEqual(geometry.visualHeight + 0.5);
+      expect(geometry.overflow).toBeLessThanOrEqual(0);
+      if (target !== "hero") await expect(page.locator(`${root} nav a[href="#${target}"]`)).toHaveAttribute("aria-current", "page");
     }
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
+
+  expect(externalRequests).toEqual([]);
+});
+
+test("touch landing keeps its stationary ambient scene", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  await page.goto(landingURL);
+  const scene = page.locator("courier-landing-app #hero courier-scene");
+  const before = await scene.evaluate((node) => ({ x: node.style.getPropertyValue("--scene-pointer-x"), transform: getComputedStyle(node.shadowRoot!.querySelector(".base")!).transform }));
+  await page.touchscreen.tap(250, 420);
+  const after = await scene.evaluate((node) => ({ x: node.style.getPropertyValue("--scene-pointer-x"), transform: getComputedStyle(node.shadowRoot!.querySelector(".base")!).transform }));
+  expect(after).toEqual(before);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await context.close();
 });
 
 test("protected data metadata never renders before authentication", async ({ page }) => {

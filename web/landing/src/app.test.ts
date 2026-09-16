@@ -2,17 +2,23 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import "./main";
 import {
   applicableFlags,
+  commandFlags,
   CourierLandingApp,
   endpointExample,
   endpointIcon,
   endpointMessage,
   expandRoutePairs,
+  installs,
 } from "./app";
 import { contractData } from "./contract";
 
+function rect(left: number, top: number, width: number, height: number): DOMRect {
+  return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) };
+}
+
 beforeEach(() => {
   localStorage.clear();
-  vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
 });
 
 afterEach(() => {
@@ -21,7 +27,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it("projects route pairs, endpoint presentation, and exact flag applicability from the contract", () => {
+it("projects routes, endpoint vocabulary, exact route flags, and command compatibility", () => {
+  expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("relay-mark");
   const pairs = expandRoutePairs(contractData.routes);
   expect(pairs).toContainEqual(expect.objectContaining({ source: "local", destination: "ssh", routeName: "path-to-path" }));
   expect(pairs).toContainEqual(expect.objectContaining({ source: "webhook", destination: "local", routeName: "webhook-to-path" }));
@@ -39,11 +46,42 @@ it("projects route pairs, endpoint presentation, and exact flag applicability fr
   expect(localFlags).not.toContain("upload-rate");
   const sshPair = pairs.find((pair) => pair.source === "ssh" && pair.destination === "ssh")!;
   expect(applicableFlags(sshPair, contractData.flags).map((flag) => flag.name)).toEqual(expect.arrayContaining(["upload-rate", "download-rate"]));
+
+  expect(commandFlags("", true, contractData.commands, contractData.flags)).toHaveLength(contractData.flags.length);
+  expect(commandFlags("from", false, contractData.commands, contractData.flags)).toHaveLength(contractData.flags.length);
+  expect(commandFlags("ui-start", true, contractData.commands, contractData.flags).map((flag) => flag.name)).toEqual(["listen", "background"]);
+  expect(commandFlags("servers-stop", true, contractData.commands, contractData.flags).map((flag) => flag.name)).toEqual(["all"]);
+  expect(commandFlags("servers", true, contractData.commands, contractData.flags)).toEqual([]);
+  expect(commandFlags("unknown", true, contractData.commands, contractData.flags)).toEqual([]);
+  expect(installs.map((install) => install.icon)).toEqual(["curl", "wget", "powershell", "npm", "npx", "yarn", "pnpm", "homebrew", "scoop"]);
 });
 
-it("renders four immersive sections and operates hero, route, and installation interactions", async () => {
+it("renders stable non-interactive scenes and activation-only route, install, and CLI controls", async () => {
+  const resizeInstances: { callback: ResizeObserverCallback; observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }[] = [];
+  const sectionInstances: { callback: IntersectionObserverCallback; observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }[] = [];
+  class ResizeObserverStub {
+    observe = vi.fn();
+    disconnect = vi.fn();
+    constructor(readonly callback: ResizeObserverCallback) { resizeInstances.push(this); }
+  }
+  class IntersectionObserverStub {
+    observe = vi.fn();
+    disconnect = vi.fn();
+    constructor(readonly callback: IntersectionObserverCallback) { sectionInstances.push(this); }
+  }
+  vi.stubGlobal("ResizeObserver", ResizeObserverStub);
+  vi.stubGlobal("IntersectionObserver", IntersectionObserverStub);
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+    if (this.classList.contains("masthead-wrap")) return rect(0, 0, 1440, 78);
+    if (this.classList.contains("route-controls")) return rect(100, 180, 700, 320);
+    if (this.closest(".source-endpoints") && this.matches(".selected")) return rect(120, 250, 180, 46);
+    if (this.closest(".destination-endpoints") && this.matches(".selected")) return rect(600, 340, 180, 46);
+    return rect(0, 0, 0, 0);
+  });
+
   const element = new CourierLandingApp();
   document.body.append(element);
+  await element.updateComplete;
   await element.updateComplete;
   const root = element.shadowRoot!;
   const text = root.textContent ?? "";
@@ -51,22 +89,26 @@ it("renders four immersive sections and operates hero, route, and installation i
   expect(text).toContain("Move files. Keep control.");
   expect(text).toContain("courier from <source> to <destination>");
   expect(text).toContain("path-to-path");
-  expect(text).toContain("--archive");
-  expect(text).not.toContain("Open source · MIT · self-contained");
+  expect(text).toContain("Source");
+  expect(text).toContain("Destination");
+  expect(text).not.toContain("Remote");
   expect([...root.querySelectorAll("section")].map((section) => section.id)).toEqual(["hero", "routes", "install", "cli"]);
-  expect(root.querySelectorAll(".slide")).toHaveLength(4);
-  expect(root.querySelector(".facts")).toBeNull();
-  expect(root.querySelector("#safety")).toBeNull();
-  expect(root.querySelector("#examples")).toBeNull();
-  expect(root.querySelector("#docs")).toBeNull();
-  expect(root.querySelector("footer")).toBeNull();
-  expect(root.querySelector(".quick-command")).toBeNull();
-  expect(root.querySelector(".actions")).toBeNull();
-  expect(root.querySelector(".reference-link")).toBeNull();
-  expect(text).not.toContain("Open the complete CLI contract");
-  expect(root.querySelector(".github-link")?.getAttribute("href")).toBe("https://github.com/iwonz/courier");
-  expect([...root.querySelectorAll("nav a")].map((link) => link.getAttribute("href"))).toEqual(["#routes", "#install", "#cli"]);
-  expect(root.querySelectorAll(".install-channel")).toHaveLength(9);
+  expect(root.querySelectorAll("courier-scene")).toHaveLength(4);
+  expect(root.querySelector("#hero button")).toBeNull();
+  expect(root.querySelector("#hero [aria-pressed]")).toBeNull();
+  expect(root.querySelector(".hero-route path")?.getAttribute("d")).toContain(" C ");
+  expect(element.style.getPropertyValue("--masthead-height")).toBe("78px");
+  expect(root.querySelector(".route-connector path")?.getAttribute("d")).toContain(" C ");
+  expect(resizeInstances[0]?.observe).toHaveBeenCalledTimes(2);
+  expect(sectionInstances[0]?.observe).toHaveBeenCalledTimes(4);
+
+  const scenes = [...root.querySelectorAll("courier-scene")];
+  await Promise.all(scenes.map((scene) => scene.updateComplete));
+  const baseSources = scenes.map((scene) => scene.shadowRoot?.querySelector(".base") as HTMLElement);
+  await Promise.all(baseSources.map((mascot) => (mascot as unknown as { updateComplete: Promise<unknown> }).updateComplete));
+  expect(baseSources.map((mascot) => mascot.shadowRoot?.querySelector("img")?.src)).toEqual(expect.arrayContaining([
+    expect.stringContaining("relay-hero-wide"), expect.stringContaining("relay-install-wide"), expect.stringContaining("relay-routing-wide"), expect.stringContaining("relay-cli-wide"),
+  ]));
 
   const routeSection = root.querySelector("#routes") as HTMLElement;
   routeSection.scrollIntoView = vi.fn();
@@ -75,108 +117,129 @@ it("renders four immersive sections and operates hero, route, and installation i
   expect(routeSection.scrollIntoView).toHaveBeenCalledWith({ block: "start" });
   expect(pushState).toHaveBeenCalledWith(null, "", "#routes");
 
-  const illustrations = [...root.querySelectorAll("courier-mascot")];
-  await Promise.all(illustrations.map((illustration) => illustration.updateComplete));
-  expect(illustrations).toHaveLength(4);
-  expect(illustrations.map((illustration) => illustration.shadowRoot?.querySelector("img")?.src)).toEqual(expect.arrayContaining([
-    expect.stringContaining("relay-hero-wide"), expect.stringContaining("relay-install-wide"), expect.stringContaining("relay-routing-wide"), expect.stringContaining("relay-cli-wide"),
-  ]));
-  expect(illustrations.map((illustration) => illustration.shadowRoot?.querySelector("source")?.srcset)).toEqual(expect.arrayContaining([
-    expect.stringContaining("relay-hero-mobile"), expect.stringContaining("relay-install-mobile"), expect.stringContaining("relay-routing-mobile"), expect.stringContaining("relay-cli-mobile"),
-  ]));
-
-  const themeSelector = root.querySelector("courier-theme-selector")!;
-  await themeSelector.updateComplete;
-  const themeControl = themeSelector.shadowRoot?.querySelector("courier-segmented-control")!;
-  await themeControl.updateComplete;
-  expect(themeControl.shadowRoot?.querySelector("legend")?.classList.contains("sr-only")).toBe(true);
-  expect(themeControl.shadowRoot?.querySelector("button span")).toBeNull();
-
-  const hero = root.querySelector(".hero-visual") as HTMLButtonElement;
-  hero.getBoundingClientRect = () => ({ left: 10, top: 20, width: 100, height: 200, right: 110, bottom: 220, x: 10, y: 20, toJSON: () => ({}) });
-  hero.dispatchEvent(new MouseEvent("pointermove", { clientX: 85, clientY: 70 }));
-  expect(hero.style.getPropertyValue("--spot-x")).toBe("75%");
-  expect(hero.style.getPropertyValue("--spot-y")).toBe("25%");
-  expect(hero.style.getPropertyValue("--relay-x")).toBe("6px");
-  expect(hero.style.getPropertyValue("--relay-y")).toBe("-4px");
-  hero.dispatchEvent(new MouseEvent("pointerleave"));
-  expect(hero.style.getPropertyValue("--spot-x")).toBe("68%");
-  expect(hero.style.getPropertyValue("--relay-x")).toBe("0px");
-  hero.click();
-  await element.updateComplete;
-  expect(hero.getAttribute("aria-pressed")).toBe("true");
-  hero.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
-  await element.updateComplete;
-  expect(hero.getAttribute("aria-pressed")).toBe("true");
-  hero.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
-  await element.updateComplete;
-  expect(hero.getAttribute("aria-pressed")).toBe("false");
-  hero.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true }));
-  await element.updateComplete;
-  expect(hero.getAttribute("aria-pressed")).toBe("true");
-
-  routeSection.getBoundingClientRect = () => ({ left: 0, top: 0, width: 200, height: 100, right: 200, bottom: 100, x: 0, y: 0, toJSON: () => ({}) });
-  routeSection.dispatchEvent(new MouseEvent("pointermove", { clientX: 50, clientY: 75 }));
-  expect(routeSection.style.getPropertyValue("--scene-spot-x")).toBe("25%");
-  expect(routeSection.style.getPropertyValue("--scene-spot-y")).toBe("75%");
-  expect(routeSection.style.getPropertyValue("--scene-x")).toBe("4px");
-  expect(routeSection.style.getPropertyValue("--scene-y")).toBe("-3px");
-  routeSection.dispatchEvent(new MouseEvent("pointerleave"));
-  expect(routeSection.style.getPropertyValue("--scene-spot-x")).toBe("72%");
-  expect(routeSection.style.getPropertyValue("--scene-y")).toBe("0px");
-
-  const installCommand = () => root.querySelector(".install-readout code")?.textContent ?? "";
-  const installChannel = (name: string) => root.querySelector(`.install-channel[data-channel="${name}"]`) as HTMLButtonElement;
-  installChannel("Homebrew").dispatchEvent(new Event("pointerenter"));
-  await element.updateComplete;
-  expect(installCommand()).toContain("brew tap iwonz/courier");
-  installChannel("npm").dispatchEvent(new FocusEvent("focus"));
-  await element.updateComplete;
-  expect(installCommand()).toBe("npm install --global @iwonz/courier");
-  installChannel("Scoop").click();
-  await element.updateComplete;
-  expect(installCommand()).toContain("scoop bucket add courier");
-  (element as unknown as { activeInstall: string }).activeInstall = "missing";
-  await element.updateComplete;
-  expect(installCommand()).toBe("curl -fsSL https://raw.githubusercontent.com/iwonz/courier/main/install.sh | sh");
-
-  const command = () => root.querySelector(".command-shape")?.textContent ?? "";
-  expect(command()).toContain("./project to relay@host:/srv/destination/");
-
-  const source = (name: string) => root.querySelector(`.endpoint-group:first-child button[data-endpoint="${name}"]`) as HTMLButtonElement;
-  const destination = (name: string) => root.querySelector(`.endpoint-group:last-child button[data-endpoint="${name}"]`) as HTMLButtonElement;
-
+  const routeCommand = () => root.querySelector(".command-shape")?.textContent ?? "";
+  const source = (name: string) => root.querySelector(`.source-endpoints button[data-endpoint="${name}"]`) as HTMLButtonElement;
+  const destination = (name: string) => root.querySelector(`.destination-endpoints button[data-endpoint="${name}"]`) as HTMLButtonElement;
   source("web").dispatchEvent(new Event("pointerenter"));
+  source("web").dispatchEvent(new FocusEvent("focus"));
   await element.updateComplete;
-  expect(command()).toContain("web:// to relay@host:/srv/destination/");
+  expect(routeCommand()).toContain("./project to relay@host:/srv/destination/");
+  source("web").click();
+  await element.updateComplete;
+  expect(routeCommand()).toContain("web:// to relay@host:/srv/destination/");
+  expect(destination("web").disabled).toBe(true);
   expect(destination("web").getAttribute("aria-disabled")).toBe("true");
-
-  destination("local").dispatchEvent(new FocusEvent("focus"));
+  destination("web").click();
   await element.updateComplete;
-  expect(command()).toContain("web:// to ./backup/");
-  destination("http").click();
+  expect(routeCommand()).toContain("web:// to relay@host:/srv/destination/");
+  destination("local").click();
   await element.updateComplete;
-  expect(command()).toContain("web:// to ./backup/");
-
+  expect(routeCommand()).toContain("web:// to ./backup/");
   source("local").click();
   await element.updateComplete;
   destination("web").click();
   await element.updateComplete;
-  expect(command()).toContain("./project to web://");
-  source("webhook").dispatchEvent(new Event("pointerenter"));
+  expect(routeCommand()).toContain("./project to web://");
+  source("webhook").click();
   await element.updateComplete;
-  expect(command()).toContain("webhook:// to ./backup/");
+  expect(routeCommand()).toContain("webhook:// to ./backup/");
+
+  const installCommand = () => root.querySelector(".install-readout code")?.textContent ?? "";
+  const install = (name: string) => root.querySelector(`.install-channel[data-channel="${name}"]`) as HTMLButtonElement;
+  install("npm").dispatchEvent(new Event("pointerenter"));
+  install("npm").dispatchEvent(new FocusEvent("focus"));
+  await element.updateComplete;
+  expect(installCommand()).toBe("curl -fsSL https://raw.githubusercontent.com/iwonz/courier/main/install.sh | sh");
+  install("Homebrew").click();
+  await element.updateComplete;
+  expect(installCommand()).toContain("brew tap iwonz/courier");
+  (element as unknown as { activeInstall: string }).activeInstall = "missing";
+  await element.updateComplete;
+  expect(installCommand()).toBe("curl -fsSL https://raw.githubusercontent.com/iwonz/courier/main/install.sh | sh");
+
+  const checkbox = root.querySelector("courier-checkbox")!;
+  await checkbox.updateComplete;
+  expect((checkbox.shadowRoot?.querySelector("input") as HTMLInputElement).checked).toBe(true);
+  expect((checkbox.shadowRoot?.querySelector("input") as HTMLInputElement).disabled).toBe(true);
+  expect(root.querySelectorAll(".option-row")).toHaveLength(contractData.flags.length);
+
+  const command = (name: string) => root.querySelector(`.command-row[data-command="${name}"]`) as HTMLButtonElement;
+  command("ui-start").click();
+  await element.updateComplete;
+  expect([...root.querySelectorAll(".option-row code")].map((node) => node.textContent)).toEqual(["--listen <host:port>", "--background"]);
+  expect((checkbox.shadowRoot?.querySelector("input") as HTMLInputElement).disabled).toBe(false);
+  checkbox.dispatchEvent(new CustomEvent("courier-checkbox-change", { detail: false }));
+  await element.updateComplete;
+  expect(root.querySelectorAll(".option-row")).toHaveLength(contractData.flags.length);
+  command("ui-start").click();
+  await element.updateComplete;
+  expect(command("ui-start").getAttribute("aria-pressed")).toBe("false");
+  expect((checkbox.shadowRoot?.querySelector("input") as HTMLInputElement).checked).toBe(true);
+  expect((checkbox.shadowRoot?.querySelector("input") as HTMLInputElement).disabled).toBe(true);
+  command("servers").click();
+  await element.updateComplete;
+  expect(root.querySelector(".empty-state")?.textContent).toBe("This command has no options.");
+  command("servers-stop").click();
+  await element.updateComplete;
+  expect(root.querySelector(".option-row code")?.textContent).toBe("--all");
+  command("from").click();
+  await element.updateComplete;
+  expect(root.querySelectorAll(".option-row")).toHaveLength(17);
+
+  sectionInstances[0]!.callback([
+    { target: root.querySelector("#hero")!, isIntersecting: true, intersectionRatio: 0.1 },
+    { target: root.querySelector("#routes")!, isIntersecting: true, intersectionRatio: 0.8 },
+  ] as IntersectionObserverEntry[], {} as IntersectionObserver);
+  await element.updateComplete;
+  expect(root.querySelector('nav a[href="#routes"]')?.getAttribute("aria-current")).toBe("page");
+  sectionInstances[0]!.callback([
+    { target: root.querySelector("#routes")!, isIntersecting: false, intersectionRatio: 0 },
+    { target: root.querySelector("#hero")!, isIntersecting: true, intersectionRatio: 0.9 },
+  ] as IntersectionObserverEntry[], {} as IntersectionObserver);
+  await element.updateComplete;
+  expect(root.querySelector("nav [aria-current]")).toBeNull();
+  resizeInstances[0]!.callback([], {} as ResizeObserver);
+  await element.updateComplete;
 
   expect((element as unknown as { displayEndpoint(name: string): string }).displayEndpoint("future")).toBe("future");
   element.setLocale(new CustomEvent("courier-locale", { detail: "ru" }));
   await element.updateComplete;
   expect(root.textContent).toContain("Переносите файлы. Сохраняйте контроль.");
-  expect(root.textContent).toContain("Команды и параметры");
-  expect(root.textContent).not.toContain("Открыть полный контракт CLI");
+  expect(root.textContent).toContain("Команда");
+  expect(root.textContent).toContain("Source");
+  expect(root.textContent).toContain("Destination");
+  expect(root.textContent).toContain("SSH");
+  expect(root.textContent).not.toContain("Remote");
+
   element.remove();
+  expect(resizeInstances[0]?.disconnect).toHaveBeenCalledOnce();
+  expect(sectionInstances[0]?.disconnect).toHaveBeenCalledOnce();
 });
 
-it("supports detached lifecycle and idempotent element definition", async () => {
+it("covers zero-layout and detached observer-free lifecycle safely", async () => {
+  vi.stubGlobal("ResizeObserver", undefined);
+  vi.stubGlobal("IntersectionObserver", undefined);
+  const element = new CourierLandingApp();
+  const internals = element as unknown as {
+    measureHeader(): void;
+    measureRouteConnector(): void;
+    observeSections(entries: readonly IntersectionObserverEntry[]): void;
+    navigate(event: MouseEvent): void;
+  };
+  document.body.append(element);
+  await element.updateComplete;
+  internals.measureHeader();
+  internals.measureRouteConnector();
+  element.shadowRoot?.querySelector(".masthead-wrap")?.remove();
+  element.shadowRoot?.querySelector(".route-controls")?.remove();
+  internals.measureHeader();
+  internals.measureRouteConnector();
+  internals.observeSections([]);
+  const missing = document.createElement("a");
+  missing.href = "#missing";
+  internals.navigate({ preventDefault: vi.fn(), currentTarget: missing } as unknown as MouseEvent);
+  element.remove();
+
   new CourierLandingApp().disconnectedCallback();
   vi.resetModules();
   await import("./main");

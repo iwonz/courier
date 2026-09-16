@@ -1,12 +1,16 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { CourierButton } from "./button";
+import { brandIconNames, CourierBrandIcon, resolveBrandIcon } from "./brand-icon";
 import { CourierBrand, CourierMascot, CourierRoute, CourierStatus } from "./brand";
+import { CourierCheckbox } from "./checkbox";
 import { CourierLocaleSelector } from "./locale-selector";
 import { CourierPanel } from "./panel";
 import { CourierProgress, progressRatio } from "./progress";
 import { CourierSegmentedControl, nextSegmentIndex } from "./segmented-control";
 import { CourierThemeSelector } from "./theme-selector";
+import { CourierScene, pointerPosition } from "./scene";
 import { defineCourierElements, type ElementRegistry } from "../define";
+import { cubicBezierPath } from "../geometry";
 import { CourierIcon, iconNames, resolveIcon } from "../icons";
 import { relayOperationsSource } from "../relay-admin";
 import { relayAccessSource } from "../relay-delivery";
@@ -29,6 +33,7 @@ afterEach(() => {
   document.documentElement.removeAttribute("data-courier-theme");
   document.documentElement.removeAttribute("data-courier-theme-preference");
   localStorage.clear();
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
@@ -41,10 +46,10 @@ describe("element registry", () => {
     };
     defineCourierElements(registry);
     expect([...values.keys()].sort()).toEqual([
-      "courier-brand", "courier-button", "courier-icon", "courier-locale-selector", "courier-mascot", "courier-panel", "courier-progress", "courier-route", "courier-segmented-control", "courier-status", "courier-theme-selector",
+      "courier-brand", "courier-brand-icon", "courier-button", "courier-checkbox", "courier-icon", "courier-locale-selector", "courier-mascot", "courier-panel", "courier-progress", "courier-route", "courier-scene", "courier-segmented-control", "courier-status", "courier-theme-selector",
     ]);
     defineCourierElements(registry);
-    expect(values.size).toBe(11);
+    expect(values.size).toBe(14);
   });
 });
 
@@ -118,6 +123,7 @@ describe("shared components", () => {
     await route.updateComplete;
     expect(route.shadowRoot?.textContent).toContain("./data");
     expect(route.shadowRoot?.textContent).toContain("server:/data");
+    expect(route.shadowRoot?.querySelector("path")?.getAttribute("d")).toContain(" C ");
 
     const status = document.createElement("courier-status") as CourierStatus;
     status.tone = "signal";
@@ -172,6 +178,113 @@ describe("shared components", () => {
     await icon.updateComplete;
     expect(icon.shadowRoot?.querySelector("svg")?.getAttribute("role")).toBe("img");
     expect(icon.shadowRoot?.querySelector("svg")?.getAttribute("aria-label")).toBe("Verified");
+  });
+
+  it("renders pinned monochrome brand marks and the Wget fallback glyph", async () => {
+    for (const name of brandIconNames) expect(resolveBrandIcon(name)).toBe(name);
+    expect(resolveBrandIcon("unknown")).toBe("linux");
+
+    const icon = document.createElement("courier-brand-icon") as CourierBrandIcon;
+    icon.name = "npm";
+    document.body.append(icon);
+    await icon.updateComplete;
+    expect(icon.shadowRoot?.querySelector(".mask")?.getAttribute("style")).toContain("url(");
+    expect(icon.shadowRoot?.querySelector(".mask")?.getAttribute("aria-hidden")).toBe("true");
+    icon.label = "npm";
+    await icon.updateComplete;
+    expect(icon.shadowRoot?.querySelector(".mask")?.getAttribute("role")).toBe("img");
+
+    icon.name = "wget";
+    icon.label = "";
+    await icon.updateComplete;
+    expect(icon.shadowRoot?.querySelector("svg")?.getAttribute("role")).toBe("presentation");
+    icon.label = "GNU Wget";
+    await icon.updateComplete;
+    expect(icon.shadowRoot?.querySelector("svg")?.getAttribute("aria-label")).toBe("GNU Wget");
+  });
+
+  it("provides styled native checkbox semantics and one composed change", async () => {
+    const checkbox = document.createElement("courier-checkbox") as CourierCheckbox;
+    checkbox.label = "Compatible";
+    checkbox.checked = true;
+    checkbox.disabled = false;
+    const changes: boolean[] = [];
+    checkbox.addEventListener("courier-checkbox-change", (event) => changes.push((event as CustomEvent<boolean>).detail));
+    document.body.append(checkbox);
+    await checkbox.updateComplete;
+    const input = checkbox.shadowRoot?.querySelector("input") as HTMLInputElement;
+    expect(input.checked).toBe(true);
+    expect(input.disabled).toBe(false);
+    input.checked = false;
+    input.dispatchEvent(new Event("change"));
+    await checkbox.updateComplete;
+    expect(checkbox.checked).toBe(false);
+    expect(changes).toEqual([false]);
+    checkbox.disabled = true;
+    await checkbox.updateComplete;
+    expect((checkbox.shadowRoot?.querySelector("input") as HTMLInputElement).disabled).toBe(true);
+  });
+
+  it("generates stable Bezier geometry in either direction and rejects invalid input", () => {
+    expect(cubicBezierPath({ x: 0, y: 10 }, { x: 100, y: 20 })).toBe("M 0 10 C 42 10, 58 20, 100 20");
+    expect(cubicBezierPath({ x: 100, y: 20 }, { x: 0, y: 10 })).toBe("M 100 20 C 58 20, 42 10, 0 10");
+    expect(cubicBezierPath({ x: 0, y: 0 }, { x: 10, y: 0 })).toContain("C 32 0, -22 0");
+    expect(() => cubicBezierPath({ x: Number.NaN, y: 0 }, { x: 1, y: 1 })).toThrow("finite");
+  });
+
+  it("tracks a fine pointer without transforming the stationary base scene", async () => {
+    expect(pointerPosition({ left: 0, top: 0, width: 0, height: 0 }, 10, 10)).toEqual({ x: 50, y: 50 });
+    expect(pointerPosition({ left: 10, top: 20, width: 100, height: 200 }, -20, 300)).toEqual({ x: 0, y: 100 });
+
+    const media = vi.fn((query: string) => ({ matches: query.includes("pointer: fine"), addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    let callback: FrameRequestCallback | undefined;
+    const request = vi.fn((handler: FrameRequestCallback) => { callback = handler; return 7; });
+    const cancel = vi.fn();
+    vi.stubGlobal("matchMedia", media);
+    vi.stubGlobal("requestAnimationFrame", request);
+    vi.stubGlobal("cancelAnimationFrame", cancel);
+
+    const scene = document.createElement("courier-scene") as CourierScene;
+    scene.source = relayHeroSource;
+    scene.mobileSource = relayHeroMobileSource;
+    scene.eager = true;
+    scene.getBoundingClientRect = () => ({ left: 10, top: 20, width: 100, height: 200, right: 110, bottom: 220, x: 10, y: 20, toJSON: () => ({}) });
+    document.body.append(scene);
+    await scene.updateComplete;
+    const base = scene.shadowRoot?.querySelector(".base") as HTMLElement;
+    expect(base.getAttribute("style")).toBeNull();
+    expect(scene.shadowRoot?.querySelectorAll("courier-mascot")).toHaveLength(2);
+    base.dispatchEvent(new MouseEvent("pointermove", { clientX: 85, clientY: 70 }));
+    base.dispatchEvent(new MouseEvent("pointermove", { clientX: 90, clientY: 80 }));
+    expect(request).toHaveBeenCalledTimes(1);
+    callback?.(1);
+    expect(scene.style.getPropertyValue("--scene-pointer-x")).toBe("80%");
+    expect(scene.style.getPropertyValue("--scene-pointer-y")).toBe("30%");
+    base.dispatchEvent(new MouseEvent("pointerleave"));
+    expect(scene.style.getPropertyValue("--scene-pointer-x")).toBe("");
+
+    base.dispatchEvent(new MouseEvent("pointermove", { clientX: 50, clientY: 50 }));
+    base.dispatchEvent(new MouseEvent("pointerleave"));
+    callback?.(2);
+    expect(cancel).toHaveBeenCalledWith(7);
+    base.dispatchEvent(new MouseEvent("pointermove", { clientX: 50, clientY: 50 }));
+    scene.remove();
+    expect(cancel).toHaveBeenCalledTimes(2);
+
+    const detached = new CourierScene();
+    detached.disconnectedCallback();
+  });
+
+  it("keeps scene pointer state fixed for coarse pointers and reduced motion", async () => {
+    const request = vi.fn();
+    vi.stubGlobal("requestAnimationFrame", request);
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: query.includes("prefers-reduced-motion"), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+    const scene = document.createElement("courier-scene") as CourierScene;
+    document.body.append(scene);
+    await scene.updateComplete;
+    scene.shadowRoot?.querySelector(".base")?.dispatchEvent(new MouseEvent("pointermove", { clientX: 1, clientY: 1 }));
+    expect(request).not.toHaveBeenCalled();
   });
 });
 

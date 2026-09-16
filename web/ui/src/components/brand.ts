@@ -1,5 +1,8 @@
 import { LitElement, css, html } from "lit";
 import relayMark from "../../assets/relay-mark.png";
+import { cubicBezierPath } from "../geometry";
+
+export const relayMarkSource = relayMark;
 
 export class CourierBrand extends LitElement {
   static properties = { product: { type: String } };
@@ -86,15 +89,16 @@ export class CourierRoute extends LitElement {
     :host { display: grid; color: var(--courier-color-text, #151714); font-family: var(--courier-font-mono, monospace); }
     .route { display: grid; grid-template-columns: minmax(0, 1fr) minmax(3rem, 0.55fr) minmax(0, 1fr); align-items: center; gap: 0.65rem; }
     .node { overflow: hidden; padding: 0.65rem 0.75rem; border: 1px solid var(--courier-color-border, #c8cdbf); border-radius: var(--courier-radius-sm, 0.25rem); background: var(--courier-color-surface, #fafbf3); font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
-    .line { position: relative; height: 1px; color: var(--courier-color-border-strong, #8e9587); background: currentColor; }
-    .line::before { content: ""; position: absolute; top: -0.2rem; left: 0; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--courier-color-accent, #d4ff45); }
-    .line::after { content: ""; position: absolute; top: -0.22rem; right: 0; width: 0.4rem; height: 0.4rem; border-top: 1px solid currentColor; border-right: 1px solid currentColor; transform: rotate(45deg); }
+    svg { width: 100%; height: 2rem; overflow: visible; color: var(--courier-color-border-strong, #8e9587); }
+    path { fill: none; stroke: currentColor; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+    circle { fill: var(--courier-color-accent, #d4ff45); }
   `;
 
   source = "";
   destination = "";
 
   protected render() {
-    return html`<div class="route"><span class="node">${this.source}</span><span class="line" aria-hidden="true"></span><span class="node">${this.destination}</span></div>`;
+    const path = cubicBezierPath({ x: 1, y: 15 }, { x: 99, y: 15 });
+    return html`<div class="route"><span class="node">${this.source}</span><svg viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path d=${path}></path><circle cx="1" cy="15" r="2.4"></circle><circle cx="99" cy="15" r="2.4"></circle></svg><span class="node">${this.destination}</span></div>`;
   }
 }

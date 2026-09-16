@@ -88,11 +88,11 @@ The Courier mark is a compact profile of Relay with the orange beak, alert eye, 
 
 ### Motion
 
-Motion confirms state changes and direction. Transitions remain short and interruptible. No essential information depends on animation. `prefers-reduced-motion` removes non-essential movement and smooth scrolling.
+Motion confirms state changes and direction. Transitions remain short and interruptible. No essential information depends on animation. Illustrated scene bases do not pan or scale with the pointer; any pointer response is confined to a local amorphous highlight and restrained refractive lens. Coarse pointers use a fixed ambient treatment, and `prefers-reduced-motion` removes non-essential travel, morphing, refraction animation, and smooth scrolling.
 
 ### Controls
 
-Courier controls never expose unstyled browser chrome. Small fixed choices such as theme and locale use icon-only shared segmented radio groups with localized programmatic names, visible selection, arrow-key navigation, and one focus stop. Form inputs and selects keep dependable platform semantics but normalize appearance, spacing, indicators, hover, focus, and disabled states through the shared UI kit. Boolean policy values use a switch treatment; file selection uses a designed action surface while retaining a real keyboard-operable file input.
+Courier controls never expose unstyled browser chrome. Small fixed choices such as theme and locale use icon-only shared segmented radio groups with localized programmatic names, visible selection, arrow-key navigation, and one focus stop. Form inputs, selects, and checkboxes keep dependable platform semantics but normalize appearance, spacing, indicators, hover, focus, and disabled states through the shared UI kit. Boolean policy values use a switch treatment; view filters use a designed checkbox; file selection uses a designed action surface while retaining a real keyboard-operable file input.
 
 Custom appearance must not recreate browser responsibilities badly. Labels remain programmatic, Enter and Space activate buttons, arrow keys move within segmented groups, validation remains available, and the orange focus ring is never removed.
 
@@ -134,7 +134,7 @@ Avoid unsupported guarantees, breathless superlatives, fake urgency, blame, joke
 
 ## Product surfaces
 
-- **Landing:** an immersive dispatch brief. Lead with the promise alone, then give routing, installation, and the generated command registry one full viewport each. Every scene is composed around its working interface rather than placed beside it as a decorative tile.
+- **Landing:** an immersive dispatch brief. Lead with the promise and a non-interactive `Source` to `Destination` handoff, then give routing, installation, and the generated command registry one full viewport each. Every scene is stationary and composed around its full-width working interface rather than placed beside it as a decorative tile. Route and installation state changes only through activation; hover communicates affordance without silently changing content.
 - **Delivery UI:** a transfer terminal. Preserve focus on authentication, destination contents, and the single next action. Protected metadata appears only after authorization.
 - **Administration UI:** an operations control room. Prioritize live state, bindings, delivery identity, confirmed counters, policy changes, and explicit stop actions.
 - **CLI and documentation:** use the same route, delivery, verification, collision, and confirmed-byte vocabulary. Decorative identity never interferes with copy-and-paste commands.

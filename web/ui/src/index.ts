@@ -1,14 +1,18 @@
 import "./tokens.css";
 
 export * from "./components/button";
+export * from "./components/brand-icon";
 export * from "./components/brand";
+export * from "./components/checkbox";
 export * from "./components/locale-selector";
 export * from "./components/panel";
 export * from "./components/progress";
 export * from "./components/segmented-control";
+export * from "./components/scene";
 export * from "./components/theme-selector";
 export * from "./define";
 export * from "./i18n";
 export * from "./icons";
+export * from "./geometry";
 export * from "./styles";
 export * from "./theme";

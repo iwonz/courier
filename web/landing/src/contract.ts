@@ -4,7 +4,7 @@ export interface LandingCommand {
   name: string;
   usage: string;
   system: boolean;
-  flags: string[];
+  flags: string[] | null;
 }
 
 export interface LandingFlag {

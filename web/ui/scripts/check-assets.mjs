@@ -6,9 +6,14 @@ import { fileURLToPath } from "node:url";
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const assetRoot = resolve(packageRoot, "assets");
 const manifest = JSON.parse(await readFile(resolve(assetRoot, "provenance.json"), "utf8"));
+const brandAssetRoot = resolve(packageRoot, "src", "brand-assets");
+const brandManifest = JSON.parse(await readFile(resolve(brandAssetRoot, "provenance.json"), "utf8"));
 
 if (manifest.schemaVersion !== 2 || !Array.isArray(manifest.assets) || manifest.assets.length === 0) {
   throw new Error("asset provenance manifest is invalid");
+}
+if (brandManifest.schemaVersion !== 1 || !Array.isArray(brandManifest.assets) || brandManifest.assets.length === 0) {
+  throw new Error("brand asset provenance manifest is invalid");
 }
 
 function uint24(data, offset) {
@@ -58,6 +63,46 @@ if (actual.size !== expected.size || [...actual].some((name) => !expected.has(na
   throw new Error("asset directory and provenance manifest differ");
 }
 
+const expectedBrandAssets = new Set(["provenance.json"]);
+for (const asset of brandManifest.assets) {
+  if (!/^[a-z0-9][a-z0-9.-]*\.svg$/.test(asset.path) || expectedBrandAssets.has(asset.path)) {
+    throw new Error(`invalid or duplicate brand asset path: ${asset.path}`);
+  }
+  if (!/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(asset.repository)
+    || !/^[0-9a-f]{40}$/.test(asset.revision)
+    || !asset.sourcePath
+    || asset.license !== "MIT"
+    || !asset.copyright) {
+    throw new Error(`brand asset provenance is incomplete: ${asset.path}`);
+  }
+  expectedBrandAssets.add(asset.path);
+  const data = await readFile(resolve(brandAssetRoot, asset.path));
+  const digest = createHash("sha256").update(data).digest("hex");
+  if (data.length !== asset.bytes || digest !== asset.sha256 || data.toString("utf8").includes("<script")) {
+    throw new Error(`brand asset integrity mismatch: ${asset.path}`);
+  }
+}
+
+const actualBrandAssets = new Set(await readdir(brandAssetRoot));
+if (actualBrandAssets.size !== expectedBrandAssets.size || [...actualBrandAssets].some((name) => !expectedBrandAssets.has(name))) {
+  throw new Error("brand asset directory and provenance manifest differ");
+}
+
+const uiPackage = JSON.parse(await readFile(resolve(packageRoot, "package.json"), "utf8"));
+const simpleIconsRoot = resolve(packageRoot, "..", "node_modules", "simple-icons");
+const simpleIconsPackage = JSON.parse(await readFile(resolve(simpleIconsRoot, "package.json"), "utf8"));
+if (uiPackage.dependencies?.["simple-icons"] !== "16.31.0"
+  || simpleIconsPackage.version !== "16.31.0"
+  || simpleIconsPackage.license !== "CC0-1.0") {
+  throw new Error("Simple Icons must remain pinned to the reviewed CC0-1.0 release");
+}
+
+const simpleIconData = JSON.parse(await readFile(resolve(simpleIconsRoot, "data", "simple-icons.json"), "utf8"));
+const iconLicenses = new Map(simpleIconData.map((icon) => [icon.slug, icon.license?.type ?? "CC0-1.0"]));
+if (iconLicenses.get("debian") !== "CC-BY-SA-3.0" || iconLicenses.get("yarn") !== "CC-BY-4.0") {
+  throw new Error("reviewed Simple Icons brand-license metadata changed");
+}
+
 const searchable = [
   await readFile(resolve(packageRoot, "NOTICE.md"), "utf8"),
   ...await Promise.all(manifest.assets.filter((asset) => asset.mediaType.includes("svg")).map((asset) => readFile(resolve(assetRoot, asset.path), "utf8"))),
@@ -66,4 +111,4 @@ if (searchable.includes("local.adguard.org") || searchable.includes("<script")) 
   throw new Error("executable reference content was retained");
 }
 
-console.log(`verified ${manifest.assets.length} Courier identity assets`);
+console.log(`verified ${manifest.assets.length} Courier identity assets and ${brandManifest.assets.length} pinned brand assets`);
