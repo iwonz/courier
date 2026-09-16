@@ -26,84 +26,84 @@
       "prompt": "Adult courier pigeon in a compact graphite utility harness carrying a sealed cream data capsule with sparse signal-lime tabs; transparent editorial screen-print cutout; no text, logo, weaponry, robot parts, childlike proportions, or third-party mascot imitation."
     },
     {
-      "path": "relay-hero-wide.webp",
+      "path": "relay-hero-wide-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 392214,
-      "sha256": "04e41e6b251b71649ffdc919219652aa98d311501d96fdd429af64465ef3a7e6",
+      "bytes": 194810,
+      "sha256": "edf0d2fe43e30a2927f99432c4706654eff437af6725e81257e191a101e1f3de",
       "width": 1672,
       "height": 941,
-      "use": "Full-bleed desktop dispatch hero with intentional headline space",
-      "prompt": "Wide purpose-composed Courier dispatch panorama: canonical Relay plans one protected delivery beside a rugged route terminal and transport case; warm-paper negative space at left, Relay at right, one signal-lime route, mature utilitarian editorial screen-print treatment, no text, logos, watermarks, robots, weapons, or framed tile."
+      "use": "Integrated desktop dispatch observatory with headline and live route-node space",
+      "prompt": "Premium landscape Courier dispatch observatory above a mountainous archipelago: canonical Relay in a black utility harness guides a delivery between distant stations; calm lower-contrast cartographic space at left for the headline and a clear curved corridor at right for live Source and Destination overlays; graphite instruments, paper maps, restrained signal-lime glints, mature editorial technology; no text, logos, fake UI, icons, watermarks, or third-party marks."
     },
     {
-      "path": "relay-hero-mobile.webp",
+      "path": "relay-hero-mobile-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 450228,
-      "sha256": "bcb96330a416a88909aac57c4874d1501ee504792052f57640122d5ddbf33163",
-      "width": 1024,
-      "height": 1536,
-      "use": "Full-bleed mobile dispatch hero with portrait headline space",
-      "prompt": "Portrait counterpart of the approved Courier dispatch panorama: calm upper headline space, canonical Relay and route terminal across the lower scene, one diagonal signal-lime route, mature utilitarian editorial screen-print treatment, full bleed, no text, logos, watermarks, or framed tile."
+      "bytes": 237246,
+      "sha256": "87effa439c0f9de3dfcbbb65240c22e72c9da35f68a525b593092a1707f95d02",
+      "width": 941,
+      "height": 1672,
+      "use": "Integrated mobile dispatch observatory with portrait headline and route-node space",
+      "prompt": "Portrait Courier dispatch observatory above a mountainous archipelago: canonical Relay in the lower-right, calm cartographic upper space for the live headline, and a clear middle-right corridor for live Source and Destination overlays; graphite instruments, paper maps, restrained signal-lime glints, mature editorial technology; no text, logos, fake UI, icons, watermarks, or third-party marks."
     },
     {
-      "path": "relay-routing-wide.webp",
+      "path": "relay-routing-wide-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 450624,
-      "sha256": "fd2a5a30b64ee0209751e8ac42cd476568ba6978ec82a627c64f294b6c0ce6bd",
+      "bytes": 170274,
+      "sha256": "dbfaaae313bcbd8abc0b4f57189e6548cf19acd77ec40d58f284dfb3839cf706",
       "width": 1672,
       "height": 941,
-      "use": "Full-bleed desktop route-cartographer scene composed around the route explorer",
-      "prompt": "Wide purpose-composed Courier routing panorama: canonical Relay maps abstract local, remote, browser, and webhook nodes at a field station; Relay left, quieter right control area framed by the map and route lines, graphite dusk editorial screen-print treatment, full bleed, no text, logos, watermarks, or framed tile."
+      "use": "Integrated desktop route observatory framing the live route explorer",
+      "prompt": "Landscape night dispatch-routing observatory above a mountainous archipelago: a wide low-detail smoked-graphite map-table bay for live route controls, canonical Relay operating a route compass at the left edge, and beacons and equipment concentrated around the perimeter; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, fake UI, icons, watermarks, or third-party marks."
     },
     {
-      "path": "relay-routing-mobile.webp",
+      "path": "relay-routing-mobile-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 435486,
-      "sha256": "518caeb5aef199fa8d798223f8fcc8d951b0d69f60fd7c20b6a25b03ac0477ce",
-      "width": 1024,
-      "height": 1536,
-      "use": "Full-bleed mobile route-cartographer scene composed around the route explorer",
-      "prompt": "Portrait counterpart of the approved Courier route-cartographer panorama: calm heading zone, canonical Relay and field table around a quieter central route-control bay, restrained signal-lime network, mature editorial screen-print treatment, full bleed, no text, logos, watermarks, or framed tile."
+      "bytes": 112464,
+      "sha256": "2f7e6527cf951fa7d3087e1e0556913afcfa7e7dd13fe40f12180bedd59783b1",
+      "width": 941,
+      "height": 1672,
+      "use": "Integrated mobile route observatory framing the live route explorer",
+      "prompt": "Portrait night dispatch-routing observatory above a mountainous archipelago: a tall low-detail smoked-graphite map-table bay for live route controls, canonical Relay operating a compass at the lower-left edge, and beacons and equipment concentrated around the perimeter; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, fake UI, icons, watermarks, or third-party marks."
     },
     {
-      "path": "relay-install-wide.webp",
+      "path": "relay-install-wide-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 295132,
-      "sha256": "736124f9c8b90bac28b846c31cd8dd70565bff20a65266cd4451f96233c7ca22",
+      "bytes": 121468,
+      "sha256": "4edcdeb008184b8fafe91bb1866f3a62710d57b779893d717970937df4aa7300",
       "width": 1672,
       "height": 941,
-      "use": "Full-bleed desktop field-installation scene composed around the channel chooser",
-      "prompt": "Wide purpose-composed Courier installation panorama: canonical Relay seats a sealed capsule into a universal terminal cradle; Relay left, calm graphite deployment bay at right framed by field equipment, mature editorial screen-print treatment, full bleed, no text, OS marks, logos, watermarks, or framed tile."
+      "use": "Integrated desktop distribution depot framing compact install controls",
+      "prompt": "Landscape twilight field distribution depot: a wide quiet recessed graphite command bay for live channel tags, command copy control, and release links; canonical Relay loads a parcel into a distribution manifold at the right edge while unmarked cases and equipment frame the perimeter; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, platform marks, fake UI, icons, or watermarks."
     },
     {
-      "path": "relay-install-mobile.webp",
+      "path": "relay-install-mobile-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 341132,
-      "sha256": "d2ab379fab7b6ffdd5eac301b7071e563609589ca4a282b934127996b665ab74",
-      "width": 1024,
-      "height": 1536,
-      "use": "Full-bleed mobile field-installation scene composed around the channel chooser",
-      "prompt": "Portrait counterpart of the approved Courier installation panorama: calm heading zone, canonical Relay loading a capsule at lower left, tall graphite equipment bay for the channel chooser, mature editorial screen-print treatment, full bleed, no text, OS marks, logos, watermarks, or framed tile."
+      "bytes": 158748,
+      "sha256": "68bfed9311574baae97a668ca8ab805ebea720ec211cbe772be260356cd28a19",
+      "width": 941,
+      "height": 1672,
+      "use": "Integrated mobile distribution depot framing compact install controls",
+      "prompt": "Portrait twilight field distribution depot: a tall quiet recessed graphite command bay for live channel tags, command copy control, and release links; canonical Relay loads a parcel into a distribution manifold at the lower-right edge while unmarked cases and equipment frame the perimeter; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, platform marks, fake UI, icons, or watermarks."
     },
     {
-      "path": "relay-cli-wide.webp",
+      "path": "relay-cli-wide-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 285154,
-      "sha256": "b4587c7ed1d978dfed4add3fa7a1446c7a1b831e8788fc4337027f3eb20e683c",
+      "bytes": 127066,
+      "sha256": "b1dfd5c165b8f166b61029310793de68072a00dfbe624658d6a4d3856ff2671a",
       "width": 1672,
       "height": 941,
-      "use": "Full-bleed desktop integrity scene composed around the CLI registry",
-      "prompt": "Wide purpose-composed Courier integrity panorama: canonical Relay verifies a capsule through a checksum gate; Relay left, recessed graphite control-board bay at right for the registry, mature editorial screen-print treatment, full bleed, no text, logos, watermarks, security theater, or framed tile."
+      "use": "Integrated desktop verification archive framing the live CLI registry",
+      "prompt": "Landscape verification archive and operations workshop: a wide quiet two-column smoked-graphite bay for the live command and options registry, canonical Relay inspecting an unmarked parcel at the lower-left perimeter, and archive drawers, optics, and equipment framing the edges; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, fake commands, fake UI, icons, third-party marks, or watermarks."
     },
     {
-      "path": "relay-cli-mobile.webp",
+      "path": "relay-cli-mobile-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 329006,
-      "sha256": "93edf8b8da4e9fef20649fadfdbacb32b15ab0f0f581dd56b3b29c589bb6bfa6",
-      "width": 1024,
-      "height": 1536,
-      "use": "Full-bleed mobile integrity scene composed around the CLI registry",
-      "prompt": "Portrait counterpart of the approved Courier integrity panorama: calm heading zone, canonical Relay and checksum scanner at lower left, tall recessed control-board bay for the registry, mature editorial screen-print treatment, full bleed, no text, logos, watermarks, security theater, or framed tile."
+      "bytes": 135566,
+      "sha256": "37b03c3f48a82058c12287623d309d1997200a9734c655230d48f5b94b2a6bcc",
+      "width": 941,
+      "height": 1672,
+      "use": "Integrated mobile verification archive framing the live CLI registry",
+      "prompt": "Portrait verification archive and operations workshop: a tall quiet two-column smoked-graphite bay for the live command and options registry, canonical Relay inspecting an unmarked parcel at the lower-left perimeter, and archive drawers, optics, and equipment framing the edges; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, fake commands, fake UI, icons, third-party marks, or watermarks."
     },
     {
       "path": "relay-access.webp",

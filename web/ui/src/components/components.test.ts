@@ -8,7 +8,7 @@ import { CourierPanel } from "./panel";
 import { CourierProgress, progressRatio } from "./progress";
 import { CourierSegmentedControl, nextSegmentIndex } from "./segmented-control";
 import { CourierThemeSelector } from "./theme-selector";
-import { CourierScene, pointerPosition } from "./scene";
+import { CourierScene, pointerPosition, sceneAmbientPosition, smoothPointerPosition } from "./scene";
 import { defineCourierElements, type ElementRegistry } from "../define";
 import { cubicBezierPath } from "../geometry";
 import { CourierIcon, iconNames, resolveIcon } from "../icons";
@@ -235,10 +235,14 @@ describe("shared components", () => {
   it("tracks a fine pointer without transforming the stationary base scene", async () => {
     expect(pointerPosition({ left: 0, top: 0, width: 0, height: 0 }, 10, 10)).toEqual({ x: 50, y: 50 });
     expect(pointerPosition({ left: 10, top: 20, width: 100, height: 200 }, -20, 300)).toEqual({ x: 0, y: 100 });
+    expect(sceneAmbientPosition).toEqual({ x: 72, y: 42 });
+    expect(smoothPointerPosition({ x: 1, y: 1 }, { x: 1, y: 1 }, 16)).toEqual({ position: { x: 1, y: 1 }, settled: true });
+    expect(smoothPointerPosition({ x: 0, y: 0 }, { x: 100, y: 100 }, -1)).toEqual({ position: { x: 0, y: 0 }, settled: false });
+    expect(smoothPointerPosition({ x: 0, y: 0 }, { x: 100, y: 100 }, 100).position.x).toBeGreaterThan(50);
 
     const media = vi.fn((query: string) => ({ matches: query.includes("pointer: fine"), addEventListener: vi.fn(), removeEventListener: vi.fn() }));
-    let callback: FrameRequestCallback | undefined;
-    const request = vi.fn((handler: FrameRequestCallback) => { callback = handler; return 7; });
+    const callbacks: FrameRequestCallback[] = [];
+    const request = vi.fn((handler: FrameRequestCallback) => { callbacks.push(handler); return request.mock.calls.length; });
     const cancel = vi.fn();
     vi.stubGlobal("matchMedia", media);
     vi.stubGlobal("requestAnimationFrame", request);
@@ -257,21 +261,34 @@ describe("shared components", () => {
     base.dispatchEvent(new MouseEvent("pointermove", { clientX: 85, clientY: 70 }));
     base.dispatchEvent(new MouseEvent("pointermove", { clientX: 90, clientY: 80 }));
     expect(request).toHaveBeenCalledTimes(1);
-    callback?.(1);
+    callbacks.shift()?.(16);
+    expect(parseFloat(scene.style.getPropertyValue("--scene-pointer-x"))).toBeGreaterThan(72);
+    expect(parseFloat(scene.style.getPropertyValue("--scene-pointer-x"))).toBeLessThan(80);
+    expect(parseFloat(scene.style.getPropertyValue("--scene-pointer-y"))).toBeLessThan(42);
+    expect(callbacks).toHaveLength(1);
+    let timestamp = 16;
+    for (let index = 0; index < 200 && callbacks.length; index += 1) {
+      timestamp += 16;
+      callbacks.shift()?.(timestamp);
+    }
     expect(scene.style.getPropertyValue("--scene-pointer-x")).toBe("80%");
     expect(scene.style.getPropertyValue("--scene-pointer-y")).toBe("30%");
     base.dispatchEvent(new MouseEvent("pointerleave"));
+    for (let index = 0; index < 200 && callbacks.length; index += 1) {
+      timestamp += 16;
+      callbacks.shift()?.(timestamp);
+    }
     expect(scene.style.getPropertyValue("--scene-pointer-x")).toBe("");
+    expect(scene.style.getPropertyValue("--scene-pointer-y")).toBe("");
+    expect(cancel).not.toHaveBeenCalled();
 
     base.dispatchEvent(new MouseEvent("pointermove", { clientX: 50, clientY: 50 }));
-    base.dispatchEvent(new MouseEvent("pointerleave"));
-    callback?.(2);
-    expect(cancel).toHaveBeenCalledWith(7);
-    base.dispatchEvent(new MouseEvent("pointermove", { clientX: 50, clientY: 50 }));
+    const activeFrame = request.mock.results.at(-1)?.value;
     scene.remove();
-    expect(cancel).toHaveBeenCalledTimes(2);
+    expect(cancel).toHaveBeenCalledWith(activeFrame);
 
     const detached = new CourierScene();
+    (detached as unknown as { advance(timestamp: number): void }).advance(1);
     detached.disconnectedCallback();
   });
 
@@ -284,6 +301,7 @@ describe("shared components", () => {
     document.body.append(scene);
     await scene.updateComplete;
     scene.shadowRoot?.querySelector(".base")?.dispatchEvent(new MouseEvent("pointermove", { clientX: 1, clientY: 1 }));
+    scene.shadowRoot?.querySelector(".base")?.dispatchEvent(new MouseEvent("pointerleave"));
     expect(request).not.toHaveBeenCalled();
   });
 });

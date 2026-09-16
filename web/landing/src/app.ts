@@ -38,6 +38,12 @@ export interface RoutePair {
   readonly allowedFlags: readonly string[];
 }
 
+export interface EndpointPresentation {
+  readonly label: LandingMessage;
+  readonly description: LandingMessage;
+  readonly icon: IconName;
+}
+
 const primaryInstall = "curl -fsSL https://raw.githubusercontent.com/iwonz/courier/main/install.sh | sh";
 
 export const installs: readonly InstallChannel[] = [
@@ -60,20 +66,19 @@ const endpointSamples: Readonly<Record<string, Readonly<Record<"source" | "desti
   http: { source: "https://api.example.test/source", destination: "https://api.example.test/upload" },
 };
 
-const endpointMessages: Readonly<Record<string, LandingMessage>> = {
-  local: "endpointLocal",
-  ssh: "endpointSsh",
-  web: "endpointWeb",
-  webhook: "endpointWebhook",
-  http: "endpointHttp",
-};
-
-const endpointIcons: Readonly<Record<string, IconName>> = {
-  local: "folder",
-  ssh: "server",
-  web: "download",
-  webhook: "upload",
-  http: "upload",
+const endpointPresentations: Readonly<Record<"source" | "destination", Readonly<Record<string, EndpointPresentation>>>> = {
+  source: {
+    local: { label: "endpointLocal", description: "sourceLocalDescription", icon: "folder-out" },
+    ssh: { label: "endpointRemote", description: "sourceRemoteDescription", icon: "server-out" },
+    web: { label: "endpointWeb", description: "sourceWebDescription", icon: "browser-upload" },
+    webhook: { label: "endpointWebHook", description: "sourceWebHookDescription", icon: "webhook-in" },
+  },
+  destination: {
+    local: { label: "endpointLocal", description: "destinationLocalDescription", icon: "folder-in" },
+    ssh: { label: "endpointRemote", description: "destinationRemoteDescription", icon: "server-in" },
+    web: { label: "endpointWeb", description: "destinationWebDescription", icon: "browser-share" },
+    http: { label: "endpointWebHook", description: "destinationWebHookDescription", icon: "webhook-out" },
+  },
 };
 
 export function expandRoutePairs(routes: readonly LandingRoute[]): RoutePair[] {
@@ -89,12 +94,16 @@ export function endpointExample(name: string, side: "source" | "destination"): s
   return endpointSamples[name]?.[side] ?? name;
 }
 
-export function endpointMessage(name: string): LandingMessage | undefined {
-  return endpointMessages[name];
+export function endpointPresentation(name: string, side: "source" | "destination"): EndpointPresentation | undefined {
+  return endpointPresentations[side][name];
 }
 
-export function endpointIcon(name: string): IconName {
-  return endpointIcons[name] ?? "route";
+export function endpointMessage(name: string, side: "source" | "destination"): LandingMessage | undefined {
+  return endpointPresentation(name, side)?.label;
+}
+
+export function endpointIcon(name: string, side: "source" | "destination"): IconName {
+  return endpointPresentation(name, side)?.icon ?? "route";
 }
 
 export function applicableFlags(pair: RoutePair, flags: readonly LandingFlag[]): LandingFlag[] {
@@ -108,11 +117,22 @@ export function commandFlags(commandName: string, compatibleOnly: boolean, comma
   return flags.filter((flag) => names.includes(flag.name));
 }
 
+export async function copyText(text: string, clipboard: Pick<Clipboard, "writeText"> | undefined = globalThis.navigator.clipboard): Promise<boolean> {
+  if (!clipboard) return false;
+  try {
+    await clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const routePairs = expandRoutePairs(contractData.routes);
 const initialRoute = routePairs.find((pair) => pair.source === "local" && pair.destination === "ssh")!;
 const sourceEndpoints = [...new Set(routePairs.map((pair) => pair.source))];
 const destinationEndpoints = [...new Set(routePairs.map((pair) => pair.destination))];
 const heroPath = cubicBezierPath({ x: 54, y: 70 }, { x: 91, y: 38 });
+const heroMobilePath = cubicBezierPath({ x: 54, y: 70 }, { x: 88, y: 52 });
 
 export class CourierLandingApp extends LitElement {
   static properties = {
@@ -123,6 +143,7 @@ export class CourierLandingApp extends LitElement {
     activeSection: { state: true },
     selectedCommand: { state: true },
     compatibleOnly: { state: true },
+    copyState: { state: true },
   };
 
   static styles = landingStyles;
@@ -134,6 +155,7 @@ export class CourierLandingApp extends LitElement {
   private activeSection = "";
   private selectedCommand = "";
   private compatibleOnly = true;
+  private copyState: "idle" | "copied" | "failed" = "idle";
   private theme?: ThemeState;
   private resizeObserver?: ResizeObserver;
   private sectionObserver?: IntersectionObserver;
@@ -182,8 +204,13 @@ export class CourierLandingApp extends LitElement {
     return landingText(this.locale, message);
   }
 
-  private displayEndpoint(name: string): string {
-    const message = endpointMessage(name);
+  private displayEndpoint(name: string, side: "source" | "destination"): string {
+    const message = endpointMessage(name, side);
+    return message ? this.t(message) : name;
+  }
+
+  private describeEndpoint(name: string, side: "source" | "destination"): string {
+    const message = endpointPresentation(name, side)?.description;
     return message ? this.t(message) : name;
   }
 
@@ -237,6 +264,12 @@ export class CourierLandingApp extends LitElement {
 
   private chooseInstall(event: Event): void {
     this.activeInstall = (event.currentTarget as HTMLElement).dataset.channel!;
+    this.copyState = "idle";
+  }
+
+  private async copyInstall(): Promise<void> {
+    const install = installs.find((channel) => channel.name === this.activeInstall) ?? installs[0]!;
+    this.copyState = await copyText(install.command) ? "copied" : "failed";
   }
 
   private chooseCommand(event: Event): void {
@@ -264,15 +297,18 @@ export class CourierLandingApp extends LitElement {
     const valid = side === "source" || routePairs.some((pair) => pair.source === this.selectedSource && pair.destination === name);
     const selected = side === "source" ? name === this.selectedSource : name === this.selectedDestination;
     const handler = side === "source" ? this.chooseSource : this.chooseDestination;
+    const description = this.describeEndpoint(name, side);
     return html`<button
       type="button"
       class="endpoint ${selected ? "selected" : ""}"
       data-endpoint=${name}
       aria-pressed=${String(selected)}
       aria-disabled=${String(!valid)}
+      aria-label=${`${this.displayEndpoint(name, side)}: ${description}`}
+      title=${description}
       ?disabled=${!valid}
       @click=${handler}
-    ><courier-icon name=${endpointIcon(name)}></courier-icon><span>${this.displayEndpoint(name)}</span></button>`;
+    ><span class="endpoint-terminal" aria-hidden="true"><courier-icon name=${endpointIcon(name, side)}></courier-icon></span><span class="endpoint-name">${this.displayEndpoint(name, side)}</span></button>`;
   }
 
   render() {
@@ -290,7 +326,7 @@ export class CourierLandingApp extends LitElement {
             </nav>
           </div>
           <div class="header-actions">
-            <a class="github-link" href="https://github.com/iwonz/courier" aria-label=${this.t("githubLabel")}><courier-icon name="github"></courier-icon></a>
+            <a class="github-link" href="https://github.com/iwonz/courier" target="_blank" rel="noopener noreferrer" aria-label=${this.t("githubLabel")}><courier-icon name="github"></courier-icon></a>
             <div class="preferences"><courier-theme-selector .locale=${this.locale}></courier-theme-selector><courier-locale-selector @courier-locale-change=${this.setLocale}></courier-locale-selector></div>
           </div>
         </div>
@@ -300,8 +336,9 @@ export class CourierLandingApp extends LitElement {
         <section id="hero" class="slide hero-slide">
           <courier-scene eager .source=${relayHeroSource} .mobileSource=${relayHeroMobileSource}></courier-scene>
           <div class="hero-shade" aria-hidden="true"></div>
-          <svg class="hero-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d=${heroPath}></path><path class="signal" d=${heroPath}></path><circle cx="54" cy="70" r="0.8"></circle><circle cx="91" cy="38" r="0.8"></circle></svg>
-          <span class="hero-node source">Source</span><span class="hero-node destination">Destination</span>
+          <svg class="hero-route desktop-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d=${heroPath}></path><path class="signal" d=${heroPath}></path><g class="route-terminal source-terminal"><circle class="terminal-ring" cx="54" cy="70" r="1.45"></circle><circle class="terminal-core" cx="54" cy="70" r="0.46"></circle></g><g class="route-terminal destination-terminal"><circle class="terminal-ring" cx="91" cy="38" r="1.45"></circle><circle class="terminal-core" cx="91" cy="38" r="0.46"></circle></g></svg>
+          <svg class="hero-route mobile-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d=${heroMobilePath}></path><path class="signal" d=${heroMobilePath}></path><g class="route-terminal source-terminal"><circle class="terminal-ring" cx="54" cy="70" r="1.7"></circle><circle class="terminal-core" cx="54" cy="70" r="0.56"></circle></g><g class="route-terminal destination-terminal"><circle class="terminal-ring" cx="88" cy="52" r="1.7"></circle><circle class="terminal-core" cx="88" cy="52" r="0.56"></circle></g></svg>
+          <span class="hero-node source"><small>01</small><strong>Source</strong></span><span class="hero-node destination"><small>02</small><strong>Destination</strong></span>
           <div class="hero shell"><div class="hero-copy"><h1>${this.t("title")}</h1><p class="tagline">${this.t("tagline")}</p><p class="subline">${this.t("subline")}</p></div></div>
         </section>
 
@@ -315,7 +352,7 @@ export class CourierLandingApp extends LitElement {
                 <div class="endpoint-group source-endpoints"><span class="label">${this.t("sourceLabel")}</span>${sourceEndpoints.map((name) => this.renderEndpoint(name, "source"))}</div>
                 <div class="endpoint-group destination-endpoints"><span class="label">${this.t("destinationLabel")}</span>${destinationEndpoints.map((name) => this.renderEndpoint(name, "destination"))}</div>
               </div>
-              <div class="route-readout" aria-live="polite"><span class="label">${selected.routeName} · ${this.t("routeExample")}</span><code class="command-shape">courier <b>${this.t("from")}</b> ${endpointExample(selected.source, "source")} <b>${this.t("to")}</b> ${endpointExample(selected.destination, "destination")}</code><span class="label">${this.t("allowed")}</span><div class="flag-list">${flags.map((flag) => html`<span class="flag">${flag.syntax}</span>`)}</div></div>
+              <div class="route-readout" aria-live="polite"><span class="label">${selected.routeName} · ${this.t("routeExample")}</span><code class="command-shape">courier <b>${this.t("from")}</b> ${endpointExample(selected.source, "source")} <b>${this.t("to")}</b> ${endpointExample(selected.destination, "destination")}</code><div class="route-meaning"><span><b>Source</b>${this.describeEndpoint(selected.source, "source")}</span><span><b>Destination</b>${this.describeEndpoint(selected.destination, "destination")}</span></div><span class="label">${this.t("allowed")}</span><div class="flag-list">${flags.map((flag) => html`<span class="flag">${flag.syntax}</span>`)}</div></div>
             </div></div>
           </div>
         </section>
@@ -327,10 +364,10 @@ export class CourierLandingApp extends LitElement {
             <div class="install-board"><div class="install-interface">
               <span class="label install-label">${this.t("chooseChannel")}</span>
               <div class="install-channels" role="list">${installs.map((channel) => html`<button type="button" class="install-channel ${channel.name === install.name ? "selected" : ""}" data-channel=${channel.name} aria-pressed=${String(channel.name === install.name)} @click=${this.chooseInstall}><courier-brand-icon name=${channel.icon}></courier-brand-icon><span>${channel.name}</span></button>`)}</div>
-              <div class="install-readout" aria-live="polite"><div class="install-readout-head"><courier-brand-icon name=${install.icon}></courier-brand-icon><h3>${install.name}</h3></div><pre tabindex="0"><code>${install.command}</code></pre></div>
+              <div class="install-readout" aria-live="polite"><div class="install-readout-head"><div><courier-brand-icon name=${install.icon}></courier-brand-icon><h3>${install.name}</h3></div><button type="button" class="copy-command" aria-label=${`${this.t("copyCommand")}: ${install.name}`} title=${this.t("copyCommand")} @click=${this.copyInstall}><courier-icon name=${this.copyState === "copied" ? "check" : "copy"}></courier-icon><span>${this.t(this.copyState === "copied" ? "copiedCommand" : this.copyState === "failed" ? "copyFailed" : "copyCommand")}</span></button></div><pre tabindex="0"><code>${install.command}</code></pre><span class="copy-status" role="status">${this.copyState === "idle" ? nothing : this.t(this.copyState === "copied" ? "copiedCommand" : "copyFailed")}</span></div>
               <div class="install-actions">
-                <a class="download-channel" href="https://github.com/iwonz/courier/releases/latest"><courier-icon name="package"></courier-icon><div><h3>${this.t("packages")}</h3><p>${this.t("packagesDetail")}</p><span class="brand-cloud" aria-hidden="true">${(["linux", "ubuntu", "debian", "arch-linux", "manjaro", "fedora", "red-hat", "alpine-linux"] as BrandIconName[]).map((name) => html`<courier-brand-icon name=${name}></courier-brand-icon>`)}</span></div></a>
-                <a class="download-channel" href="https://github.com/iwonz/courier/releases/latest"><courier-icon name="download"></courier-icon><div><h3>${this.t("direct")}</h3><p>${this.t("directDetail")}</p></div></a>
+                <a class="download-channel" href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><courier-icon name="package"></courier-icon><div><h3>${this.t("packages")}</h3><p>${this.t("packagesDetail")}</p><span class="brand-cloud" aria-hidden="true">${(["linux", "ubuntu", "debian", "arch-linux", "manjaro", "fedora", "red-hat", "alpine-linux"] as BrandIconName[]).map((name) => html`<courier-brand-icon name=${name}></courier-brand-icon>`)}</span></div></a>
+                <a class="download-channel" href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><courier-icon name="download"></courier-icon><div><h3>${this.t("direct")}</h3><p>${this.t("directDetail")}</p></div></a>
               </div>
             </div></div>
           </div>

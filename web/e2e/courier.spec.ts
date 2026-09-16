@@ -26,7 +26,7 @@ async function exerciseThemes(page: Page, root: string): Promise<void> {
   await expect(page.locator("html")).toHaveAttribute("data-courier-theme", "dark");
 }
 
-test("landing preserves interaction and geometry across routes, channels, locales, themes, and viewports", async ({ page }) => {
+test("landing preserves interaction and geometry across routes, channels, locales, themes, and viewports", async ({ page, context }) => {
   const externalRequests: string[] = [];
   page.on("request", (request) => {
     const url = request.url();
@@ -39,8 +39,8 @@ test("landing preserves interaction and geometry across routes, channels, locale
   await expect(page.locator(`${root} h1`)).toHaveText("Move files. Keep control.");
   await expect(page.locator(`${root} section`)).toHaveCount(4);
   await expect(page.locator(`${root} footer, ${root} #hero button, ${root} #hero [aria-pressed]`)).toHaveCount(0);
-  await expect(page.locator(`${root} .hero-node.source`)).toHaveText("Source");
-  await expect(page.locator(`${root} .hero-node.destination`)).toHaveText("Destination");
+  await expect(page.locator(`${root} .hero-node.source strong`)).toHaveText("Source");
+  await expect(page.locator(`${root} .hero-node.destination strong`)).toHaveText("Destination");
   await expect(page.locator(`${root} .hero-route path`).first()).toHaveAttribute("d", / C /);
   await expect(page.locator(`${root} .route-connector path`)).toHaveAttribute("d", / C /);
   await expect(page.locator(`${root} courier-scene`)).toHaveCount(4);
@@ -48,7 +48,11 @@ test("landing preserves interaction and geometry across routes, channels, locale
   for (const image of await page.locator(`${root} courier-scene .base img`).all()) {
     await expect.poll(() => image.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBe(true);
   }
-  await expect(page.locator(root)).not.toContainText("Remote");
+  await expect(page.locator(`${root} .source-endpoints .endpoint-name`)).toHaveText(["Local", "Remote", "Web", "Web Hook"]);
+  await expect(page.locator(`${root} .destination-endpoints .endpoint-name`)).toHaveText(["Local", "Remote", "Web", "Web Hook"]);
+  expect(await page.locator(`${root} .source-endpoints courier-icon`).evaluateAll((icons) => icons.map((icon) => icon.getAttribute("name")))).toEqual(["folder-out", "server-out", "browser-upload", "webhook-in"]);
+  expect(await page.locator(`${root} .destination-endpoints courier-icon`).evaluateAll((icons) => icons.map((icon) => icon.getAttribute("name")))).toEqual(["folder-in", "server-in", "browser-share", "webhook-out"]);
+  expect(await page.locator(`${root} a[href^="https://"]`).evaluateAll((links) => links.every((link) => link.getAttribute("target") === "_blank" && link.getAttribute("rel") === "noopener noreferrer"))).toBe(true);
 
   const heroScene = page.locator(`${root} #hero courier-scene`);
   const baseTransform = await heroScene.locator(".base").evaluate((node) => getComputedStyle(node).transform);
@@ -78,6 +82,10 @@ test("landing preserves interaction and geometry across routes, channels, locale
   await expect(installCommand).toHaveText(initialInstall!);
   await npmChannel.press("Enter");
   await expect(installCommand).toHaveText("npm install --global @iwonz/courier");
+  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: "http://127.0.0.1:4173" });
+  await page.locator(`${root} .copy-command`).click();
+  await expect(page.locator(`${root} .copy-status`)).toHaveText("Copied");
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("npm install --global @iwonz/courier");
 
   const checkbox = page.locator(`${root} courier-checkbox input`);
   await expect(checkbox).toBeChecked();
@@ -133,6 +141,8 @@ test("landing preserves interaction and geometry across routes, channels, locale
     expect(Math.abs(readout.height - installReadoutBox.height)).toBeLessThanOrEqual(1);
   }
   await expect(page.locator(`${root} .install-channel courier-brand-icon`)).toHaveCount(9);
+  expect(await page.locator(`${root} .endpoint`).evaluateAll((buttons) => buttons.every((button) => button.getBoundingClientRect().height <= 44))).toBe(true);
+  expect(await page.locator(`${root} .install-channel`).evaluateAll((buttons) => buttons.every((button) => button.getBoundingClientRect().height <= 40))).toBe(true);
 
   await exerciseThemes(page, root);
   await expect(page.locator(`${root} courier-theme-selector select`)).toHaveCount(0);
@@ -146,7 +156,7 @@ test("landing preserves interaction and geometry across routes, channels, locale
   await expect(page.locator(`${root} h2`).filter({ hasText: "Установить Courier" })).toBeVisible();
   await expect(page.locator(`${root} .source-endpoints .label`)).toHaveText("Source");
   await expect(page.locator(`${root} .destination-endpoints .label`)).toHaveText("Destination");
-  await expect(page.locator(root)).not.toContainText("Remote");
+  await expect(page.locator(`${root} .source-endpoints .endpoint-name`)).toHaveText(["Local", "Remote", "Web", "Web Hook"]);
   await page.reload();
   await expect(page.locator(`${root} h2`).filter({ hasText: "Установить Courier" })).toBeVisible();
 

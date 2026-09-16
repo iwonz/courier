@@ -3,10 +3,12 @@ import "./main";
 import {
   applicableFlags,
   commandFlags,
+  copyText,
   CourierLandingApp,
   endpointExample,
   endpointIcon,
   endpointMessage,
+  endpointPresentation,
   expandRoutePairs,
   installs,
 } from "./app";
@@ -35,10 +37,13 @@ it("projects routes, endpoint vocabulary, exact route flags, and command compati
   expect(endpointExample("local", "source")).toBe("./project");
   expect(endpointExample("ssh", "destination")).toBe("relay@host:/srv/destination/");
   expect(endpointExample("future", "source")).toBe("future");
-  expect(endpointMessage("ssh")).toBe("endpointSsh");
-  expect(endpointMessage("future")).toBeUndefined();
-  expect(endpointIcon("webhook")).toBe("upload");
-  expect(endpointIcon("future")).toBe("route");
+  expect(endpointMessage("ssh", "source")).toBe("endpointRemote");
+  expect(endpointMessage("http", "destination")).toBe("endpointWebHook");
+  expect(endpointMessage("future", "source")).toBeUndefined();
+  expect(endpointPresentation("web", "source")).toEqual(expect.objectContaining({ icon: "browser-upload" }));
+  expect(endpointIcon("webhook", "source")).toBe("webhook-in");
+  expect(endpointIcon("http", "destination")).toBe("webhook-out");
+  expect(endpointIcon("future", "destination")).toBe("route");
 
   const localPair = pairs.find((pair) => pair.source === "local" && pair.destination === "local")!;
   const localFlags = applicableFlags(localPair, contractData.flags).map((flag) => flag.name);
@@ -54,6 +59,14 @@ it("projects routes, endpoint vocabulary, exact route flags, and command compati
   expect(commandFlags("servers", true, contractData.commands, contractData.flags)).toEqual([]);
   expect(commandFlags("unknown", true, contractData.commands, contractData.flags)).toEqual([]);
   expect(installs.map((install) => install.icon)).toEqual(["curl", "wget", "powershell", "npm", "npx", "yarn", "pnpm", "homebrew", "scoop"]);
+});
+
+it("copies exact commands and reports unavailable or rejected clipboard access", async () => {
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  await expect(copyText("courier", { writeText })).resolves.toBe(true);
+  expect(writeText).toHaveBeenCalledWith("courier");
+  await expect(copyText("courier", { writeText: vi.fn().mockRejectedValue(new Error("denied")) })).resolves.toBe(false);
+  await expect(copyText("courier", undefined)).resolves.toBe(false);
 });
 
 it("renders stable non-interactive scenes and activation-only route, install, and CLI controls", async () => {
@@ -91,7 +104,8 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   expect(text).toContain("path-to-path");
   expect(text).toContain("Source");
   expect(text).toContain("Destination");
-  expect(text).not.toContain("Remote");
+  expect(text).toContain("Remote");
+  expect(text).toContain("Web Hook");
   expect([...root.querySelectorAll("section")].map((section) => section.id)).toEqual(["hero", "routes", "install", "cli"]);
   expect(root.querySelectorAll("courier-scene")).toHaveLength(4);
   expect(root.querySelector("#hero button")).toBeNull();
@@ -101,6 +115,9 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   expect(root.querySelector(".route-connector path")?.getAttribute("d")).toContain(" C ");
   expect(resizeInstances[0]?.observe).toHaveBeenCalledTimes(2);
   expect(sectionInstances[0]?.observe).toHaveBeenCalledTimes(4);
+  expect(root.querySelector(".github-link")?.getAttribute("target")).toBe("_blank");
+  expect(root.querySelector(".github-link")?.getAttribute("rel")).toBe("noopener noreferrer");
+  expect([...root.querySelectorAll<HTMLAnchorElement>('a[href^="https://"]')].every((link) => link.target === "_blank" && link.rel === "noopener noreferrer")).toBe(true);
 
   const scenes = [...root.querySelectorAll("courier-scene")];
   await Promise.all(scenes.map((scene) => scene.updateComplete));
@@ -153,9 +170,24 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   install("Homebrew").click();
   await element.updateComplete;
   expect(installCommand()).toContain("brew tap iwonz/courier");
+  const clipboard = vi.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: clipboard } });
+  (root.querySelector(".copy-command") as HTMLButtonElement).click();
+  await vi.waitFor(() => expect(root.querySelector(".copy-status")?.textContent).toBe("Copied"));
+  expect(clipboard).toHaveBeenCalledWith(installCommand());
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: vi.fn().mockRejectedValue(new Error("denied")) } });
+  (root.querySelector(".copy-command") as HTMLButtonElement).click();
+  await vi.waitFor(() => expect(root.querySelector(".copy-status")?.textContent).toBe("Copy failed"));
+  install("npm").click();
+  await element.updateComplete;
+  expect(root.querySelector(".copy-status")?.textContent).toBe("");
   (element as unknown as { activeInstall: string }).activeInstall = "missing";
   await element.updateComplete;
   expect(installCommand()).toBe("curl -fsSL https://raw.githubusercontent.com/iwonz/courier/main/install.sh | sh");
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: clipboard } });
+  (root.querySelector(".copy-command") as HTMLButtonElement).click();
+  await vi.waitFor(() => expect(root.querySelector(".copy-status")?.textContent).toBe("Copied"));
+  expect(clipboard).toHaveBeenLastCalledWith(installCommand());
 
   const checkbox = root.querySelector("courier-checkbox")!;
   await checkbox.updateComplete;
@@ -201,15 +233,16 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   resizeInstances[0]!.callback([], {} as ResizeObserver);
   await element.updateComplete;
 
-  expect((element as unknown as { displayEndpoint(name: string): string }).displayEndpoint("future")).toBe("future");
+  expect((element as unknown as { displayEndpoint(name: string, side: "source" | "destination"): string }).displayEndpoint("future", "source")).toBe("future");
+  expect((element as unknown as { describeEndpoint(name: string, side: "source" | "destination"): string }).describeEndpoint("future", "destination")).toBe("future");
   element.setLocale(new CustomEvent("courier-locale", { detail: "ru" }));
   await element.updateComplete;
   expect(root.textContent).toContain("Переносите файлы. Сохраняйте контроль.");
   expect(root.textContent).toContain("Команда");
   expect(root.textContent).toContain("Source");
   expect(root.textContent).toContain("Destination");
-  expect(root.textContent).toContain("SSH");
-  expect(root.textContent).not.toContain("Remote");
+  expect(root.textContent).toContain("Remote");
+  expect(root.textContent).toContain("Web Hook");
 
   element.remove();
   expect(resizeInstances[0]?.disconnect).toHaveBeenCalledOnce();

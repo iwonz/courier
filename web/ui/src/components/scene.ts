@@ -5,6 +5,13 @@ export interface PointerPosition {
   readonly y: number;
 }
 
+export interface SmoothedPointer {
+  readonly position: PointerPosition;
+  readonly settled: boolean;
+}
+
+export const sceneAmbientPosition: PointerPosition = { x: 72, y: 42 };
+
 function clamp(value: number): number {
   return Math.min(100, Math.max(0, value));
 }
@@ -15,6 +22,17 @@ export function pointerPosition(bounds: Pick<DOMRect, "left" | "top" | "width" |
     x: clamp(((clientX - bounds.left) / bounds.width) * 100),
     y: clamp(((clientY - bounds.top) / bounds.height) * 100),
   };
+}
+
+export function smoothPointerPosition(current: PointerPosition, target: PointerPosition, elapsedMilliseconds: number): SmoothedPointer {
+  const elapsed = Math.min(64, Math.max(0, elapsedMilliseconds));
+  const factor = 1 - Math.exp(-elapsed / 72);
+  const position = {
+    x: current.x + (target.x - current.x) * factor,
+    y: current.y + (target.y - current.y) * factor,
+  };
+  const settled = Math.hypot(target.x - position.x, target.y - position.y) < 0.04;
+  return { position: settled ? target : position, settled };
 }
 
 export class CourierScene extends LitElement {
@@ -29,9 +47,9 @@ export class CourierScene extends LitElement {
     courier-mascot { position: absolute; inset: 0; width: 100%; height: 100%; }
     courier-mascot::part(image) { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.88) contrast(1.02); }
     .base { z-index: 0; transform: none; }
-    .refracted { z-index: 1; clip-path: ellipse(clamp(5rem, 12vw, 11rem) clamp(4rem, 10vw, 8.5rem) at var(--scene-pointer-x) var(--scene-pointer-y)); opacity: 0.74; transform: scale(1.018); transform-origin: var(--scene-pointer-x) var(--scene-pointer-y); filter: saturate(1.08) contrast(1.03); will-change: clip-path, transform; }
-    .glow { position: absolute; z-index: 2; inset: 0; background: radial-gradient(ellipse clamp(8rem, 23vw, 20rem) clamp(6rem, 17vw, 15rem) at var(--scene-pointer-x) var(--scene-pointer-y), color-mix(in srgb, var(--courier-signal, #d4ff45) 17%, transparent), transparent 66%), radial-gradient(ellipse clamp(5rem, 12vw, 10rem) clamp(8rem, 18vw, 15rem) at calc(var(--scene-pointer-x) + 3%) calc(var(--scene-pointer-y) - 2%), rgb(255 255 255 / 0.09), transparent 72%); mix-blend-mode: screen; pointer-events: none; }
-    .veil { position: absolute; z-index: 3; inset: 0; background: linear-gradient(90deg, rgb(10 12 10 / 0.14), transparent 28% 72%, rgb(10 12 10 / 0.24)), linear-gradient(180deg, color-mix(in srgb, var(--courier-color-canvas, #f3f4e9) 16%, transparent), transparent 25% 78%, rgb(10 12 10 / 0.3)); pointer-events: none; }
+    .refracted { z-index: 1; clip-path: ellipse(clamp(5rem, 11vw, 10rem) clamp(4rem, 9vw, 8rem) at var(--scene-pointer-x) var(--scene-pointer-y)); opacity: 0.62; transform: scale(1.012); transform-origin: var(--scene-pointer-x) var(--scene-pointer-y); filter: saturate(1.06) contrast(1.025); will-change: clip-path, transform; }
+    .glow { position: absolute; z-index: 2; inset: 0; background: radial-gradient(ellipse clamp(8rem, 22vw, 19rem) clamp(6rem, 16vw, 14rem) at var(--scene-pointer-x) var(--scene-pointer-y), color-mix(in srgb, var(--courier-signal, #d4ff45) 14%, transparent), transparent 67%), radial-gradient(ellipse clamp(5rem, 11vw, 9rem) clamp(8rem, 17vw, 14rem) at calc(var(--scene-pointer-x) + 3%) calc(var(--scene-pointer-y) - 2%), rgb(255 255 255 / 0.07), transparent 73%); mix-blend-mode: screen; pointer-events: none; }
+    .veil { position: absolute; z-index: 3; inset: 0; background: linear-gradient(90deg, rgb(8 10 8 / 0.1), transparent 28% 72%, rgb(8 10 8 / 0.16)), linear-gradient(180deg, rgb(8 10 8 / 0.08), transparent 23% 82%, rgb(8 10 8 / 0.22)); pointer-events: none; }
     @media (pointer: coarse), (hover: none) {
       :host { --scene-pointer-x: 68%; --scene-pointer-y: 40%; }
       .refracted { display: none; }
@@ -47,11 +65,16 @@ export class CourierScene extends LitElement {
   mobileSource = "";
   source = "";
   private frame = 0;
-  private pending?: PointerPosition;
+  private current: PointerPosition = sceneAmbientPosition;
+  private target?: PointerPosition;
+  private previousTimestamp?: number;
+  private returning = false;
 
   disconnectedCallback(): void {
     if (this.frame) globalThis.cancelAnimationFrame(this.frame);
     this.frame = 0;
+    this.target = undefined;
+    this.previousTimestamp = undefined;
     super.disconnectedCallback();
   }
 
@@ -61,23 +84,44 @@ export class CourierScene extends LitElement {
 
   private move(event: PointerEvent): void {
     if (!this.tracksPointer()) return;
-    this.pending = pointerPosition(this.getBoundingClientRect(), event.clientX, event.clientY);
-    if (this.frame) return;
-    this.frame = globalThis.requestAnimationFrame(() => {
-      this.frame = 0;
-      const position = this.pending;
-      if (!position) return;
-      this.style.setProperty("--scene-pointer-x", `${position.x}%`);
-      this.style.setProperty("--scene-pointer-y", `${position.y}%`);
-    });
+    this.target = pointerPosition(this.getBoundingClientRect(), event.clientX, event.clientY);
+    this.returning = false;
+    this.schedule();
   }
 
   private leave(): void {
-    this.pending = undefined;
-    if (this.frame) globalThis.cancelAnimationFrame(this.frame);
+    if (!this.tracksPointer()) return;
+    this.target = sceneAmbientPosition;
+    this.returning = true;
+    this.schedule();
+  }
+
+  private schedule(): void {
+    if (this.frame) return;
+    this.frame = globalThis.requestAnimationFrame((timestamp) => this.advance(timestamp));
+  }
+
+  private advance(timestamp: number): void {
     this.frame = 0;
-    this.style.removeProperty("--scene-pointer-x");
-    this.style.removeProperty("--scene-pointer-y");
+    const target = this.target;
+    if (!target) return;
+    const elapsed = this.previousTimestamp === undefined ? 16 : timestamp - this.previousTimestamp;
+    this.previousTimestamp = timestamp;
+    const next = smoothPointerPosition(this.current, target, elapsed);
+    this.current = next.position;
+    this.style.setProperty("--scene-pointer-x", `${this.current.x}%`);
+    this.style.setProperty("--scene-pointer-y", `${this.current.y}%`);
+    if (!next.settled) {
+      this.schedule();
+      return;
+    }
+    this.previousTimestamp = undefined;
+    if (this.returning) {
+      this.target = undefined;
+      this.returning = false;
+      this.style.removeProperty("--scene-pointer-x");
+      this.style.removeProperty("--scene-pointer-y");
+    }
   }
 
   protected render() {
