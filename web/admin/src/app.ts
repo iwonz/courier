@@ -1,6 +1,6 @@
 import { LitElement, css, html, nothing } from "lit";
 import { browserLocale, browserThemeState, defineCourierElements, formControlStyles, type Locale, type ThemeState } from "@courier/ui";
-import { relayOperationsSource } from "@courier/ui/relay-admin";
+import { relayOperationsMobileSource, relayOperationsSource } from "@courier/ui/relay-admin";
 import { loadServers, savePolicy, stopTarget, subscribeSnapshots, type Delivery, type Policy, type Server, type Snapshot } from "./api";
 import { adminText } from "./catalog";
 
@@ -69,6 +69,30 @@ export class CourierAdminApp extends LitElement {
     .state-art courier-mascot { position: absolute; inset: 0; width: 100%; height: 100%; }
     .state-art courier-mascot::part(image) { width: 100%; height: 100%; object-fit: cover; }
     .empty, .loading { display: grid; min-height: 13rem; place-items: center; border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-md); color: var(--courier-color-muted); background: var(--courier-color-surface-raised); font-family: var(--courier-font-mono); }
+    .page-scene { position: fixed; z-index: 0; inset: 0; }
+    main { position: relative; z-index: 2; }
+    :host { background: var(--courier-graphite-900); }
+    :host::after { content: ""; position: fixed; z-index: 1; inset: 0; background: linear-gradient(90deg, rgb(9 12 9 / 0.72), rgb(9 12 9 / 0.38) 60%, rgb(9 12 9 / 0.58)); pointer-events: none; }
+    header { color: var(--courier-paper-50); border-bottom-color: rgb(203 208 195 / 0.25); }
+    header courier-brand { --courier-color-text: var(--courier-paper-50); --courier-color-muted: #b9c0b1; }
+    .page-head { color: var(--courier-paper-50); border-bottom: 0; }
+    .page-head .intro { color: #cbd0c3; }
+    .registry-terminal, .server-terminal, .delivery-terminal, .state-brief, .loading { --courier-color-text: var(--courier-terminal-text); --courier-color-muted: var(--courier-terminal-muted); }
+    .metrics { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+    .metric { padding: 0.85rem 1rem; }
+    .metric + .metric { border-left-color: var(--courier-terminal-border); }
+    .metric strong { color: var(--courier-terminal-prompt); font-family: var(--courier-font-mono); font-size: 1.55rem; }
+    .server-list { gap: 0.75rem; }
+    .server { padding: 0.85rem; }
+    .server-head { padding-bottom: 0.75rem; border-bottom-color: var(--courier-terminal-border); }
+    article { padding: 0.75rem; border: 0; border-radius: 0; color: var(--courier-terminal-text); background: transparent; }
+    dl { border-color: var(--courier-terminal-border); }
+    dt, .bind { color: var(--courier-terminal-muted); }
+    form { padding-top: 0.25rem; }
+    label { color: var(--courier-terminal-muted); }
+    .state-brief { display: block; min-height: 0; }
+    .state-copy { min-height: 9rem; padding: 1.25rem; }
+    .loading { min-height: 10rem; padding: 1rem; }
     @media (max-width: 64rem) { form { grid-template-columns: repeat(2, minmax(10rem, 1fr)); } }
     @media (max-width: 44rem) {
       header { align-items: flex-start; padding: 1rem 0; }
@@ -160,6 +184,7 @@ export class CourierAdminApp extends LitElement {
     const source = item.source || this.t("unavailable");
     const destination = item.destination || this.t("unavailable");
     return html`
+      <courier-terminal class="delivery-terminal" .heading=${`${this.t("deliveries")} · ${item.route}`} .status=${item.state}>
       <article>
         <div class="row delivery-head"><div><span class="label">${this.t("deliveries")} · ${item.route}</span><strong class="delivery-id">${item.id}</strong></div><courier-button @click=${() => this.stop("deliveries", item.id)}>${this.t("stopDelivery")}</courier-button></div>
         <div class="route"><courier-route source=${source} destination=${destination}></courier-route></div>
@@ -176,13 +201,13 @@ export class CourierAdminApp extends LitElement {
           <label class="checkbox"><input name="noUi" type="checkbox" ?checked=${item.policy.noUi}><span>${this.t("noUi")}</span></label>
           <courier-button type="submit" variant="primary">${this.t("save")}</courier-button>
         </form>
-      </article>
+      </article></courier-terminal>
     `;
   }
 
   private server(item: Server) {
     return html`
-      <courier-panel>
+      <courier-terminal class="server-terminal" .heading=${this.t("server")} .status=${item.status}>
         <section class="server">
           <div class="server-head">
             <div class="server-title"><span class="label">${this.t("server")}</span><h2 class="server-id">${item.id}</h2><span class="bind"><courier-icon name="server"></courier-icon>${item.bind}</span></div>
@@ -191,7 +216,7 @@ export class CourierAdminApp extends LitElement {
           <span class="label">${this.t("deliveries")}</span>
           <div class="delivery-stack">${item.deliveries.map((delivery) => this.delivery(delivery))}</div>
         </section>
-      </courier-panel>
+      </courier-terminal>
     `;
   }
 
@@ -200,6 +225,7 @@ export class CourierAdminApp extends LitElement {
     const deliveries = servers.reduce((count, server) => count + server.deliveries.length, 0);
     const confirmed = servers.reduce((serverTotal, server) => serverTotal + server.deliveries.reduce((deliveryTotal, delivery) => deliveryTotal + delivery.counters.confirmed, 0), 0);
     return html`
+      <courier-scene class="page-scene" .source=${relayOperationsSource} .mobileSource=${relayOperationsMobileSource}></courier-scene>
       <main>
         <header>
           <courier-brand product=${this.t("brandProduct")}></courier-brand>
@@ -207,14 +233,14 @@ export class CourierAdminApp extends LitElement {
         </header>
         <div class="workspace">
           <div class="page-head"><div><span class="eyebrow">${this.t("eyebrow")}</span><h1>${this.t("title")}</h1><p class="intro">${this.t("intro")}</p></div><courier-status tone=${this.failed ? "danger" : "signal"}>${this.t(this.failed ? "unreachable" : "live")}</courier-status></div>
-          <div class="metrics">
+          <courier-terminal class="registry-terminal" .heading=${this.t("eyebrow")} .status=${this.failed ? this.t("unreachable") : this.t("live")}><div class="metrics">
             <div class="metric"><strong>${servers.length}</strong><span>${this.t("serversMetric")}</span></div>
             <div class="metric"><strong>${deliveries}</strong><span>${this.t("deliveriesMetric")}</span></div>
             <div class="metric"><strong>${confirmed}</strong><span>${this.t("confirmedMetric")}</span></div>
-          </div>
-          ${this.failed ? html`<div class="state-brief"><div class="state-copy"><span class="eyebrow">${this.t("unreachable")}</span><p role="alert">${this.t("failed")}</p><courier-button @click=${this.refresh}>${this.t("retry")}</courier-button></div><div class="state-art"><courier-mascot alt="" .source=${relayOperationsSource}></courier-mascot></div></div>` : nothing}
+          </div></courier-terminal>
+          ${this.failed ? html`<courier-terminal class="state-brief" .heading=${this.t("unreachable")} status="request failed"><div class="state-copy"><p role="alert">${this.t("failed")}</p><courier-button @click=${this.refresh}>${this.t("retry")}</courier-button></div></courier-terminal>` : nothing}
           ${this.conflict ? html`<div class="notice"><p role="alert">${this.t("conflict")}</p><courier-button @click=${this.refresh}>${this.t("refresh")}</courier-button></div>` : nothing}
-          ${this.snapshot ? servers.length === 0 ? html`<div class="state-brief"><div class="state-copy"><span class="eyebrow">${this.t("live")}</span><p>${this.t("empty")}</p></div><div class="state-art"><courier-mascot alt="" .source=${relayOperationsSource}></courier-mascot></div></div>` : html`<div class="server-list">${servers.map((server) => this.server(server))}</div>` : !this.failed ? html`<div class="loading"><courier-status>${this.t("loading")}</courier-status></div>` : nothing}
+          ${this.snapshot ? servers.length === 0 ? html`<courier-terminal class="state-brief" .heading=${this.t("live")} status="exit 0"><div class="state-copy"><p>${this.t("empty")}</p></div></courier-terminal>` : html`<div class="server-list">${servers.map((server) => this.server(server))}</div>` : !this.failed ? html`<courier-terminal class="loading" .heading=${this.t("eyebrow")} status="running"><courier-status>${this.t("loading")}</courier-status></courier-terminal>` : nothing}
         </div>
       </main>
     `;

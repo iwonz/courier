@@ -7,6 +7,7 @@ import { CourierPanel } from "./components/panel";
 import { CourierProgress } from "./components/progress";
 import { CourierSegmentedControl } from "./components/segmented-control";
 import { CourierThemeSelector } from "./components/theme-selector";
+import { CourierCommandDemo, CourierTerminal } from "./components/terminal";
 import { CourierScene } from "./components/scene";
 import { CourierIcon } from "./icons";
 
@@ -30,6 +31,8 @@ const elements = {
   "courier-segmented-control": CourierSegmentedControl,
   "courier-status": CourierStatus,
   "courier-theme-selector": CourierThemeSelector,
+  "courier-terminal": CourierTerminal,
+  "courier-command-demo": CourierCommandDemo,
 } as const;
 
 export function defineCourierElements(registry: ElementRegistry = customElements): void {

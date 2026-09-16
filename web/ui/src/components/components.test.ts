@@ -9,11 +9,12 @@ import { CourierProgress, progressRatio } from "./progress";
 import { CourierSegmentedControl, nextSegmentIndex } from "./segmented-control";
 import { CourierThemeSelector } from "./theme-selector";
 import { CourierScene, pointerPosition, sceneAmbientPosition, smoothPointerPosition } from "./scene";
+import { CourierCommandDemo, CourierTerminal, terminalTimestamp, type TerminalStep } from "./terminal";
 import { defineCourierElements, type ElementRegistry } from "../define";
 import { cubicBezierPath } from "../geometry";
 import { CourierIcon, iconNames, resolveIcon } from "../icons";
-import { relayOperationsSource } from "../relay-admin";
-import { relayAccessSource } from "../relay-delivery";
+import { relayOperationsMobileSource, relayOperationsSource } from "../relay-admin";
+import { relayAccessMobileSource, relayAccessSource } from "../relay-delivery";
 import {
   relayCliMobileSource,
   relayCliSource,
@@ -46,10 +47,10 @@ describe("element registry", () => {
     };
     defineCourierElements(registry);
     expect([...values.keys()].sort()).toEqual([
-      "courier-brand", "courier-brand-icon", "courier-button", "courier-checkbox", "courier-icon", "courier-locale-selector", "courier-mascot", "courier-panel", "courier-progress", "courier-route", "courier-scene", "courier-segmented-control", "courier-status", "courier-theme-selector",
+      "courier-brand", "courier-brand-icon", "courier-button", "courier-checkbox", "courier-command-demo", "courier-icon", "courier-locale-selector", "courier-mascot", "courier-panel", "courier-progress", "courier-route", "courier-scene", "courier-segmented-control", "courier-status", "courier-terminal", "courier-theme-selector",
     ]);
     defineCourierElements(registry);
-    expect(values.size).toBe(14);
+    expect(values.size).toBe(16);
   });
 });
 
@@ -102,7 +103,7 @@ describe("shared components", () => {
     expect(mascot.shadowRoot?.querySelector("img")?.src).toContain("relay-mascot");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("loading")).toBe("eager");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("high");
-    expect(mascot.shadowRoot?.querySelector("source")?.srcset).toContain("relay-hero-mobile");
+    expect(mascot.shadowRoot?.querySelector("source")?.srcset).toContain("relay-terminal-hero-mobile");
     mascot.mobileSource = "";
     mascot.eager = false;
     await mascot.updateComplete;
@@ -111,10 +112,10 @@ describe("shared components", () => {
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("auto");
 
     expect([
-      relayAccessSource, relayCliMobileSource, relayCliSource,
+      relayAccessMobileSource, relayAccessSource, relayCliMobileSource, relayCliSource,
       relayHeroMobileSource, relayHeroSource, relayInstallMobileSource,
-      relayInstallSource, relayOperationsSource, relayRoutingMobileSource, relayRoutingSource,
-    ].every((source) => source.includes("relay-") || source.includes("readme-route"))).toBe(true);
+      relayInstallSource, relayOperationsMobileSource, relayOperationsSource, relayRoutingMobileSource, relayRoutingSource,
+    ].every((source) => source.includes("relay-terminal-"))).toBe(true);
 
     const route = document.createElement("courier-route") as CourierRoute;
     route.source = "./data";
@@ -124,6 +125,8 @@ describe("shared components", () => {
     expect(route.shadowRoot?.textContent).toContain("./data");
     expect(route.shadowRoot?.textContent).toContain("server:/data");
     expect(route.shadowRoot?.querySelector("path")?.getAttribute("d")).toContain(" C ");
+    expect(route.shadowRoot?.querySelector("svg circle")).toBeNull();
+    expect(route.shadowRoot?.querySelectorAll(".terminal")).toHaveLength(2);
 
     const status = document.createElement("courier-status") as CourierStatus;
     status.tone = "signal";
@@ -258,8 +261,9 @@ describe("shared components", () => {
     const base = scene.shadowRoot?.querySelector(".base") as HTMLElement;
     expect(base.getAttribute("style")).toBeNull();
     expect(scene.shadowRoot?.querySelectorAll("courier-mascot")).toHaveLength(2);
-    base.dispatchEvent(new MouseEvent("pointermove", { clientX: 85, clientY: 70 }));
-    base.dispatchEvent(new MouseEvent("pointermove", { clientX: 90, clientY: 80 }));
+    expect((CourierScene.styles as { cssText: string }).cssText).toContain("pointer-events: none");
+    scene.dispatchEvent(new MouseEvent("pointermove", { clientX: 85, clientY: 70 }));
+    scene.dispatchEvent(new MouseEvent("pointermove", { clientX: 90, clientY: 80 }));
     expect(request).toHaveBeenCalledTimes(1);
     callbacks.shift()?.(16);
     expect(parseFloat(scene.style.getPropertyValue("--scene-pointer-x"))).toBeGreaterThan(72);
@@ -273,7 +277,7 @@ describe("shared components", () => {
     }
     expect(scene.style.getPropertyValue("--scene-pointer-x")).toBe("80%");
     expect(scene.style.getPropertyValue("--scene-pointer-y")).toBe("30%");
-    base.dispatchEvent(new MouseEvent("pointerleave"));
+    scene.dispatchEvent(new MouseEvent("pointerleave"));
     for (let index = 0; index < 200 && callbacks.length; index += 1) {
       timestamp += 16;
       callbacks.shift()?.(timestamp);
@@ -282,7 +286,7 @@ describe("shared components", () => {
     expect(scene.style.getPropertyValue("--scene-pointer-y")).toBe("");
     expect(cancel).not.toHaveBeenCalled();
 
-    base.dispatchEvent(new MouseEvent("pointermove", { clientX: 50, clientY: 50 }));
+    scene.dispatchEvent(new MouseEvent("pointermove", { clientX: 50, clientY: 50 }));
     const activeFrame = request.mock.results.at(-1)?.value;
     scene.remove();
     expect(cancel).toHaveBeenCalledWith(activeFrame);
@@ -300,9 +304,105 @@ describe("shared components", () => {
     const scene = document.createElement("courier-scene") as CourierScene;
     document.body.append(scene);
     await scene.updateComplete;
-    scene.shadowRoot?.querySelector(".base")?.dispatchEvent(new MouseEvent("pointermove", { clientX: 1, clientY: 1 }));
-    scene.shadowRoot?.querySelector(".base")?.dispatchEvent(new MouseEvent("pointerleave"));
+    scene.dispatchEvent(new MouseEvent("pointermove", { clientX: 1, clientY: 1 }));
+    scene.dispatchEvent(new MouseEvent("pointerleave"));
     expect(request).not.toHaveBeenCalled();
+  });
+
+  it("runs immutable terminal demos, reports copy outcomes, and cleans timers", async () => {
+    vi.useFakeTimers();
+    expect(terminalTimestamp(-2)).toBe("00:00");
+    expect(terminalTimestamp(4)).toBe("00:08");
+
+    const terminal = document.createElement("courier-terminal") as CourierTerminal;
+    terminal.heading = "Preview";
+    terminal.status = "ready";
+    terminal.textContent = "Transcript";
+    document.body.append(terminal);
+    await terminal.updateComplete;
+    expect(terminal.shadowRoot?.textContent).toContain("Preview");
+    expect(terminal.shadowRoot?.textContent).toContain("ready");
+    terminal.status = "";
+    await terminal.updateComplete;
+    expect(terminal.shadowRoot?.querySelector(".status")).toBeNull();
+
+    const steps: readonly TerminalStep[] = [
+      { label: "Preflight", detail: "Preview only", tone: "signal" },
+      { label: "Verify", detail: "No data leaves the page", tone: "warning" },
+      { label: "Complete", tone: "success" },
+    ];
+    const demo = document.createElement("courier-command-demo") as CourierCommandDemo;
+    demo.command = "courier from ./data to ./backup";
+    demo.description = "Deterministic preview";
+    demo.steps = steps;
+    demo.interval = -1;
+    demo.clipboard = { writeText: vi.fn().mockResolvedValue(undefined) };
+    document.body.append(demo);
+    await demo.updateComplete;
+    expect(demo.shadowRoot?.querySelector("input, textarea, [contenteditable]")).toBeNull();
+    expect(demo.shadowRoot?.textContent).toContain(demo.command);
+    await demo.copyCommand();
+    await demo.updateComplete;
+    expect(demo.shadowRoot?.textContent).toContain("Copied");
+    demo.run();
+    await demo.updateComplete;
+    expect(demo.phase).toBe("running");
+    expect(demo.shadowRoot?.querySelectorAll("li")).toHaveLength(1);
+    await vi.runAllTimersAsync();
+    await demo.updateComplete;
+    expect(demo.phase).toBe("complete");
+    expect(demo.shadowRoot?.querySelectorAll("li")).toHaveLength(3);
+    const demoTerminal = demo.shadowRoot?.querySelector("courier-terminal") as CourierTerminal;
+    await demoTerminal.updateComplete;
+    expect(demoTerminal.shadowRoot?.textContent).toContain("exit 0");
+
+    demo.steps = [{ label: "Only" }];
+    demo.run();
+    await demo.updateComplete;
+    expect(demo.phase).toBe("complete");
+    demo.clipboard = { writeText: vi.fn().mockRejectedValue(new Error("denied")) };
+    await demo.copyCommand();
+    await demo.updateComplete;
+    expect(demo.shadowRoot?.textContent).toContain("Copy failed");
+
+    demo.command = "";
+    await demo.copyCommand();
+    demo.run();
+    await demo.updateComplete;
+    expect(demo.phase).toBe("idle");
+    expect(demo.shadowRoot?.querySelector("button")?.disabled).toBe(true);
+    demo.command = "courier help";
+    demo.steps = [];
+    demo.run();
+    expect(demo.phase).toBe("idle");
+
+    demo.command = "courier version";
+    demo.steps = steps;
+    demo.sessionKey = "version";
+    await demo.updateComplete;
+    expect(demo.phase).toBe("idle");
+    demo.run();
+    const clear = vi.spyOn(globalThis, "clearTimeout");
+    demo.reset();
+    expect(clear).toHaveBeenCalled();
+    demo.run();
+    demo.remove();
+    expect(clear).toHaveBeenCalledTimes(2);
+
+    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+    const reduced = new CourierCommandDemo();
+    reduced.command = "courier help";
+    reduced.steps = steps;
+    reduced.run();
+    expect(reduced.phase).toBe("complete");
+
+    const noClipboard = new CourierCommandDemo();
+    noClipboard.command = "courier help";
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+    await noClipboard.copyCommand();
+    expect(noClipboard.render()).toBeTruthy();
+    noClipboard.disconnectedCallback();
+    vi.useRealTimers();
   });
 });
 

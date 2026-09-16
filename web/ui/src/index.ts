@@ -10,6 +10,7 @@ export * from "./components/progress";
 export * from "./components/segmented-control";
 export * from "./components/scene";
 export * from "./components/theme-selector";
+export * from "./components/terminal";
 export * from "./define";
 export * from "./i18n";
 export * from "./icons";

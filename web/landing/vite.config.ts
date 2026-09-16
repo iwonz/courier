@@ -16,9 +16,7 @@ export default defineConfig({
       output: {
         entryFileNames: "assets/landing.js",
         chunkFileNames: "assets/[name].js",
-        assetFileNames: ({ names }) => names.some((name) => name.endsWith(".svg"))
-          ? "assets/landing-[name][extname]"
-          : "assets/landing[extname]",
+        assetFileNames: "assets/landing-[name][extname]",
       },
     },
   },

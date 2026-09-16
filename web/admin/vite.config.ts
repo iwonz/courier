@@ -16,9 +16,7 @@ export default defineConfig({
       output: {
         entryFileNames: "assets/admin.js",
         chunkFileNames: "assets/[name].js",
-        assetFileNames: ({ names }) => names.some((name) => name.endsWith(".svg"))
-          ? "assets/admin-[name][extname]"
-          : "assets/admin[extname]",
+        assetFileNames: "assets/admin-[name][extname]",
       },
     },
   },

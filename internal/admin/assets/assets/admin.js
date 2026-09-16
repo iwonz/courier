@@ -187,7 +187,7 @@
     :host { display: inline-flex; width: 1.5rem; height: 1.5rem; color: currentColor; }
     svg, .mask { display: block; width: 100%; height: 100%; }
     .mask { background: currentColor; mask: var(--brand-mask) center / contain no-repeat; -webkit-mask: var(--brand-mask) center / contain no-repeat; }
-  `}render(){let e=ze[Be(this.name)],t=this.label||void 0;return e.kind===`glyph`?F`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter" role=${t?`img`:`presentation`} aria-label=${t} aria-hidden=${t?`false`:`true`}><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"></path></svg>`:F`<span class="mask" style=${`--brand-mask: url("${e.source}")`} role=${t?`img`:`presentation`} aria-label=${t} aria-hidden=${t?`false`:`true`}></span>`}},He=`/assets/admin.png`;function K(e){return Number(e.toFixed(2)).toString()}function Ue(e,t){if(![e.x,e.y,t.x,t.y].every(Number.isFinite))throw TypeError(`Bezier coordinates must be finite`);let n=Math.abs(t.x-e.x),r=Math.max(32,n*.42),i=t.x>=e.x?1:-1,a=e.x+r*i,o=t.x-r*i;return`M ${K(e.x)} ${K(e.y)} C ${K(a)} ${K(e.y)}, ${K(o)} ${K(t.y)}, ${K(t.x)} ${K(t.y)}`}var We=class extends W{constructor(...e){super(...e),this.product=``}static{this.properties={product:{type:String}}}static{this.styles=o`
+  `}render(){let e=ze[Be(this.name)],t=this.label||void 0;return e.kind===`glyph`?F`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter" role=${t?`img`:`presentation`} aria-label=${t} aria-hidden=${t?`false`:`true`}><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"></path></svg>`:F`<span class="mask" style=${`--brand-mask: url("${e.source}")`} role=${t?`img`:`presentation`} aria-label=${t} aria-hidden=${t?`false`:`true`}></span>`}},He=`/assets/admin-relay-mark.png`;function K(e){return Number(e.toFixed(2)).toString()}function Ue(e,t){if(![e.x,e.y,t.x,t.y].every(Number.isFinite))throw TypeError(`Bezier coordinates must be finite`);let n=Math.abs(t.x-e.x),r=Math.max(32,n*.42),i=t.x>=e.x?1:-1,a=e.x+r*i,o=t.x-r*i;return`M ${K(e.x)} ${K(e.y)} C ${K(a)} ${K(e.y)}, ${K(o)} ${K(t.y)}, ${K(t.x)} ${K(t.y)}`}var We=class extends W{constructor(...e){super(...e),this.product=``}static{this.properties={product:{type:String}}}static{this.styles=o`
     :host { display: inline-flex; min-width: 0; color: var(--courier-color-text, #151714); font-family: var(--courier-font-sans, sans-serif); }
     .lockup { display: inline-flex; min-width: 0; align-items: center; gap: 0.625rem; color: inherit; }
     img { flex: 0 0 auto; width: 2.5rem; height: 2.5rem; object-fit: contain; filter: drop-shadow(0 0.3rem 0.45rem rgb(16 18 15 / 0.16)); }
@@ -222,10 +222,13 @@
     :host { display: grid; color: var(--courier-color-text, #151714); font-family: var(--courier-font-mono, monospace); }
     .route { display: grid; grid-template-columns: minmax(0, 1fr) minmax(3rem, 0.55fr) minmax(0, 1fr); align-items: center; gap: 0.65rem; }
     .node { overflow: hidden; padding: 0.65rem 0.75rem; border: 1px solid var(--courier-color-border, #c8cdbf); border-radius: var(--courier-radius-sm, 0.25rem); background: var(--courier-color-surface, #fafbf3); font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
-    svg { width: 100%; height: 2rem; overflow: visible; color: var(--courier-color-border-strong, #8e9587); }
+    .connector { position: relative; height: 2rem; }
+    svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; color: var(--courier-color-border-strong, #8e9587); }
     path { fill: none; stroke: currentColor; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-    circle { fill: var(--courier-color-accent, #d4ff45); }
-  `}render(){let e=Ue({x:1,y:15},{x:99,y:15});return F`<div class="route"><span class="node">${this.source}</span><svg viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path d=${e}></path><circle cx="1" cy="15" r="2.4"></circle><circle cx="99" cy="15" r="2.4"></circle></svg><span class="node">${this.destination}</span></div>`}},Je=class extends W{constructor(...e){super(...e),this.checked=!1,this.disabled=!1,this.label=``}static{this.properties={checked:{type:Boolean,reflect:!0},disabled:{type:Boolean,reflect:!0},label:{type:String}}}static{this.styles=o`
+    .terminal { position: absolute; top: 50%; width: 0.65rem; height: 0.65rem; aspect-ratio: 1; border: 2px solid var(--courier-color-accent, #d4ff45); border-radius: 50%; background: var(--courier-graphite-900, #151714); box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--courier-color-accent, #d4ff45) 14%, transparent); transform: translateY(-50%); }
+    .terminal.source { left: 0; transform: translate(-50%, -50%); }
+    .terminal.destination { right: 0; transform: translate(50%, -50%); }
+  `}render(){let e=Ue({x:1,y:15},{x:99,y:15});return F`<div class="route"><span class="node">${this.source}</span><span class="connector" aria-hidden="true"><svg viewBox="0 0 100 30" preserveAspectRatio="none"><path d=${e}></path></svg><i class="terminal source"></i><i class="terminal destination"></i></span><span class="node">${this.destination}</span></div>`}},Je=class extends W{constructor(...e){super(...e),this.checked=!1,this.disabled=!1,this.label=``}static{this.properties={checked:{type:Boolean,reflect:!0},disabled:{type:Boolean,reflect:!0},label:{type:String}}}static{this.styles=o`
     :host { display: inline-flex; min-width: 0; color: inherit; font-family: var(--courier-font-sans, sans-serif); }
     label { display: inline-grid; min-width: 0; grid-template-columns: 1.25rem minmax(0, 1fr); align-items: center; gap: 0.55rem; color: inherit; font-size: 0.75rem; font-weight: 720; line-height: 1.25; cursor: pointer; }
     input { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -330,30 +333,136 @@
             @keydown=${this.move}
           >${e.icon?F`<courier-icon name=${e.icon}></courier-icon>`:``}${e.symbol?F`<span class="symbol" aria-hidden="true">${e.symbol}</span>`:``}${this.iconOnly?``:F`<span>${e.label}</span>`}</button>`})}
       </div>
-    </fieldset>`}},ot={x:72,y:42};function st(e){return Math.min(100,Math.max(0,e))}function ct(e,t,n){return e.width<=0||e.height<=0?{x:50,y:50}:{x:st((t-e.left)/e.width*100),y:st((n-e.top)/e.height*100)}}function lt(e,t,n){let r=1-Math.exp(-Math.min(64,Math.max(0,n))/72),i={x:e.x+(t.x-e.x)*r,y:e.y+(t.y-e.y)*r},a=Math.hypot(t.x-i.x,t.y-i.y)<.04;return{position:a?t:i,settled:a}}var ut=class extends W{constructor(...e){super(...e),this.eager=!1,this.mobileSource=``,this.source=``,this.frame=0,this.current=ot,this.returning=!1}static{this.properties={eager:{type:Boolean},mobileSource:{type:String,attribute:`mobile-source`},source:{type:String}}}static{this.styles=o`
+    </fieldset>`}},ot={x:72,y:42};function st(e){return Math.min(100,Math.max(0,e))}function ct(e,t,n){return e.width<=0||e.height<=0?{x:50,y:50}:{x:st((t-e.left)/e.width*100),y:st((n-e.top)/e.height*100)}}function lt(e,t,n){let r=1-Math.exp(-Math.min(48,Math.max(0,n))/42),i={x:e.x+(t.x-e.x)*r,y:e.y+(t.y-e.y)*r},a=Math.hypot(t.x-i.x,t.y-i.y)<.04;return{position:a?t:i,settled:a}}var ut=class extends W{constructor(...e){super(...e),this.eager=!1,this.mobileSource=``,this.source=``,this.frame=0,this.current=ot,this.returning=!1,this.handlePointerMove=e=>this.move(e),this.handlePointerLeave=()=>this.leave()}static{this.properties={eager:{type:Boolean},mobileSource:{type:String,attribute:`mobile-source`},source:{type:String}}}static{this.styles=o`
     :host { --scene-pointer-x: 72%; --scene-pointer-y: 42%; position: absolute; display: block; inset: 0; overflow: hidden; background: var(--courier-graphite-900, #151714); pointer-events: auto; isolation: isolate; }
-    courier-mascot { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .tracking { position: absolute; inset: 0; }
+    courier-mascot { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
     courier-mascot::part(image) { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.88) contrast(1.02); }
     .base { z-index: 0; transform: none; }
-    .refracted { z-index: 1; clip-path: ellipse(clamp(5rem, 11vw, 10rem) clamp(4rem, 9vw, 8rem) at var(--scene-pointer-x) var(--scene-pointer-y)); opacity: 0.62; transform: scale(1.012); transform-origin: var(--scene-pointer-x) var(--scene-pointer-y); filter: saturate(1.06) contrast(1.025); will-change: clip-path, transform; }
-    .glow { position: absolute; z-index: 2; inset: 0; background: radial-gradient(ellipse clamp(8rem, 22vw, 19rem) clamp(6rem, 16vw, 14rem) at var(--scene-pointer-x) var(--scene-pointer-y), color-mix(in srgb, var(--courier-signal, #d4ff45) 14%, transparent), transparent 67%), radial-gradient(ellipse clamp(5rem, 11vw, 9rem) clamp(8rem, 17vw, 14rem) at calc(var(--scene-pointer-x) + 3%) calc(var(--scene-pointer-y) - 2%), rgb(255 255 255 / 0.07), transparent 73%); mix-blend-mode: screen; pointer-events: none; }
+    .refracted { z-index: 1; opacity: 0.56; transform: scale(1.009); transform-origin: var(--scene-pointer-x) var(--scene-pointer-y); filter: saturate(1.055) contrast(1.02); mask-image: radial-gradient(circle clamp(3.8rem, 8vw, 7.2rem) at var(--scene-pointer-x) var(--scene-pointer-y), #000 36%, transparent 72%), radial-gradient(circle clamp(2.8rem, 6vw, 5.4rem) at calc(var(--scene-pointer-x) - 4.5%) calc(var(--scene-pointer-y) + 2.5%), #000 32%, transparent 74%), radial-gradient(circle clamp(2.4rem, 5vw, 4.8rem) at calc(var(--scene-pointer-x) + 4%) calc(var(--scene-pointer-y) - 3.5%), #000 30%, transparent 72%); mask-repeat: no-repeat; will-change: mask-position, transform; animation: scene-lobes 7s ease-in-out infinite alternate; }
+    .glow { position: absolute; z-index: 2; inset: 0; background: radial-gradient(circle clamp(8rem, 20vw, 18rem) at var(--scene-pointer-x) var(--scene-pointer-y), color-mix(in srgb, var(--courier-signal, #d4ff45) 13%, transparent), transparent 68%), radial-gradient(circle clamp(4rem, 9vw, 8rem) at calc(var(--scene-pointer-x) - 5%) calc(var(--scene-pointer-y) + 4%), rgb(255 255 255 / 0.065), transparent 72%), radial-gradient(circle clamp(3rem, 7vw, 6rem) at calc(var(--scene-pointer-x) + 6%) calc(var(--scene-pointer-y) - 5%), color-mix(in srgb, var(--courier-beak, #ff8758) 5%, transparent), transparent 76%); filter: blur(0.55rem); mix-blend-mode: screen; pointer-events: none; animation: scene-glow 8s ease-in-out infinite alternate; }
     .veil { position: absolute; z-index: 3; inset: 0; background: linear-gradient(90deg, rgb(8 10 8 / 0.1), transparent 28% 72%, rgb(8 10 8 / 0.16)), linear-gradient(180deg, rgb(8 10 8 / 0.08), transparent 23% 82%, rgb(8 10 8 / 0.22)); pointer-events: none; }
+    @keyframes scene-lobes { to { filter: saturate(1.06) contrast(1.025) blur(0.08rem); } }
+    @keyframes scene-glow { to { opacity: 0.86; } }
     @media (pointer: coarse), (hover: none) {
       :host { --scene-pointer-x: 68%; --scene-pointer-y: 40%; }
       .refracted { display: none; }
-      .glow { opacity: 0.74; }
+      .glow { opacity: 0.74; animation: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       .refracted { display: none; }
-      .glow { opacity: 0.68; }
+      .glow { opacity: 0.68; animation: none; }
     }
-  `}disconnectedCallback(){this.frame&&globalThis.cancelAnimationFrame(this.frame),this.frame=0,this.target=void 0,this.previousTimestamp=void 0,super.disconnectedCallback()}tracksPointer(){return globalThis.matchMedia?.(`(hover: hover) and (pointer: fine)`).matches===!0&&!globalThis.matchMedia?.(`(prefers-reduced-motion: reduce)`).matches}move(e){this.tracksPointer()&&(this.target=ct(this.getBoundingClientRect(),e.clientX,e.clientY),this.returning=!1,this.schedule())}leave(){this.tracksPointer()&&(this.target=ot,this.returning=!0,this.schedule())}schedule(){this.frame||=globalThis.requestAnimationFrame(e=>this.advance(e))}advance(e){this.frame=0;let t=this.target;if(!t)return;let n=this.previousTimestamp===void 0?16:e-this.previousTimestamp;this.previousTimestamp=e;let r=lt(this.current,t,n);if(this.current=r.position,this.style.setProperty(`--scene-pointer-x`,`${this.current.x}%`),this.style.setProperty(`--scene-pointer-y`,`${this.current.y}%`),!r.settled){this.schedule();return}this.previousTimestamp=void 0,this.returning&&(this.target=void 0,this.returning=!1,this.style.removeProperty(`--scene-pointer-x`),this.style.removeProperty(`--scene-pointer-y`))}render(){return F`<courier-mascot class="base" ?eager=${this.eager} alt="" .source=${this.source} .mobileSource=${this.mobileSource} @pointermove=${this.move} @pointerleave=${this.leave}></courier-mascot><courier-mascot class="refracted" aria-hidden="true" alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot><span class="glow" aria-hidden="true"></span><span class="veil" aria-hidden="true"></span>`}},dt=[`system`,`light`,`dark`],ft=`courier.theme`;function pt(e){return dt.includes(e)?e:`system`}function mt(e,t){return e===`system`?t?.matches?`dark`:`light`:e}function ht(e){if(!e)return`system`;try{return pt(e.getItem(ft))}catch{return`system`}}function gt(e,t){if(e)try{e.setItem(ft,t)}catch{}}var _t=class{constructor(e,t,n,r){this.root=e,this.storage=t,this.media=n,this.onSystemChange=()=>this.apply(),this.preference=r??ht(t),this.media?.addEventListener(`change`,this.onSystemChange),this.apply()}set(e){this.preference=e,gt(this.storage,e),this.apply()}destroy(){this.media?.removeEventListener(`change`,this.onSystemChange)}apply(){this.root.dataset.courierTheme=mt(this.preference,this.media),this.root.dataset.courierThemePreference=this.preference}};function Z(){let e;try{e=globalThis.localStorage}catch{e=void 0}let t=globalThis.matchMedia?.(`(prefers-color-scheme: dark)`);return new _t(document.documentElement,e,t)}var vt=class extends W{constructor(...e){super(...e),this.preference=`system`,this.locale=`en`}static{this.properties={preference:{type:String},locale:{type:String}}}connectedCallback(){super.connectedCallback(),this.state=Z(),this.preference=this.state.preference}disconnectedCallback(){this.state?.destroy(),super.disconnectedCallback()}change(e){let t=pt(e.detail);this.preference=t,this.state?.set(t),this.dispatchEvent(new CustomEvent(`courier-theme-change`,{detail:t,bubbles:!0,composed:!0}))}render(){return F`<courier-segmented-control
+  `}connectedCallback(){super.connectedCallback(),this.addEventListener(`pointermove`,this.handlePointerMove),this.addEventListener(`pointerleave`,this.handlePointerLeave)}disconnectedCallback(){this.removeEventListener(`pointermove`,this.handlePointerMove),this.removeEventListener(`pointerleave`,this.handlePointerLeave),this.frame&&globalThis.cancelAnimationFrame(this.frame),this.frame=0,this.target=void 0,this.previousTimestamp=void 0,super.disconnectedCallback()}tracksPointer(){return globalThis.matchMedia?.(`(hover: hover) and (pointer: fine)`).matches===!0&&!globalThis.matchMedia?.(`(prefers-reduced-motion: reduce)`).matches}move(e){this.tracksPointer()&&(this.target=ct(this.getBoundingClientRect(),e.clientX,e.clientY),this.returning=!1,this.schedule())}leave(){this.tracksPointer()&&(this.target=ot,this.returning=!0,this.schedule())}schedule(){this.frame||=globalThis.requestAnimationFrame(e=>this.advance(e))}advance(e){this.frame=0;let t=this.target;if(!t)return;let n=this.previousTimestamp===void 0?16:e-this.previousTimestamp;this.previousTimestamp=e;let r=lt(this.current,t,n);if(this.current=r.position,this.style.setProperty(`--scene-pointer-x`,`${this.current.x}%`),this.style.setProperty(`--scene-pointer-y`,`${this.current.y}%`),!r.settled){this.schedule();return}this.previousTimestamp=void 0,this.returning&&(this.target=void 0,this.returning=!1,this.style.removeProperty(`--scene-pointer-x`),this.style.removeProperty(`--scene-pointer-y`))}render(){return F`<div class="tracking"><courier-mascot class="base" ?eager=${this.eager} alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot><courier-mascot class="refracted" aria-hidden="true" alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot><span class="glow" aria-hidden="true"></span><span class="veil" aria-hidden="true"></span></div>`}},dt=[`system`,`light`,`dark`],ft=`courier.theme`;function pt(e){return dt.includes(e)?e:`system`}function mt(e,t){return e===`system`?t?.matches?`dark`:`light`:e}function ht(e){if(!e)return`system`;try{return pt(e.getItem(ft))}catch{return`system`}}function gt(e,t){if(e)try{e.setItem(ft,t)}catch{}}var _t=class{constructor(e,t,n,r){this.root=e,this.storage=t,this.media=n,this.onSystemChange=()=>this.apply(),this.preference=r??ht(t),this.media?.addEventListener(`change`,this.onSystemChange),this.apply()}set(e){this.preference=e,gt(this.storage,e),this.apply()}destroy(){this.media?.removeEventListener(`change`,this.onSystemChange)}apply(){this.root.dataset.courierTheme=mt(this.preference,this.media),this.root.dataset.courierThemePreference=this.preference}};function Z(){let e;try{e=globalThis.localStorage}catch{e=void 0}let t=globalThis.matchMedia?.(`(prefers-color-scheme: dark)`);return new _t(document.documentElement,e,t)}var vt=class extends W{constructor(...e){super(...e),this.preference=`system`,this.locale=`en`}static{this.properties={preference:{type:String},locale:{type:String}}}connectedCallback(){super.connectedCallback(),this.state=Z(),this.preference=this.state.preference}disconnectedCallback(){this.state?.destroy(),super.disconnectedCallback()}change(e){let t=pt(e.detail);this.preference=t,this.state?.set(t),this.dispatchEvent(new CustomEvent(`courier-theme-change`,{detail:t,bubbles:!0,composed:!0}))}render(){return F`<courier-segmented-control
       icon-only
       .label=${X(this.locale,`theme.label`)}
       .value=${this.preference}
       .options=${[{value:`system`,label:X(this.locale,`theme.system`),icon:`system`},{value:`light`,label:X(this.locale,`theme.light`),icon:`sun`},{value:`dark`,label:X(this.locale,`theme.dark`),icon:`moon`}]}
       @courier-segment-change=${this.change}
-    ></courier-segmented-control>`}},yt=`apple.archive.browser-share.browser-upload.check.copy.download.folder.folder-in.folder-out.github.homebrew.linux.moon.npm.package.parcel.pnpm.receipt.retry.route.scoop.server.server-in.server-out.shield.sun.system.terminal.upload.webhook-in.webhook-out.windows.yarn`.split(`.`),bt={apple:`M15 5c1-1 1-3 1-3-2 0-3 1-4 3m6 7c-1-2-2-3-4-3-1 0-2 1-3 1s-2-1-3-1c-3 0-5 3-5 6 0 4 3 8 5 8 1 0 2-1 3-1s2 1 3 1c2 0 4-3 5-6-2-1-3-2-3-4 0-2 1-3 2-4z`,archive:`M3 3h18v5H3zM5 8v13h14V8M9 12h6`,"browser-share":`M3 4h18v15H3zM3 8h18M7 6h.01M10 6h.01M14 15c2-3 4-4 7-4m-3-2 3 2-1 4`,"browser-upload":`M3 4h18v15H3zM3 8h18M7 6h.01M10 6h.01M12 17v-6m-3 3 3-3 3 3`,check:`m4 12 5 5L20 6`,copy:`M8 3h13v13M3 8h13v13H3z`,download:`M12 3v13m-5-5 5 5 5-5M4 15v6h16v-6`,folder:`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3`,"folder-in":`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3m12 6h-7m3-3-3 3 3 3`,"folder-out":`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3m5 6h7m-3-3 3 3-3 3`,github:`M9 19c-5 1-5-2-7-3m14 6v-3.6c0-1 .1-1.7-.4-2.2 3.2-.4 6.4-1.6 6.4-7.1 0-1.6-.6-3-1.7-4 .2-.5.7-2.3-.2-4.6 0 0-1.4-.5-4.7 1.7a16 16 0 0 0-8.6 0C6.4 1 5 1.5 5 1.5 4.1 3.8 4.6 5.6 4.8 6.1a7 7 0 0 0-1.7 4c0 5.5 3.2 6.7 6.4 7.1-.4.4-.8 1.1-.8 2.2V23`,homebrew:`M6 4h11l-1 15H8zM17 7h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2M5 22h13`,linux:`M12 2c-3 0-4 3-4 6-2 2-3 5-3 8l3-1 1 5 3-2 3 2 1-5 3 1c0-3-1-6-3-8 0-3-1-6-4-6zM9 8h.01M15 8h.01M10 11h4`,moon:`M20 16a8 8 0 0 1-12-10 8 8 0 1 0 12 10z`,npm:`M2 6h20v12H2zM6 15V9h5v6m0-6h4v6m0-6h3v6`,package:`m3 7 9-5 9 5v11l-9 4-9-4zM3 7l9 5 9-5M12 12v10M8 4l9 5`,parcel:`m3 7 9-5 9 5v11l-9 4-9-4zM3 7l9 5 9-5M12 12v10M8 4l9 5v5`,pnpm:`M3 3h5v5H3zM10 3h5v5h-5zM17 3h4v5h-4zM3 10h5v5H3zm7 0h5v5h-5zm7 0h4v5h-4zM10 17h5v4h-5zm7 0h4v4h-4z`,receipt:`M5 2h14v20l-3-2-4 2-4-2-3 2zM8 7h8M8 11h8m-8 5 2 2 5-4`,retry:`M3 10a9 9 0 1 1 1 7M3 3v7h7M12 7v5l3 2`,route:`M2 3h6v6H2zM16 15h6v6h-6zM11 6h8v6m-3-3 3 3 3-3M13 18H5v-6m-3 3 3-3 3 3`,scoop:`M5 8h14l-2 13H7zM4 8h16M8 8V5a4 4 0 0 1 8 0v3`,server:`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m3 0h6M6 10v4m12-4v4`,"server-in":`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m7-12h-6m3-3-3 3 3 3`,"server-out":`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m3-12h6m-3-3 3 3-3 3`,shield:`m12 2 8 3v7c0 5-8 10-8 10S4 17 4 12V5zM8 11l3 3 5-6`,sun:`M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3m0 14v3M4.9 4.9 7 7m10 10 2.1 2.1M2 12h3m14 0h3M4.9 19.1 7 17M17 7l2.1-2.1`,system:`M3 4h18v13H3zM8 21h8M12 17v4`,terminal:`M4 6l5 6-5 6m7 0h9`,upload:`M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6`,"webhook-in":`M7 7a3 3 0 1 1 3 3l-3 6a3 3 0 1 0 3 4m7-3a3 3 0 1 1-3-3l3-6a3 3 0 1 0-3-4m-1 8h-6m3-3-3 3 3 3`,"webhook-out":`M7 7a3 3 0 1 1 3 3l-3 6a3 3 0 1 0 3 4m7-3a3 3 0 1 1-3-3l3-6a3 3 0 1 0-3-4m-4 8h6m-3-3 3 3-3 3`,windows:`M3 4l8-1v8H3zm10-1 8-1v9h-8zM3 13h8v8l-8-1zm10 0h8v9l-8-1z`,yarn:`M12 3a9 9 0 1 0 9 9M8 16c4-1 7-4 9-8m-8 1c3 1 5 4 5 8m-5-5c-1-3 0-5 2-6`};function xt(e){return yt.includes(e)?e:`parcel`}var St={"courier-brand":We,"courier-brand-icon":Ve,"courier-button":Ce,"courier-checkbox":Je,"courier-icon":class extends W{constructor(...e){super(...e),this.name=`parcel`,this.label=``}static{this.properties={name:{type:String},label:{type:String}}}static{this.styles=o`
+    ></courier-segmented-control>`}};function yt(e){let t=Math.max(0,e)*2;return`00:${String(t).padStart(2,`0`)}`}var bt=class extends W{constructor(...e){super(...e),this.heading=``,this.status=``}static{this.properties={heading:{type:String},status:{type:String}}}static{this.styles=o`
+    :host {
+      display: grid;
+      min-width: 0;
+      min-height: 0;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      overflow: hidden;
+      border: 1px solid var(--courier-terminal-border, rgb(137 147 129 / 0.48));
+      border-radius: var(--courier-radius-md, 0.625rem);
+      color: var(--courier-terminal-text, var(--courier-color-text, #f3f4e9));
+      background: var(--courier-terminal-surface, rgb(12 15 12 / 0.68));
+      box-shadow: inset 0 1px rgb(255 255 255 / 0.035), 0 1rem 3rem rgb(0 0 0 / 0.12);
+      font-family: var(--courier-font-mono, monospace);
+      backdrop-filter: blur(18px) saturate(0.8);
+    }
+    header {
+      display: flex;
+      min-height: 2.7rem;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--courier-terminal-border, rgb(137 147 129 / 0.48));
+      color: var(--courier-terminal-muted, #b9c0b1);
+      background: linear-gradient(90deg, rgb(255 255 255 / 0.035), transparent 62%);
+      font-size: 0.66rem;
+      font-weight: 760;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .status { color: var(--courier-terminal-prompt, #d4ff45); }
+    .body { min-width: 0; min-height: 0; overflow: auto; }
+    footer {
+      border-top: 1px solid var(--courier-terminal-border, rgb(137 147 129 / 0.48));
+    }
+    ::slotted([slot="toolbar"]), ::slotted([slot="footer"]) { min-width: 0; }
+  `}render(){return F`
+      <header>
+        <span>${this.heading}</span>
+        <slot name="toolbar"></slot>
+        ${this.status?F`<span class="status">${this.status}</span>`:L}
+      </header>
+      <div class="body"><slot></slot></div>
+      <footer><slot name="footer"></slot></footer>
+    `}},xt=class extends W{constructor(...e){super(...e),this.command=``,this.description=``,this.steps=[],this.copyLabel=`Copy`,this.runLabel=`Run demo`,this.replayLabel=`Replay`,this.copiedLabel=`Copied`,this.copyFailedLabel=`Copy failed`,this.previewLabel=`Preview`,this.noEffectLabel=`Preview only. No command or transfer ran in this browser.`,this.sessionKey=``,this.interval=180,this.phase=`idle`,this.visibleCount=0,this.copyState=`idle`}static{this.properties={command:{type:String},description:{type:String},steps:{attribute:!1},copyLabel:{type:String,attribute:`copy-label`},runLabel:{type:String,attribute:`run-label`},replayLabel:{type:String,attribute:`replay-label`},copiedLabel:{type:String,attribute:`copied-label`},copyFailedLabel:{type:String,attribute:`copy-failed-label`},previewLabel:{type:String,attribute:`preview-label`},noEffectLabel:{type:String,attribute:`no-effect-label`},sessionKey:{type:String,attribute:`session-key`},interval:{type:Number},phase:{state:!0},visibleCount:{state:!0},copyState:{state:!0}}}static{this.styles=o`
+    :host { display: block; min-width: 0; min-height: 0; }
+    courier-terminal { height: 100%; }
+    .toolbar { display: flex; align-items: center; gap: 0.4rem; }
+    button {
+      appearance: none;
+      display: inline-flex;
+      min-height: 1.9rem;
+      align-items: center;
+      gap: 0.38rem;
+      padding: 0.28rem 0.55rem;
+      border: 1px solid var(--courier-terminal-border, #596253);
+      border-radius: 999px;
+      color: var(--courier-terminal-text, #f3f4e9);
+      background: rgb(255 255 255 / 0.035);
+      font: 700 0.65rem/1 var(--courier-font-sans, sans-serif);
+      cursor: pointer;
+    }
+    button:hover:not(:disabled), button:focus-visible { border-color: var(--courier-terminal-prompt, #d4ff45); color: var(--courier-terminal-prompt, #d4ff45); }
+    button:focus-visible { outline: 3px solid var(--courier-beak, #ff8758); outline-offset: 2px; }
+    button:disabled { cursor: not-allowed; opacity: 0.42; }
+    courier-icon { width: 0.9rem; height: 0.9rem; }
+    .session { display: grid; height: 100%; min-height: 0; grid-template-rows: auto auto auto minmax(0, 1fr); }
+    .prompt, .description, li, .empty { min-width: 0; padding: 0.58rem 0.8rem; }
+    .prompt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.65rem; color: var(--courier-terminal-text, #f3f4e9); }
+    .prompt::before { content: "$"; color: var(--courier-terminal-prompt, #d4ff45); font-weight: 800; }
+    code { overflow-wrap: anywhere; font: inherit; line-height: 1.45; white-space: pre-wrap; }
+    .description { border-top: 1px solid color-mix(in srgb, var(--courier-terminal-border, #596253) 58%, transparent); color: var(--courier-terminal-muted, #b9c0b1); font-size: 0.68rem; line-height: 1.45; }
+    ol { min-height: 0; max-height: 11rem; margin: 0; padding: 0; overflow: auto; list-style: none; }
+    li { display: grid; grid-template-columns: 2.6rem minmax(7rem, 0.35fr) minmax(0, 1fr); gap: 0.7rem; border-top: 1px solid color-mix(in srgb, var(--courier-terminal-border, #596253) 45%, transparent); font-size: 0.65rem; line-height: 1.4; }
+    time { color: var(--courier-terminal-muted, #b9c0b1); font-variant-numeric: tabular-nums; }
+    .step-label { color: var(--courier-terminal-text, #f3f4e9); font-weight: 760; }
+    .step-detail { color: var(--courier-terminal-muted, #b9c0b1); overflow-wrap: anywhere; }
+    li[data-tone="signal"] .step-label, li[data-tone="success"] .step-label { color: var(--courier-terminal-prompt, #d4ff45); }
+    li[data-tone="warning"] .step-label { color: var(--courier-warning, #f0b849); }
+    li[data-tone="danger"] .step-label { color: var(--courier-danger, #ff6b5f); }
+    .empty { color: var(--courier-terminal-muted, #b9c0b1); font-size: 0.65rem; }
+    .details { min-width: 0; }
+    .footer { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.48rem 0.8rem; color: var(--courier-terminal-muted, #b9c0b1); font-size: 0.58rem; line-height: 1.4; }
+    @media (max-width: 44rem) {
+      .toolbar button span { display: none; }
+      li { grid-template-columns: 2.25rem minmax(5.5rem, 0.42fr) minmax(0, 1fr); gap: 0.4rem; padding: 0.45rem 0.55rem; font-size: 0.56rem; }
+      .prompt, .description, .empty { padding: 0.48rem 0.55rem; font-size: 0.58rem; }
+      ol { max-height: 8rem; }
+    }
+  `}disconnectedCallback(){this.stopTimer(),super.disconnectedCallback()}willUpdate(e){e.has(`sessionKey`)&&e.get(`sessionKey`)!==void 0&&this.reset()}reset(){this.stopTimer(),this.phase=`idle`,this.visibleCount=0,this.copyState=`idle`}async copyCommand(){let e=this.clipboard??globalThis.navigator.clipboard;if(!e||!this.command){this.copyState=`failed`;return}try{await e.writeText(this.command),this.copyState=`copied`}catch{this.copyState=`failed`}}run(){if(this.stopTimer(),this.copyState=`idle`,!this.command||this.steps.length===0){this.phase=`idle`,this.visibleCount=0;return}if(globalThis.matchMedia?.(`(prefers-reduced-motion: reduce)`).matches){this.visibleCount=this.steps.length,this.phase=`complete`;return}this.visibleCount=1,this.phase=this.steps.length===1?`complete`:`running`,this.phase===`running`&&this.scheduleStep()}scheduleStep(){this.timer=globalThis.setTimeout(()=>{if(this.timer=void 0,this.visibleCount+=1,this.visibleCount>=this.steps.length){this.phase=`complete`;return}this.scheduleStep()},Math.max(0,this.interval))}stopTimer(){this.timer!==void 0&&(globalThis.clearTimeout(this.timer),this.timer=void 0)}render(){let e=this.copyState===`copied`?this.copiedLabel:this.copyState===`failed`?this.copyFailedLabel:``,t=this.steps.slice(0,this.visibleCount);return F`
+      <courier-terminal .heading=${this.previewLabel} .status=${this.phase===`complete`?`exit 0`:this.phase}>
+        <div slot="toolbar" class="toolbar">
+          <button type="button" ?disabled=${!this.command} aria-label=${this.copyLabel} title=${this.copyLabel} @click=${this.copyCommand}><courier-icon name=${this.copyState===`copied`?`check`:`copy`}></courier-icon><span>${this.copyLabel}</span></button>
+          <button type="button" ?disabled=${!this.command||this.steps.length===0} aria-label=${this.phase===`idle`?this.runLabel:this.replayLabel} title=${this.phase===`idle`?this.runLabel:this.replayLabel} @click=${this.run}><courier-icon name="terminal"></courier-icon><span>${this.phase===`idle`?this.runLabel:this.replayLabel}</span></button>
+        </div>
+        <div class="session">
+          <div class="prompt"><code>${this.command}</code></div>
+          ${this.description?F`<p class="description">${this.description}</p>`:L}
+          <div class="details"><slot name="details"></slot></div>
+          ${t.length?F`<ol aria-live="polite">${t.map((e,t)=>F`<li data-tone=${e.tone??`neutral`}><time>${yt(t)}</time><span class="step-label">${e.label}</span><span class="step-detail">${e.detail??``}</span></li>`)}</ol>`:F`<p class="empty" aria-live="polite">${e}</p>`}
+        </div>
+        <div slot="footer" class="footer" role="status"><span>${e||this.noEffectLabel}</span><slot name="footer-actions"></slot></div>
+      </courier-terminal>
+    `}},St=`apple.archive.browser-share.browser-upload.check.copy.download.folder.folder-in.folder-out.github.homebrew.linux.moon.npm.package.parcel.pnpm.receipt.retry.route.scoop.server.server-in.server-out.shield.sun.system.terminal.upload.webhook-in.webhook-out.windows.yarn`.split(`.`),Ct={apple:`M15 5c1-1 1-3 1-3-2 0-3 1-4 3m6 7c-1-2-2-3-4-3-1 0-2 1-3 1s-2-1-3-1c-3 0-5 3-5 6 0 4 3 8 5 8 1 0 2-1 3-1s2 1 3 1c2 0 4-3 5-6-2-1-3-2-3-4 0-2 1-3 2-4z`,archive:`M3 3h18v5H3zM5 8v13h14V8M9 12h6`,"browser-share":`M3 4h18v15H3zM3 8h18M7 6h.01M10 6h.01M14 15c2-3 4-4 7-4m-3-2 3 2-1 4`,"browser-upload":`M3 4h18v15H3zM3 8h18M7 6h.01M10 6h.01M12 17v-6m-3 3 3-3 3 3`,check:`m4 12 5 5L20 6`,copy:`M8 3h13v13M3 8h13v13H3z`,download:`M12 3v13m-5-5 5 5 5-5M4 15v6h16v-6`,folder:`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3`,"folder-in":`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3m12 6h-7m3-3-3 3 3 3`,"folder-out":`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3m5 6h7m-3-3 3 3-3 3`,github:`M9 19c-5 1-5-2-7-3m14 6v-3.6c0-1 .1-1.7-.4-2.2 3.2-.4 6.4-1.6 6.4-7.1 0-1.6-.6-3-1.7-4 .2-.5.7-2.3-.2-4.6 0 0-1.4-.5-4.7 1.7a16 16 0 0 0-8.6 0C6.4 1 5 1.5 5 1.5 4.1 3.8 4.6 5.6 4.8 6.1a7 7 0 0 0-1.7 4c0 5.5 3.2 6.7 6.4 7.1-.4.4-.8 1.1-.8 2.2V23`,homebrew:`M6 4h11l-1 15H8zM17 7h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2M5 22h13`,linux:`M12 2c-3 0-4 3-4 6-2 2-3 5-3 8l3-1 1 5 3-2 3 2 1-5 3 1c0-3-1-6-3-8 0-3-1-6-4-6zM9 8h.01M15 8h.01M10 11h4`,moon:`M20 16a8 8 0 0 1-12-10 8 8 0 1 0 12 10z`,npm:`M2 6h20v12H2zM6 15V9h5v6m0-6h4v6m0-6h3v6`,package:`m3 7 9-5 9 5v11l-9 4-9-4zM3 7l9 5 9-5M12 12v10M8 4l9 5`,parcel:`m3 7 9-5 9 5v11l-9 4-9-4zM3 7l9 5 9-5M12 12v10M8 4l9 5v5`,pnpm:`M3 3h5v5H3zM10 3h5v5h-5zM17 3h4v5h-4zM3 10h5v5H3zm7 0h5v5h-5zm7 0h4v5h-4zM10 17h5v4h-5zm7 0h4v4h-4z`,receipt:`M5 2h14v20l-3-2-4 2-4-2-3 2zM8 7h8M8 11h8m-8 5 2 2 5-4`,retry:`M3 10a9 9 0 1 1 1 7M3 3v7h7M12 7v5l3 2`,route:`M2 3h6v6H2zM16 15h6v6h-6zM11 6h8v6m-3-3 3 3 3-3M13 18H5v-6m-3 3 3-3 3 3`,scoop:`M5 8h14l-2 13H7zM4 8h16M8 8V5a4 4 0 0 1 8 0v3`,server:`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m3 0h6M6 10v4m12-4v4`,"server-in":`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m7-12h-6m3-3-3 3 3 3`,"server-out":`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m3-12h6m-3-3 3 3-3 3`,shield:`m12 2 8 3v7c0 5-8 10-8 10S4 17 4 12V5zM8 11l3 3 5-6`,sun:`M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3m0 14v3M4.9 4.9 7 7m10 10 2.1 2.1M2 12h3m14 0h3M4.9 19.1 7 17M17 7l2.1-2.1`,system:`M3 4h18v13H3zM8 21h8M12 17v4`,terminal:`M4 6l5 6-5 6m7 0h9`,upload:`M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6`,"webhook-in":`M7 7a3 3 0 1 1 3 3l-3 6a3 3 0 1 0 3 4m7-3a3 3 0 1 1-3-3l3-6a3 3 0 1 0-3-4m-1 8h-6m3-3-3 3 3 3`,"webhook-out":`M7 7a3 3 0 1 1 3 3l-3 6a3 3 0 1 0 3 4m7-3a3 3 0 1 1-3-3l3-6a3 3 0 1 0-3-4m-4 8h6m-3-3 3 3-3 3`,windows:`M3 4l8-1v8H3zm10-1 8-1v9h-8zM3 13h8v8l-8-1zm10 0h8v9l-8-1z`,yarn:`M12 3a9 9 0 1 0 9 9M8 16c4-1 7-4 9-8m-8 1c3 1 5 4 5 8m-5-5c-1-3 0-5 2-6`};function wt(e){return St.includes(e)?e:`parcel`}var Tt={"courier-brand":We,"courier-brand-icon":Ve,"courier-button":Ce,"courier-checkbox":Je,"courier-icon":class extends W{constructor(...e){super(...e),this.name=`parcel`,this.label=``}static{this.properties={name:{type:String},label:{type:String}}}static{this.styles=o`
     :host {
       display: inline-flex;
       width: 1.5rem;
@@ -361,7 +470,7 @@
       color: currentColor;
     }
     svg { width: 100%; height: 100%; }
-  `}render(){let e=xt(this.name);return F`<svg
+  `}render(){let e=wt(this.name);return F`<svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -371,7 +480,7 @@
       role=${this.label?`img`:`presentation`}
       aria-hidden=${this.label?`false`:`true`}
       aria-label=${this.label||void 0}
-    ><path d=${bt[e]}></path></svg>`}},"courier-locale-selector":et,"courier-mascot":Ge,"courier-panel":tt,"courier-progress":rt,"courier-route":qe,"courier-scene":ut,"courier-segmented-control":at,"courier-status":Ke,"courier-theme-selector":vt};function Ct(e=customElements){for(let[t,n]of Object.entries(St))e.get(t)||e.define(t,n)}var wt=`/assets/admin.webp`;function Q(e,t=globalThis.location.pathname){return`${t.endsWith(`/`)?t:`${t}/`}api/v1/${e}`}async function $(e){if(!e.ok){let t=Error(`Courier administration request failed (${e.status})`);throw t.name=e.status===409?`ConflictError`:`RequestError`,t}if(e.status!==204)return e.json()}async function Tt(e=globalThis.fetch){return $(await e(Q(`servers`),{credentials:`same-origin`}))}async function Et(e,t,n=globalThis.fetch){await $(await n(Q(`deliveries/${e.id}/policy`),{method:`PUT`,credentials:`same-origin`,headers:{"Content-Type":`application/json`},body:JSON.stringify({expectedVersion:e.policy.version,policy:t})}))}async function Dt(e,t,n=globalThis.fetch){await $(await n(Q(`${e}/${t}/stop`),{method:`POST`,credentials:`same-origin`}))}function Ot(e,t=e=>new EventSource(e)){let n=t(Q(`events`));return n.addEventListener(`snapshot`,t=>e(JSON.parse(t.data))),()=>n.close()}var kt={en:{brandProduct:`Operations control`,eyebrow:`Local control plane`,title:`Delivery control`,intro:`Inspect live routes, confirmed volume, and delivery policy from one private local console.`,refresh:`Refresh registry`,retry:`Retry connection`,loading:`Checking the live registry…`,empty:`No live Courier servers are registered.`,failed:`Administration data is temporarily unavailable. Retry the local connection.`,conflict:`This delivery policy changed elsewhere. Refresh before editing again.`,live:`Live`,unreachable:`Unreachable`,stopServer:`Stop server`,stopDelivery:`Stop delivery`,source:`Source`,destination:`Destination`,transferred:`Confirmed bytes`,authentication:`Authentication`,attempts:`Authentication attempts`,failAction:`Failure action`,noUi:`Hide delivery UI`,save:`Apply policy`,serversMetric:`Live registry servers`,deliveriesMetric:`Active deliveries`,confirmedMetric:`Confirmed bytes`,server:`Server`,bind:`Bound address`,deliveries:`Delivery routes`,policy:`Delivery policy`,unavailable:`Unavailable`},ru:{brandProduct:`Операционный контроль`,eyebrow:`Локальный контур управления`,title:`Управление доставками`,intro:`Проверяйте активные маршруты, подтверждённый объём и правила доставки в одной приватной локальной консоли.`,refresh:`Обновить реестр`,retry:`Повторить подключение`,loading:`Проверка активного реестра…`,empty:`Активные серверы Courier не зарегистрированы.`,failed:`Данные управления временно недоступны. Повторите локальное подключение.`,conflict:`Правила этой доставки были изменены. Обновите данные перед повторным редактированием.`,live:`Работает`,unreachable:`Недоступен`,stopServer:`Остановить сервер`,stopDelivery:`Остановить доставку`,source:`Источник`,destination:`Назначение`,transferred:`Подтверждено байт`,authentication:`Аутентификация`,attempts:`Попытки аутентификации`,failAction:`Действие при ошибке`,noUi:`Скрыть интерфейс доставки`,save:`Применить правила`,serversMetric:`Серверы активного реестра`,deliveriesMetric:`Активные доставки`,confirmedMetric:`Подтверждено байт`,server:`Сервер`,bind:`Адрес привязки`,deliveries:`Маршруты доставки`,policy:`Правила доставки`,unavailable:`Недоступно`}};function At(e,t){return kt[e][t]}Ct();var jt=class extends W{constructor(...e){super(...e),this.locale=$e(),this.failed=!1,this.conflict=!1}static{this.properties={locale:{state:!0},snapshot:{state:!0},failed:{state:!0},conflict:{state:!0}}}static{this.styles=[Se,o`
+    ><path d=${Ct[e]}></path></svg>`}},"courier-locale-selector":et,"courier-mascot":Ge,"courier-panel":tt,"courier-progress":rt,"courier-route":qe,"courier-scene":ut,"courier-segmented-control":at,"courier-status":Ke,"courier-theme-selector":vt,"courier-terminal":bt,"courier-command-demo":xt};function Et(e=customElements){for(let[t,n]of Object.entries(Tt))e.get(t)||e.define(t,n)}var Dt=`/assets/admin-relay-terminal-admin-mobile-v2.webp`,Ot=`/assets/admin-relay-terminal-admin-wide-v2.webp`,kt=Dt;function Q(e,t=globalThis.location.pathname){return`${t.endsWith(`/`)?t:`${t}/`}api/v1/${e}`}async function $(e){if(!e.ok){let t=Error(`Courier administration request failed (${e.status})`);throw t.name=e.status===409?`ConflictError`:`RequestError`,t}if(e.status!==204)return e.json()}async function At(e=globalThis.fetch){return $(await e(Q(`servers`),{credentials:`same-origin`}))}async function jt(e,t,n=globalThis.fetch){await $(await n(Q(`deliveries/${e.id}/policy`),{method:`PUT`,credentials:`same-origin`,headers:{"Content-Type":`application/json`},body:JSON.stringify({expectedVersion:e.policy.version,policy:t})}))}async function Mt(e,t,n=globalThis.fetch){await $(await n(Q(`${e}/${t}/stop`),{method:`POST`,credentials:`same-origin`}))}function Nt(e,t=e=>new EventSource(e)){let n=t(Q(`events`));return n.addEventListener(`snapshot`,t=>e(JSON.parse(t.data))),()=>n.close()}var Pt={en:{brandProduct:`Operations control`,eyebrow:`Local control plane`,title:`Delivery control`,intro:`Inspect live routes, confirmed volume, and delivery policy from one private local console.`,refresh:`Refresh registry`,retry:`Retry connection`,loading:`Checking the live registry…`,empty:`No live Courier servers are registered.`,failed:`Administration data is temporarily unavailable. Retry the local connection.`,conflict:`This delivery policy changed elsewhere. Refresh before editing again.`,live:`Live`,unreachable:`Unreachable`,stopServer:`Stop server`,stopDelivery:`Stop delivery`,source:`Source`,destination:`Destination`,transferred:`Confirmed bytes`,authentication:`Authentication`,attempts:`Authentication attempts`,failAction:`Failure action`,noUi:`Hide delivery UI`,save:`Apply policy`,serversMetric:`Live registry servers`,deliveriesMetric:`Active deliveries`,confirmedMetric:`Confirmed bytes`,server:`Server`,bind:`Bound address`,deliveries:`Delivery routes`,policy:`Delivery policy`,unavailable:`Unavailable`},ru:{brandProduct:`Операционный контроль`,eyebrow:`Локальный контур управления`,title:`Управление доставками`,intro:`Проверяйте активные маршруты, подтверждённый объём и правила доставки в одной приватной локальной консоли.`,refresh:`Обновить реестр`,retry:`Повторить подключение`,loading:`Проверка активного реестра…`,empty:`Активные серверы Courier не зарегистрированы.`,failed:`Данные управления временно недоступны. Повторите локальное подключение.`,conflict:`Правила этой доставки были изменены. Обновите данные перед повторным редактированием.`,live:`Работает`,unreachable:`Недоступен`,stopServer:`Остановить сервер`,stopDelivery:`Остановить доставку`,source:`Источник`,destination:`Назначение`,transferred:`Подтверждено байт`,authentication:`Аутентификация`,attempts:`Попытки аутентификации`,failAction:`Действие при ошибке`,noUi:`Скрыть интерфейс доставки`,save:`Применить правила`,serversMetric:`Серверы активного реестра`,deliveriesMetric:`Активные доставки`,confirmedMetric:`Подтверждено байт`,server:`Сервер`,bind:`Адрес привязки`,deliveries:`Маршруты доставки`,policy:`Правила доставки`,unavailable:`Недоступно`}};function Ft(e,t){return Pt[e][t]}Et();var It=class extends W{constructor(...e){super(...e),this.locale=$e(),this.failed=!1,this.conflict=!1}static{this.properties={locale:{state:!0},snapshot:{state:!0},failed:{state:!0},conflict:{state:!0}}}static{this.styles=[Se,o`
     :host {
       display: block;
       min-height: 100vh;
@@ -426,6 +535,30 @@
     .state-art courier-mascot { position: absolute; inset: 0; width: 100%; height: 100%; }
     .state-art courier-mascot::part(image) { width: 100%; height: 100%; object-fit: cover; }
     .empty, .loading { display: grid; min-height: 13rem; place-items: center; border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-md); color: var(--courier-color-muted); background: var(--courier-color-surface-raised); font-family: var(--courier-font-mono); }
+    .page-scene { position: fixed; z-index: 0; inset: 0; }
+    main { position: relative; z-index: 2; }
+    :host { background: var(--courier-graphite-900); }
+    :host::after { content: ""; position: fixed; z-index: 1; inset: 0; background: linear-gradient(90deg, rgb(9 12 9 / 0.72), rgb(9 12 9 / 0.38) 60%, rgb(9 12 9 / 0.58)); pointer-events: none; }
+    header { color: var(--courier-paper-50); border-bottom-color: rgb(203 208 195 / 0.25); }
+    header courier-brand { --courier-color-text: var(--courier-paper-50); --courier-color-muted: #b9c0b1; }
+    .page-head { color: var(--courier-paper-50); border-bottom: 0; }
+    .page-head .intro { color: #cbd0c3; }
+    .registry-terminal, .server-terminal, .delivery-terminal, .state-brief, .loading { --courier-color-text: var(--courier-terminal-text); --courier-color-muted: var(--courier-terminal-muted); }
+    .metrics { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+    .metric { padding: 0.85rem 1rem; }
+    .metric + .metric { border-left-color: var(--courier-terminal-border); }
+    .metric strong { color: var(--courier-terminal-prompt); font-family: var(--courier-font-mono); font-size: 1.55rem; }
+    .server-list { gap: 0.75rem; }
+    .server { padding: 0.85rem; }
+    .server-head { padding-bottom: 0.75rem; border-bottom-color: var(--courier-terminal-border); }
+    article { padding: 0.75rem; border: 0; border-radius: 0; color: var(--courier-terminal-text); background: transparent; }
+    dl { border-color: var(--courier-terminal-border); }
+    dt, .bind { color: var(--courier-terminal-muted); }
+    form { padding-top: 0.25rem; }
+    label { color: var(--courier-terminal-muted); }
+    .state-brief { display: block; min-height: 0; }
+    .state-copy { min-height: 9rem; padding: 1.25rem; }
+    .loading { min-height: 10rem; padding: 1rem; }
     @media (max-width: 64rem) { form { grid-template-columns: repeat(2, minmax(10rem, 1fr)); } }
     @media (max-width: 44rem) {
       header { align-items: flex-start; padding: 1rem 0; }
@@ -439,7 +572,8 @@
       .state-brief { grid-template-columns: 1fr; }
       .state-art { min-height: 15rem; }
     }
-  `]}connectedCallback(){super.connectedCallback(),this.theme=Z(),this.unsubscribe=Ot(e=>{this.snapshot=e,this.failed=!1}),this.refresh()}disconnectedCallback(){this.unsubscribe?.(),this.theme?.destroy(),super.disconnectedCallback()}async refresh(){this.failed=!1,this.conflict=!1;try{this.snapshot=await Tt()}catch{this.failed=!0}}setLocale(e){this.locale=e.detail}async stop(e,t){try{await Dt(e,t),await this.refresh()}catch{this.failed=!0}}async save(e,t){e.preventDefault();let n=new FormData(e.currentTarget),r={...t.policy,version:t.policy.version+1,auth:String(n.get(`auth`)),authAttempts:Number(n.get(`attempts`)),authFailAction:String(n.get(`failAction`)),noUi:n.get(`noUi`)===`on`};this.failed=!1,this.conflict=!1;try{await Et(t,r),await this.refresh()}catch(e){this.conflict=e instanceof Error&&e.name===`ConflictError`,this.failed=!this.conflict}}t(e){return At(this.locale,e)}delivery(e){let t=e.source||this.t(`unavailable`),n=e.destination||this.t(`unavailable`);return F`
+  `]}connectedCallback(){super.connectedCallback(),this.theme=Z(),this.unsubscribe=Nt(e=>{this.snapshot=e,this.failed=!1}),this.refresh()}disconnectedCallback(){this.unsubscribe?.(),this.theme?.destroy(),super.disconnectedCallback()}async refresh(){this.failed=!1,this.conflict=!1;try{this.snapshot=await At()}catch{this.failed=!0}}setLocale(e){this.locale=e.detail}async stop(e,t){try{await Mt(e,t),await this.refresh()}catch{this.failed=!0}}async save(e,t){e.preventDefault();let n=new FormData(e.currentTarget),r={...t.policy,version:t.policy.version+1,auth:String(n.get(`auth`)),authAttempts:Number(n.get(`attempts`)),authFailAction:String(n.get(`failAction`)),noUi:n.get(`noUi`)===`on`};this.failed=!1,this.conflict=!1;try{await jt(t,r),await this.refresh()}catch(e){this.conflict=e instanceof Error&&e.name===`ConflictError`,this.failed=!this.conflict}}t(e){return Ft(this.locale,e)}delivery(e){let t=e.source||this.t(`unavailable`),n=e.destination||this.t(`unavailable`);return F`
+      <courier-terminal class="delivery-terminal" .heading=${`${this.t(`deliveries`)} · ${e.route}`} .status=${e.state}>
       <article>
         <div class="row delivery-head"><div><span class="label">${this.t(`deliveries`)} · ${e.route}</span><strong class="delivery-id">${e.id}</strong></div><courier-button @click=${()=>this.stop(`deliveries`,e.id)}>${this.t(`stopDelivery`)}</courier-button></div>
         <div class="route"><courier-route source=${t} destination=${n}></courier-route></div>
@@ -456,9 +590,9 @@
           <label class="checkbox"><input name="noUi" type="checkbox" ?checked=${e.policy.noUi}><span>${this.t(`noUi`)}</span></label>
           <courier-button type="submit" variant="primary">${this.t(`save`)}</courier-button>
         </form>
-      </article>
+      </article></courier-terminal>
     `}server(e){return F`
-      <courier-panel>
+      <courier-terminal class="server-terminal" .heading=${this.t(`server`)} .status=${e.status}>
         <section class="server">
           <div class="server-head">
             <div class="server-title"><span class="label">${this.t(`server`)}</span><h2 class="server-id">${e.id}</h2><span class="bind"><courier-icon name="server"></courier-icon>${e.bind}</span></div>
@@ -467,8 +601,9 @@
           <span class="label">${this.t(`deliveries`)}</span>
           <div class="delivery-stack">${e.deliveries.map(e=>this.delivery(e))}</div>
         </section>
-      </courier-panel>
+      </courier-terminal>
     `}render(){let e=this.snapshot?.servers??[],t=e.reduce((e,t)=>e+t.deliveries.length,0),n=e.reduce((e,t)=>e+t.deliveries.reduce((e,t)=>e+t.counters.confirmed,0),0);return F`
+      <courier-scene class="page-scene" .source=${Ot} .mobileSource=${kt}></courier-scene>
       <main>
         <header>
           <courier-brand product=${this.t(`brandProduct`)}></courier-brand>
@@ -476,14 +611,14 @@
         </header>
         <div class="workspace">
           <div class="page-head"><div><span class="eyebrow">${this.t(`eyebrow`)}</span><h1>${this.t(`title`)}</h1><p class="intro">${this.t(`intro`)}</p></div><courier-status tone=${this.failed?`danger`:`signal`}>${this.t(this.failed?`unreachable`:`live`)}</courier-status></div>
-          <div class="metrics">
+          <courier-terminal class="registry-terminal" .heading=${this.t(`eyebrow`)} .status=${this.failed?this.t(`unreachable`):this.t(`live`)}><div class="metrics">
             <div class="metric"><strong>${e.length}</strong><span>${this.t(`serversMetric`)}</span></div>
             <div class="metric"><strong>${t}</strong><span>${this.t(`deliveriesMetric`)}</span></div>
             <div class="metric"><strong>${n}</strong><span>${this.t(`confirmedMetric`)}</span></div>
-          </div>
-          ${this.failed?F`<div class="state-brief"><div class="state-copy"><span class="eyebrow">${this.t(`unreachable`)}</span><p role="alert">${this.t(`failed`)}</p><courier-button @click=${this.refresh}>${this.t(`retry`)}</courier-button></div><div class="state-art"><courier-mascot alt="" .source=${wt}></courier-mascot></div></div>`:L}
+          </div></courier-terminal>
+          ${this.failed?F`<courier-terminal class="state-brief" .heading=${this.t(`unreachable`)} status="request failed"><div class="state-copy"><p role="alert">${this.t(`failed`)}</p><courier-button @click=${this.refresh}>${this.t(`retry`)}</courier-button></div></courier-terminal>`:L}
           ${this.conflict?F`<div class="notice"><p role="alert">${this.t(`conflict`)}</p><courier-button @click=${this.refresh}>${this.t(`refresh`)}</courier-button></div>`:L}
-          ${this.snapshot?e.length===0?F`<div class="state-brief"><div class="state-copy"><span class="eyebrow">${this.t(`live`)}</span><p>${this.t(`empty`)}</p></div><div class="state-art"><courier-mascot alt="" .source=${wt}></courier-mascot></div></div>`:F`<div class="server-list">${e.map(e=>this.server(e))}</div>`:this.failed?L:F`<div class="loading"><courier-status>${this.t(`loading`)}</courier-status></div>`}
+          ${this.snapshot?e.length===0?F`<courier-terminal class="state-brief" .heading=${this.t(`live`)} status="exit 0"><div class="state-copy"><p>${this.t(`empty`)}</p></div></courier-terminal>`:F`<div class="server-list">${e.map(e=>this.server(e))}</div>`:this.failed?L:F`<courier-terminal class="loading" .heading=${this.t(`eyebrow`)} status="running"><courier-status>${this.t(`loading`)}</courier-status></courier-terminal>`}
         </div>
       </main>
-    `}};customElements.get(`courier-admin-app`)||customElements.define(`courier-admin-app`,jt);
+    `}};customElements.get(`courier-admin-app`)||customElements.define(`courier-admin-app`,It);

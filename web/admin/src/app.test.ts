@@ -71,9 +71,10 @@ it("loads, renders, receives events, localizes, and disconnects", async () => {
   eventListener!(new MessageEvent("snapshot", { data: JSON.stringify({ servers: [] }) }));
   await element.updateComplete;
   expect(element.shadowRoot?.textContent).toContain("No live Courier servers");
-  const operationsArt = element.shadowRoot?.querySelector("courier-mascot");
-  await operationsArt?.updateComplete;
-  expect(operationsArt?.shadowRoot?.querySelector("img")?.src).toContain("relay-operations");
+  const operationsArt = element.shadowRoot?.querySelector("courier-scene") as HTMLElement & { source: string; mobileSource: string };
+  expect(operationsArt.source).toContain("relay-terminal-admin-wide");
+  expect(operationsArt.mobileSource).toContain("relay-terminal-admin-mobile");
+  expect(element.shadowRoot?.querySelector("courier-terminal.registry-terminal")).not.toBeNull();
   element.setLocale(new CustomEvent("courier-locale", { detail: "ru" }));
   await element.updateComplete;
   expect(element.shadowRoot?.textContent).toContain("Активные серверы Courier");

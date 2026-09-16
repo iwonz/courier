@@ -26,104 +26,124 @@
       "prompt": "Adult courier pigeon in a compact graphite utility harness carrying a sealed cream data capsule with sparse signal-lime tabs; transparent editorial screen-print cutout; no text, logo, weaponry, robot parts, childlike proportions, or third-party mascot imitation."
     },
     {
-      "path": "relay-hero-wide-v2.webp",
+      "path": "relay-terminal-hero-wide-v3.webp",
       "mediaType": "image/webp",
-      "bytes": 194810,
-      "sha256": "edf0d2fe43e30a2927f99432c4706654eff437af6725e81257e191a101e1f3de",
+      "bytes": 142634,
+      "sha256": "91e0d7edc7bf9f7525cd1b722db9546703e2c0393a0af77cd03cce890d37886f",
       "width": 1672,
       "height": 941,
-      "use": "Integrated desktop dispatch observatory with headline and live route-node space",
-      "prompt": "Premium landscape Courier dispatch observatory above a mountainous archipelago: canonical Relay in a black utility harness guides a delivery between distant stations; calm lower-contrast cartographic space at left for the headline and a clear curved corridor at right for live Source and Destination overlays; graphite instruments, paper maps, restrained signal-lime glints, mature editorial technology; no text, logos, fake UI, icons, watermarks, or third-party marks."
+      "use": "Wide terminal-workbench hero scene with quiet headline and route geometry space",
+      "prompt": "Wide cinematic editorial Courier scene: canonical mature Relay flies between two signal stations along a graceful luminous route above a pale graphite technical landscape; reserve quiet headline space; warm paper, graphite, signal-lime and orange; no text, fake UI, logos, watermarks, weapons, credentials, or required product information."
     },
     {
-      "path": "relay-hero-mobile-v2.webp",
+      "path": "relay-terminal-hero-mobile-v3.webp",
       "mediaType": "image/webp",
-      "bytes": 237246,
-      "sha256": "87effa439c0f9de3dfcbbb65240c22e72c9da35f68a525b593092a1707f95d02",
+      "bytes": 145786,
+      "sha256": "065b6ce8ead83ac5a81d3580080c7f50f794f093e22dea892216e702c938da40",
       "width": 941,
       "height": 1672,
-      "use": "Integrated mobile dispatch observatory with portrait headline and route-node space",
-      "prompt": "Portrait Courier dispatch observatory above a mountainous archipelago: canonical Relay in the lower-right, calm cartographic upper space for the live headline, and a clear middle-right corridor for live Source and Destination overlays; graphite instruments, paper maps, restrained signal-lime glints, mature editorial technology; no text, logos, fake UI, icons, watermarks, or third-party marks."
+      "use": "Portrait terminal-workbench hero scene with quiet headline and route geometry space",
+      "prompt": "Portrait cinematic editorial Courier scene independently composed for mobile: canonical mature Relay flies upward between two signal stations along a luminous route; reserve quiet headline space; warm paper, graphite, signal-lime and orange; no text, fake UI, logos, watermarks, weapons, credentials, or required product information."
     },
     {
-      "path": "relay-routing-wide-v2.webp",
+      "path": "relay-terminal-routing-wide-v3.webp",
       "mediaType": "image/webp",
-      "bytes": 170274,
-      "sha256": "dbfaaae313bcbd8abc0b4f57189e6548cf19acd77ec40d58f284dfb3839cf706",
+      "bytes": 176238,
+      "sha256": "b2273f5bc9cf90b6d7edba39f6b4f7d6747de428adae0077be5efa5d876fbad1",
       "width": 1672,
       "height": 941,
-      "use": "Integrated desktop route observatory framing the live route explorer",
-      "prompt": "Landscape night dispatch-routing observatory above a mountainous archipelago: a wide low-detail smoked-graphite map-table bay for live route controls, canonical Relay operating a route compass at the left edge, and beacons and equipment concentrated around the perimeter; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, fake UI, icons, watermarks, or third-party marks."
+      "use": "Wide routing scene with quiet endpoint-control and terminal regions",
+      "prompt": "Wide cinematic editorial signal yard: several physical routes converge at a precise switch while canonical mature Relay supervises; reserve a quiet center and lower half for route controls and terminal; warm paper, graphite, signal-lime and orange; no text, fake UI, logos, watermarks, weapons, credentials, or required information."
     },
     {
-      "path": "relay-routing-mobile-v2.webp",
+      "path": "relay-terminal-routing-mobile-v3.webp",
       "mediaType": "image/webp",
-      "bytes": 112464,
-      "sha256": "2f7e6527cf951fa7d3087e1e0556913afcfa7e7dd13fe40f12180bedd59783b1",
+      "bytes": 152396,
+      "sha256": "2e041c3f18b7d192333619a27605dbec1ee812e27b6990d5b7ec840f02429e65",
       "width": 941,
       "height": 1672,
-      "use": "Integrated mobile route observatory framing the live route explorer",
-      "prompt": "Portrait night dispatch-routing observatory above a mountainous archipelago: a tall low-detail smoked-graphite map-table bay for live route controls, canonical Relay operating a compass at the lower-left edge, and beacons and equipment concentrated around the perimeter; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, fake UI, icons, watermarks, or third-party marks."
+      "use": "Portrait routing scene with quiet stacked endpoint-control and terminal regions",
+      "prompt": "Portrait cinematic editorial signal junction independently composed for mobile: routes branch toward distant structures while canonical mature Relay supervises; reserve the central and lower field for controls and terminal; no text, fake UI, logos, watermarks, weapons, credentials, or required information."
     },
     {
-      "path": "relay-install-wide-v2.webp",
+      "path": "relay-terminal-install-wide-v3.webp",
       "mediaType": "image/webp",
-      "bytes": 121468,
-      "sha256": "4edcdeb008184b8fafe91bb1866f3a62710d57b779893d717970937df4aa7300",
+      "bytes": 162334,
+      "sha256": "651422fd3fef44d0a2a10ac2d89c871bf4fba3709d2cdd8c9e589e56e395fc81",
       "width": 1672,
       "height": 941,
-      "use": "Integrated desktop distribution depot framing compact install controls",
-      "prompt": "Landscape twilight field distribution depot: a wide quiet recessed graphite command bay for live channel tags, command copy control, and release links; canonical Relay loads a parcel into a distribution manifold at the right edge while unmarked cases and equipment frame the perimeter; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, platform marks, fake UI, icons, or watermarks."
+      "use": "Wide installation dispatch scene with quiet channel and terminal regions",
+      "prompt": "Wide full-frame cinematic editorial dispatch depot: unbranded graphite parcels pass from a release vault through a checksum light gate while canonical mature Relay inspects them; reserve continuous pale floor for installation controls; no text, fake UI, logos, watermarks, weapons, credentials, or required information."
     },
     {
-      "path": "relay-install-mobile-v2.webp",
+      "path": "relay-terminal-install-mobile-v3.webp",
       "mediaType": "image/webp",
-      "bytes": 158748,
-      "sha256": "68bfed9311574baae97a668ca8ab805ebea720ec211cbe772be260356cd28a19",
+      "bytes": 148386,
+      "sha256": "be31323ae7c5a3390d04bd54cb05b7aae6a06ebe781fee47bb4fbdf6bc8a84b5",
       "width": 941,
       "height": 1672,
-      "use": "Integrated mobile distribution depot framing compact install controls",
-      "prompt": "Portrait twilight field distribution depot: a tall quiet recessed graphite command bay for live channel tags, command copy control, and release links; canonical Relay loads a parcel into a distribution manifold at the lower-right edge while unmarked cases and equipment frame the perimeter; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, platform marks, fake UI, icons, or watermarks."
+      "use": "Portrait installation dispatch scene with quiet stacked channel and terminal regions",
+      "prompt": "Portrait full-frame cinematic editorial dispatch hall independently composed for mobile: parcels pass through a checksum gate while canonical mature Relay inspects them; reserve the middle and lower pale floor for installation controls; no text, fake UI, logos, watermarks, weapons, credentials, or required information."
     },
     {
-      "path": "relay-cli-wide-v2.webp",
+      "path": "relay-terminal-cli-wide-v3.webp",
       "mediaType": "image/webp",
-      "bytes": 127066,
-      "sha256": "b1dfd5c165b8f166b61029310793de68072a00dfbe624658d6a4d3856ff2671a",
+      "bytes": 139638,
+      "sha256": "ff242e8e9dfa5095a8d638b8c0161e13614d90a459477af90833119530cb53cf",
       "width": 1672,
       "height": 941,
-      "use": "Integrated desktop verification archive framing the live CLI registry",
-      "prompt": "Landscape verification archive and operations workshop: a wide quiet two-column smoked-graphite bay for the live command and options registry, canonical Relay inspecting an unmarked parcel at the lower-left perimeter, and archive drawers, optics, and equipment framing the edges; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, fake commands, fake UI, icons, third-party marks, or watermarks."
+      "use": "Wide CLI archive scene with quiet command, option, and demo regions",
+      "prompt": "Wide cinematic editorial operations archive: canonical mature Relay organizes unlabeled route instruments and modular drawers; reserve a large pale work surface for transparent CLI panes; no text, code, fake UI, logos, watermarks, weapons, credentials, or required information."
     },
     {
-      "path": "relay-cli-mobile-v2.webp",
+      "path": "relay-terminal-cli-mobile-v3.webp",
       "mediaType": "image/webp",
-      "bytes": 135566,
-      "sha256": "37b03c3f48a82058c12287623d309d1997200a9734c655230d48f5b94b2a6bcc",
+      "bytes": 188956,
+      "sha256": "53fca1eb254d573651a60a93f61803b1f70d132788567012cffb757c9675f49c",
       "width": 941,
       "height": 1672,
-      "use": "Integrated mobile verification archive framing the live CLI registry",
-      "prompt": "Portrait verification archive and operations workshop: a tall quiet two-column smoked-graphite bay for the live command and options registry, canonical Relay inspecting an unmarked parcel at the lower-left perimeter, and archive drawers, optics, and equipment framing the edges; mature graphite, paper, brass, and signal-lime editorial technology; no text, logos, fake commands, fake UI, icons, third-party marks, or watermarks."
+      "use": "Portrait CLI archive scene with quiet stacked command, option, and demo regions",
+      "prompt": "Portrait cinematic editorial operations archive independently composed for mobile: canonical mature Relay organizes unlabeled route instruments; reserve the central and lower pale work surface for stacked CLI panes; no text, code, fake UI, logos, watermarks, weapons, credentials, or required information."
     },
     {
-      "path": "relay-access.webp",
+      "path": "relay-terminal-delivery-wide-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 202564,
-      "sha256": "24850df15fb8d8192df9856a797ddccb8f2d17ac1c83b1aacfd7fbe8d89a1de2",
-      "width": 1233,
-      "height": 1276,
-      "use": "Delivery authentication access-controller scene",
-      "prompt": "Relay calmly presents a blank credential tile to a delivery checkpoint scanner; transparent mature editorial cutout with no password, secret, biometric imagery, text, or logos."
+      "bytes": 128404,
+      "sha256": "af3fca8d7dc48b807ec4222f592a99371a24200d876aec1bc0b87e2838527622",
+      "width": 1672,
+      "height": 941,
+      "use": "Wide protected-delivery scene with quiet authentication and manifest regions",
+      "prompt": "Wide cinematic editorial secure transit hall: canonical mature Relay guards an arrival bay with a circular gateway, narrow signal lanes and unbranded sealed parcels; reserve the center and right for protected terminal UI; no text, fake UI, logos, watermarks, weapons, credentials, people, or required information."
     },
     {
-      "path": "relay-operations.webp",
+      "path": "relay-terminal-delivery-mobile-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 230902,
-      "sha256": "4b11d2111e21a340a26c06013c863ecfa9e0ba5992da3851f1993ddb7c948ceb",
-      "width": 1536,
-      "height": 1024,
-      "use": "Administration operations-controller scene",
-      "prompt": "Relay operates an abstract network control console with route dials, healthy status lights, a headset, and blank clipboard; mature graphite editorial vignette without real metadata or legible UI."
+      "bytes": 164460,
+      "sha256": "c19b2ed07f82355cd5e4b56c88dc9303249afeca8aa2ac08a83b30f821b8fe62",
+      "width": 941,
+      "height": 1672,
+      "use": "Portrait protected-delivery scene with quiet stacked authentication and manifest regions",
+      "prompt": "Portrait cinematic editorial secure transit hall independently composed for mobile: canonical mature Relay guards a circular gateway and unbranded parcels; reserve the center and lower field for protected terminal UI; no text, fake UI, logos, watermarks, weapons, credentials, people, or required information."
+    },
+    {
+      "path": "relay-terminal-admin-wide-v2.webp",
+      "mediaType": "image/webp",
+      "bytes": 177604,
+      "sha256": "6239f15e2132cbd049fc407b9ce37541dfe8379ed040f576ae40772c881aa2b8",
+      "width": 1672,
+      "height": 941,
+      "use": "Wide operations-observatory scene with quiet registry and policy regions",
+      "prompt": "Wide cinematic editorial operations observatory: canonical mature Relay coordinates distant relay stations and abstract status beacons; reserve the left and center for registry, server and policy terminal workspaces; no text, fake UI, charts, logos, watermarks, weapons, credentials, people, or required information."
+    },
+    {
+      "path": "relay-terminal-admin-mobile-v2.webp",
+      "mediaType": "image/webp",
+      "bytes": 168016,
+      "sha256": "03c85081cf8ee85641c938edde64f21f70557de217c8f295ae2f0d2e9071cb90",
+      "width": 941,
+      "height": 1672,
+      "use": "Portrait operations-observatory scene with quiet stacked registry and policy regions",
+      "prompt": "Portrait cinematic editorial operations observatory independently composed for mobile: canonical mature Relay coordinates distant signal routes and beacons; reserve the center and lower field for stacked operations workspaces; no text, fake UI, charts, logos, watermarks, weapons, credentials, people, or required information."
     },
     {
       "path": "readme-route-banner.webp",

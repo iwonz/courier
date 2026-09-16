@@ -89,9 +89,12 @@ export class CourierRoute extends LitElement {
     :host { display: grid; color: var(--courier-color-text, #151714); font-family: var(--courier-font-mono, monospace); }
     .route { display: grid; grid-template-columns: minmax(0, 1fr) minmax(3rem, 0.55fr) minmax(0, 1fr); align-items: center; gap: 0.65rem; }
     .node { overflow: hidden; padding: 0.65rem 0.75rem; border: 1px solid var(--courier-color-border, #c8cdbf); border-radius: var(--courier-radius-sm, 0.25rem); background: var(--courier-color-surface, #fafbf3); font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
-    svg { width: 100%; height: 2rem; overflow: visible; color: var(--courier-color-border-strong, #8e9587); }
+    .connector { position: relative; height: 2rem; }
+    svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; color: var(--courier-color-border-strong, #8e9587); }
     path { fill: none; stroke: currentColor; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-    circle { fill: var(--courier-color-accent, #d4ff45); }
+    .terminal { position: absolute; top: 50%; width: 0.65rem; height: 0.65rem; aspect-ratio: 1; border: 2px solid var(--courier-color-accent, #d4ff45); border-radius: 50%; background: var(--courier-graphite-900, #151714); box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--courier-color-accent, #d4ff45) 14%, transparent); transform: translateY(-50%); }
+    .terminal.source { left: 0; transform: translate(-50%, -50%); }
+    .terminal.destination { right: 0; transform: translate(50%, -50%); }
   `;
 
   source = "";
@@ -99,6 +102,6 @@ export class CourierRoute extends LitElement {
 
   protected render() {
     const path = cubicBezierPath({ x: 1, y: 15 }, { x: 99, y: 15 });
-    return html`<div class="route"><span class="node">${this.source}</span><svg viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path d=${path}></path><circle cx="1" cy="15" r="2.4"></circle><circle cx="99" cy="15" r="2.4"></circle></svg><span class="node">${this.destination}</span></div>`;
+    return html`<div class="route"><span class="node">${this.source}</span><span class="connector" aria-hidden="true"><svg viewBox="0 0 100 30" preserveAspectRatio="none"><path d=${path}></path></svg><i class="terminal source"></i><i class="terminal destination"></i></span><span class="node">${this.destination}</span></div>`;
   }
 }

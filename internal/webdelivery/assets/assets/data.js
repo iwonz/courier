@@ -187,7 +187,7 @@
     :host { display: inline-flex; width: 1.5rem; height: 1.5rem; color: currentColor; }
     svg, .mask { display: block; width: 100%; height: 100%; }
     .mask { background: currentColor; mask: var(--brand-mask) center / contain no-repeat; -webkit-mask: var(--brand-mask) center / contain no-repeat; }
-  `}render(){let e=Be[Ve(this.name)],t=this.label||void 0;return e.kind===`glyph`?P`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter" role=${t?`img`:`presentation`} aria-label=${t} aria-hidden=${t?`false`:`true`}><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"></path></svg>`:P`<span class="mask" style=${`--brand-mask: url("${e.source}")`} role=${t?`img`:`presentation`} aria-label=${t} aria-hidden=${t?`false`:`true`}></span>`}},Ue=`/assets/data.png`;function G(e){return Number(e.toFixed(2)).toString()}function We(e,t){if(![e.x,e.y,t.x,t.y].every(Number.isFinite))throw TypeError(`Bezier coordinates must be finite`);let n=Math.abs(t.x-e.x),r=Math.max(32,n*.42),i=t.x>=e.x?1:-1,a=e.x+r*i,o=t.x-r*i;return`M ${G(e.x)} ${G(e.y)} C ${G(a)} ${G(e.y)}, ${G(o)} ${G(t.y)}, ${G(t.x)} ${G(t.y)}`}var Ge=class extends U{constructor(...e){super(...e),this.product=``}static{this.properties={product:{type:String}}}static{this.styles=o`
+  `}render(){let e=Be[Ve(this.name)],t=this.label||void 0;return e.kind===`glyph`?P`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" stroke-linejoin="miter" role=${t?`img`:`presentation`} aria-label=${t} aria-hidden=${t?`false`:`true`}><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"></path></svg>`:P`<span class="mask" style=${`--brand-mask: url("${e.source}")`} role=${t?`img`:`presentation`} aria-label=${t} aria-hidden=${t?`false`:`true`}></span>`}},Ue=`/assets/data-relay-mark.png`;function G(e){return Number(e.toFixed(2)).toString()}function We(e,t){if(![e.x,e.y,t.x,t.y].every(Number.isFinite))throw TypeError(`Bezier coordinates must be finite`);let n=Math.abs(t.x-e.x),r=Math.max(32,n*.42),i=t.x>=e.x?1:-1,a=e.x+r*i,o=t.x-r*i;return`M ${G(e.x)} ${G(e.y)} C ${G(a)} ${G(e.y)}, ${G(o)} ${G(t.y)}, ${G(t.x)} ${G(t.y)}`}var Ge=class extends U{constructor(...e){super(...e),this.product=``}static{this.properties={product:{type:String}}}static{this.styles=o`
     :host { display: inline-flex; min-width: 0; color: var(--courier-color-text, #151714); font-family: var(--courier-font-sans, sans-serif); }
     .lockup { display: inline-flex; min-width: 0; align-items: center; gap: 0.625rem; color: inherit; }
     img { flex: 0 0 auto; width: 2.5rem; height: 2.5rem; object-fit: contain; filter: drop-shadow(0 0.3rem 0.45rem rgb(16 18 15 / 0.16)); }
@@ -222,10 +222,13 @@
     :host { display: grid; color: var(--courier-color-text, #151714); font-family: var(--courier-font-mono, monospace); }
     .route { display: grid; grid-template-columns: minmax(0, 1fr) minmax(3rem, 0.55fr) minmax(0, 1fr); align-items: center; gap: 0.65rem; }
     .node { overflow: hidden; padding: 0.65rem 0.75rem; border: 1px solid var(--courier-color-border, #c8cdbf); border-radius: var(--courier-radius-sm, 0.25rem); background: var(--courier-color-surface, #fafbf3); font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
-    svg { width: 100%; height: 2rem; overflow: visible; color: var(--courier-color-border-strong, #8e9587); }
+    .connector { position: relative; height: 2rem; }
+    svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; color: var(--courier-color-border-strong, #8e9587); }
     path { fill: none; stroke: currentColor; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-    circle { fill: var(--courier-color-accent, #d4ff45); }
-  `}render(){let e=We({x:1,y:15},{x:99,y:15});return P`<div class="route"><span class="node">${this.source}</span><svg viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path d=${e}></path><circle cx="1" cy="15" r="2.4"></circle><circle cx="99" cy="15" r="2.4"></circle></svg><span class="node">${this.destination}</span></div>`}},Ye=class extends U{constructor(...e){super(...e),this.checked=!1,this.disabled=!1,this.label=``}static{this.properties={checked:{type:Boolean,reflect:!0},disabled:{type:Boolean,reflect:!0},label:{type:String}}}static{this.styles=o`
+    .terminal { position: absolute; top: 50%; width: 0.65rem; height: 0.65rem; aspect-ratio: 1; border: 2px solid var(--courier-color-accent, #d4ff45); border-radius: 50%; background: var(--courier-graphite-900, #151714); box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--courier-color-accent, #d4ff45) 14%, transparent); transform: translateY(-50%); }
+    .terminal.source { left: 0; transform: translate(-50%, -50%); }
+    .terminal.destination { right: 0; transform: translate(50%, -50%); }
+  `}render(){let e=We({x:1,y:15},{x:99,y:15});return P`<div class="route"><span class="node">${this.source}</span><span class="connector" aria-hidden="true"><svg viewBox="0 0 100 30" preserveAspectRatio="none"><path d=${e}></path></svg><i class="terminal source"></i><i class="terminal destination"></i></span><span class="node">${this.destination}</span></div>`}},Ye=class extends U{constructor(...e){super(...e),this.checked=!1,this.disabled=!1,this.label=``}static{this.properties={checked:{type:Boolean,reflect:!0},disabled:{type:Boolean,reflect:!0},label:{type:String}}}static{this.styles=o`
     :host { display: inline-flex; min-width: 0; color: inherit; font-family: var(--courier-font-sans, sans-serif); }
     label { display: inline-grid; min-width: 0; grid-template-columns: 1.25rem minmax(0, 1fr); align-items: center; gap: 0.55rem; color: inherit; font-size: 0.75rem; font-weight: 720; line-height: 1.25; cursor: pointer; }
     input { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -330,30 +333,136 @@
             @keydown=${this.move}
           >${e.icon?P`<courier-icon name=${e.icon}></courier-icon>`:``}${e.symbol?P`<span class="symbol" aria-hidden="true">${e.symbol}</span>`:``}${this.iconOnly?``:P`<span>${e.label}</span>`}</button>`})}
       </div>
-    </fieldset>`}},st={x:72,y:42};function ct(e){return Math.min(100,Math.max(0,e))}function lt(e,t,n){return e.width<=0||e.height<=0?{x:50,y:50}:{x:ct((t-e.left)/e.width*100),y:ct((n-e.top)/e.height*100)}}function ut(e,t,n){let r=1-Math.exp(-Math.min(64,Math.max(0,n))/72),i={x:e.x+(t.x-e.x)*r,y:e.y+(t.y-e.y)*r},a=Math.hypot(t.x-i.x,t.y-i.y)<.04;return{position:a?t:i,settled:a}}var dt=class extends U{constructor(...e){super(...e),this.eager=!1,this.mobileSource=``,this.source=``,this.frame=0,this.current=st,this.returning=!1}static{this.properties={eager:{type:Boolean},mobileSource:{type:String,attribute:`mobile-source`},source:{type:String}}}static{this.styles=o`
+    </fieldset>`}},st={x:72,y:42};function ct(e){return Math.min(100,Math.max(0,e))}function lt(e,t,n){return e.width<=0||e.height<=0?{x:50,y:50}:{x:ct((t-e.left)/e.width*100),y:ct((n-e.top)/e.height*100)}}function ut(e,t,n){let r=1-Math.exp(-Math.min(48,Math.max(0,n))/42),i={x:e.x+(t.x-e.x)*r,y:e.y+(t.y-e.y)*r},a=Math.hypot(t.x-i.x,t.y-i.y)<.04;return{position:a?t:i,settled:a}}var dt=class extends U{constructor(...e){super(...e),this.eager=!1,this.mobileSource=``,this.source=``,this.frame=0,this.current=st,this.returning=!1,this.handlePointerMove=e=>this.move(e),this.handlePointerLeave=()=>this.leave()}static{this.properties={eager:{type:Boolean},mobileSource:{type:String,attribute:`mobile-source`},source:{type:String}}}static{this.styles=o`
     :host { --scene-pointer-x: 72%; --scene-pointer-y: 42%; position: absolute; display: block; inset: 0; overflow: hidden; background: var(--courier-graphite-900, #151714); pointer-events: auto; isolation: isolate; }
-    courier-mascot { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .tracking { position: absolute; inset: 0; }
+    courier-mascot { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
     courier-mascot::part(image) { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.88) contrast(1.02); }
     .base { z-index: 0; transform: none; }
-    .refracted { z-index: 1; clip-path: ellipse(clamp(5rem, 11vw, 10rem) clamp(4rem, 9vw, 8rem) at var(--scene-pointer-x) var(--scene-pointer-y)); opacity: 0.62; transform: scale(1.012); transform-origin: var(--scene-pointer-x) var(--scene-pointer-y); filter: saturate(1.06) contrast(1.025); will-change: clip-path, transform; }
-    .glow { position: absolute; z-index: 2; inset: 0; background: radial-gradient(ellipse clamp(8rem, 22vw, 19rem) clamp(6rem, 16vw, 14rem) at var(--scene-pointer-x) var(--scene-pointer-y), color-mix(in srgb, var(--courier-signal, #d4ff45) 14%, transparent), transparent 67%), radial-gradient(ellipse clamp(5rem, 11vw, 9rem) clamp(8rem, 17vw, 14rem) at calc(var(--scene-pointer-x) + 3%) calc(var(--scene-pointer-y) - 2%), rgb(255 255 255 / 0.07), transparent 73%); mix-blend-mode: screen; pointer-events: none; }
+    .refracted { z-index: 1; opacity: 0.56; transform: scale(1.009); transform-origin: var(--scene-pointer-x) var(--scene-pointer-y); filter: saturate(1.055) contrast(1.02); mask-image: radial-gradient(circle clamp(3.8rem, 8vw, 7.2rem) at var(--scene-pointer-x) var(--scene-pointer-y), #000 36%, transparent 72%), radial-gradient(circle clamp(2.8rem, 6vw, 5.4rem) at calc(var(--scene-pointer-x) - 4.5%) calc(var(--scene-pointer-y) + 2.5%), #000 32%, transparent 74%), radial-gradient(circle clamp(2.4rem, 5vw, 4.8rem) at calc(var(--scene-pointer-x) + 4%) calc(var(--scene-pointer-y) - 3.5%), #000 30%, transparent 72%); mask-repeat: no-repeat; will-change: mask-position, transform; animation: scene-lobes 7s ease-in-out infinite alternate; }
+    .glow { position: absolute; z-index: 2; inset: 0; background: radial-gradient(circle clamp(8rem, 20vw, 18rem) at var(--scene-pointer-x) var(--scene-pointer-y), color-mix(in srgb, var(--courier-signal, #d4ff45) 13%, transparent), transparent 68%), radial-gradient(circle clamp(4rem, 9vw, 8rem) at calc(var(--scene-pointer-x) - 5%) calc(var(--scene-pointer-y) + 4%), rgb(255 255 255 / 0.065), transparent 72%), radial-gradient(circle clamp(3rem, 7vw, 6rem) at calc(var(--scene-pointer-x) + 6%) calc(var(--scene-pointer-y) - 5%), color-mix(in srgb, var(--courier-beak, #ff8758) 5%, transparent), transparent 76%); filter: blur(0.55rem); mix-blend-mode: screen; pointer-events: none; animation: scene-glow 8s ease-in-out infinite alternate; }
     .veil { position: absolute; z-index: 3; inset: 0; background: linear-gradient(90deg, rgb(8 10 8 / 0.1), transparent 28% 72%, rgb(8 10 8 / 0.16)), linear-gradient(180deg, rgb(8 10 8 / 0.08), transparent 23% 82%, rgb(8 10 8 / 0.22)); pointer-events: none; }
+    @keyframes scene-lobes { to { filter: saturate(1.06) contrast(1.025) blur(0.08rem); } }
+    @keyframes scene-glow { to { opacity: 0.86; } }
     @media (pointer: coarse), (hover: none) {
       :host { --scene-pointer-x: 68%; --scene-pointer-y: 40%; }
       .refracted { display: none; }
-      .glow { opacity: 0.74; }
+      .glow { opacity: 0.74; animation: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       .refracted { display: none; }
-      .glow { opacity: 0.68; }
+      .glow { opacity: 0.68; animation: none; }
     }
-  `}disconnectedCallback(){this.frame&&globalThis.cancelAnimationFrame(this.frame),this.frame=0,this.target=void 0,this.previousTimestamp=void 0,super.disconnectedCallback()}tracksPointer(){return globalThis.matchMedia?.(`(hover: hover) and (pointer: fine)`).matches===!0&&!globalThis.matchMedia?.(`(prefers-reduced-motion: reduce)`).matches}move(e){this.tracksPointer()&&(this.target=lt(this.getBoundingClientRect(),e.clientX,e.clientY),this.returning=!1,this.schedule())}leave(){this.tracksPointer()&&(this.target=st,this.returning=!0,this.schedule())}schedule(){this.frame||=globalThis.requestAnimationFrame(e=>this.advance(e))}advance(e){this.frame=0;let t=this.target;if(!t)return;let n=this.previousTimestamp===void 0?16:e-this.previousTimestamp;this.previousTimestamp=e;let r=ut(this.current,t,n);if(this.current=r.position,this.style.setProperty(`--scene-pointer-x`,`${this.current.x}%`),this.style.setProperty(`--scene-pointer-y`,`${this.current.y}%`),!r.settled){this.schedule();return}this.previousTimestamp=void 0,this.returning&&(this.target=void 0,this.returning=!1,this.style.removeProperty(`--scene-pointer-x`),this.style.removeProperty(`--scene-pointer-y`))}render(){return P`<courier-mascot class="base" ?eager=${this.eager} alt="" .source=${this.source} .mobileSource=${this.mobileSource} @pointermove=${this.move} @pointerleave=${this.leave}></courier-mascot><courier-mascot class="refracted" aria-hidden="true" alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot><span class="glow" aria-hidden="true"></span><span class="veil" aria-hidden="true"></span>`}},ft=[`system`,`light`,`dark`],pt=`courier.theme`;function mt(e){return ft.includes(e)?e:`system`}function ht(e,t){return e===`system`?t?.matches?`dark`:`light`:e}function gt(e){if(!e)return`system`;try{return mt(e.getItem(pt))}catch{return`system`}}function _t(e,t){if(e)try{e.setItem(pt,t)}catch{}}var vt=class{constructor(e,t,n,r){this.root=e,this.storage=t,this.media=n,this.onSystemChange=()=>this.apply(),this.preference=r??gt(t),this.media?.addEventListener(`change`,this.onSystemChange),this.apply()}set(e){this.preference=e,_t(this.storage,e),this.apply()}destroy(){this.media?.removeEventListener(`change`,this.onSystemChange)}apply(){this.root.dataset.courierTheme=ht(this.preference,this.media),this.root.dataset.courierThemePreference=this.preference}};function X(){let e;try{e=globalThis.localStorage}catch{e=void 0}let t=globalThis.matchMedia?.(`(prefers-color-scheme: dark)`);return new vt(document.documentElement,e,t)}var yt=class extends U{constructor(...e){super(...e),this.preference=`system`,this.locale=`en`}static{this.properties={preference:{type:String},locale:{type:String}}}connectedCallback(){super.connectedCallback(),this.state=X(),this.preference=this.state.preference}disconnectedCallback(){this.state?.destroy(),super.disconnectedCallback()}change(e){let t=mt(e.detail);this.preference=t,this.state?.set(t),this.dispatchEvent(new CustomEvent(`courier-theme-change`,{detail:t,bubbles:!0,composed:!0}))}render(){return P`<courier-segmented-control
+  `}connectedCallback(){super.connectedCallback(),this.addEventListener(`pointermove`,this.handlePointerMove),this.addEventListener(`pointerleave`,this.handlePointerLeave)}disconnectedCallback(){this.removeEventListener(`pointermove`,this.handlePointerMove),this.removeEventListener(`pointerleave`,this.handlePointerLeave),this.frame&&globalThis.cancelAnimationFrame(this.frame),this.frame=0,this.target=void 0,this.previousTimestamp=void 0,super.disconnectedCallback()}tracksPointer(){return globalThis.matchMedia?.(`(hover: hover) and (pointer: fine)`).matches===!0&&!globalThis.matchMedia?.(`(prefers-reduced-motion: reduce)`).matches}move(e){this.tracksPointer()&&(this.target=lt(this.getBoundingClientRect(),e.clientX,e.clientY),this.returning=!1,this.schedule())}leave(){this.tracksPointer()&&(this.target=st,this.returning=!0,this.schedule())}schedule(){this.frame||=globalThis.requestAnimationFrame(e=>this.advance(e))}advance(e){this.frame=0;let t=this.target;if(!t)return;let n=this.previousTimestamp===void 0?16:e-this.previousTimestamp;this.previousTimestamp=e;let r=ut(this.current,t,n);if(this.current=r.position,this.style.setProperty(`--scene-pointer-x`,`${this.current.x}%`),this.style.setProperty(`--scene-pointer-y`,`${this.current.y}%`),!r.settled){this.schedule();return}this.previousTimestamp=void 0,this.returning&&(this.target=void 0,this.returning=!1,this.style.removeProperty(`--scene-pointer-x`),this.style.removeProperty(`--scene-pointer-y`))}render(){return P`<div class="tracking"><courier-mascot class="base" ?eager=${this.eager} alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot><courier-mascot class="refracted" aria-hidden="true" alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot><span class="glow" aria-hidden="true"></span><span class="veil" aria-hidden="true"></span></div>`}},ft=[`system`,`light`,`dark`],pt=`courier.theme`;function mt(e){return ft.includes(e)?e:`system`}function ht(e,t){return e===`system`?t?.matches?`dark`:`light`:e}function gt(e){if(!e)return`system`;try{return mt(e.getItem(pt))}catch{return`system`}}function _t(e,t){if(e)try{e.setItem(pt,t)}catch{}}var vt=class{constructor(e,t,n,r){this.root=e,this.storage=t,this.media=n,this.onSystemChange=()=>this.apply(),this.preference=r??gt(t),this.media?.addEventListener(`change`,this.onSystemChange),this.apply()}set(e){this.preference=e,_t(this.storage,e),this.apply()}destroy(){this.media?.removeEventListener(`change`,this.onSystemChange)}apply(){this.root.dataset.courierTheme=ht(this.preference,this.media),this.root.dataset.courierThemePreference=this.preference}};function X(){let e;try{e=globalThis.localStorage}catch{e=void 0}let t=globalThis.matchMedia?.(`(prefers-color-scheme: dark)`);return new vt(document.documentElement,e,t)}var yt=class extends U{constructor(...e){super(...e),this.preference=`system`,this.locale=`en`}static{this.properties={preference:{type:String},locale:{type:String}}}connectedCallback(){super.connectedCallback(),this.state=X(),this.preference=this.state.preference}disconnectedCallback(){this.state?.destroy(),super.disconnectedCallback()}change(e){let t=mt(e.detail);this.preference=t,this.state?.set(t),this.dispatchEvent(new CustomEvent(`courier-theme-change`,{detail:t,bubbles:!0,composed:!0}))}render(){return P`<courier-segmented-control
       icon-only
       .label=${Y(this.locale,`theme.label`)}
       .value=${this.preference}
       .options=${[{value:`system`,label:Y(this.locale,`theme.system`),icon:`system`},{value:`light`,label:Y(this.locale,`theme.light`),icon:`sun`},{value:`dark`,label:Y(this.locale,`theme.dark`),icon:`moon`}]}
       @courier-segment-change=${this.change}
-    ></courier-segmented-control>`}},bt=`apple.archive.browser-share.browser-upload.check.copy.download.folder.folder-in.folder-out.github.homebrew.linux.moon.npm.package.parcel.pnpm.receipt.retry.route.scoop.server.server-in.server-out.shield.sun.system.terminal.upload.webhook-in.webhook-out.windows.yarn`.split(`.`),xt={apple:`M15 5c1-1 1-3 1-3-2 0-3 1-4 3m6 7c-1-2-2-3-4-3-1 0-2 1-3 1s-2-1-3-1c-3 0-5 3-5 6 0 4 3 8 5 8 1 0 2-1 3-1s2 1 3 1c2 0 4-3 5-6-2-1-3-2-3-4 0-2 1-3 2-4z`,archive:`M3 3h18v5H3zM5 8v13h14V8M9 12h6`,"browser-share":`M3 4h18v15H3zM3 8h18M7 6h.01M10 6h.01M14 15c2-3 4-4 7-4m-3-2 3 2-1 4`,"browser-upload":`M3 4h18v15H3zM3 8h18M7 6h.01M10 6h.01M12 17v-6m-3 3 3-3 3 3`,check:`m4 12 5 5L20 6`,copy:`M8 3h13v13M3 8h13v13H3z`,download:`M12 3v13m-5-5 5 5 5-5M4 15v6h16v-6`,folder:`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3`,"folder-in":`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3m12 6h-7m3-3-3 3 3 3`,"folder-out":`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3m5 6h7m-3-3 3 3-3 3`,github:`M9 19c-5 1-5-2-7-3m14 6v-3.6c0-1 .1-1.7-.4-2.2 3.2-.4 6.4-1.6 6.4-7.1 0-1.6-.6-3-1.7-4 .2-.5.7-2.3-.2-4.6 0 0-1.4-.5-4.7 1.7a16 16 0 0 0-8.6 0C6.4 1 5 1.5 5 1.5 4.1 3.8 4.6 5.6 4.8 6.1a7 7 0 0 0-1.7 4c0 5.5 3.2 6.7 6.4 7.1-.4.4-.8 1.1-.8 2.2V23`,homebrew:`M6 4h11l-1 15H8zM17 7h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2M5 22h13`,linux:`M12 2c-3 0-4 3-4 6-2 2-3 5-3 8l3-1 1 5 3-2 3 2 1-5 3 1c0-3-1-6-3-8 0-3-1-6-4-6zM9 8h.01M15 8h.01M10 11h4`,moon:`M20 16a8 8 0 0 1-12-10 8 8 0 1 0 12 10z`,npm:`M2 6h20v12H2zM6 15V9h5v6m0-6h4v6m0-6h3v6`,package:`m3 7 9-5 9 5v11l-9 4-9-4zM3 7l9 5 9-5M12 12v10M8 4l9 5`,parcel:`m3 7 9-5 9 5v11l-9 4-9-4zM3 7l9 5 9-5M12 12v10M8 4l9 5v5`,pnpm:`M3 3h5v5H3zM10 3h5v5h-5zM17 3h4v5h-4zM3 10h5v5H3zm7 0h5v5h-5zm7 0h4v5h-4zM10 17h5v4h-5zm7 0h4v4h-4z`,receipt:`M5 2h14v20l-3-2-4 2-4-2-3 2zM8 7h8M8 11h8m-8 5 2 2 5-4`,retry:`M3 10a9 9 0 1 1 1 7M3 3v7h7M12 7v5l3 2`,route:`M2 3h6v6H2zM16 15h6v6h-6zM11 6h8v6m-3-3 3 3 3-3M13 18H5v-6m-3 3 3-3 3 3`,scoop:`M5 8h14l-2 13H7zM4 8h16M8 8V5a4 4 0 0 1 8 0v3`,server:`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m3 0h6M6 10v4m12-4v4`,"server-in":`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m7-12h-6m3-3-3 3 3 3`,"server-out":`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m3-12h6m-3-3 3 3-3 3`,shield:`m12 2 8 3v7c0 5-8 10-8 10S4 17 4 12V5zM8 11l3 3 5-6`,sun:`M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3m0 14v3M4.9 4.9 7 7m10 10 2.1 2.1M2 12h3m14 0h3M4.9 19.1 7 17M17 7l2.1-2.1`,system:`M3 4h18v13H3zM8 21h8M12 17v4`,terminal:`M4 6l5 6-5 6m7 0h9`,upload:`M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6`,"webhook-in":`M7 7a3 3 0 1 1 3 3l-3 6a3 3 0 1 0 3 4m7-3a3 3 0 1 1-3-3l3-6a3 3 0 1 0-3-4m-1 8h-6m3-3-3 3 3 3`,"webhook-out":`M7 7a3 3 0 1 1 3 3l-3 6a3 3 0 1 0 3 4m7-3a3 3 0 1 1-3-3l3-6a3 3 0 1 0-3-4m-4 8h6m-3-3 3 3-3 3`,windows:`M3 4l8-1v8H3zm10-1 8-1v9h-8zM3 13h8v8l-8-1zm10 0h8v9l-8-1z`,yarn:`M12 3a9 9 0 1 0 9 9M8 16c4-1 7-4 9-8m-8 1c3 1 5 4 5 8m-5-5c-1-3 0-5 2-6`};function St(e){return bt.includes(e)?e:`parcel`}var Ct={"courier-brand":Ge,"courier-brand-icon":He,"courier-button":we,"courier-checkbox":Ye,"courier-icon":class extends U{constructor(...e){super(...e),this.name=`parcel`,this.label=``}static{this.properties={name:{type:String},label:{type:String}}}static{this.styles=o`
+    ></courier-segmented-control>`}};function bt(e){let t=Math.max(0,e)*2;return`00:${String(t).padStart(2,`0`)}`}var xt=class extends U{constructor(...e){super(...e),this.heading=``,this.status=``}static{this.properties={heading:{type:String},status:{type:String}}}static{this.styles=o`
+    :host {
+      display: grid;
+      min-width: 0;
+      min-height: 0;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      overflow: hidden;
+      border: 1px solid var(--courier-terminal-border, rgb(137 147 129 / 0.48));
+      border-radius: var(--courier-radius-md, 0.625rem);
+      color: var(--courier-terminal-text, var(--courier-color-text, #f3f4e9));
+      background: var(--courier-terminal-surface, rgb(12 15 12 / 0.68));
+      box-shadow: inset 0 1px rgb(255 255 255 / 0.035), 0 1rem 3rem rgb(0 0 0 / 0.12);
+      font-family: var(--courier-font-mono, monospace);
+      backdrop-filter: blur(18px) saturate(0.8);
+    }
+    header {
+      display: flex;
+      min-height: 2.7rem;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--courier-terminal-border, rgb(137 147 129 / 0.48));
+      color: var(--courier-terminal-muted, #b9c0b1);
+      background: linear-gradient(90deg, rgb(255 255 255 / 0.035), transparent 62%);
+      font-size: 0.66rem;
+      font-weight: 760;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .status { color: var(--courier-terminal-prompt, #d4ff45); }
+    .body { min-width: 0; min-height: 0; overflow: auto; }
+    footer {
+      border-top: 1px solid var(--courier-terminal-border, rgb(137 147 129 / 0.48));
+    }
+    ::slotted([slot="toolbar"]), ::slotted([slot="footer"]) { min-width: 0; }
+  `}render(){return P`
+      <header>
+        <span>${this.heading}</span>
+        <slot name="toolbar"></slot>
+        ${this.status?P`<span class="status">${this.status}</span>`:I}
+      </header>
+      <div class="body"><slot></slot></div>
+      <footer><slot name="footer"></slot></footer>
+    `}},St=class extends U{constructor(...e){super(...e),this.command=``,this.description=``,this.steps=[],this.copyLabel=`Copy`,this.runLabel=`Run demo`,this.replayLabel=`Replay`,this.copiedLabel=`Copied`,this.copyFailedLabel=`Copy failed`,this.previewLabel=`Preview`,this.noEffectLabel=`Preview only. No command or transfer ran in this browser.`,this.sessionKey=``,this.interval=180,this.phase=`idle`,this.visibleCount=0,this.copyState=`idle`}static{this.properties={command:{type:String},description:{type:String},steps:{attribute:!1},copyLabel:{type:String,attribute:`copy-label`},runLabel:{type:String,attribute:`run-label`},replayLabel:{type:String,attribute:`replay-label`},copiedLabel:{type:String,attribute:`copied-label`},copyFailedLabel:{type:String,attribute:`copy-failed-label`},previewLabel:{type:String,attribute:`preview-label`},noEffectLabel:{type:String,attribute:`no-effect-label`},sessionKey:{type:String,attribute:`session-key`},interval:{type:Number},phase:{state:!0},visibleCount:{state:!0},copyState:{state:!0}}}static{this.styles=o`
+    :host { display: block; min-width: 0; min-height: 0; }
+    courier-terminal { height: 100%; }
+    .toolbar { display: flex; align-items: center; gap: 0.4rem; }
+    button {
+      appearance: none;
+      display: inline-flex;
+      min-height: 1.9rem;
+      align-items: center;
+      gap: 0.38rem;
+      padding: 0.28rem 0.55rem;
+      border: 1px solid var(--courier-terminal-border, #596253);
+      border-radius: 999px;
+      color: var(--courier-terminal-text, #f3f4e9);
+      background: rgb(255 255 255 / 0.035);
+      font: 700 0.65rem/1 var(--courier-font-sans, sans-serif);
+      cursor: pointer;
+    }
+    button:hover:not(:disabled), button:focus-visible { border-color: var(--courier-terminal-prompt, #d4ff45); color: var(--courier-terminal-prompt, #d4ff45); }
+    button:focus-visible { outline: 3px solid var(--courier-beak, #ff8758); outline-offset: 2px; }
+    button:disabled { cursor: not-allowed; opacity: 0.42; }
+    courier-icon { width: 0.9rem; height: 0.9rem; }
+    .session { display: grid; height: 100%; min-height: 0; grid-template-rows: auto auto auto minmax(0, 1fr); }
+    .prompt, .description, li, .empty { min-width: 0; padding: 0.58rem 0.8rem; }
+    .prompt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.65rem; color: var(--courier-terminal-text, #f3f4e9); }
+    .prompt::before { content: "$"; color: var(--courier-terminal-prompt, #d4ff45); font-weight: 800; }
+    code { overflow-wrap: anywhere; font: inherit; line-height: 1.45; white-space: pre-wrap; }
+    .description { border-top: 1px solid color-mix(in srgb, var(--courier-terminal-border, #596253) 58%, transparent); color: var(--courier-terminal-muted, #b9c0b1); font-size: 0.68rem; line-height: 1.45; }
+    ol { min-height: 0; max-height: 11rem; margin: 0; padding: 0; overflow: auto; list-style: none; }
+    li { display: grid; grid-template-columns: 2.6rem minmax(7rem, 0.35fr) minmax(0, 1fr); gap: 0.7rem; border-top: 1px solid color-mix(in srgb, var(--courier-terminal-border, #596253) 45%, transparent); font-size: 0.65rem; line-height: 1.4; }
+    time { color: var(--courier-terminal-muted, #b9c0b1); font-variant-numeric: tabular-nums; }
+    .step-label { color: var(--courier-terminal-text, #f3f4e9); font-weight: 760; }
+    .step-detail { color: var(--courier-terminal-muted, #b9c0b1); overflow-wrap: anywhere; }
+    li[data-tone="signal"] .step-label, li[data-tone="success"] .step-label { color: var(--courier-terminal-prompt, #d4ff45); }
+    li[data-tone="warning"] .step-label { color: var(--courier-warning, #f0b849); }
+    li[data-tone="danger"] .step-label { color: var(--courier-danger, #ff6b5f); }
+    .empty { color: var(--courier-terminal-muted, #b9c0b1); font-size: 0.65rem; }
+    .details { min-width: 0; }
+    .footer { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.48rem 0.8rem; color: var(--courier-terminal-muted, #b9c0b1); font-size: 0.58rem; line-height: 1.4; }
+    @media (max-width: 44rem) {
+      .toolbar button span { display: none; }
+      li { grid-template-columns: 2.25rem minmax(5.5rem, 0.42fr) minmax(0, 1fr); gap: 0.4rem; padding: 0.45rem 0.55rem; font-size: 0.56rem; }
+      .prompt, .description, .empty { padding: 0.48rem 0.55rem; font-size: 0.58rem; }
+      ol { max-height: 8rem; }
+    }
+  `}disconnectedCallback(){this.stopTimer(),super.disconnectedCallback()}willUpdate(e){e.has(`sessionKey`)&&e.get(`sessionKey`)!==void 0&&this.reset()}reset(){this.stopTimer(),this.phase=`idle`,this.visibleCount=0,this.copyState=`idle`}async copyCommand(){let e=this.clipboard??globalThis.navigator.clipboard;if(!e||!this.command){this.copyState=`failed`;return}try{await e.writeText(this.command),this.copyState=`copied`}catch{this.copyState=`failed`}}run(){if(this.stopTimer(),this.copyState=`idle`,!this.command||this.steps.length===0){this.phase=`idle`,this.visibleCount=0;return}if(globalThis.matchMedia?.(`(prefers-reduced-motion: reduce)`).matches){this.visibleCount=this.steps.length,this.phase=`complete`;return}this.visibleCount=1,this.phase=this.steps.length===1?`complete`:`running`,this.phase===`running`&&this.scheduleStep()}scheduleStep(){this.timer=globalThis.setTimeout(()=>{if(this.timer=void 0,this.visibleCount+=1,this.visibleCount>=this.steps.length){this.phase=`complete`;return}this.scheduleStep()},Math.max(0,this.interval))}stopTimer(){this.timer!==void 0&&(globalThis.clearTimeout(this.timer),this.timer=void 0)}render(){let e=this.copyState===`copied`?this.copiedLabel:this.copyState===`failed`?this.copyFailedLabel:``,t=this.steps.slice(0,this.visibleCount);return P`
+      <courier-terminal .heading=${this.previewLabel} .status=${this.phase===`complete`?`exit 0`:this.phase}>
+        <div slot="toolbar" class="toolbar">
+          <button type="button" ?disabled=${!this.command} aria-label=${this.copyLabel} title=${this.copyLabel} @click=${this.copyCommand}><courier-icon name=${this.copyState===`copied`?`check`:`copy`}></courier-icon><span>${this.copyLabel}</span></button>
+          <button type="button" ?disabled=${!this.command||this.steps.length===0} aria-label=${this.phase===`idle`?this.runLabel:this.replayLabel} title=${this.phase===`idle`?this.runLabel:this.replayLabel} @click=${this.run}><courier-icon name="terminal"></courier-icon><span>${this.phase===`idle`?this.runLabel:this.replayLabel}</span></button>
+        </div>
+        <div class="session">
+          <div class="prompt"><code>${this.command}</code></div>
+          ${this.description?P`<p class="description">${this.description}</p>`:I}
+          <div class="details"><slot name="details"></slot></div>
+          ${t.length?P`<ol aria-live="polite">${t.map((e,t)=>P`<li data-tone=${e.tone??`neutral`}><time>${bt(t)}</time><span class="step-label">${e.label}</span><span class="step-detail">${e.detail??``}</span></li>`)}</ol>`:P`<p class="empty" aria-live="polite">${e}</p>`}
+        </div>
+        <div slot="footer" class="footer" role="status"><span>${e||this.noEffectLabel}</span><slot name="footer-actions"></slot></div>
+      </courier-terminal>
+    `}},Ct=`apple.archive.browser-share.browser-upload.check.copy.download.folder.folder-in.folder-out.github.homebrew.linux.moon.npm.package.parcel.pnpm.receipt.retry.route.scoop.server.server-in.server-out.shield.sun.system.terminal.upload.webhook-in.webhook-out.windows.yarn`.split(`.`),wt={apple:`M15 5c1-1 1-3 1-3-2 0-3 1-4 3m6 7c-1-2-2-3-4-3-1 0-2 1-3 1s-2-1-3-1c-3 0-5 3-5 6 0 4 3 8 5 8 1 0 2-1 3-1s2 1 3 1c2 0 4-3 5-6-2-1-3-2-3-4 0-2 1-3 2-4z`,archive:`M3 3h18v5H3zM5 8v13h14V8M9 12h6`,"browser-share":`M3 4h18v15H3zM3 8h18M7 6h.01M10 6h.01M14 15c2-3 4-4 7-4m-3-2 3 2-1 4`,"browser-upload":`M3 4h18v15H3zM3 8h18M7 6h.01M10 6h.01M12 17v-6m-3 3 3-3 3 3`,check:`m4 12 5 5L20 6`,copy:`M8 3h13v13M3 8h13v13H3z`,download:`M12 3v13m-5-5 5 5 5-5M4 15v6h16v-6`,folder:`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3`,"folder-in":`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3m12 6h-7m3-3-3 3 3 3`,"folder-out":`M3 6h7l2 3h9v12H3zM3 6V3h7l2 3h9v3m5 6h7m-3-3 3 3-3 3`,github:`M9 19c-5 1-5-2-7-3m14 6v-3.6c0-1 .1-1.7-.4-2.2 3.2-.4 6.4-1.6 6.4-7.1 0-1.6-.6-3-1.7-4 .2-.5.7-2.3-.2-4.6 0 0-1.4-.5-4.7 1.7a16 16 0 0 0-8.6 0C6.4 1 5 1.5 5 1.5 4.1 3.8 4.6 5.6 4.8 6.1a7 7 0 0 0-1.7 4c0 5.5 3.2 6.7 6.4 7.1-.4.4-.8 1.1-.8 2.2V23`,homebrew:`M6 4h11l-1 15H8zM17 7h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2M5 22h13`,linux:`M12 2c-3 0-4 3-4 6-2 2-3 5-3 8l3-1 1 5 3-2 3 2 1-5 3 1c0-3-1-6-3-8 0-3-1-6-4-6zM9 8h.01M15 8h.01M10 11h4`,moon:`M20 16a8 8 0 0 1-12-10 8 8 0 1 0 12 10z`,npm:`M2 6h20v12H2zM6 15V9h5v6m0-6h4v6m0-6h3v6`,package:`m3 7 9-5 9 5v11l-9 4-9-4zM3 7l9 5 9-5M12 12v10M8 4l9 5`,parcel:`m3 7 9-5 9 5v11l-9 4-9-4zM3 7l9 5 9-5M12 12v10M8 4l9 5v5`,pnpm:`M3 3h5v5H3zM10 3h5v5h-5zM17 3h4v5h-4zM3 10h5v5H3zm7 0h5v5h-5zm7 0h4v5h-4zM10 17h5v4h-5zm7 0h4v4h-4z`,receipt:`M5 2h14v20l-3-2-4 2-4-2-3 2zM8 7h8M8 11h8m-8 5 2 2 5-4`,retry:`M3 10a9 9 0 1 1 1 7M3 3v7h7M12 7v5l3 2`,route:`M2 3h6v6H2zM16 15h6v6h-6zM11 6h8v6m-3-3 3 3 3-3M13 18H5v-6m-3 3 3-3 3 3`,scoop:`M5 8h14l-2 13H7zM4 8h16M8 8V5a4 4 0 0 1 8 0v3`,server:`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m3 0h6M6 10v4m12-4v4`,"server-in":`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m7-12h-6m3-3-3 3 3 3`,"server-out":`M3 2h18v8H3zM3 14h18v8H3zM7 6h1m3 0h6M7 18h1m3-12h6m-3-3 3 3-3 3`,shield:`m12 2 8 3v7c0 5-8 10-8 10S4 17 4 12V5zM8 11l3 3 5-6`,sun:`M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3m0 14v3M4.9 4.9 7 7m10 10 2.1 2.1M2 12h3m14 0h3M4.9 19.1 7 17M17 7l2.1-2.1`,system:`M3 4h18v13H3zM8 21h8M12 17v4`,terminal:`M4 6l5 6-5 6m7 0h9`,upload:`M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6`,"webhook-in":`M7 7a3 3 0 1 1 3 3l-3 6a3 3 0 1 0 3 4m7-3a3 3 0 1 1-3-3l3-6a3 3 0 1 0-3-4m-1 8h-6m3-3-3 3 3 3`,"webhook-out":`M7 7a3 3 0 1 1 3 3l-3 6a3 3 0 1 0 3 4m7-3a3 3 0 1 1-3-3l3-6a3 3 0 1 0-3-4m-4 8h6m-3-3 3 3-3 3`,windows:`M3 4l8-1v8H3zm10-1 8-1v9h-8zM3 13h8v8l-8-1zm10 0h8v9l-8-1z`,yarn:`M12 3a9 9 0 1 0 9 9M8 16c4-1 7-4 9-8m-8 1c3 1 5 4 5 8m-5-5c-1-3 0-5 2-6`};function Tt(e){return Ct.includes(e)?e:`parcel`}var Et={"courier-brand":Ge,"courier-brand-icon":He,"courier-button":we,"courier-checkbox":Ye,"courier-icon":class extends U{constructor(...e){super(...e),this.name=`parcel`,this.label=``}static{this.properties={name:{type:String},label:{type:String}}}static{this.styles=o`
     :host {
       display: inline-flex;
       width: 1.5rem;
@@ -361,7 +470,7 @@
       color: currentColor;
     }
     svg { width: 100%; height: 100%; }
-  `}render(){let e=St(this.name);return P`<svg
+  `}render(){let e=Tt(this.name);return P`<svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -371,7 +480,7 @@
       role=${this.label?`img`:`presentation`}
       aria-hidden=${this.label?`false`:`true`}
       aria-label=${this.label||void 0}
-    ><path d=${xt[e]}></path></svg>`}},"courier-locale-selector":tt,"courier-mascot":Ke,"courier-panel":nt,"courier-progress":it,"courier-route":Je,"courier-scene":dt,"courier-segmented-control":ot,"courier-status":qe,"courier-theme-selector":yt};function wt(e=customElements){for(let[t,n]of Object.entries(Ct))e.get(t)||e.define(t,n)}var Tt=`/assets/data.webp`;function Z(e,t=``,n=globalThis.location.pathname){let r=n.endsWith(`/`)?n:`${n}/`,i=new URL(`api/v1/${e}`,globalThis.location.origin);return i.pathname=`${r}api/v1/${e}`,t&&i.searchParams.set(`path`,t),`${i.pathname}${i.search}`}async function Q(e){if(!e.ok)throw Error(`Courier request failed (${e.status})`);return e.json()}async function Et(e=``,t=globalThis.fetch){return Q(await t(Z(`meta`,e),{credentials:`same-origin`}))}async function Dt(e,t=globalThis.fetch){return Q(await t(Z(`session`),{method:`POST`,credentials:`same-origin`,headers:{"Content-Type":`application/json`},body:JSON.stringify({password:e})}))}async function Ot(e,t,n=globalThis.fetch){let r=new FormData;r.append(`file`,e),await Q(await n(Z(`upload`),{method:`POST`,credentials:`same-origin`,headers:{"X-Courier-CSRF":t,"X-Courier-File-Size":String(e.size)},body:r}))}function $(e,t=!1){let n=new URL(Z(`download`,e),globalThis.location.origin);return t&&n.searchParams.set(`archive`,`tar.gz`),`${n.pathname}${n.search}`}function kt(e,t){return e?`${e}/${t}`:t}function At(e){let t=e.lastIndexOf(`/`);return t<0?``:e.slice(0,t)}var jt={en:{brandProduct:`Delivery terminal`,title:`Courier delivery`,privateRoute:`Private route`,loading:`Preparing the delivery route…`,retry:`Retry connection`,download:`Download file`,downloadArchive:`Download as archive`,downloadAll:`Download directory`,upload:`Choose a file`,uploadTitle:`Dispatch a file`,uploadHelp:`Select one file. Courier checks policy and reserves the final path before committing it.`,up:`Parent directory`,password:`Delivery password`,signIn:`Verify access`,accessTitle:`Identity check`,accessHelp:`This route is protected. Verify access to reveal its delivery metadata.`,empty:`No entries are available at this path.`,failed:`The route is unavailable or authorization is required. No delivery metadata was revealed.`,ready:`Route ready`,manifest:`Delivery manifest`,confirmed:`Verified handoff`,entryTypeFile:`File`,entryTypeDirectory:`Directory`,itemSize:`Bytes`},ru:{brandProduct:`Терминал доставки`,title:`Доставка Courier`,privateRoute:`Приватный маршрут`,loading:`Подготовка маршрута доставки…`,retry:`Повторить подключение`,download:`Скачать файл`,downloadArchive:`Скачать архивом`,downloadAll:`Скачать каталог`,upload:`Выбрать файл`,uploadTitle:`Отправить файл`,uploadHelp:`Выберите один файл. Courier проверит правила и зарезервирует конечный путь до фиксации.`,up:`Родительский каталог`,password:`Пароль доставки`,signIn:`Подтвердить доступ`,accessTitle:`Проверка доступа`,accessHelp:`Маршрут защищён. Подтвердите доступ, чтобы увидеть данные доставки.`,empty:`По этому пути нет доступных объектов.`,failed:`Маршрут недоступен или требуется авторизация. Данные доставки не были раскрыты.`,ready:`Маршрут готов`,manifest:`Манифест доставки`,confirmed:`Подтверждённая передача`,entryTypeFile:`Файл`,entryTypeDirectory:`Каталог`,itemSize:`Байт`}};function Mt(e,t){return jt[e][t]}wt();var Nt=class extends U{constructor(...e){super(...e),this.locale=et(),this.failed=!1,this.csrf=``}static{this.properties={locale:{state:!0},metadata:{state:!0},failed:{state:!0},csrf:{state:!0}}}static{this.styles=[Ce,o`
+    ><path d=${wt[e]}></path></svg>`}},"courier-locale-selector":tt,"courier-mascot":Ke,"courier-panel":nt,"courier-progress":it,"courier-route":Je,"courier-scene":dt,"courier-segmented-control":ot,"courier-status":qe,"courier-theme-selector":yt,"courier-terminal":xt,"courier-command-demo":St};function Dt(e=customElements){for(let[t,n]of Object.entries(Et))e.get(t)||e.define(t,n)}var Ot=`/assets/data-relay-terminal-delivery-mobile-v2.webp`,kt=`/assets/data-relay-terminal-delivery-wide-v2.webp`,At=Ot;function Z(e,t=``,n=globalThis.location.pathname){let r=n.endsWith(`/`)?n:`${n}/`,i=new URL(`api/v1/${e}`,globalThis.location.origin);return i.pathname=`${r}api/v1/${e}`,t&&i.searchParams.set(`path`,t),`${i.pathname}${i.search}`}async function Q(e){if(!e.ok)throw Error(`Courier request failed (${e.status})`);return e.json()}async function jt(e=``,t=globalThis.fetch){return Q(await t(Z(`meta`,e),{credentials:`same-origin`}))}async function Mt(e,t=globalThis.fetch){return Q(await t(Z(`session`),{method:`POST`,credentials:`same-origin`,headers:{"Content-Type":`application/json`},body:JSON.stringify({password:e})}))}async function Nt(e,t,n=globalThis.fetch){let r=new FormData;r.append(`file`,e),await Q(await n(Z(`upload`),{method:`POST`,credentials:`same-origin`,headers:{"X-Courier-CSRF":t,"X-Courier-File-Size":String(e.size)},body:r}))}function $(e,t=!1){let n=new URL(Z(`download`,e),globalThis.location.origin);return t&&n.searchParams.set(`archive`,`tar.gz`),`${n.pathname}${n.search}`}function Pt(e,t){return e?`${e}/${t}`:t}function Ft(e){let t=e.lastIndexOf(`/`);return t<0?``:e.slice(0,t)}var It={en:{brandProduct:`Delivery terminal`,title:`Courier delivery`,privateRoute:`Private route`,loading:`Preparing the delivery route…`,retry:`Retry connection`,download:`Download file`,downloadArchive:`Download as archive`,downloadAll:`Download directory`,upload:`Choose a file`,uploadTitle:`Dispatch a file`,uploadHelp:`Select one file. Courier checks policy and reserves the final path before committing it.`,up:`Parent directory`,password:`Delivery password`,signIn:`Verify access`,accessTitle:`Identity check`,accessHelp:`This route is protected. Verify access to reveal its delivery metadata.`,empty:`No entries are available at this path.`,failed:`The route is unavailable or authorization is required. No delivery metadata was revealed.`,ready:`Route ready`,manifest:`Delivery manifest`,confirmed:`Verified handoff`,entryTypeFile:`File`,entryTypeDirectory:`Directory`,itemSize:`Bytes`},ru:{brandProduct:`Терминал доставки`,title:`Доставка Courier`,privateRoute:`Приватный маршрут`,loading:`Подготовка маршрута доставки…`,retry:`Повторить подключение`,download:`Скачать файл`,downloadArchive:`Скачать архивом`,downloadAll:`Скачать каталог`,upload:`Выбрать файл`,uploadTitle:`Отправить файл`,uploadHelp:`Выберите один файл. Courier проверит правила и зарезервирует конечный путь до фиксации.`,up:`Родительский каталог`,password:`Пароль доставки`,signIn:`Подтвердить доступ`,accessTitle:`Проверка доступа`,accessHelp:`Маршрут защищён. Подтвердите доступ, чтобы увидеть данные доставки.`,empty:`По этому пути нет доступных объектов.`,failed:`Маршрут недоступен или требуется авторизация. Данные доставки не были раскрыты.`,ready:`Маршрут готов`,manifest:`Манифест доставки`,confirmed:`Подтверждённая передача`,entryTypeFile:`Файл`,entryTypeDirectory:`Каталог`,itemSize:`Байт`}};function Lt(e,t){return It[e][t]}Dt();var Rt=class extends U{constructor(...e){super(...e),this.locale=et(),this.failed=!1,this.csrf=``}static{this.properties={locale:{state:!0},metadata:{state:!0},failed:{state:!0},csrf:{state:!0}}}static{this.styles=[Ce,o`
     :host {
       display: block;
       min-height: 100vh;
@@ -420,6 +529,28 @@
     .entry-name { min-width: 0; overflow-wrap: anywhere; }
     .size { color: var(--courier-color-muted); font-family: var(--courier-font-mono); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
     .loading { display: grid; min-height: 14rem; place-items: center; border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-lg); color: var(--courier-color-muted); background: var(--courier-color-surface-raised); font-family: var(--courier-font-mono); }
+    .page-scene { position: fixed; z-index: 0; inset: 0; }
+    main { position: relative; z-index: 2; }
+    :host { background: var(--courier-graphite-900); }
+    :host::after { content: ""; position: fixed; z-index: 1; inset: 0; background: linear-gradient(90deg, rgb(9 12 9 / 0.72), rgb(9 12 9 / 0.34) 62%, rgb(9 12 9 / 0.55)); pointer-events: none; }
+    header { color: var(--courier-paper-50); border-bottom-color: rgb(203 208 195 / 0.25); }
+    header courier-brand { --courier-color-text: var(--courier-paper-50); --courier-color-muted: #b9c0b1; }
+    .workspace, .operation-head { color: var(--courier-paper-50); }
+    .operation-head { border-bottom: 0; }
+    .access { display: block; min-height: 0; }
+    .access-copy { min-height: 20rem; color: var(--courier-terminal-text); }
+    .access-art { display: none; }
+    .route-overview { padding: 0.85rem; border: 0; border-radius: 0; background: transparent; }
+    .delivery-panel { display: block; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+    .delivery-title, .toolbar, .upload-zone, .delivery-panel > ul, .delivery-panel > p { margin: 0.75rem; }
+    .delivery-title { color: var(--courier-terminal-text); }
+    .toolbar { border-color: var(--courier-terminal-border); }
+    .upload-zone { border-color: var(--courier-terminal-border); color: var(--courier-terminal-text); background: rgb(255 255 255 / 0.025); }
+    ul { border-top-color: var(--courier-terminal-border); }
+    li { border-bottom-color: var(--courier-terminal-border); }
+    a, button.link { color: var(--courier-terminal-text); }
+    .muted, .size { color: var(--courier-terminal-muted); }
+    .loading { min-height: 10rem; padding: 1rem; }
     @media (max-width: 44rem) {
       header { align-items: flex-start; padding: 1rem 0; }
       nav { justify-content: flex-end; }
@@ -431,7 +562,8 @@
       li .size { display: none; }
       .delivery-title { display: grid; }
     }
-  `]}connectedCallback(){super.connectedCallback(),this.theme=X(),this.refresh()}disconnectedCallback(){this.theme?.destroy(),super.disconnectedCallback()}async refresh(e=this.metadata?.path??``){this.failed=!1;try{this.metadata=await Et(e)}catch{this.failed=!0,this.metadata=void 0}}async openDirectory(e,t){e.preventDefault(),await this.refresh(t)}async signIn(e){e.preventDefault();let t=e.currentTarget,n=new FormData(t).get(`password`)?.toString()??``;try{this.csrf=(await Dt(n)).csrf,t.reset(),await this.refresh()}catch{this.failed=!0}}async sendFile(e){let t=e.currentTarget,n=t.files?.item(0);if(n)try{await Ot(n,this.csrf),t.value=``,await this.refresh()}catch{this.failed=!0}}setLocale(e){this.locale=e.detail}t(e){return Mt(this.locale,e)}entry(e){let t=kt(this.metadata.path,e.name);return e.type===`directory`?P`<li><courier-icon name="folder"></courier-icon><button class="link entry-name" @click=${e=>this.openDirectory(e,t)}>${e.name}</button><span class="size">${e.size} ${this.t(`itemSize`)}</span><a href=${$(t,!0)}>${this.t(`downloadArchive`)}</a></li>`:P`<li><courier-icon name="parcel"></courier-icon><span class="entry-name">${e.name}</span><span class="size">${e.size} ${this.t(`itemSize`)}</span><a href=${$(t)}>${this.t(`download`)}</a></li>`}render(){let e=this.metadata?.entries??[];return P`
+  `]}connectedCallback(){super.connectedCallback(),this.theme=X(),this.refresh()}disconnectedCallback(){this.theme?.destroy(),super.disconnectedCallback()}async refresh(e=this.metadata?.path??``){this.failed=!1;try{this.metadata=await jt(e)}catch{this.failed=!0,this.metadata=void 0}}async openDirectory(e,t){e.preventDefault(),await this.refresh(t)}async signIn(e){e.preventDefault();let t=e.currentTarget,n=new FormData(t).get(`password`)?.toString()??``;try{this.csrf=(await Mt(n)).csrf,t.reset(),await this.refresh()}catch{this.failed=!0}}async sendFile(e){let t=e.currentTarget,n=t.files?.item(0);if(n)try{await Nt(n,this.csrf),t.value=``,await this.refresh()}catch{this.failed=!0}}setLocale(e){this.locale=e.detail}t(e){return Lt(this.locale,e)}entry(e){let t=Pt(this.metadata.path,e.name);return e.type===`directory`?P`<li><courier-icon name="folder"></courier-icon><button class="link entry-name" @click=${e=>this.openDirectory(e,t)}>${e.name}</button><span class="size">${e.size} ${this.t(`itemSize`)}</span><a href=${$(t,!0)}>${this.t(`downloadArchive`)}</a></li>`:P`<li><courier-icon name="parcel"></courier-icon><span class="entry-name">${e.name}</span><span class="size">${e.size} ${this.t(`itemSize`)}</span><a href=${$(t)}>${this.t(`download`)}</a></li>`}render(){let e=this.metadata?.entries??[];return P`
+      <courier-scene class="page-scene" .source=${kt} .mobileSource=${At}></courier-scene>
       <main>
         <header>
           <courier-brand product=${this.t(`brandProduct`)}></courier-brand>
@@ -440,7 +572,7 @@
         <div class="workspace">
           <div class="operation-head"><div><span class="eyebrow">${this.t(`privateRoute`)}</span><h1>${this.t(`title`)}</h1></div>${this.metadata?P`<courier-status tone="signal">${this.t(`ready`)}</courier-status>`:I}</div>
           ${this.failed?P`
-            <div class="access">
+            <courier-terminal class="access" .heading=${this.t(`privateRoute`)} status="authentication required">
               <div class="access-copy">
                 <span class="eyebrow">${this.t(`privateRoute`)}</span>
                 <h2>${this.t(`accessTitle`)}</h2>
@@ -449,23 +581,22 @@
                 <form class="signin" @submit=${this.signIn}><label class="field"><span>${this.t(`password`)}</span><input name="password" type="password" autocomplete="current-password" placeholder=${this.t(`password`)}></label><courier-button type="submit" variant="primary">${this.t(`signIn`)}</courier-button></form>
                 <courier-button @click=${this.refresh}>${this.t(`retry`)}</courier-button>
               </div>
-              <div class="access-art"><courier-mascot alt="" .source=${Tt}></courier-mascot></div>
-            </div>
+            </courier-terminal>
           `:I}
           ${this.metadata?P`
-            <div class="route-overview"><span class="label">${this.t(`confirmed`)}</span><courier-route source="sender" destination=${this.metadata.name}></courier-route></div>
-            <section class="delivery-panel">
+            <courier-terminal class="route-overview" .heading=${this.t(`confirmed`)} status="verified"><courier-route source="sender" destination=${this.metadata.name}></courier-route></courier-terminal>
+            <courier-terminal class="delivery-panel" .heading=${this.t(`manifest`)} .status=${this.t(`ready`)}>
               <div class="delivery-title"><div><span class="eyebrow">${this.t(`manifest`)}</span><h2>${this.metadata.name}</h2></div><courier-status tone="signal">${this.t(`ready`)}</courier-status></div>
               ${this.metadata.type===`upload`?P`
                 <div class="upload-zone"><h2>${this.t(`uploadTitle`)}</h2><p class="muted">${this.t(`uploadHelp`)}</p><label class="courier-file-action"><courier-icon name="upload"></courier-icon><span>${this.t(`upload`)}</span><input type="file" @change=${this.sendFile}></label></div>
               `:P`
                 ${this.metadata.type===`file`?P`<div class="toolbar"><courier-icon name="download"></courier-icon><a href=${$(this.metadata.path)}>${this.t(`download`)}</a></div>`:P`
-                  <div class="toolbar"><a href=${$(this.metadata.path,!0)}>${this.t(`downloadAll`)}</a>${this.metadata.path?P`<button class="link" @click=${e=>this.openDirectory(e,At(this.metadata.path))}>${this.t(`up`)}</button>`:I}</div>
+                  <div class="toolbar"><a href=${$(this.metadata.path,!0)}>${this.t(`downloadAll`)}</a>${this.metadata.path?P`<button class="link" @click=${e=>this.openDirectory(e,Ft(this.metadata.path))}>${this.t(`up`)}</button>`:I}</div>
                   ${e.length===0?P`<p class="muted">${this.t(`empty`)}</p>`:P`<ul>${e.map(e=>this.entry(e))}</ul>`}
                 `}
               `}
-            </section>
-          `:this.failed?I:P`<div class="loading"><courier-status>${this.t(`loading`)}</courier-status></div>`}
+            </courier-terminal>
+          `:this.failed?I:P`<courier-terminal class="loading" .heading=${this.t(`privateRoute`)} status="running"><courier-status>${this.t(`loading`)}</courier-status></courier-terminal>`}
         </div>
       </main>
-    `}};customElements.get(`courier-data-app`)||customElements.define(`courier-data-app`,Nt);
+    `}};customElements.get(`courier-data-app`)||customElements.define(`courier-data-app`,Rt);

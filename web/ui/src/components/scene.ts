@@ -25,8 +25,8 @@ export function pointerPosition(bounds: Pick<DOMRect, "left" | "top" | "width" |
 }
 
 export function smoothPointerPosition(current: PointerPosition, target: PointerPosition, elapsedMilliseconds: number): SmoothedPointer {
-  const elapsed = Math.min(64, Math.max(0, elapsedMilliseconds));
-  const factor = 1 - Math.exp(-elapsed / 72);
+  const elapsed = Math.min(48, Math.max(0, elapsedMilliseconds));
+  const factor = 1 - Math.exp(-elapsed / 42);
   const position = {
     x: current.x + (target.x - current.x) * factor,
     y: current.y + (target.y - current.y) * factor,
@@ -44,20 +44,23 @@ export class CourierScene extends LitElement {
 
   static styles = css`
     :host { --scene-pointer-x: 72%; --scene-pointer-y: 42%; position: absolute; display: block; inset: 0; overflow: hidden; background: var(--courier-graphite-900, #151714); pointer-events: auto; isolation: isolate; }
-    courier-mascot { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .tracking { position: absolute; inset: 0; }
+    courier-mascot { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
     courier-mascot::part(image) { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.88) contrast(1.02); }
     .base { z-index: 0; transform: none; }
-    .refracted { z-index: 1; clip-path: ellipse(clamp(5rem, 11vw, 10rem) clamp(4rem, 9vw, 8rem) at var(--scene-pointer-x) var(--scene-pointer-y)); opacity: 0.62; transform: scale(1.012); transform-origin: var(--scene-pointer-x) var(--scene-pointer-y); filter: saturate(1.06) contrast(1.025); will-change: clip-path, transform; }
-    .glow { position: absolute; z-index: 2; inset: 0; background: radial-gradient(ellipse clamp(8rem, 22vw, 19rem) clamp(6rem, 16vw, 14rem) at var(--scene-pointer-x) var(--scene-pointer-y), color-mix(in srgb, var(--courier-signal, #d4ff45) 14%, transparent), transparent 67%), radial-gradient(ellipse clamp(5rem, 11vw, 9rem) clamp(8rem, 17vw, 14rem) at calc(var(--scene-pointer-x) + 3%) calc(var(--scene-pointer-y) - 2%), rgb(255 255 255 / 0.07), transparent 73%); mix-blend-mode: screen; pointer-events: none; }
+    .refracted { z-index: 1; opacity: 0.56; transform: scale(1.009); transform-origin: var(--scene-pointer-x) var(--scene-pointer-y); filter: saturate(1.055) contrast(1.02); mask-image: radial-gradient(circle clamp(3.8rem, 8vw, 7.2rem) at var(--scene-pointer-x) var(--scene-pointer-y), #000 36%, transparent 72%), radial-gradient(circle clamp(2.8rem, 6vw, 5.4rem) at calc(var(--scene-pointer-x) - 4.5%) calc(var(--scene-pointer-y) + 2.5%), #000 32%, transparent 74%), radial-gradient(circle clamp(2.4rem, 5vw, 4.8rem) at calc(var(--scene-pointer-x) + 4%) calc(var(--scene-pointer-y) - 3.5%), #000 30%, transparent 72%); mask-repeat: no-repeat; will-change: mask-position, transform; animation: scene-lobes 7s ease-in-out infinite alternate; }
+    .glow { position: absolute; z-index: 2; inset: 0; background: radial-gradient(circle clamp(8rem, 20vw, 18rem) at var(--scene-pointer-x) var(--scene-pointer-y), color-mix(in srgb, var(--courier-signal, #d4ff45) 13%, transparent), transparent 68%), radial-gradient(circle clamp(4rem, 9vw, 8rem) at calc(var(--scene-pointer-x) - 5%) calc(var(--scene-pointer-y) + 4%), rgb(255 255 255 / 0.065), transparent 72%), radial-gradient(circle clamp(3rem, 7vw, 6rem) at calc(var(--scene-pointer-x) + 6%) calc(var(--scene-pointer-y) - 5%), color-mix(in srgb, var(--courier-beak, #ff8758) 5%, transparent), transparent 76%); filter: blur(0.55rem); mix-blend-mode: screen; pointer-events: none; animation: scene-glow 8s ease-in-out infinite alternate; }
     .veil { position: absolute; z-index: 3; inset: 0; background: linear-gradient(90deg, rgb(8 10 8 / 0.1), transparent 28% 72%, rgb(8 10 8 / 0.16)), linear-gradient(180deg, rgb(8 10 8 / 0.08), transparent 23% 82%, rgb(8 10 8 / 0.22)); pointer-events: none; }
+    @keyframes scene-lobes { to { filter: saturate(1.06) contrast(1.025) blur(0.08rem); } }
+    @keyframes scene-glow { to { opacity: 0.86; } }
     @media (pointer: coarse), (hover: none) {
       :host { --scene-pointer-x: 68%; --scene-pointer-y: 40%; }
       .refracted { display: none; }
-      .glow { opacity: 0.74; }
+      .glow { opacity: 0.74; animation: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       .refracted { display: none; }
-      .glow { opacity: 0.68; }
+      .glow { opacity: 0.68; animation: none; }
     }
   `;
 
@@ -69,8 +72,18 @@ export class CourierScene extends LitElement {
   private target?: PointerPosition;
   private previousTimestamp?: number;
   private returning = false;
+  private readonly handlePointerMove = (event: PointerEvent): void => this.move(event);
+  private readonly handlePointerLeave = (): void => this.leave();
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.addEventListener("pointermove", this.handlePointerMove);
+    this.addEventListener("pointerleave", this.handlePointerLeave);
+  }
 
   disconnectedCallback(): void {
+    this.removeEventListener("pointermove", this.handlePointerMove);
+    this.removeEventListener("pointerleave", this.handlePointerLeave);
     if (this.frame) globalThis.cancelAnimationFrame(this.frame);
     this.frame = 0;
     this.target = undefined;
@@ -125,6 +138,6 @@ export class CourierScene extends LitElement {
   }
 
   protected render() {
-    return html`<courier-mascot class="base" ?eager=${this.eager} alt="" .source=${this.source} .mobileSource=${this.mobileSource} @pointermove=${this.move} @pointerleave=${this.leave}></courier-mascot><courier-mascot class="refracted" aria-hidden="true" alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot><span class="glow" aria-hidden="true"></span><span class="veil" aria-hidden="true"></span>`;
+    return html`<div class="tracking"><courier-mascot class="base" ?eager=${this.eager} alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot><courier-mascot class="refracted" aria-hidden="true" alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot><span class="glow" aria-hidden="true"></span><span class="veil" aria-hidden="true"></span></div>`;
   }
 }

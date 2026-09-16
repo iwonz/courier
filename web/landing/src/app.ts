@@ -7,6 +7,7 @@ import {
   type BrandIconName,
   type IconName,
   type Locale,
+  type TerminalStep,
   type ThemeState,
 } from "@courier/ui";
 import {
@@ -143,7 +144,6 @@ export class CourierLandingApp extends LitElement {
     activeSection: { state: true },
     selectedCommand: { state: true },
     compatibleOnly: { state: true },
-    copyState: { state: true },
   };
 
   static styles = landingStyles;
@@ -155,7 +155,6 @@ export class CourierLandingApp extends LitElement {
   private activeSection = "";
   private selectedCommand = "";
   private compatibleOnly = true;
-  private copyState: "idle" | "copied" | "failed" = "idle";
   private theme?: ThemeState;
   private resizeObserver?: ResizeObserver;
   private sectionObserver?: IntersectionObserver;
@@ -264,12 +263,6 @@ export class CourierLandingApp extends LitElement {
 
   private chooseInstall(event: Event): void {
     this.activeInstall = (event.currentTarget as HTMLElement).dataset.channel!;
-    this.copyState = "idle";
-  }
-
-  private async copyInstall(): Promise<void> {
-    const install = installs.find((channel) => channel.name === this.activeInstall) ?? installs[0]!;
-    this.copyState = await copyText(install.command) ? "copied" : "failed";
   }
 
   private chooseCommand(event: Event): void {
@@ -284,6 +277,35 @@ export class CourierLandingApp extends LitElement {
 
   private setCompatibility(event: CustomEvent<boolean>): void {
     this.compatibleOnly = event.detail;
+  }
+
+  private routeSteps(): readonly TerminalStep[] {
+    return [
+      { label: this.t("demoPreflight"), detail: this.t("demoPreflightDetail"), tone: "signal" },
+      { label: this.t("demoRoute"), detail: this.t("demoRouteDetail"), tone: "signal" },
+      { label: this.t("demoTransfer"), detail: this.t("demoTransferDetail") },
+      { label: this.t("demoVerify"), detail: this.t("demoVerifyDetail") },
+      { label: this.t("demoComplete"), detail: this.t("demoCompleteDetail"), tone: "success" },
+    ];
+  }
+
+  private installSteps(): readonly TerminalStep[] {
+    return [
+      { label: this.t("demoResolve"), detail: this.t("demoResolveDetail"), tone: "signal" },
+      { label: this.t("demoPlatform"), detail: this.t("demoPlatformDetail") },
+      { label: this.t("demoDownload"), detail: this.t("demoDownloadDetail") },
+      { label: this.t("demoChecksum"), detail: this.t("demoChecksumDetail") },
+      { label: this.t("demoInstall"), detail: this.t("demoInstallDetail"), tone: "success" },
+    ];
+  }
+
+  private commandSteps(): readonly TerminalStep[] {
+    return [
+      { label: this.t("demoContract"), detail: this.t("demoContractDetail"), tone: "signal" },
+      { label: this.t("demoUsage"), detail: this.t("demoUsageDetail") },
+      { label: this.t("demoOptions"), detail: this.t("demoOptionsDetail") },
+      { label: this.t("demoComplete"), detail: this.t("demoCompleteDetail"), tone: "success" },
+    ];
   }
 
   private navigate(event: MouseEvent): void {
@@ -316,6 +338,8 @@ export class CourierLandingApp extends LitElement {
     const flags = applicableFlags(selected, contractData.flags);
     const install = installs.find((channel) => channel.name === this.activeInstall) ?? installs[0]!;
     const visibleFlags = commandFlags(this.selectedCommand, this.compatibleOnly, contractData.commands, contractData.flags);
+    const selectedCommand = contractData.commands.find((command) => command.name === this.selectedCommand);
+    const routeCommand = `courier ${this.t("from")} ${endpointExample(selected.source, "source")} ${this.t("to")} ${endpointExample(selected.destination, "destination")}`;
     return html`
       <header class="masthead-wrap">
         <div class="masthead shell">
@@ -336,10 +360,11 @@ export class CourierLandingApp extends LitElement {
         <section id="hero" class="slide hero-slide">
           <courier-scene eager .source=${relayHeroSource} .mobileSource=${relayHeroMobileSource}></courier-scene>
           <div class="hero-shade" aria-hidden="true"></div>
-          <svg class="hero-route desktop-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d=${heroPath}></path><path class="signal" d=${heroPath}></path><g class="route-terminal source-terminal"><circle class="terminal-ring" cx="54" cy="70" r="1.45"></circle><circle class="terminal-core" cx="54" cy="70" r="0.46"></circle></g><g class="route-terminal destination-terminal"><circle class="terminal-ring" cx="91" cy="38" r="1.45"></circle><circle class="terminal-core" cx="91" cy="38" r="0.46"></circle></g></svg>
-          <svg class="hero-route mobile-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d=${heroMobilePath}></path><path class="signal" d=${heroMobilePath}></path><g class="route-terminal source-terminal"><circle class="terminal-ring" cx="54" cy="70" r="1.7"></circle><circle class="terminal-core" cx="54" cy="70" r="0.56"></circle></g><g class="route-terminal destination-terminal"><circle class="terminal-ring" cx="88" cy="52" r="1.7"></circle><circle class="terminal-core" cx="88" cy="52" r="0.56"></circle></g></svg>
+          <svg class="hero-route desktop-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d=${heroPath}></path><path class="signal" d=${heroPath}></path></svg>
+          <svg class="hero-route mobile-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d=${heroMobilePath}></path><path class="signal" d=${heroMobilePath}></path></svg>
+          <span class="hero-terminal source" aria-hidden="true"></span><span class="hero-terminal destination" aria-hidden="true"></span>
           <span class="hero-node source"><small>01</small><strong>Source</strong></span><span class="hero-node destination"><small>02</small><strong>Destination</strong></span>
-          <div class="hero shell"><div class="hero-copy"><h1>${this.t("title")}</h1><p class="tagline">${this.t("tagline")}</p><p class="subline">${this.t("subline")}</p></div></div>
+          <div class="hero shell"><div class="hero-copy"><h1>${this.t("title")}</h1><p class="tagline">${this.t("tagline")}</p></div></div>
         </section>
 
         <section id="routes" class="slide">
@@ -352,7 +377,7 @@ export class CourierLandingApp extends LitElement {
                 <div class="endpoint-group source-endpoints"><span class="label">${this.t("sourceLabel")}</span>${sourceEndpoints.map((name) => this.renderEndpoint(name, "source"))}</div>
                 <div class="endpoint-group destination-endpoints"><span class="label">${this.t("destinationLabel")}</span>${destinationEndpoints.map((name) => this.renderEndpoint(name, "destination"))}</div>
               </div>
-              <div class="route-readout" aria-live="polite"><span class="label">${selected.routeName} · ${this.t("routeExample")}</span><code class="command-shape">courier <b>${this.t("from")}</b> ${endpointExample(selected.source, "source")} <b>${this.t("to")}</b> ${endpointExample(selected.destination, "destination")}</code><div class="route-meaning"><span><b>Source</b>${this.describeEndpoint(selected.source, "source")}</span><span><b>Destination</b>${this.describeEndpoint(selected.destination, "destination")}</span></div><span class="label">${this.t("allowed")}</span><div class="flag-list">${flags.map((flag) => html`<span class="flag">${flag.syntax}</span>`)}</div></div>
+              <courier-command-demo class="route-readout" .command=${routeCommand} .description=${`${this.describeEndpoint(selected.source, "source")} → ${this.describeEndpoint(selected.destination, "destination")}`} .steps=${this.routeSteps()} .sessionKey=${`${this.locale}:${selected.source}:${selected.destination}`} .copyLabel=${this.t("copyCommand")} .runLabel=${this.t("runDemo")} .replayLabel=${this.t("replayDemo")} .copiedLabel=${this.t("copiedCommand")} .copyFailedLabel=${this.t("copyFailed")} .previewLabel=${this.t("preview")} .noEffectLabel=${this.t("noBrowserEffect")}><div slot="details" class="demo-details"><span class="label">${this.t("allowed")}</span><div class="flag-list">${flags.map((flag) => html`<span class="flag">${flag.syntax}</span>`)}</div></div></courier-command-demo>
             </div></div>
           </div>
         </section>
@@ -360,15 +385,14 @@ export class CourierLandingApp extends LitElement {
         <section id="install" class="slide">
           <courier-scene .source=${relayInstallSource} .mobileSource=${relayInstallMobileSource}></courier-scene>
           <div class="slide-shell shell">
-            <div class="section-heading"><div><span class="section-index">02 / Distribution</span><h2>${this.t("install")}</h2><p class="intro">${this.t("installIntro")}</p></div></div>
+            <div class="section-heading"><div><span class="section-index">02 / Distribution</span><h2>${this.t("install")}</h2></div></div>
             <div class="install-board"><div class="install-interface">
               <span class="label install-label">${this.t("chooseChannel")}</span>
               <div class="install-channels" role="list">${installs.map((channel) => html`<button type="button" class="install-channel ${channel.name === install.name ? "selected" : ""}" data-channel=${channel.name} aria-pressed=${String(channel.name === install.name)} @click=${this.chooseInstall}><courier-brand-icon name=${channel.icon}></courier-brand-icon><span>${channel.name}</span></button>`)}</div>
-              <div class="install-readout" aria-live="polite"><div class="install-readout-head"><div><courier-brand-icon name=${install.icon}></courier-brand-icon><h3>${install.name}</h3></div><button type="button" class="copy-command" aria-label=${`${this.t("copyCommand")}: ${install.name}`} title=${this.t("copyCommand")} @click=${this.copyInstall}><courier-icon name=${this.copyState === "copied" ? "check" : "copy"}></courier-icon><span>${this.t(this.copyState === "copied" ? "copiedCommand" : this.copyState === "failed" ? "copyFailed" : "copyCommand")}</span></button></div><pre tabindex="0"><code>${install.command}</code></pre><span class="copy-status" role="status">${this.copyState === "idle" ? nothing : this.t(this.copyState === "copied" ? "copiedCommand" : "copyFailed")}</span></div>
-              <div class="install-actions">
+              <courier-command-demo class="install-readout" .command=${install.command} .description=${this.t("installDemoDescription")} .steps=${this.installSteps()} .sessionKey=${`${this.locale}:${install.name}`} .copyLabel=${this.t("copyCommand")} .runLabel=${this.t("runDemo")} .replayLabel=${this.t("replayDemo")} .copiedLabel=${this.t("copiedCommand")} .copyFailedLabel=${this.t("copyFailed")} .previewLabel=${this.t("preview")} .noEffectLabel=${this.t("noBrowserEffect")}><div slot="details" class="install-identity"><courier-brand-icon name=${install.icon}></courier-brand-icon><strong>${install.name}</strong></div><div slot="footer-actions" class="install-actions">
                 <a class="download-channel" href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><courier-icon name="package"></courier-icon><div><h3>${this.t("packages")}</h3><p>${this.t("packagesDetail")}</p><span class="brand-cloud" aria-hidden="true">${(["linux", "ubuntu", "debian", "arch-linux", "manjaro", "fedora", "red-hat", "alpine-linux"] as BrandIconName[]).map((name) => html`<courier-brand-icon name=${name}></courier-brand-icon>`)}</span></div></a>
                 <a class="download-channel" href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><courier-icon name="download"></courier-icon><div><h3>${this.t("direct")}</h3><p>${this.t("directDetail")}</p></div></a>
-              </div>
+              </div></courier-command-demo>
             </div></div>
           </div>
         </section>
@@ -376,11 +400,11 @@ export class CourierLandingApp extends LitElement {
         <section id="cli" class="slide">
           <courier-scene .source=${relayCliSource} .mobileSource=${relayCliMobileSource}></courier-scene>
           <div class="slide-shell shell">
-            <div class="section-heading"><div><span class="section-index">03 / Interface</span><h2>${this.t("cliTitle")}</h2><p class="intro">${this.t("cliIntro")}</p></div></div>
-            <div class="reference">
+            <div class="section-heading"><div><span class="section-index">03 / Interface</span><h2>${this.t("cliTitle")}</h2></div></div>
+            <div class="cli-workspace"><div class="reference">
               <div class="reference-column commands"><div class="reference-head"><span class="label">${this.t("commandLabel")}</span></div><div class="reference-list">${contractData.commands.map((command) => html`<button type="button" class="command-row" data-command=${command.name} aria-pressed=${String(command.name === this.selectedCommand)} @click=${this.chooseCommand}><code>${command.usage}</code></button>`)}</div></div>
               <div class="reference-column options"><div class="reference-head"><span class="label">${this.t("optionsLabel")}</span><courier-checkbox .checked=${this.compatibleOnly} ?disabled=${!this.selectedCommand} .label=${this.t("compatibleOnly")} @courier-checkbox-change=${this.setCompatibility}></courier-checkbox></div><div class="reference-list">${visibleFlags.length ? visibleFlags.map((flag) => html`<article class="option-row"><div class="option-head"><code>${flag.syntax}</code><span class="kind">${this.t("optionDefault")}: ${flag.default}</span></div><p class="option-meta">${this.t("repeatable")}: ${flag.repeatable ? this.t("yes") : this.t("no")} · ${this.t("applies")}: ${flag.appliesTo.join(", ")}</p></article>`) : html`<p class="empty-state">${this.t("noCompatibleOptions")}</p>`}</div></div>
-            </div>
+            </div><courier-command-demo class="cli-demo" .command=${selectedCommand?.usage ?? ""} .description=${selectedCommand ? this.t("cliDemoDescription") : this.t("selectCommand")} .steps=${selectedCommand ? this.commandSteps() : []} .sessionKey=${`${this.locale}:${this.selectedCommand}:${this.compatibleOnly}`} .copyLabel=${this.t("copyCommand")} .runLabel=${this.t("runDemo")} .replayLabel=${this.t("replayDemo")} .copiedLabel=${this.t("copiedCommand")} .copyFailedLabel=${this.t("copyFailed")} .previewLabel=${this.t("preview")} .noEffectLabel=${this.t("noBrowserEffect")}><div slot="details" class="demo-details"><span class="label">${this.t("optionsLabel")}</span><div class="flag-list">${visibleFlags.map((flag) => html`<span class="flag">${flag.syntax}</span>`)}</div></div></courier-command-demo></div>
           </div>
         </section>
       </main>

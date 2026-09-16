@@ -1,8 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const landingURL = "http://127.0.0.1:4173/courier/";
-const dataURL = "http://127.0.0.1:4174/";
-const adminURL = "http://127.0.0.1:4175/";
+const landingOrigin = `http://127.0.0.1:${process.env.COURIER_LANDING_PORT ?? "4173"}`;
+const dataOrigin = `http://127.0.0.1:${process.env.COURIER_DATA_PORT ?? "4174"}`;
+const adminOrigin = `http://127.0.0.1:${process.env.COURIER_ADMIN_PORT ?? "4175"}`;
+const landingURL = `${landingOrigin}/courier/`;
+const dataURL = `${dataOrigin}/`;
+const adminURL = `${adminOrigin}/`;
 const secretMarker = "COURIER_SECRET_MUST_NOT_RENDER";
 
 async function selectTheme(page: Page, root: string, preference: "system" | "light" | "dark"): Promise<void> {
@@ -30,7 +33,7 @@ test("landing preserves interaction and geometry across routes, channels, locale
   const externalRequests: string[] = [];
   page.on("request", (request) => {
     const url = request.url();
-    if (url.startsWith("http") && !url.startsWith("http://127.0.0.1:4173")) externalRequests.push(url);
+    if (url.startsWith("http") && !url.startsWith(landingOrigin)) externalRequests.push(url);
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(landingURL);
@@ -38,7 +41,8 @@ test("landing preserves interaction and geometry across routes, channels, locale
 
   await expect(page.locator(`${root} h1`)).toHaveText("Move files. Keep control.");
   await expect(page.locator(`${root} section`)).toHaveCount(4);
-  await expect(page.locator(`${root} footer, ${root} #hero button, ${root} #hero [aria-pressed]`)).toHaveCount(0);
+  expect(await page.locator(root).evaluate((app) => app.shadowRoot!.querySelectorAll(":scope > footer, main > footer").length)).toBe(0);
+  await expect(page.locator(`${root} #hero button, ${root} #hero [aria-pressed]`)).toHaveCount(0);
   await expect(page.locator(`${root} .hero-node.source strong`)).toHaveText("Source");
   await expect(page.locator(`${root} .hero-node.destination strong`)).toHaveText("Destination");
   await expect(page.locator(`${root} .hero-route path`).first()).toHaveAttribute("d", / C /);
@@ -62,7 +66,7 @@ test("landing preserves interaction and geometry across routes, channels, locale
   expect(await heroScene.locator(".base").evaluate((node) => getComputedStyle(node).transform)).toBe(baseTransform);
   expect(await heroScene.evaluate((node) => getComputedStyle(node).getPropertyValue("--scene-pointer-x"))).not.toBe(beforePointer);
 
-  const routeCommand = page.locator(`${root} .command-shape`);
+  const routeCommand = page.locator(`${root} .route-readout .prompt code`);
   const webSource = page.locator(`${root} .source-endpoints button[data-endpoint="web"]`);
   const initialRoute = await routeCommand.textContent();
   await webSource.hover();
@@ -72,6 +76,11 @@ test("landing preserves interaction and geometry across routes, channels, locale
   await webSource.press("Enter");
   await expect(routeCommand).toContainText("web://");
   await expect(page.locator(`${root} .destination-endpoints button[data-endpoint="web"]`)).toBeDisabled();
+  const routeRun = page.locator(`${root} .route-readout button[title="Run demo"]`);
+  await routeRun.click();
+  await expect(page.locator(`${root} .route-readout courier-terminal .status`)).toHaveText("exit 0");
+  await expect(page.locator(`${root} .route-readout ol li`)).toHaveCount(5);
+  await expect(page.locator(`${root} .route-readout`)).toContainText("No data left this page");
 
   const installCommand = page.locator(`${root} .install-readout code`);
   const npmChannel = page.locator(`${root} .install-channel[data-channel="npm"]`);
@@ -82,10 +91,15 @@ test("landing preserves interaction and geometry across routes, channels, locale
   await expect(installCommand).toHaveText(initialInstall!);
   await npmChannel.press("Enter");
   await expect(installCommand).toHaveText("npm install --global @iwonz/courier");
-  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: "http://127.0.0.1:4173" });
-  await page.locator(`${root} .copy-command`).click();
-  await expect(page.locator(`${root} .copy-status`)).toHaveText("Copied");
+  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: landingOrigin });
+  await page.locator(`${root} .install-readout button[title="Copy command"]`).click();
+  await expect(page.locator(`${root} .install-readout [role="status"]`)).toContainText("Copied");
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("npm install --global @iwonz/courier");
+  const installRun = page.locator(`${root} .install-readout button[title="Run demo"]`);
+  await installRun.focus();
+  await installRun.press("Enter");
+  await expect(page.locator(`${root} .install-readout courier-terminal .status`)).toHaveText("exit 0");
+  await expect(page.locator(`${root} .install-readout ol li`)).toHaveCount(5);
 
   const checkbox = page.locator(`${root} courier-checkbox input`);
   await expect(checkbox).toBeChecked();
@@ -96,6 +110,13 @@ test("landing preserves interaction and geometry across routes, channels, locale
   await uiStart.press("Enter");
   await expect(checkbox).toBeEnabled();
   await expect(page.locator(`${root} .option-row code`)).toHaveText(["--listen <host:port>", "--background"]);
+  const cliRun = page.locator(`${root} .cli-demo button[title="Run demo"]`);
+  await cliRun.focus();
+  await cliRun.press("Enter");
+  await expect(page.locator(`${root} .cli-demo courier-terminal .status`)).toHaveText("exit 0");
+  await expect(page.locator(`${root} .cli-demo ol li`)).toHaveCount(4);
+  await page.locator(`${root} .cli-demo button[title="Copy command"]`).click();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("courier ui start [options]");
   await page.locator(`${root} courier-checkbox label`).click();
   await expect(checkbox).not.toBeChecked();
   await expect(page.locator(`${root} .option-row`)).toHaveCount(allOptionCount);
@@ -170,6 +191,12 @@ test("landing preserves interaction and geometry across routes, channels, locale
     await page.setViewportSize(viewport);
     const expectedSceneSource = viewport.width <= 704 ? "mobile" : "wide";
     await expect.poll(() => page.locator(`${root} courier-scene .base img`).evaluateAll((images, expected) => images.every((image) => (image as HTMLImageElement).currentSrc.includes(expected)), expectedSceneSource)).toBe(true);
+    const terminals = await page.locator(`${root} #hero .hero-terminal`).evaluateAll((nodes) => nodes.map((node) => {
+      const bounds = node.getBoundingClientRect();
+      return { width: bounds.width, height: bounds.height };
+    }));
+    expect(terminals).toHaveLength(2);
+    for (const terminal of terminals) expect(Math.abs(terminal.width - terminal.height)).toBeLessThanOrEqual(1);
     for (const target of ["hero", "routes", "install", "cli"] as const) {
       await page.locator(`${root} #${target}`).evaluate((section) => section.scrollIntoView({ block: "start" }));
       await expect.poll(() => page.locator(`${root} #${target}`).evaluate((section) => Math.abs(section.getBoundingClientRect().top))).toBeLessThan(2);
@@ -217,8 +244,9 @@ test("protected data metadata never renders before authentication", async ({ pag
   const root = "courier-data-app";
   const password = page.locator(`${root} input[type="password"]`);
   await expect(password).toBeVisible();
-  await expect(page.locator(`${root} courier-mascot img`)).toBeVisible();
-  await expect(page.locator(`${root} courier-mascot img`)).toHaveAttribute("src", /relay-access/);
+  await expect(page.locator(`${root} courier-scene .base img`)).toBeVisible();
+  await expect(page.locator(`${root} courier-scene .base img`)).toHaveAttribute("src", /relay-terminal-delivery-wide/);
+  await expect(page.locator(`${root} courier-terminal.access`)).toBeVisible();
   await expect(page.locator(root)).not.toContainText(secretMarker);
   await exerciseThemes(page, root);
   await password.focus();
@@ -268,6 +296,8 @@ test("admin renders secret-free state with localized controls", async ({ page })
   const root = "courier-admin-app";
   await expect(page.locator(root)).toContainText("127.0.0.1:8080");
   await expect(page.locator(`${root} .metrics`)).toContainText("Active deliveries");
+  await expect(page.locator(`${root} courier-scene .base img`)).toHaveAttribute("src", /relay-terminal-admin-wide/);
+  await expect(page.locator(`${root} courier-terminal.registry-terminal`)).toBeVisible();
   await expect(page.locator(`${root} form select`).first()).toHaveCSS("appearance", "none");
   await expect(page.locator(`${root} form input[type="checkbox"]`).first()).toHaveCSS("appearance", "none");
   await expect(page.locator(root)).not.toContainText(secretMarker);
