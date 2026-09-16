@@ -4,6 +4,7 @@ export * from "./components/button";
 export * from "./components/brand-icon";
 export * from "./components/brand";
 export * from "./components/checkbox";
+export * from "./components/icon-link";
 export * from "./components/locale-selector";
 export * from "./components/panel";
 export * from "./components/progress";

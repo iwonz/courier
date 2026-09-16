@@ -1,54 +1,57 @@
 # Courier UI architecture
 
-Courier browser surfaces use one private workspace package, [`@courier/ui`](../web/ui), for visual tokens, identity assets, icons, localization, theme state, and reusable Lit components. Delivery pages, administration pages, and the static project landing import this package; they must not copy its component implementations or maintain parallel token sets.
+Courier browser surfaces share one private workspace package, [`@courier/ui`](../web/ui), for visual tokens, identity assets, icons, localization, theme state, and Lit components. Delivery, administration, and the static landing import this package; consumers do not copy component implementations or maintain parallel token sets.
 
-The visual and verbal rules are defined in the [Courier brand system](brand.md). Its central idea is a field manual connected to a network control room: clear routes, calm status language, disciplined information density, and a small amount of warmth from Relay, the courier-pigeon field operator.
+The visual and verbal rules are defined in the [Courier brand system](brand.md): a field manual connected to a network control room, with clear routes, calm status language, disciplined density, and restrained warmth from Relay.
 
 ## Package boundary
 
-The public TypeScript entry point exports:
+The TypeScript entry point exports:
 
-- `defineCourierElements` for idempotent custom-element registration;
-- brand, responsive contextual mascot and stationary scene, status, route, terminal, command-demo, brand-icon, checkbox, button, panel, progress, icon, segmented-control, theme-selector, and locale-selector components;
-- typed terminal transcript rows, tones, and deterministic demo phases;
-- deterministic cubic Bezier route geometry shared by route presentations;
-- shared form-control styles for normalized inputs, selects, switches, and file actions;
+- idempotent `defineCourierElements` registration;
+- brand, responsive mascot, stationary scene, status, route, terminal, command-readout, icon-link, brand-icon, checkbox, button, panel, progress, icon, segmented-control, theme-selector, and locale-selector components;
+- deterministic cubic Bezier route geometry;
+- shared normalized form-control styles;
 - typed theme state and browser adapters;
-- typed English and Russian catalogs, browser-language negotiation, and translation helpers.
+- typed English/Russian catalogs, browser-language negotiation, and translation helpers.
 
-The Vite library build emits an ES module, declarations, and `courier-ui.css`. Consumers load that stylesheet once so document-level tokens and reduced-motion behavior apply consistently; component shadow styles inherit the same custom properties.
+The Vite library build emits an ES module, declarations, and `courier-ui.css`. Consumers load the stylesheet once so document tokens, shared control frames, and reduced-motion behavior remain consistent.
 
-## Terminal boundary
+## Terminal and command boundaries
 
-`courier-terminal` is an accessible transparent workspace with toolbar, transcript body, footer actions, and status slots. It supplies the hairline registration frame and scrolling boundary while consumers retain semantic buttons, links, forms, password fields, file inputs, selects, and checkboxes. `courier-command-demo` adds an immutable command, Copy and Run/Replay actions, a localized live result, and typed prompt/stage/result rows. It is a deterministic browser preview: it has no editable command field, shell bridge, installer execution, transfer side effect, or arbitrary network action. Reduced motion completes the transcript immediately; normal motion uses one bounded timer that is reset on selection change and cleared on replay or disconnection.
+`courier-terminal` is an accessible transparent workspace with toolbar, content, footer, and status slots. Delivery and administration use it around real authentication, transfer, registry, SSE, policy, refresh, and stop state. Consumers retain semantic buttons, links, forms, password/file inputs, selects, and checkboxes. Neither product surface exposes a shell prompt.
 
-Delivery uses the terminal as a presentation boundary around its real authentication and versioned transfer API. Administration uses it around the existing registry, SSE snapshots, policy forms, refresh, and stop APIs. Neither product surface presents a shell prompt or changes its security boundary.
+`courier-command-readout` is deliberately smaller. It exposes immutable command text, localized heading and description, Copy, a reserved live result region, details, and footer actions. Changing command identity synchronously clears previous copy feedback. It has no timer, transcript, editable field, Run/Replay API, shell bridge, installer execution, transfer side effect, or arbitrary network behavior.
 
-## Themes and accessibility
+## Themes, controls, and localization
 
-The stored preference is one of `system`, `light`, or `dark` and defaults to `system`. The resolved light or dark theme is written separately to the document root, so operating-system changes update a system-selected page without losing the user's preference. Storage failures fall back safely and never prevent a page from rendering.
+Theme preference is `system`, `light`, or `dark` and defaults to `system`. Resolved theme and stored preference remain separate so operating-system changes can update a system-selected page. Storage failure never prevents rendering.
 
-Graphite, paper, signal lime, and beak orange are the core identity colors. Signal lime identifies a route, active state, or decisive action rather than covering large surfaces. The shared route and status components pair color with text. Theme and locale use icon-only shared segmented radiogroups: visible `Theme` and `Language` legends are suppressed, while localized button and group names, selected state, one roving tab stop, and arrow/Home/End keyboard behavior remain. Inputs, selects, switches, password fields, file actions, and the shared custom checkbox retain dependable form semantics but receive one normalized Courier appearance, explicit programmatic labels, visible focus treatment, accessible light/dark contrast, and reduced-motion behavior. The checkbox preserves native checked/disabled behavior and emits one composed boolean change event without exposing native chrome.
+Graphite, paper, signal lime, and beak orange are shared semantic roles. Theme and locale use icon-only segmented radiogroups with localized accessible names, visible selected state, roving focus, and arrow/Home/End behavior. Shared control-frame tokens define dimensions, border, surface, radius, hover, focus, and theme behavior for segmented groups and semantic icon links. `courier-icon-link` keeps anchor semantics and explicit target/relationship attributes.
 
-## Localization
+Inputs, selects, switches, password fields, file actions, and the shared checkbox keep native semantics while normalizing visible chrome. English is the fallback. Catalog shape derives from English keys, so TypeScript rejects missing Russian or future keys; adding a locale requires no backend change.
 
-English is the fallback locale. Initial selection checks persisted preference and then the browser language list. Catalog shape derives from the English keys, so TypeScript rejects missing keys in Russian or future locale modules. Runtime pages can perform their initial negotiation independently; adding a locale requires no backend API change.
+## Scenes and loading
 
-## Assets and provenance
+Retained assets live in [`web/ui/assets`](../web/ui/assets) beside `provenance.json`. The manifest records media type, role, dimensions, bytes, SHA-256, prompt summary, and landing sequence position. Validation rejects missing, extra, changed, duplicate, dimension-mismatched, executable, incomplete, or over-budget content.
 
-Retained Courier-owned assets live in [`web/ui/assets`](../web/ui/assets) beside `provenance.json`. The manifest records the source context, every asset's media type, role, dimensions, byte count, SHA-256 digest, and prompt summary. The verification script reads PNG and WebP headers and rejects missing, extra, changed, duplicate, dimension-mismatched, incomplete, or executable asset content. The compact transparent PNG mark is a generated profile of Relay, not the former source-arrow symbol. The canonical raster Relay reference anchors a twelve-image terminal scene family plus the unchanged README panorama. Hero, routing, installation, CLI reference, delivery, and administration each have separately composed wide and portrait cinematic editorial assets. They reserve low-detail regions matching the real terminal layouts, concentrate character and props around their edges, and contain no embedded text, terminal UI, logos, third-party marks, credentials, or required information. `courier-mascot` accepts an optional portrait source and renders it through `<picture>` below the shared mobile breakpoint, allowing a scene to change composition without duplicating component logic. `courier-scene` composes that responsive picture as an immutable base with a pointer-local multi-lobed glow and refractive duplicate. The stable host owns tracking, decorative layers ignore hit testing, fine-pointer coordinates converge through one elapsed-time loop, and the loop stops after convergence or disconnection. Coarse pointers and reduced motion use stable fallbacks. All illustrations are non-essential: headings, controls, routes, and states remain complete if an image cannot load.
+The canonical Relay reference anchors eight landing journey segments and four delivery/administration scenes plus the unchanged README panorama. Landing segments continue one route through departure, routing junction, verification depot, and destination archive. Wide and portrait sequences have four independently composed images each with matching boundary geometry. The landing total is capped at 1.6 MiB and each segment at 225 KiB.
 
-The shared `courier-brand-icon` renders reviewed monochrome product geometry from the pinned Simple Icons package or pinned official PowerShell and Scoop repository revisions. Those third-party files have a separate provenance manifest, digest gate, and license/trademark notice; they are not described as Courier-owned assets. The component makes no runtime network request and only supplies an accessible image name when a consumer requests one.
+`courier-mascot` renders an optional portrait source through `<picture>`. `courier-scene` activates eager images immediately and non-eager images once at half-viewport proximity. Until activation, no image element or request exists. If `IntersectionObserver` is unavailable, native lazy loading is used. The stationary base is the only image before interaction.
 
-No reference HTML or JavaScript is shipped. Browser-injected AdGuard resources, obsolete mirror artwork and messaging, and remote resources were excluded. [`NOTICE.md`](../web/ui/NOTICE.md) records both Courier asset authorship and all third-party mark license, attribution, and trademark context.
+Fine-pointer movement creates a refracted duplicate on demand; ambient convergence removes it. The stable host owns hit testing, decorative layers ignore input, one elapsed-time loop converges and stops, and disconnection cancels observers and frames. Coarse pointers and reduced motion never create moving refraction. Every illustration is optional to meaning.
+
+The shared `courier-brand-icon` renders pinned local official geometry in Courier monochrome. Simple Icons 16.31.0 supplies reviewed marks; official pinned PowerShell and Scoop revisions supply missing geometry. Their provenance, license, attribution, and trademark context are recorded separately in [`NOTICE.md`](../web/ui/NOTICE.md). GNU Wget uses a Courier functional download glyph because this set has no distinct official product mark.
+
+No reference HTML or JavaScript is shipped. Browser-injected AdGuard resources, obsolete mirror artwork/messages, superseded landing scenes, temporary storyboards, and remote runtime assets are excluded.
 
 ## Verification
 
-Run the UI gate directly with:
+Run:
 
 ```sh
 npm ci --prefix web --ignore-scripts --no-audit --no-fund
 npm run verify --prefix web
 ```
 
-The gate checks asset integrity, requires 100% TypeScript statements, branches, functions, and lines through Vitest/V8, and produces a deterministic Vite library build. `make verify` includes this gate before the GoReleaser snapshot.
+The gate verifies asset and license provenance, enforces exactly 100% TypeScript statements/branches/functions/lines, builds every UI, validates embedded assets, and enforces landing bundle budgets. `make verify` includes it before the GoReleaser snapshot.

@@ -1,11 +1,11 @@
-import relayCliMobile from "../assets/relay-terminal-cli-mobile-v3.webp";
-import relayCliWide from "../assets/relay-terminal-cli-wide-v3.webp";
-import relayHeroMobile from "../assets/relay-terminal-hero-mobile-v3.webp";
-import relayHeroWide from "../assets/relay-terminal-hero-wide-v3.webp";
-import relayInstallMobile from "../assets/relay-terminal-install-mobile-v3.webp";
-import relayInstallWide from "../assets/relay-terminal-install-wide-v3.webp";
-import relayRoutingMobile from "../assets/relay-terminal-routing-mobile-v3.webp";
-import relayRoutingWide from "../assets/relay-terminal-routing-wide-v3.webp";
+import relayCliMobile from "../assets/relay-journey-cli-mobile-v1.webp";
+import relayCliWide from "../assets/relay-journey-cli-wide-v1.webp";
+import relayHeroMobile from "../assets/relay-journey-hero-mobile-v1.webp";
+import relayHeroWide from "../assets/relay-journey-hero-wide-v1.webp";
+import relayInstallMobile from "../assets/relay-journey-install-mobile-v1.webp";
+import relayInstallWide from "../assets/relay-journey-install-wide-v1.webp";
+import relayRoutingMobile from "../assets/relay-journey-routing-mobile-v1.webp";
+import relayRoutingWide from "../assets/relay-journey-routing-wide-v1.webp";
 
 export const relayHeroMobileSource = relayHeroMobile;
 export const relayHeroSource = relayHeroWide;

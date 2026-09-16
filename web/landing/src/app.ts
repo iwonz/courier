@@ -7,7 +7,6 @@ import {
   type BrandIconName,
   type IconName,
   type Locale,
-  type TerminalStep,
   type ThemeState,
 } from "@courier/ui";
 import {
@@ -158,17 +157,24 @@ export class CourierLandingApp extends LitElement {
   private theme?: ThemeState;
   private resizeObserver?: ResizeObserver;
   private sectionObserver?: IntersectionObserver;
-  private readonly sectionRatios = new Map<string, number>();
+  private readonly observedSections = new Set<string>();
+  private headerHeight = 0;
+  private readonly handleViewportResize = (): void => {
+    this.observeSectionBand();
+    this.measureRouteConnector();
+  };
 
   connectedCallback(): void {
     super.connectedCallback();
     this.theme = browserThemeState();
+    globalThis.addEventListener("resize", this.handleViewportResize);
   }
 
   disconnectedCallback(): void {
     this.theme?.destroy();
     this.resizeObserver?.disconnect();
     this.sectionObserver?.disconnect();
+    globalThis.removeEventListener("resize", this.handleViewportResize);
     super.disconnectedCallback();
   }
 
@@ -184,10 +190,6 @@ export class CourierLandingApp extends LitElement {
       });
       this.resizeObserver.observe(masthead);
       this.resizeObserver.observe(controls);
-    }
-    if (globalThis.IntersectionObserver) {
-      this.sectionObserver = new IntersectionObserver((entries) => this.observeSections(entries), { threshold: [0.25, 0.5, 0.75] });
-      this.renderRoot.querySelectorAll<HTMLElement>("section").forEach((section) => this.sectionObserver?.observe(section));
     }
   }
 
@@ -217,13 +219,35 @@ export class CourierLandingApp extends LitElement {
     const masthead = this.renderRoot.querySelector<HTMLElement>(".masthead-wrap");
     if (!masthead) return;
     const height = Math.ceil(masthead.getBoundingClientRect().height);
-    if (height > 0) this.style.setProperty("--masthead-height", `${height}px`);
+    if (height <= 0) return;
+    this.style.setProperty("--masthead-height", `${height}px`);
+    if (height === this.headerHeight) return;
+    this.headerHeight = height;
+    this.observeSectionBand();
   }
 
   private observeSections(entries: readonly IntersectionObserverEntry[]): void {
-    for (const entry of entries) this.sectionRatios.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0);
-    const visible = [...this.sectionRatios.entries()].sort((left, right) => right[1] - left[1])[0];
-    this.activeSection = visible && visible[1] > 0 && visible[0] !== "hero" ? visible[0] : "";
+    for (const entry of entries) {
+      if (entry.isIntersecting && entry.intersectionRatio > 0) this.observedSections.add(entry.target.id);
+      else this.observedSections.delete(entry.target.id);
+    }
+    const visible = [...this.renderRoot.querySelectorAll<HTMLElement>("section")].reverse().find((section) => this.observedSections.has(section.id));
+    if (visible) this.activeSection = visible.id === "hero" ? "" : visible.id;
+  }
+
+  private observeSectionBand(): void {
+    this.sectionObserver?.disconnect();
+    this.sectionObserver = undefined;
+    this.observedSections.clear();
+    if (!globalThis.IntersectionObserver) return;
+    const viewportHeight = Math.max(this.headerHeight + 2, globalThis.innerHeight);
+    const readingBandHeight = Math.max(2, Math.min(160, viewportHeight * 0.25));
+    const bottomInset = Math.max(0, viewportHeight - this.headerHeight - readingBandHeight);
+    this.sectionObserver = new IntersectionObserver((entries) => this.observeSections(entries), {
+      rootMargin: `-${this.headerHeight}px 0px -${bottomInset}px 0px`,
+      threshold: 0,
+    });
+    this.renderRoot.querySelectorAll<HTMLElement>("section").forEach((section) => this.sectionObserver?.observe(section));
   }
 
   private measureRouteConnector(): void {
@@ -279,39 +303,11 @@ export class CourierLandingApp extends LitElement {
     this.compatibleOnly = event.detail;
   }
 
-  private routeSteps(): readonly TerminalStep[] {
-    return [
-      { label: this.t("demoPreflight"), detail: this.t("demoPreflightDetail"), tone: "signal" },
-      { label: this.t("demoRoute"), detail: this.t("demoRouteDetail"), tone: "signal" },
-      { label: this.t("demoTransfer"), detail: this.t("demoTransferDetail") },
-      { label: this.t("demoVerify"), detail: this.t("demoVerifyDetail") },
-      { label: this.t("demoComplete"), detail: this.t("demoCompleteDetail"), tone: "success" },
-    ];
-  }
-
-  private installSteps(): readonly TerminalStep[] {
-    return [
-      { label: this.t("demoResolve"), detail: this.t("demoResolveDetail"), tone: "signal" },
-      { label: this.t("demoPlatform"), detail: this.t("demoPlatformDetail") },
-      { label: this.t("demoDownload"), detail: this.t("demoDownloadDetail") },
-      { label: this.t("demoChecksum"), detail: this.t("demoChecksumDetail") },
-      { label: this.t("demoInstall"), detail: this.t("demoInstallDetail"), tone: "success" },
-    ];
-  }
-
-  private commandSteps(): readonly TerminalStep[] {
-    return [
-      { label: this.t("demoContract"), detail: this.t("demoContractDetail"), tone: "signal" },
-      { label: this.t("demoUsage"), detail: this.t("demoUsageDetail") },
-      { label: this.t("demoOptions"), detail: this.t("demoOptionsDetail") },
-      { label: this.t("demoComplete"), detail: this.t("demoCompleteDetail"), tone: "success" },
-    ];
-  }
-
   private navigate(event: MouseEvent): void {
     event.preventDefault();
     const hash = (event.currentTarget as HTMLAnchorElement).getAttribute("href")!;
-    this.renderRoot.querySelector<HTMLElement>(hash)?.scrollIntoView({ block: "start" });
+    const reducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+    this.renderRoot.querySelector<HTMLElement>(hash)?.scrollIntoView({ block: "start", behavior: reducedMotion ? "auto" : "smooth" });
     globalThis.history.pushState(null, "", hash);
   }
 
@@ -350,7 +346,7 @@ export class CourierLandingApp extends LitElement {
             </nav>
           </div>
           <div class="header-actions">
-            <a class="github-link" href="https://github.com/iwonz/courier" target="_blank" rel="noopener noreferrer" aria-label=${this.t("githubLabel")}><courier-icon name="github"></courier-icon></a>
+            <courier-icon-link class="github-link" href="https://github.com/iwonz/courier" icon="github" target="_blank" rel="noopener noreferrer" .label=${this.t("githubLabel")}></courier-icon-link>
             <div class="preferences"><courier-theme-selector .locale=${this.locale}></courier-theme-selector><courier-locale-selector @courier-locale-change=${this.setLocale}></courier-locale-selector></div>
           </div>
         </div>
@@ -364,7 +360,7 @@ export class CourierLandingApp extends LitElement {
           <svg class="hero-route mobile-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d=${heroMobilePath}></path><path class="signal" d=${heroMobilePath}></path></svg>
           <span class="hero-terminal source" aria-hidden="true"></span><span class="hero-terminal destination" aria-hidden="true"></span>
           <span class="hero-node source"><small>01</small><strong>Source</strong></span><span class="hero-node destination"><small>02</small><strong>Destination</strong></span>
-          <div class="hero shell"><div class="hero-copy"><h1>${this.t("title")}</h1><p class="tagline">${this.t("tagline")}</p></div></div>
+          <div class="hero shell"><div class="hero-copy"><h1>${this.t("title")}</h1></div></div>
         </section>
 
         <section id="routes" class="slide">
@@ -377,7 +373,7 @@ export class CourierLandingApp extends LitElement {
                 <div class="endpoint-group source-endpoints"><span class="label">${this.t("sourceLabel")}</span>${sourceEndpoints.map((name) => this.renderEndpoint(name, "source"))}</div>
                 <div class="endpoint-group destination-endpoints"><span class="label">${this.t("destinationLabel")}</span>${destinationEndpoints.map((name) => this.renderEndpoint(name, "destination"))}</div>
               </div>
-              <courier-command-demo class="route-readout" .command=${routeCommand} .description=${`${this.describeEndpoint(selected.source, "source")} → ${this.describeEndpoint(selected.destination, "destination")}`} .steps=${this.routeSteps()} .sessionKey=${`${this.locale}:${selected.source}:${selected.destination}`} .copyLabel=${this.t("copyCommand")} .runLabel=${this.t("runDemo")} .replayLabel=${this.t("replayDemo")} .copiedLabel=${this.t("copiedCommand")} .copyFailedLabel=${this.t("copyFailed")} .previewLabel=${this.t("preview")} .noEffectLabel=${this.t("noBrowserEffect")}><div slot="details" class="demo-details"><span class="label">${this.t("allowed")}</span><div class="flag-list">${flags.map((flag) => html`<span class="flag">${flag.syntax}</span>`)}</div></div></courier-command-demo>
+              <courier-command-readout class="route-readout" .heading=${this.t("commandLabel")} .command=${routeCommand} .description=${`${this.describeEndpoint(selected.source, "source")} → ${this.describeEndpoint(selected.destination, "destination")}`} .sessionKey=${`${this.locale}:${selected.source}:${selected.destination}`} .copyLabel=${this.t("copyCommand")} .copiedLabel=${this.t("copiedCommand")} .copyFailedLabel=${this.t("copyFailed")}><div slot="details" class="demo-details"><span class="label">${this.t("allowed")}</span><div class="flag-list">${flags.map((flag) => html`<span class="flag">${flag.syntax}</span>`)}</div></div></courier-command-readout>
             </div></div>
           </div>
         </section>
@@ -389,10 +385,10 @@ export class CourierLandingApp extends LitElement {
             <div class="install-board"><div class="install-interface">
               <span class="label install-label">${this.t("chooseChannel")}</span>
               <div class="install-channels" role="list">${installs.map((channel) => html`<button type="button" class="install-channel ${channel.name === install.name ? "selected" : ""}" data-channel=${channel.name} aria-pressed=${String(channel.name === install.name)} @click=${this.chooseInstall}><courier-brand-icon name=${channel.icon}></courier-brand-icon><span>${channel.name}</span></button>`)}</div>
-              <courier-command-demo class="install-readout" .command=${install.command} .description=${this.t("installDemoDescription")} .steps=${this.installSteps()} .sessionKey=${`${this.locale}:${install.name}`} .copyLabel=${this.t("copyCommand")} .runLabel=${this.t("runDemo")} .replayLabel=${this.t("replayDemo")} .copiedLabel=${this.t("copiedCommand")} .copyFailedLabel=${this.t("copyFailed")} .previewLabel=${this.t("preview")} .noEffectLabel=${this.t("noBrowserEffect")}><div slot="details" class="install-identity"><courier-brand-icon name=${install.icon}></courier-brand-icon><strong>${install.name}</strong></div><div slot="footer-actions" class="install-actions">
+              <courier-command-readout class="install-readout" .heading=${this.t("commandLabel")} .command=${install.command} .description=${this.t("installReadoutDescription")} .sessionKey=${`${this.locale}:${install.name}`} .copyLabel=${this.t("copyCommand")} .copiedLabel=${this.t("copiedCommand")} .copyFailedLabel=${this.t("copyFailed")}><div slot="details" class="install-identity"><courier-brand-icon name=${install.icon}></courier-brand-icon><strong>${install.name}</strong></div><div slot="footer-actions" class="install-actions">
                 <a class="download-channel" href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><courier-icon name="package"></courier-icon><div><h3>${this.t("packages")}</h3><p>${this.t("packagesDetail")}</p><span class="brand-cloud" aria-hidden="true">${(["linux", "ubuntu", "debian", "arch-linux", "manjaro", "fedora", "red-hat", "alpine-linux"] as BrandIconName[]).map((name) => html`<courier-brand-icon name=${name}></courier-brand-icon>`)}</span></div></a>
                 <a class="download-channel" href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><courier-icon name="download"></courier-icon><div><h3>${this.t("direct")}</h3><p>${this.t("directDetail")}</p></div></a>
-              </div></courier-command-demo>
+              </div></courier-command-readout>
             </div></div>
           </div>
         </section>
@@ -404,7 +400,7 @@ export class CourierLandingApp extends LitElement {
             <div class="cli-workspace"><div class="reference">
               <div class="reference-column commands"><div class="reference-head"><span class="label">${this.t("commandLabel")}</span></div><div class="reference-list">${contractData.commands.map((command) => html`<button type="button" class="command-row" data-command=${command.name} aria-pressed=${String(command.name === this.selectedCommand)} @click=${this.chooseCommand}><code>${command.usage}</code></button>`)}</div></div>
               <div class="reference-column options"><div class="reference-head"><span class="label">${this.t("optionsLabel")}</span><courier-checkbox .checked=${this.compatibleOnly} ?disabled=${!this.selectedCommand} .label=${this.t("compatibleOnly")} @courier-checkbox-change=${this.setCompatibility}></courier-checkbox></div><div class="reference-list">${visibleFlags.length ? visibleFlags.map((flag) => html`<article class="option-row"><div class="option-head"><code>${flag.syntax}</code><span class="kind">${this.t("optionDefault")}: ${flag.default}</span></div><p class="option-meta">${this.t("repeatable")}: ${flag.repeatable ? this.t("yes") : this.t("no")} · ${this.t("applies")}: ${flag.appliesTo.join(", ")}</p></article>`) : html`<p class="empty-state">${this.t("noCompatibleOptions")}</p>`}</div></div>
-            </div><courier-command-demo class="cli-demo" .command=${selectedCommand?.usage ?? ""} .description=${selectedCommand ? this.t("cliDemoDescription") : this.t("selectCommand")} .steps=${selectedCommand ? this.commandSteps() : []} .sessionKey=${`${this.locale}:${this.selectedCommand}:${this.compatibleOnly}`} .copyLabel=${this.t("copyCommand")} .runLabel=${this.t("runDemo")} .replayLabel=${this.t("replayDemo")} .copiedLabel=${this.t("copiedCommand")} .copyFailedLabel=${this.t("copyFailed")} .previewLabel=${this.t("preview")} .noEffectLabel=${this.t("noBrowserEffect")}><div slot="details" class="demo-details"><span class="label">${this.t("optionsLabel")}</span><div class="flag-list">${visibleFlags.map((flag) => html`<span class="flag">${flag.syntax}</span>`)}</div></div></courier-command-demo></div>
+            </div><courier-command-readout class="cli-readout" .heading=${this.t("commandLabel")} .command=${selectedCommand?.usage ?? ""} .description=${selectedCommand ? this.t("cliReadoutDescription") : this.t("selectCommand")} .sessionKey=${`${this.locale}:${this.selectedCommand}:${this.compatibleOnly}`} .copyLabel=${this.t("copyCommand")} .copiedLabel=${this.t("copiedCommand")} .copyFailedLabel=${this.t("copyFailed")}><div slot="details" class="demo-details"><span class="label">${this.t("optionsLabel")}</span><div class="flag-list">${visibleFlags.map((flag) => html`<span class="flag">${flag.syntax}</span>`)}</div></div></courier-command-readout></div>
           </div>
         </section>
       </main>

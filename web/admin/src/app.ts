@@ -225,7 +225,7 @@ export class CourierAdminApp extends LitElement {
     const deliveries = servers.reduce((count, server) => count + server.deliveries.length, 0);
     const confirmed = servers.reduce((serverTotal, server) => serverTotal + server.deliveries.reduce((deliveryTotal, delivery) => deliveryTotal + delivery.counters.confirmed, 0), 0);
     return html`
-      <courier-scene class="page-scene" .source=${relayOperationsSource} .mobileSource=${relayOperationsMobileSource}></courier-scene>
+      <courier-scene class="page-scene" eager .source=${relayOperationsSource} .mobileSource=${relayOperationsMobileSource}></courier-scene>
       <main>
         <header>
           <courier-brand product=${this.t("brandProduct")}></courier-brand>

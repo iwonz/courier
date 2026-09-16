@@ -3,13 +3,14 @@ import { CourierButton } from "./button";
 import { brandIconNames, CourierBrandIcon, resolveBrandIcon } from "./brand-icon";
 import { CourierBrand, CourierMascot, CourierRoute, CourierStatus } from "./brand";
 import { CourierCheckbox } from "./checkbox";
+import { CourierIconLink } from "./icon-link";
 import { CourierLocaleSelector } from "./locale-selector";
 import { CourierPanel } from "./panel";
 import { CourierProgress, progressRatio } from "./progress";
 import { CourierSegmentedControl, nextSegmentIndex } from "./segmented-control";
 import { CourierThemeSelector } from "./theme-selector";
 import { CourierScene, pointerPosition, sceneAmbientPosition, smoothPointerPosition } from "./scene";
-import { CourierCommandDemo, CourierTerminal, terminalTimestamp, type TerminalStep } from "./terminal";
+import { CourierCommandReadout, CourierTerminal } from "./terminal";
 import { defineCourierElements, type ElementRegistry } from "../define";
 import { cubicBezierPath } from "../geometry";
 import { CourierIcon, iconNames, resolveIcon } from "../icons";
@@ -47,10 +48,10 @@ describe("element registry", () => {
     };
     defineCourierElements(registry);
     expect([...values.keys()].sort()).toEqual([
-      "courier-brand", "courier-brand-icon", "courier-button", "courier-checkbox", "courier-command-demo", "courier-icon", "courier-locale-selector", "courier-mascot", "courier-panel", "courier-progress", "courier-route", "courier-scene", "courier-segmented-control", "courier-status", "courier-terminal", "courier-theme-selector",
+      "courier-brand", "courier-brand-icon", "courier-button", "courier-checkbox", "courier-command-readout", "courier-icon", "courier-icon-link", "courier-locale-selector", "courier-mascot", "courier-panel", "courier-progress", "courier-route", "courier-scene", "courier-segmented-control", "courier-status", "courier-terminal", "courier-theme-selector",
     ]);
     defineCourierElements(registry);
-    expect(values.size).toBe(16);
+    expect(values.size).toBe(17);
   });
 });
 
@@ -103,7 +104,7 @@ describe("shared components", () => {
     expect(mascot.shadowRoot?.querySelector("img")?.src).toContain("relay-mascot");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("loading")).toBe("eager");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("high");
-    expect(mascot.shadowRoot?.querySelector("source")?.srcset).toContain("relay-terminal-hero-mobile");
+    expect(mascot.shadowRoot?.querySelector("source")?.srcset).toContain("relay-journey-hero-mobile");
     mascot.mobileSource = "";
     mascot.eager = false;
     await mascot.updateComplete;
@@ -111,11 +112,11 @@ describe("shared components", () => {
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("loading")).toBe("lazy");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("auto");
 
+    expect([relayAccessMobileSource, relayAccessSource, relayOperationsMobileSource, relayOperationsSource].every((source) => source.includes("relay-terminal-"))).toBe(true);
     expect([
-      relayAccessMobileSource, relayAccessSource, relayCliMobileSource, relayCliSource,
-      relayHeroMobileSource, relayHeroSource, relayInstallMobileSource,
-      relayInstallSource, relayOperationsMobileSource, relayOperationsSource, relayRoutingMobileSource, relayRoutingSource,
-    ].every((source) => source.includes("relay-terminal-"))).toBe(true);
+      relayCliMobileSource, relayCliSource, relayHeroMobileSource, relayHeroSource,
+      relayInstallMobileSource, relayInstallSource, relayRoutingMobileSource, relayRoutingSource,
+    ].every((source) => source.includes("relay-journey-"))).toBe(true);
 
     const route = document.createElement("courier-route") as CourierRoute;
     route.source = "./data";
@@ -181,6 +182,21 @@ describe("shared components", () => {
     await icon.updateComplete;
     expect(icon.shadowRoot?.querySelector("svg")?.getAttribute("role")).toBe("img");
     expect(icon.shadowRoot?.querySelector("svg")?.getAttribute("aria-label")).toBe("Verified");
+  });
+
+  it("renders a secure semantic icon link with shared control chrome", async () => {
+    const link = document.createElement("courier-icon-link") as CourierIconLink;
+    link.href = "https://github.com/iwonz/courier";
+    link.label = "Courier on GitHub";
+    document.body.append(link);
+    await link.updateComplete;
+    const anchor = link.shadowRoot?.querySelector("a");
+    expect(anchor?.href).toBe("https://github.com/iwonz/courier");
+    expect(anchor?.target).toBe("_blank");
+    expect(anchor?.rel).toBe("noopener noreferrer");
+    expect(anchor?.getAttribute("aria-label")).toBe("Courier on GitHub");
+    expect((CourierIconLink.styles as { cssText: string }).cssText).toContain("--courier-control-frame-size");
+    expect((CourierSegmentedControl.styles as { cssText: string }).cssText).toContain("--courier-control-frame-size");
   });
 
   it("renders pinned monochrome brand marks and the Wget fallback glyph", async () => {
@@ -260,10 +276,12 @@ describe("shared components", () => {
     await scene.updateComplete;
     const base = scene.shadowRoot?.querySelector(".base") as HTMLElement;
     expect(base.getAttribute("style")).toBeNull();
-    expect(scene.shadowRoot?.querySelectorAll("courier-mascot")).toHaveLength(2);
+    expect(scene.shadowRoot?.querySelectorAll("courier-mascot")).toHaveLength(1);
     expect((CourierScene.styles as { cssText: string }).cssText).toContain("pointer-events: none");
     scene.dispatchEvent(new MouseEvent("pointermove", { clientX: 85, clientY: 70 }));
     scene.dispatchEvent(new MouseEvent("pointermove", { clientX: 90, clientY: 80 }));
+    await scene.updateComplete;
+    expect(scene.shadowRoot?.querySelectorAll("courier-mascot")).toHaveLength(2);
     expect(request).toHaveBeenCalledTimes(1);
     callbacks.shift()?.(16);
     expect(parseFloat(scene.style.getPropertyValue("--scene-pointer-x"))).toBeGreaterThan(72);
@@ -284,6 +302,8 @@ describe("shared components", () => {
     }
     expect(scene.style.getPropertyValue("--scene-pointer-x")).toBe("");
     expect(scene.style.getPropertyValue("--scene-pointer-y")).toBe("");
+    await scene.updateComplete;
+    expect(scene.shadowRoot?.querySelectorAll("courier-mascot")).toHaveLength(1);
     expect(cancel).not.toHaveBeenCalled();
 
     scene.dispatchEvent(new MouseEvent("pointermove", { clientX: 50, clientY: 50 }));
@@ -294,6 +314,41 @@ describe("shared components", () => {
     const detached = new CourierScene();
     (detached as unknown as { advance(timestamp: number): void }).advance(1);
     detached.disconnectedCallback();
+  });
+
+  it("activates non-eager scenes once near the viewport and cleans observers", async () => {
+    const instances: { callback: IntersectionObserverCallback; observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn>; options?: IntersectionObserverInit }[] = [];
+    class IntersectionObserverStub {
+      observe = vi.fn();
+      disconnect = vi.fn();
+      constructor(readonly callback: IntersectionObserverCallback, readonly options?: IntersectionObserverInit) { instances.push(this); }
+    }
+    vi.stubGlobal("IntersectionObserver", IntersectionObserverStub);
+    const scene = document.createElement("courier-scene") as CourierScene;
+    scene.source = relayHeroSource;
+    document.body.append(scene);
+    await scene.updateComplete;
+    expect(scene.shadowRoot?.querySelector("courier-mascot")).toBeNull();
+    expect(instances[0]?.options?.rootMargin).toBe("50% 0px");
+    expect(instances[0]?.observe).toHaveBeenCalledWith(scene);
+    instances[0]!.callback([{ isIntersecting: false } as IntersectionObserverEntry], {} as IntersectionObserver);
+    await scene.updateComplete;
+    expect(scene.shadowRoot?.querySelector("courier-mascot")).toBeNull();
+    instances[0]!.callback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
+    await scene.updateComplete;
+    expect(scene.shadowRoot?.querySelector("courier-mascot.base")).not.toBeNull();
+    expect(instances[0]?.disconnect).toHaveBeenCalledOnce();
+    scene.remove();
+    expect(instances[0]?.disconnect).toHaveBeenCalledOnce();
+
+    const eager = new CourierScene();
+    eager.eager = true;
+    eager.connectedCallback();
+    await eager.updateComplete;
+    expect(eager.shadowRoot?.querySelector("courier-mascot.base")).not.toBeNull();
+    eager.disconnectedCallback();
+    eager.connectedCallback();
+    eager.disconnectedCallback();
   });
 
   it("keeps scene pointer state fixed for coarse pointers and reduced motion", async () => {
@@ -309,100 +364,50 @@ describe("shared components", () => {
     expect(request).not.toHaveBeenCalled();
   });
 
-  it("runs immutable terminal demos, reports copy outcomes, and cleans timers", async () => {
-    vi.useFakeTimers();
-    expect(terminalTimestamp(-2)).toBe("00:00");
-    expect(terminalTimestamp(4)).toBe("00:08");
-
+  it("renders terminals and immutable command readouts with reserved copy feedback", async () => {
     const terminal = document.createElement("courier-terminal") as CourierTerminal;
-    terminal.heading = "Preview";
+    terminal.heading = "Operations";
     terminal.status = "ready";
     terminal.textContent = "Transcript";
     document.body.append(terminal);
     await terminal.updateComplete;
-    expect(terminal.shadowRoot?.textContent).toContain("Preview");
+    expect(terminal.shadowRoot?.textContent).toContain("Operations");
     expect(terminal.shadowRoot?.textContent).toContain("ready");
     terminal.status = "";
     await terminal.updateComplete;
     expect(terminal.shadowRoot?.querySelector(".status")).toBeNull();
 
-    const steps: readonly TerminalStep[] = [
-      { label: "Preflight", detail: "Preview only", tone: "signal" },
-      { label: "Verify", detail: "No data leaves the page", tone: "warning" },
-      { label: "Complete", tone: "success" },
-    ];
-    const demo = document.createElement("courier-command-demo") as CourierCommandDemo;
-    demo.command = "courier from ./data to ./backup";
-    demo.description = "Deterministic preview";
-    demo.steps = steps;
-    demo.interval = -1;
-    demo.clipboard = { writeText: vi.fn().mockResolvedValue(undefined) };
-    document.body.append(demo);
-    await demo.updateComplete;
-    expect(demo.shadowRoot?.querySelector("input, textarea, [contenteditable]")).toBeNull();
-    expect(demo.shadowRoot?.textContent).toContain(demo.command);
-    await demo.copyCommand();
-    await demo.updateComplete;
-    expect(demo.shadowRoot?.textContent).toContain("Copied");
-    demo.run();
-    await demo.updateComplete;
-    expect(demo.phase).toBe("running");
-    expect(demo.shadowRoot?.querySelectorAll("li")).toHaveLength(1);
-    await vi.runAllTimersAsync();
-    await demo.updateComplete;
-    expect(demo.phase).toBe("complete");
-    expect(demo.shadowRoot?.querySelectorAll("li")).toHaveLength(3);
-    const demoTerminal = demo.shadowRoot?.querySelector("courier-terminal") as CourierTerminal;
-    await demoTerminal.updateComplete;
-    expect(demoTerminal.shadowRoot?.textContent).toContain("exit 0");
+    const readout = document.createElement("courier-command-readout") as CourierCommandReadout;
+    readout.command = "courier from ./data to ./backup";
+    readout.description = "Immutable route command";
+    readout.heading = "Command";
+    readout.clipboard = { writeText: vi.fn().mockResolvedValue(undefined) };
+    document.body.append(readout);
+    await readout.updateComplete;
+    expect(readout.shadowRoot?.querySelector("input, textarea, [contenteditable]")).toBeNull();
+    expect(readout.shadowRoot?.textContent).toContain(readout.command);
+    expect(readout.shadowRoot?.textContent).not.toContain("Run");
+    expect(readout.shadowRoot?.querySelector(".copy-status")?.textContent).toBe("");
+    await readout.copyCommand();
+    await readout.updateComplete;
+    expect(readout.shadowRoot?.textContent).toContain("Copied");
+    readout.clipboard = { writeText: vi.fn().mockRejectedValue(new Error("denied")) };
+    await readout.copyCommand();
+    await readout.updateComplete;
+    expect(readout.shadowRoot?.textContent).toContain("Copy failed");
+    readout.sessionKey = "next";
+    await readout.updateComplete;
+    expect(readout.shadowRoot?.textContent).not.toContain("Copy failed");
+    readout.command = "";
+    await readout.updateComplete;
+    await readout.copyCommand();
+    expect(readout.shadowRoot?.querySelector("button")?.disabled).toBe(true);
 
-    demo.steps = [{ label: "Only" }];
-    demo.run();
-    await demo.updateComplete;
-    expect(demo.phase).toBe("complete");
-    demo.clipboard = { writeText: vi.fn().mockRejectedValue(new Error("denied")) };
-    await demo.copyCommand();
-    await demo.updateComplete;
-    expect(demo.shadowRoot?.textContent).toContain("Copy failed");
-
-    demo.command = "";
-    await demo.copyCommand();
-    demo.run();
-    await demo.updateComplete;
-    expect(demo.phase).toBe("idle");
-    expect(demo.shadowRoot?.querySelector("button")?.disabled).toBe(true);
-    demo.command = "courier help";
-    demo.steps = [];
-    demo.run();
-    expect(demo.phase).toBe("idle");
-
-    demo.command = "courier version";
-    demo.steps = steps;
-    demo.sessionKey = "version";
-    await demo.updateComplete;
-    expect(demo.phase).toBe("idle");
-    demo.run();
-    const clear = vi.spyOn(globalThis, "clearTimeout");
-    demo.reset();
-    expect(clear).toHaveBeenCalled();
-    demo.run();
-    demo.remove();
-    expect(clear).toHaveBeenCalledTimes(2);
-
-    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
-    const reduced = new CourierCommandDemo();
-    reduced.command = "courier help";
-    reduced.steps = steps;
-    reduced.run();
-    expect(reduced.phase).toBe("complete");
-
-    const noClipboard = new CourierCommandDemo();
+    const noClipboard = new CourierCommandReadout();
     noClipboard.command = "courier help";
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
     await noClipboard.copyCommand();
     expect(noClipboard.render()).toBeTruthy();
-    noClipboard.disconnectedCallback();
-    vi.useRealTimers();
   });
 });
 

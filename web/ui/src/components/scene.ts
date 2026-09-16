@@ -1,4 +1,4 @@
-import { LitElement, css, html } from "lit";
+import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 
 export interface PointerPosition {
   readonly x: number;
@@ -40,6 +40,8 @@ export class CourierScene extends LitElement {
     eager: { type: Boolean },
     mobileSource: { type: String, attribute: "mobile-source" },
     source: { type: String },
+    active: { state: true },
+    refracting: { state: true },
   };
 
   static styles = css`
@@ -48,7 +50,7 @@ export class CourierScene extends LitElement {
     courier-mascot { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
     courier-mascot::part(image) { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.88) contrast(1.02); }
     .base { z-index: 0; transform: none; }
-    .refracted { z-index: 1; opacity: 0.56; transform: scale(1.009); transform-origin: var(--scene-pointer-x) var(--scene-pointer-y); filter: saturate(1.055) contrast(1.02); mask-image: radial-gradient(circle clamp(3.8rem, 8vw, 7.2rem) at var(--scene-pointer-x) var(--scene-pointer-y), #000 36%, transparent 72%), radial-gradient(circle clamp(2.8rem, 6vw, 5.4rem) at calc(var(--scene-pointer-x) - 4.5%) calc(var(--scene-pointer-y) + 2.5%), #000 32%, transparent 74%), radial-gradient(circle clamp(2.4rem, 5vw, 4.8rem) at calc(var(--scene-pointer-x) + 4%) calc(var(--scene-pointer-y) - 3.5%), #000 30%, transparent 72%); mask-repeat: no-repeat; will-change: mask-position, transform; animation: scene-lobes 7s ease-in-out infinite alternate; }
+    .refracted { z-index: 1; opacity: 0.56; transform: scale(1.009); transform-origin: var(--scene-pointer-x) var(--scene-pointer-y); filter: saturate(1.055) contrast(1.02); -webkit-mask-image: radial-gradient(circle clamp(3.8rem, 8vw, 7.2rem) at var(--scene-pointer-x) var(--scene-pointer-y), #000 36%, transparent 72%), radial-gradient(circle clamp(2.8rem, 6vw, 5.4rem) at calc(var(--scene-pointer-x) - 4.5%) calc(var(--scene-pointer-y) + 2.5%), #000 32%, transparent 74%), radial-gradient(circle clamp(2.4rem, 5vw, 4.8rem) at calc(var(--scene-pointer-x) + 4%) calc(var(--scene-pointer-y) - 3.5%), #000 30%, transparent 72%); mask-image: radial-gradient(circle clamp(3.8rem, 8vw, 7.2rem) at var(--scene-pointer-x) var(--scene-pointer-y), #000 36%, transparent 72%), radial-gradient(circle clamp(2.8rem, 6vw, 5.4rem) at calc(var(--scene-pointer-x) - 4.5%) calc(var(--scene-pointer-y) + 2.5%), #000 32%, transparent 74%), radial-gradient(circle clamp(2.4rem, 5vw, 4.8rem) at calc(var(--scene-pointer-x) + 4%) calc(var(--scene-pointer-y) - 3.5%), #000 30%, transparent 72%); -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; will-change: mask-position, transform; animation: scene-lobes 7s ease-in-out infinite alternate; }
     .glow { position: absolute; z-index: 2; inset: 0; background: radial-gradient(circle clamp(8rem, 20vw, 18rem) at var(--scene-pointer-x) var(--scene-pointer-y), color-mix(in srgb, var(--courier-signal, #d4ff45) 13%, transparent), transparent 68%), radial-gradient(circle clamp(4rem, 9vw, 8rem) at calc(var(--scene-pointer-x) - 5%) calc(var(--scene-pointer-y) + 4%), rgb(255 255 255 / 0.065), transparent 72%), radial-gradient(circle clamp(3rem, 7vw, 6rem) at calc(var(--scene-pointer-x) + 6%) calc(var(--scene-pointer-y) - 5%), color-mix(in srgb, var(--courier-beak, #ff8758) 5%, transparent), transparent 76%); filter: blur(0.55rem); mix-blend-mode: screen; pointer-events: none; animation: scene-glow 8s ease-in-out infinite alternate; }
     .veil { position: absolute; z-index: 3; inset: 0; background: linear-gradient(90deg, rgb(8 10 8 / 0.1), transparent 28% 72%, rgb(8 10 8 / 0.16)), linear-gradient(180deg, rgb(8 10 8 / 0.08), transparent 23% 82%, rgb(8 10 8 / 0.22)); pointer-events: none; }
     @keyframes scene-lobes { to { filter: saturate(1.06) contrast(1.025) blur(0.08rem); } }
@@ -67,7 +69,10 @@ export class CourierScene extends LitElement {
   eager = false;
   mobileSource = "";
   source = "";
+  private active = false;
+  private refracting = false;
   private frame = 0;
+  private proximityObserver?: IntersectionObserver;
   private current: PointerPosition = sceneAmbientPosition;
   private target?: PointerPosition;
   private previousTimestamp?: number;
@@ -79,16 +84,46 @@ export class CourierScene extends LitElement {
     super.connectedCallback();
     this.addEventListener("pointermove", this.handlePointerMove);
     this.addEventListener("pointerleave", this.handlePointerLeave);
+    this.configureLoading();
   }
 
   disconnectedCallback(): void {
     this.removeEventListener("pointermove", this.handlePointerMove);
     this.removeEventListener("pointerleave", this.handlePointerLeave);
+    this.proximityObserver?.disconnect();
+    this.proximityObserver = undefined;
     if (this.frame) globalThis.cancelAnimationFrame(this.frame);
     this.frame = 0;
     this.target = undefined;
     this.previousTimestamp = undefined;
+    this.refracting = false;
     super.disconnectedCallback();
+  }
+
+  protected updated(changed: PropertyValues<this>): void {
+    if (changed.has("eager") && this.eager) this.activate();
+  }
+
+  private configureLoading(): void {
+    if (this.active) return;
+    if (this.eager) {
+      this.activate();
+      return;
+    }
+    if (!globalThis.IntersectionObserver) {
+      this.active = true;
+      return;
+    }
+    this.proximityObserver = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) this.activate();
+    }, { rootMargin: "50% 0px", threshold: 0 });
+    this.proximityObserver.observe(this);
+  }
+
+  private activate(): void {
+    this.active = true;
+    this.proximityObserver?.disconnect();
+    this.proximityObserver = undefined;
   }
 
   private tracksPointer(): boolean {
@@ -96,7 +131,8 @@ export class CourierScene extends LitElement {
   }
 
   private move(event: PointerEvent): void {
-    if (!this.tracksPointer()) return;
+    if (!this.active || !this.tracksPointer()) return;
+    this.refracting = true;
     this.target = pointerPosition(this.getBoundingClientRect(), event.clientX, event.clientY);
     this.returning = false;
     this.schedule();
@@ -132,12 +168,13 @@ export class CourierScene extends LitElement {
     if (this.returning) {
       this.target = undefined;
       this.returning = false;
+      this.refracting = false;
       this.style.removeProperty("--scene-pointer-x");
       this.style.removeProperty("--scene-pointer-y");
     }
   }
 
   protected render() {
-    return html`<div class="tracking"><courier-mascot class="base" ?eager=${this.eager} alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot><courier-mascot class="refracted" aria-hidden="true" alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot><span class="glow" aria-hidden="true"></span><span class="veil" aria-hidden="true"></span></div>`;
+    return html`<div class="tracking">${this.active ? html`<courier-mascot class="base" ?eager=${this.eager} alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot>${this.refracting ? html`<courier-mascot class="refracted" aria-hidden="true" alt="" .source=${this.source} .mobileSource=${this.mobileSource}></courier-mascot>` : nothing}` : nothing}<span class="glow" aria-hidden="true"></span><span class="veil" aria-hidden="true"></span></div>`;
   }
 }

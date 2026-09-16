@@ -71,7 +71,7 @@ it("copies exact commands and reports unavailable or rejected clipboard access",
 
 it("renders stable non-interactive scenes and activation-only route, install, and CLI controls", async () => {
   const resizeInstances: { callback: ResizeObserverCallback; observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }[] = [];
-  const sectionInstances: { callback: IntersectionObserverCallback; observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }[] = [];
+  const sectionInstances: { callback: IntersectionObserverCallback; observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn>; options?: IntersectionObserverInit }[] = [];
   class ResizeObserverStub {
     observe = vi.fn();
     disconnect = vi.fn();
@@ -80,7 +80,7 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   class IntersectionObserverStub {
     observe = vi.fn();
     disconnect = vi.fn();
-    constructor(readonly callback: IntersectionObserverCallback) { sectionInstances.push(this); }
+    constructor(readonly callback: IntersectionObserverCallback, readonly options?: IntersectionObserverInit) { sectionInstances.push(this); }
   }
   vi.stubGlobal("ResizeObserver", ResizeObserverStub);
   vi.stubGlobal("IntersectionObserver", IntersectionObserverStub);
@@ -106,6 +106,9 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   expect(text).toContain("Destination");
   expect(text).toContain("Remote");
   expect(text).toContain("Web Hook");
+  expect(text).not.toContain("A dependable CLI");
+  expect(text).not.toContain("Run demo");
+  expect(text).not.toContain("Replay demo");
   expect(text).not.toContain("One binary plans the route");
   expect(text).not.toContain("All connections come from the published CLI contract");
   expect(text).not.toContain("PATH-TO-PATH");
@@ -118,30 +121,36 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   expect(element.style.getPropertyValue("--masthead-height")).toBe("78px");
   expect(root.querySelector(".route-connector path")?.getAttribute("d")).toContain(" C ");
   expect(resizeInstances[0]?.observe).toHaveBeenCalledTimes(2);
-  expect(sectionInstances[0]?.observe).toHaveBeenCalledTimes(4);
-  expect(root.querySelector(".github-link")?.getAttribute("target")).toBe("_blank");
-  expect(root.querySelector(".github-link")?.getAttribute("rel")).toBe("noopener noreferrer");
+  const navigationObserver = sectionInstances.find((instance) => instance.observe.mock.calls.length === 4)!;
+  expect(navigationObserver.options?.rootMargin).toContain("-78px");
+  const github = root.querySelector(".github-link")!;
+  await github.updateComplete;
+  const githubAnchor = github.shadowRoot?.querySelector("a");
+  expect(githubAnchor?.target).toBe("_blank");
+  expect(githubAnchor?.rel).toBe("noopener noreferrer");
   expect([...root.querySelectorAll<HTMLAnchorElement>('a[href^="https://"]')].every((link) => link.target === "_blank" && link.rel === "noopener noreferrer")).toBe(true);
 
   const scenes = [...root.querySelectorAll("courier-scene")];
+  for (const instance of sectionInstances.filter((candidate) => candidate.observe.mock.calls[0]?.[0]?.tagName === "COURIER-SCENE")) {
+    instance.callback([{ target: instance.observe.mock.calls[0]![0], isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
+  }
   await Promise.all(scenes.map((scene) => scene.updateComplete));
   const baseSources = scenes.map((scene) => scene.shadowRoot?.querySelector(".base") as HTMLElement);
   await Promise.all(baseSources.map((mascot) => (mascot as unknown as { updateComplete: Promise<unknown> }).updateComplete));
   expect(baseSources.map((mascot) => mascot.shadowRoot?.querySelector("img")?.src)).toEqual(expect.arrayContaining([
-    expect.stringContaining("relay-terminal-hero-wide"), expect.stringContaining("relay-terminal-install-wide"), expect.stringContaining("relay-terminal-routing-wide"), expect.stringContaining("relay-terminal-cli-wide"),
+    expect.stringContaining("relay-journey-hero-wide"), expect.stringContaining("relay-journey-install-wide"), expect.stringContaining("relay-journey-routing-wide"), expect.stringContaining("relay-journey-cli-wide"),
   ]));
 
   const routeSection = root.querySelector("#routes") as HTMLElement;
   routeSection.scrollIntoView = vi.fn();
   const pushState = vi.spyOn(history, "pushState");
   (root.querySelector('nav a[href="#routes"]') as HTMLAnchorElement).click();
-  expect(routeSection.scrollIntoView).toHaveBeenCalledWith({ block: "start" });
+  expect(routeSection.scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "smooth" });
   expect(pushState).toHaveBeenCalledWith(null, "", "#routes");
 
-  const routeDemo = root.querySelector(".route-readout") as HTMLElement & { command: string; steps: readonly { label: string; detail?: string }[] };
-  const routeCommand = () => routeDemo.command;
-  expect(routeDemo.steps.map((step) => step.label)).toEqual(["Preflight", "Route", "Transfer", "Verify", "Complete"]);
-  expect(routeDemo.steps.at(-1)?.detail).toContain("No data left this page");
+  const routeReadout = root.querySelector(".route-readout") as HTMLElement & { command: string };
+  const routeCommand = () => routeReadout.command;
+  expect(routeReadout.shadowRoot?.textContent).not.toContain("Run demo");
   const source = (name: string) => root.querySelector(`.source-endpoints button[data-endpoint="${name}"]`) as HTMLButtonElement;
   const destination = (name: string) => root.querySelector(`.destination-endpoints button[data-endpoint="${name}"]`) as HTMLButtonElement;
   source("web").dispatchEvent(new Event("pointerenter"));
@@ -168,9 +177,8 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   await element.updateComplete;
   expect(routeCommand()).toContain("webhook:// to ./backup/");
 
-  const installDemo = root.querySelector(".install-readout") as HTMLElement & { command: string; steps: readonly { label: string }[]; clipboard?: Pick<Clipboard, "writeText">; copyCommand(): Promise<void>; updateComplete: Promise<unknown> };
-  const installCommand = () => installDemo.command;
-  expect(installDemo.steps.map((step) => step.label)).toEqual(["Resolve release", "Select platform", "Download", "Verify checksum", "Install"]);
+  const installReadout = root.querySelector(".install-readout") as HTMLElement & { command: string; clipboard?: Pick<Clipboard, "writeText">; copyCommand(): Promise<void>; updateComplete: Promise<unknown> };
+  const installCommand = () => installReadout.command;
   const install = (name: string) => root.querySelector(`.install-channel[data-channel="${name}"]`) as HTMLButtonElement;
   install("npm").dispatchEvent(new Event("pointerenter"));
   install("npm").dispatchEvent(new FocusEvent("focus"));
@@ -180,26 +188,26 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   await element.updateComplete;
   expect(installCommand()).toContain("brew tap iwonz/courier");
   const clipboard = vi.fn().mockResolvedValue(undefined);
-  installDemo.clipboard = { writeText: clipboard };
-  await installDemo.copyCommand();
-  await installDemo.updateComplete;
-  expect(installDemo.shadowRoot?.textContent).toContain("Copied");
+  installReadout.clipboard = { writeText: clipboard };
+  await installReadout.copyCommand();
+  await installReadout.updateComplete;
+  expect(installReadout.shadowRoot?.textContent).toContain("Copied");
   expect(clipboard).toHaveBeenCalledWith(installCommand());
-  installDemo.clipboard = { writeText: vi.fn().mockRejectedValue(new Error("denied")) };
-  await installDemo.copyCommand();
-  await installDemo.updateComplete;
-  expect(installDemo.shadowRoot?.textContent).toContain("Copy failed");
+  installReadout.clipboard = { writeText: vi.fn().mockRejectedValue(new Error("denied")) };
+  await installReadout.copyCommand();
+  await installReadout.updateComplete;
+  expect(installReadout.shadowRoot?.textContent).toContain("Copy failed");
   install("npm").click();
   await element.updateComplete;
-  await installDemo.updateComplete;
-  expect(installDemo.shadowRoot?.textContent).not.toContain("Copy failed");
+  await installReadout.updateComplete;
+  expect(installReadout.shadowRoot?.textContent).not.toContain("Copy failed");
   (element as unknown as { activeInstall: string }).activeInstall = "missing";
   await element.updateComplete;
   expect(installCommand()).toBe("curl -fsSL https://raw.githubusercontent.com/iwonz/courier/main/install.sh | sh");
-  installDemo.clipboard = { writeText: clipboard };
-  await installDemo.copyCommand();
-  await installDemo.updateComplete;
-  expect(installDemo.shadowRoot?.textContent).toContain("Copied");
+  installReadout.clipboard = { writeText: clipboard };
+  await installReadout.copyCommand();
+  await installReadout.updateComplete;
+  expect(installReadout.shadowRoot?.textContent).toContain("Copied");
   expect(clipboard).toHaveBeenLastCalledWith(installCommand());
 
   const checkbox = root.querySelector("courier-checkbox")!;
@@ -209,13 +217,11 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   expect(root.querySelectorAll(".option-row")).toHaveLength(contractData.flags.length);
 
   const command = (name: string) => root.querySelector(`.command-row[data-command="${name}"]`) as HTMLButtonElement;
-  const cliDemo = root.querySelector(".cli-demo") as HTMLElement & { command: string; steps: readonly { label: string }[] };
-  expect(cliDemo.command).toBe("");
-  expect(cliDemo.steps).toEqual([]);
+  const cliReadout = root.querySelector(".cli-readout") as HTMLElement & { command: string };
+  expect(cliReadout.command).toBe("");
   command("ui-start").click();
   await element.updateComplete;
-  expect(cliDemo.command).toBe("courier ui start [options]");
-  expect(cliDemo.steps.map((step) => step.label)).toEqual(["Load contract", "Render usage", "Render options", "Complete"]);
+  expect(cliReadout.command).toBe("courier ui start [options]");
   expect([...root.querySelectorAll(".option-row code")].map((node) => node.textContent)).toEqual(["--listen <host:port>", "--background"]);
   expect((checkbox.shadowRoot?.querySelector("input") as HTMLInputElement).disabled).toBe(false);
   checkbox.dispatchEvent(new CustomEvent("courier-checkbox-change", { detail: false }));
@@ -236,19 +242,19 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   await element.updateComplete;
   expect(root.querySelectorAll(".option-row")).toHaveLength(17);
 
-  sectionInstances[0]!.callback([
-    { target: root.querySelector("#hero")!, isIntersecting: true, intersectionRatio: 0.1 },
+  navigationObserver.callback([
     { target: root.querySelector("#routes")!, isIntersecting: true, intersectionRatio: 0.8 },
   ] as IntersectionObserverEntry[], {} as IntersectionObserver);
   await element.updateComplete;
   expect(root.querySelector('nav a[href="#routes"]')?.getAttribute("aria-current")).toBe("page");
-  sectionInstances[0]!.callback([
+  navigationObserver.callback([
     { target: root.querySelector("#routes")!, isIntersecting: false, intersectionRatio: 0 },
     { target: root.querySelector("#hero")!, isIntersecting: true, intersectionRatio: 0.9 },
   ] as IntersectionObserverEntry[], {} as IntersectionObserver);
   await element.updateComplete;
   expect(root.querySelector("nav [aria-current]")).toBeNull();
   resizeInstances[0]!.callback([], {} as ResizeObserver);
+  globalThis.dispatchEvent(new Event("resize"));
   await element.updateComplete;
 
   expect((element as unknown as { displayEndpoint(name: string, side: "source" | "destination"): string }).displayEndpoint("future", "source")).toBe("future");
@@ -261,13 +267,15 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   expect(root.textContent).toContain("Destination");
   expect(root.textContent).toContain("Remote");
   expect(root.textContent).toContain("Web Hook");
+  expect(root.textContent).not.toContain("Надёжный CLI");
+  expect(root.textContent).not.toContain("Запустить демо");
   expect(root.textContent).not.toContain("Один бинарник планирует маршрут");
   expect(root.textContent).not.toContain("Все связи взяты из опубликованного контракта CLI");
   expect(root.textContent).not.toContain("Единый сгенерированный справочник");
 
   element.remove();
   expect(resizeInstances[0]?.disconnect).toHaveBeenCalledOnce();
-  expect(sectionInstances[0]?.disconnect).toHaveBeenCalledOnce();
+  expect(navigationObserver.disconnect).toHaveBeenCalled();
 });
 
 it("covers zero-layout and detached observer-free lifecycle safely", async () => {
@@ -278,6 +286,7 @@ it("covers zero-layout and detached observer-free lifecycle safely", async () =>
     measureHeader(): void;
     measureRouteConnector(): void;
     observeSections(entries: readonly IntersectionObserverEntry[]): void;
+    observeSectionBand(): void;
     navigate(event: MouseEvent): void;
   };
   document.body.append(element);
@@ -289,9 +298,17 @@ it("covers zero-layout and detached observer-free lifecycle safely", async () =>
   internals.measureHeader();
   internals.measureRouteConnector();
   internals.observeSections([]);
+  internals.observeSectionBand();
   const missing = document.createElement("a");
   missing.href = "#missing";
+  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
   internals.navigate({ preventDefault: vi.fn(), currentTarget: missing } as unknown as MouseEvent);
+  const routes = element.shadowRoot?.querySelector("#routes") as HTMLElement;
+  routes.scrollIntoView = vi.fn();
+  const routeLink = document.createElement("a");
+  routeLink.href = "#routes";
+  internals.navigate({ preventDefault: vi.fn(), currentTarget: routeLink } as unknown as MouseEvent);
+  expect(routes.scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "auto" });
   element.remove();
 
   new CourierLandingApp().disconnectedCallback();

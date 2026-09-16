@@ -1,51 +1,4 @@
-# project-landing Specification
-
-## Purpose
-Define the contract-backed, shared-kit Courier project site and its least-privilege publication as a repository-owned GitHub Pages artifact.
-
-## Requirements
-
-### Requirement: Shared-kit static landing
-
-Courier SHALL provide a responsive static Lit application built from the shared UI kit with English fallback, Russian localization, accessible system/light/dark controls, reduced-motion support, and semantic keyboard navigation.
-
-#### Scenario: A Russian-language browser visits for the first time
-
-- **WHEN** the browser language resolves to Russian and no selector preference exists
-- **THEN** the landing renders the Russian catalog while the same shipped contract data and installation commands remain available
-
-### Requirement: Installation and release guidance
-
-The landing SHALL present supported one-command installers, npm-compatible clients, Homebrew, Scoop, direct GitHub Releases, and Linux package formats as compact icon-led channels without clipping their exact commands or embedding tokens or mutable release credentials.
-
-#### Scenario: A user chooses a distribution channel
-
-- **WHEN** the installation section is opened on any supported viewport
-- **THEN** every repository-owned command or GitHub Release destination uses the available width, remains fully reachable by keyboard, and does not force document overflow
-
-### Requirement: Repository-owned Pages deployment
-
-Courier SHALL automatically publish the deterministic landing artifact after every push to `main` through GitHub Actions Pages deployment with least-privilege permissions, no external repository, and no `gh-pages` maintenance branch. Courier SHALL also provide one Make command that builds a clean synchronized `main`, dispatches the same workflow, waits for completion, and reports the public URL.
-
-#### Scenario: Main passes the landing gate
-
-- **WHEN** the Pages workflow builds a synchronized contract and tested production landing
-- **THEN** it uploads and deploys only the static artifact through the GitHub Pages environment
-
-#### Scenario: Main changes
-
-- **WHEN** any revision is pushed to `main`
-- **THEN** the Pages workflow verifies the synchronized contract, tests and builds the production landing, and deploys only its static artifact
-
-#### Scenario: A maintainer explicitly republishes
-
-- **WHEN** an authenticated maintainer runs the publication Make command from clean local `main` matching `origin/main`
-- **THEN** Courier builds locally, enables workflow-based Pages if absent, dispatches the exact main revision, waits for the new run to succeed, and reports the Pages URL
-
-#### Scenario: Local state is not publishable
-
-- **WHEN** the publication command runs from a feature branch, dirty worktree, or main revision different from `origin/main`
-- **THEN** it fails before changing Pages configuration or dispatching a workflow
+## MODIFIED Requirements
 
 ### Requirement: Brand-led product narrative
 
@@ -90,35 +43,6 @@ The project landing and repository README SHALL use responsive, context-specific
 - **WHEN** GitHub renders the README
 - **THEN** the existing locally versioned, full-width, text-free Courier route panorama remains unchanged and legible in light and dark GitHub themes
 
-### Requirement: Contract-backed interactive route illustration
-
-Courier SHALL project the shipped route matrix into one keyboard- and pointer-operable `from <source> to <destination>` illustration without maintaining a second route capability list. `Source` and `Destination` SHALL identify endpoint roles. The landing SHALL present endpoint types as `Local`, `Remote`, `Web`, and `Web Hook`, mapping `Remote` to SSH, source `Web Hook` to incoming `webhook://`, and destination `Web Hook` to outgoing HTTP(S). Each role SHALL use semantic, directional iconography and concise role-specific explanation. Selection SHALL change only through activation, and a measured cubic Bezier connector SHALL join the compact selected endpoint controls without affecting layout.
-
-#### Scenario: A visitor compares endpoint roles
-
-- **WHEN** the route explorer renders its source and destination choices
-- **THEN** both sides show Local, Remote, Web, and Web Hook while Web and Web Hook communicate upload, serving, receiving, or sending according to the selected side
-
-#### Scenario: A visitor previews an endpoint
-
-- **WHEN** the visitor hovers or focuses an endpoint control
-- **THEN** the control receives visual feedback without changing the selected route
-
-#### Scenario: A visitor activates a source or destination
-
-- **WHEN** the visitor clicks or keyboard-activates a valid endpoint
-- **THEN** the selected pair, Bezier connector, example syntax, and applicable options update from the generated contract while panel bounds remain unchanged
-
-#### Scenario: A visitor explores a source endpoint
-
-- **WHEN** the visitor hovers or focuses a source endpoint
-- **THEN** the control indicates its affordance without changing the selected route, and only activation highlights its valid destinations and updates contract-backed details
-
-#### Scenario: A visitor explores a destination endpoint
-
-- **WHEN** the visitor hovers or focuses a valid destination
-- **THEN** the control indicates its affordance without changing the selected route, and only activation updates the route while remaining operable without hover
-
 ### Requirement: Compact landing composition
 
 The landing SHALL consist of exactly four sections ordered hero, route explorer, installation chooser, and combined CLI reference. It SHALL use natural document scrolling without mandatory scroll snapping and SHALL omit a separate route-card grid, safety narrative, statistics strip, examples section, documentation section, full-contract link, closing call to action, and footer while keeping GitHub source access in the masthead.
@@ -127,20 +51,6 @@ The landing SHALL consist of exactly four sections ordered hero, route explorer,
 
 - **WHEN** the visitor scrolls through the landing
 - **THEN** each naturally sized section follows the previous section without snapping, clipping, or a disconnected visual tile and no removed standalone content interrupts the sequence
-
-### Requirement: Viewport-aware installation chooser
-
-Courier SHALL present every supported installation channel through compact, icon-led tag controls with one exact, width-safe command readout, an accessible copy action with bounded status feedback, and compact repository-owned package/download actions. Selection SHALL change only through activation, official third-party mark geometry SHALL be bundled locally and rendered in Courier monochrome, and every channel SHALL occupy invariant panel geometry.
-
-#### Scenario: A user inspects an installation channel
-
-- **WHEN** the user clicks or keyboard-activates a channel tag
-- **THEN** the section exposes that channel's complete command without document overflow, hover-dependent state, layout movement, or a remote asset request
-
-#### Scenario: A user copies an installation command
-
-- **WHEN** the visitor activates the copy action and clipboard access succeeds or fails
-- **THEN** Courier attempts to copy the exact visible command and announces a localized result without moving or resizing the installation surface
 
 ### Requirement: Minimal masthead composition
 
@@ -171,20 +81,6 @@ Courier SHALL align section navigation beside the product identity and group Git
 - **WHEN** an in-page link is activated
 - **THEN** its target is offset by the measured masthead height and scrolling is smooth unless the visitor requests reduced motion
 
-### Requirement: Full-width compatible CLI reference
-
-Courier SHALL present generated commands and options in a full-width, invariant two-column reference. Commands SHALL be selectable without displaying repeated product/system badges. A checked-by-default custom checkbox SHALL filter options by the selected command's generated flag registry; no command selection SHALL display every option, and commands without flags SHALL display a localized empty state.
-
-#### Scenario: A visitor filters options by command
-
-- **WHEN** the visitor selects a command while compatibility filtering is checked
-- **THEN** only flags registered for that command are shown without changing reference bounds
-
-#### Scenario: No command is selected
-
-- **WHEN** the reference first opens or the selected command is activated again
-- **THEN** all options are shown and the checked compatibility control is disabled until another command is selected
-
 ### Requirement: Terminal-composed illustrated landing
 
 The project landing SHALL use purpose-composed wide and portrait panorama segments for hero, routing, installation, and CLI reference. The stationary responsive backgrounds SHALL form one continuous Relay journey and reserve quiet space for transparent read-only command and reference surfaces. The hero SHALL remain non-interactive and SHALL depict a decorative handoff between circular `Source` and `Destination` terminals.
@@ -194,14 +90,7 @@ The project landing SHALL use purpose-composed wide and portrait panorama segmen
 - **WHEN** it moves over the base, optional refracted, glow, or veil layers
 - **THEN** the local effect follows smoothly without hit-test jitter, base translation, functional state change, or continuous work after convergence
 
-### Requirement: Transparent masthead integration
-
-Courier SHALL keep the safe-area-aware measured masthead permanently visible using a transparent multi-stop scene fade and masked backdrop blur without an opaque band or lower rule.
-
-#### Scenario: A visitor scrolls across contrasting scenes
-
-- **WHEN** any slide aligns with the viewport
-- **THEN** navigation and actions remain legible while the masthead blends gradually into the scene and remains fully within the visual viewport
+## ADDED Requirements
 
 ### Requirement: Read-only landing command surfaces
 
@@ -235,3 +124,23 @@ Courier SHALL load the responsive hero panorama eagerly with high fetch priority
 
 - **WHEN** the browser lacks IntersectionObserver
 - **THEN** non-hero scenes render responsive images with native lazy loading and remain fully usable
+
+## REMOVED Requirements
+
+### Requirement: Terminal route demonstration
+
+**Reason**: Landing commands are read-only copy surfaces and no longer simulate execution or transfer transcripts.
+
+**Migration**: Use the selected route's immutable command, route description, applicable options, and Copy action.
+
+### Requirement: Terminal installation demonstration
+
+**Reason**: Installation commands are read-only copy surfaces and no longer simulate resolution, download, verification, or installation.
+
+**Migration**: Use the selected channel's immutable command, Copy action, and repository-owned release links.
+
+### Requirement: Terminal CLI demonstration
+
+**Reason**: CLI reference selection no longer simulates a help invocation.
+
+**Migration**: Select a generated command to inspect compatible options and copy its immutable usage string.

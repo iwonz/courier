@@ -177,7 +177,7 @@ export class CourierDataApp extends LitElement {
   render() {
     const entries = this.metadata?.entries ?? [];
     return html`
-      <courier-scene class="page-scene" .source=${relayAccessSource} .mobileSource=${relayAccessMobileSource}></courier-scene>
+      <courier-scene class="page-scene" eager .source=${relayAccessSource} .mobileSource=${relayAccessMobileSource}></courier-scene>
       <main>
         <header>
           <courier-brand product=${this.t("brandProduct")}></courier-brand>

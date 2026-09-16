@@ -39,6 +39,18 @@
   --courier-terminal-text: #1b1e19;
   --courier-terminal-muted: #596054;
   --courier-terminal-prompt: #6f9300;
+  --courier-control-frame-size: 2.35rem;
+  --courier-control-frame-border-width: 1px;
+  --courier-control-frame-border: var(--courier-color-border);
+  --courier-control-frame-radius: var(--courier-radius-md);
+  --courier-control-frame-color: var(--courier-color-muted);
+  --courier-control-frame-surface: color-mix(in srgb, var(--courier-color-field) 68%, transparent);
+  --courier-control-frame-hover-border: var(--courier-color-accent);
+  --courier-control-frame-hover-color: var(--courier-color-text);
+  --courier-control-frame-hover-surface: color-mix(in srgb, var(--courier-color-surface-raised) 72%, transparent);
+  --courier-control-frame-focus: var(--courier-beak);
+  --courier-control-frame-focus-width: 3px;
+  --courier-control-frame-shadow: inset 0 1px 2px rgb(16 18 15 / 0.07);
 }
 
 :root,
@@ -94,10 +106,6 @@
 
 html {
   scroll-behavior: smooth;
-}
-
-html.courier-landing {
-  scroll-snap-type: y mandatory;
 }
 
 body {

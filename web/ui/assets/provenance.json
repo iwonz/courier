@@ -26,84 +26,92 @@
       "prompt": "Adult courier pigeon in a compact graphite utility harness carrying a sealed cream data capsule with sparse signal-lime tabs; transparent editorial screen-print cutout; no text, logo, weaponry, robot parts, childlike proportions, or third-party mascot imitation."
     },
     {
-      "path": "relay-terminal-hero-wide-v3.webp",
+      "path": "relay-journey-hero-wide-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 142634,
-      "sha256": "91e0d7edc7bf9f7525cd1b722db9546703e2c0393a0af77cd03cce890d37886f",
+      "bytes": 189206,
+      "sha256": "7a280ca556a165349c06c9394814cb32fad155d4096083eae6ce061f20b41f54",
       "width": 1672,
       "height": 941,
-      "use": "Wide terminal-workbench hero scene with quiet headline and route geometry space",
-      "prompt": "Wide cinematic editorial Courier scene: canonical mature Relay flies between two signal stations along a graceful luminous route above a pale graphite technical landscape; reserve quiet headline space; warm paper, graphite, signal-lime and orange; no text, fake UI, logos, watermarks, weapons, credentials, or required product information."
+      "use": "Wide landing journey segment 1: Relay departure and route overview",
+      "prompt": "Wide cinematic editorial departure derived from the top quarter of the continuity storyboard: canonical mature Relay leaves a source station above a warm-paper and graphite mountain transit landscape; broad quiet headline space and a signal-lime route continue through a low-detail bottom transition; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
+      "sequence": { "name": "landing-journey", "orientation": "wide", "position": 1, "total": 4 }
     },
     {
-      "path": "relay-terminal-hero-mobile-v3.webp",
+      "path": "relay-journey-hero-mobile-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 145786,
-      "sha256": "065b6ce8ead83ac5a81d3580080c7f50f794f093e22dea892216e702c938da40",
+      "bytes": 215870,
+      "sha256": "a3fe5237871e86e31f05e02e6ad10a28b88098fe774493e524e91c98920b14e4",
       "width": 941,
       "height": 1672,
-      "use": "Portrait terminal-workbench hero scene with quiet headline and route geometry space",
-      "prompt": "Portrait cinematic editorial Courier scene independently composed for mobile: canonical mature Relay flies upward between two signal stations along a luminous route; reserve quiet headline space; warm paper, graphite, signal-lime and orange; no text, fake UI, logos, watermarks, weapons, credentials, or required product information."
+      "use": "Portrait landing journey segment 1: Relay departure and route overview",
+      "prompt": "Portrait cinematic editorial departure derived from the left quarter of the continuity storyboard: canonical mature Relay crosses a warm-paper dawn above a graphite transit landscape while a signal-lime route approaches the next segment; quiet mobile headline field; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
+      "sequence": { "name": "landing-journey", "orientation": "portrait", "position": 1, "total": 4 }
     },
     {
-      "path": "relay-terminal-routing-wide-v3.webp",
+      "path": "relay-journey-routing-wide-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 176238,
-      "sha256": "b2273f5bc9cf90b6d7edba39f6b4f7d6747de428adae0077be5efa5d876fbad1",
+      "bytes": 223166,
+      "sha256": "33cfdb2269bd9de6c1933c136071d94500c9065b432a49959b4f62757aac8673",
       "width": 1672,
       "height": 941,
-      "use": "Wide routing scene with quiet endpoint-control and terminal regions",
-      "prompt": "Wide cinematic editorial signal yard: several physical routes converge at a precise switch while canonical mature Relay supervises; reserve a quiet center and lower half for route controls and terminal; warm paper, graphite, signal-lime and orange; no text, fake UI, logos, watermarks, weapons, credentials, or required information."
+      "use": "Wide landing journey segment 2: routing junction",
+      "prompt": "Wide cinematic editorial routing junction continuing the preceding mountain landscape and signal-lime route through curved graphite bridges toward a depot, with canonical mature Relay supervising from the perimeter and quiet control space; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
+      "sequence": { "name": "landing-journey", "orientation": "wide", "position": 2, "total": 4 }
     },
     {
-      "path": "relay-terminal-routing-mobile-v3.webp",
+      "path": "relay-journey-routing-mobile-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 152396,
-      "sha256": "2e041c3f18b7d192333619a27605dbec1ee812e27b6990d5b7ec840f02429e65",
+      "bytes": 222674,
+      "sha256": "ef5edaeb8af109aeb3489b80c844ffb2576c900e280138fd919f9a8a95416392",
       "width": 941,
       "height": 1672,
-      "use": "Portrait routing scene with quiet stacked endpoint-control and terminal regions",
-      "prompt": "Portrait cinematic editorial signal junction independently composed for mobile: routes branch toward distant structures while canonical mature Relay supervises; reserve the central and lower field for controls and terminal; no text, fake UI, logos, watermarks, weapons, credentials, or required information."
+      "use": "Portrait landing journey segment 2: routing junction",
+      "prompt": "Portrait cinematic editorial routing junction continuing the preceding mobile landscape and signal-lime route through mountain bridges toward a depot, with canonical mature Relay on a side perch and quiet stacked-control space; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
+      "sequence": { "name": "landing-journey", "orientation": "portrait", "position": 2, "total": 4 }
     },
     {
-      "path": "relay-terminal-install-wide-v3.webp",
+      "path": "relay-journey-install-wide-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 162334,
-      "sha256": "651422fd3fef44d0a2a10ac2d89c871bf4fba3709d2cdd8c9e589e56e395fc81",
+      "bytes": 207048,
+      "sha256": "313744b3017d766e04de8bfa6f940ecbed3db9ae0ec828218eaf571cdadd61b1",
       "width": 1672,
       "height": 941,
-      "use": "Wide installation dispatch scene with quiet channel and terminal regions",
-      "prompt": "Wide full-frame cinematic editorial dispatch depot: unbranded graphite parcels pass from a release vault through a checksum light gate while canonical mature Relay inspects them; reserve continuous pale floor for installation controls; no text, fake UI, logos, watermarks, weapons, credentials, or required information."
+      "use": "Wide landing journey segment 3: verified distribution and checksum depot",
+      "prompt": "Wide cinematic editorial verification depot continuing the preceding route into restrained signal-lime checksum gates and unbranded cream parcel channels, with canonical mature Relay inspecting from the perimeter and quiet installation-control space; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
+      "sequence": { "name": "landing-journey", "orientation": "wide", "position": 3, "total": 4 }
     },
     {
-      "path": "relay-terminal-install-mobile-v3.webp",
+      "path": "relay-journey-install-mobile-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 148386,
-      "sha256": "be31323ae7c5a3390d04bd54cb05b7aae6a06ebe781fee47bb4fbdf6bc8a84b5",
+      "bytes": 205728,
+      "sha256": "f7b2b1339165144bf92cd8e0fd1223ab02b5bc13401735842e1c5f8506f88ed6",
       "width": 941,
       "height": 1672,
-      "use": "Portrait installation dispatch scene with quiet stacked channel and terminal regions",
-      "prompt": "Portrait full-frame cinematic editorial dispatch hall independently composed for mobile: parcels pass through a checksum gate while canonical mature Relay inspects them; reserve the middle and lower pale floor for installation controls; no text, fake UI, logos, watermarks, weapons, credentials, or required information."
+      "use": "Portrait landing journey segment 3: verified distribution and checksum depot",
+      "prompt": "Portrait cinematic editorial verification depot continuing the preceding route through restrained signal-lime gates and cream parcel channels, with canonical mature Relay at a side platform and quiet mobile installation space; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
+      "sequence": { "name": "landing-journey", "orientation": "portrait", "position": 3, "total": 4 }
     },
     {
-      "path": "relay-terminal-cli-wide-v3.webp",
+      "path": "relay-journey-cli-wide-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 139638,
-      "sha256": "ff242e8e9dfa5095a8d638b8c0161e13614d90a459477af90833119530cb53cf",
+      "bytes": 196452,
+      "sha256": "eba5b32ed1ae5fd7cf7c025e8114b76fc0edfc37fc613846883ccc9b0a389dba",
       "width": 1672,
       "height": 941,
-      "use": "Wide CLI archive scene with quiet command, option, and demo regions",
-      "prompt": "Wide cinematic editorial operations archive: canonical mature Relay organizes unlabeled route instruments and modular drawers; reserve a large pale work surface for transparent CLI panes; no text, code, fake UI, logos, watermarks, weapons, credentials, or required information."
+      "use": "Wide landing journey segment 4: destination control and archive",
+      "prompt": "Wide cinematic editorial destination archive continuing the depot passage and signal-lime route to a restrained endpoint plinth, with modular unlabeled drawers, quiet work surfaces, and canonical mature Relay completing delivery; no text, code, fake UI, logos, charts, credentials, watermarks, weapons, people, or required information.",
+      "sequence": { "name": "landing-journey", "orientation": "wide", "position": 4, "total": 4 }
     },
     {
-      "path": "relay-terminal-cli-mobile-v3.webp",
+      "path": "relay-journey-cli-mobile-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 188956,
-      "sha256": "53fca1eb254d573651a60a93f61803b1f70d132788567012cffb757c9675f49c",
+      "bytes": 212616,
+      "sha256": "df7b5c0400c6e69189289846fd14e936bb42161d1f5262bab284914f56f1fc00",
       "width": 941,
       "height": 1672,
-      "use": "Portrait CLI archive scene with quiet stacked command, option, and demo regions",
-      "prompt": "Portrait cinematic editorial operations archive independently composed for mobile: canonical mature Relay organizes unlabeled route instruments; reserve the central and lower pale work surface for stacked CLI panes; no text, code, fake UI, logos, watermarks, weapons, credentials, or required information."
+      "use": "Portrait landing journey segment 4: destination control and archive",
+      "prompt": "Portrait cinematic editorial destination archive continuing the mobile depot passage and route to a restrained endpoint, with modular unlabeled drawers, quiet work surfaces, and canonical mature Relay completing delivery; no text, code, fake UI, logos, charts, credentials, watermarks, weapons, people, or required information.",
+      "sequence": { "name": "landing-journey", "orientation": "portrait", "position": 4, "total": 4 }
     },
     {
       "path": "relay-terminal-delivery-wide-v2.webp",

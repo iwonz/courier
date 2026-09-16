@@ -1,20 +1,5 @@
 import { LitElement, css, html, nothing, type PropertyValues } from "lit";
 
-export type TerminalTone = "neutral" | "signal" | "success" | "warning" | "danger";
-
-export interface TerminalStep {
-  readonly label: string;
-  readonly detail?: string;
-  readonly tone?: TerminalTone;
-}
-
-export type DemoPhase = "idle" | "running" | "complete";
-
-export function terminalTimestamp(index: number): string {
-  const seconds = Math.max(0, index) * 2;
-  return `00:${String(seconds).padStart(2, "0")}`;
-}
-
 export class CourierTerminal extends LitElement {
   static properties = {
     heading: { type: String },
@@ -75,29 +60,22 @@ export class CourierTerminal extends LitElement {
   }
 }
 
-export class CourierCommandDemo extends LitElement {
+export class CourierCommandReadout extends LitElement {
   static properties = {
     command: { type: String },
     description: { type: String },
-    steps: { attribute: false },
+    heading: { type: String },
     copyLabel: { type: String, attribute: "copy-label" },
-    runLabel: { type: String, attribute: "run-label" },
-    replayLabel: { type: String, attribute: "replay-label" },
     copiedLabel: { type: String, attribute: "copied-label" },
     copyFailedLabel: { type: String, attribute: "copy-failed-label" },
-    previewLabel: { type: String, attribute: "preview-label" },
-    noEffectLabel: { type: String, attribute: "no-effect-label" },
     sessionKey: { type: String, attribute: "session-key" },
-    interval: { type: Number },
-    phase: { state: true },
-    visibleCount: { state: true },
     copyState: { state: true },
   };
 
   static styles = css`
     :host { display: block; min-width: 0; min-height: 0; }
     courier-terminal { height: 100%; }
-    .toolbar { display: flex; align-items: center; gap: 0.4rem; }
+    .toolbar { display: flex; align-items: center; }
     button {
       appearance: none;
       display: inline-flex;
@@ -116,62 +94,37 @@ export class CourierCommandDemo extends LitElement {
     button:focus-visible { outline: 3px solid var(--courier-beak, #ff8758); outline-offset: 2px; }
     button:disabled { cursor: not-allowed; opacity: 0.42; }
     courier-icon { width: 0.9rem; height: 0.9rem; }
-    .session { display: grid; height: 100%; min-height: 0; grid-template-rows: auto auto auto minmax(0, 1fr); }
-    .prompt, .description, li, .empty { min-width: 0; padding: 0.58rem 0.8rem; }
+    .readout { display: grid; height: 100%; min-height: 0; grid-template-rows: auto auto minmax(0, 1fr); }
+    .prompt, .description { min-width: 0; padding: 0.58rem 0.8rem; }
     .prompt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.65rem; color: var(--courier-terminal-text, #f3f4e9); }
     .prompt::before { content: "$"; color: var(--courier-terminal-prompt, #d4ff45); font-weight: 800; }
     code { overflow-wrap: anywhere; font: inherit; line-height: 1.45; white-space: pre-wrap; }
     .description { border-top: 1px solid color-mix(in srgb, var(--courier-terminal-border, #596253) 58%, transparent); color: var(--courier-terminal-muted, #b9c0b1); font-size: 0.68rem; line-height: 1.45; }
-    ol { min-height: 0; max-height: 11rem; margin: 0; padding: 0; overflow: auto; list-style: none; }
-    li { display: grid; grid-template-columns: 2.6rem minmax(7rem, 0.35fr) minmax(0, 1fr); gap: 0.7rem; border-top: 1px solid color-mix(in srgb, var(--courier-terminal-border, #596253) 45%, transparent); font-size: 0.65rem; line-height: 1.4; }
-    time { color: var(--courier-terminal-muted, #b9c0b1); font-variant-numeric: tabular-nums; }
-    .step-label { color: var(--courier-terminal-text, #f3f4e9); font-weight: 760; }
-    .step-detail { color: var(--courier-terminal-muted, #b9c0b1); overflow-wrap: anywhere; }
-    li[data-tone="signal"] .step-label, li[data-tone="success"] .step-label { color: var(--courier-terminal-prompt, #d4ff45); }
-    li[data-tone="warning"] .step-label { color: var(--courier-warning, #f0b849); }
-    li[data-tone="danger"] .step-label { color: var(--courier-danger, #ff6b5f); }
-    .empty { color: var(--courier-terminal-muted, #b9c0b1); font-size: 0.65rem; }
-    .details { min-width: 0; }
+    .details { min-width: 0; min-height: 0; overflow: auto; }
     .footer { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.48rem 0.8rem; color: var(--courier-terminal-muted, #b9c0b1); font-size: 0.58rem; line-height: 1.4; }
+    .copy-status { min-width: 7rem; min-height: 1.4em; }
     @media (max-width: 44rem) {
       .toolbar button span { display: none; }
-      li { grid-template-columns: 2.25rem minmax(5.5rem, 0.42fr) minmax(0, 1fr); gap: 0.4rem; padding: 0.45rem 0.55rem; font-size: 0.56rem; }
-      .prompt, .description, .empty { padding: 0.48rem 0.55rem; font-size: 0.58rem; }
-      ol { max-height: 8rem; }
+      .prompt, .description { padding: 0.48rem 0.55rem; font-size: 0.58rem; }
+      .footer { padding: 0.42rem 0.55rem; }
     }
   `;
 
   command = "";
   description = "";
-  steps: readonly TerminalStep[] = [];
+  heading = "Command";
   copyLabel = "Copy";
-  runLabel = "Run demo";
-  replayLabel = "Replay";
   copiedLabel = "Copied";
   copyFailedLabel = "Copy failed";
-  previewLabel = "Preview";
-  noEffectLabel = "Preview only. No command or transfer ran in this browser.";
   sessionKey = "";
-  interval = 180;
-  phase: DemoPhase = "idle";
-  private visibleCount = 0;
   private copyState: "idle" | "copied" | "failed" = "idle";
-  private timer?: number;
   clipboard: Pick<Clipboard, "writeText"> | undefined;
 
-  disconnectedCallback(): void {
-    this.stopTimer();
-    super.disconnectedCallback();
-  }
-
   protected willUpdate(changed: PropertyValues<this>): void {
-    if (changed.has("sessionKey") && changed.get("sessionKey") !== undefined) this.reset();
+    if (changed.has("sessionKey") || changed.has("command")) this.reset();
   }
 
   reset(): void {
-    this.stopTimer();
-    this.phase = "idle";
-    this.visibleCount = 0;
     this.copyState = "idle";
   }
 
@@ -189,58 +142,19 @@ export class CourierCommandDemo extends LitElement {
     }
   }
 
-  run(): void {
-    this.stopTimer();
-    this.copyState = "idle";
-    if (!this.command || this.steps.length === 0) {
-      this.phase = "idle";
-      this.visibleCount = 0;
-      return;
-    }
-    if (globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      this.visibleCount = this.steps.length;
-      this.phase = "complete";
-      return;
-    }
-    this.visibleCount = 1;
-    this.phase = this.steps.length === 1 ? "complete" : "running";
-    if (this.phase === "running") this.scheduleStep();
-  }
-
-  private scheduleStep(): void {
-    this.timer = globalThis.setTimeout(() => {
-      this.timer = undefined;
-      this.visibleCount += 1;
-      if (this.visibleCount >= this.steps.length) {
-        this.phase = "complete";
-        return;
-      }
-      this.scheduleStep();
-    }, Math.max(0, this.interval));
-  }
-
-  private stopTimer(): void {
-    if (this.timer === undefined) return;
-    globalThis.clearTimeout(this.timer);
-    this.timer = undefined;
-  }
-
   protected render() {
     const copyStatus = this.copyState === "copied" ? this.copiedLabel : this.copyState === "failed" ? this.copyFailedLabel : "";
-    const visible = this.steps.slice(0, this.visibleCount);
     return html`
-      <courier-terminal .heading=${this.previewLabel} .status=${this.phase === "complete" ? "exit 0" : this.phase}>
+      <courier-terminal .heading=${this.heading}>
         <div slot="toolbar" class="toolbar">
           <button type="button" ?disabled=${!this.command} aria-label=${this.copyLabel} title=${this.copyLabel} @click=${this.copyCommand}><courier-icon name=${this.copyState === "copied" ? "check" : "copy"}></courier-icon><span>${this.copyLabel}</span></button>
-          <button type="button" ?disabled=${!this.command || this.steps.length === 0} aria-label=${this.phase === "idle" ? this.runLabel : this.replayLabel} title=${this.phase === "idle" ? this.runLabel : this.replayLabel} @click=${this.run}><courier-icon name="terminal"></courier-icon><span>${this.phase === "idle" ? this.runLabel : this.replayLabel}</span></button>
         </div>
-        <div class="session">
+        <div class="readout">
           <div class="prompt"><code>${this.command}</code></div>
           ${this.description ? html`<p class="description">${this.description}</p>` : nothing}
           <div class="details"><slot name="details"></slot></div>
-          ${visible.length ? html`<ol aria-live="polite">${visible.map((step, index) => html`<li data-tone=${step.tone ?? "neutral"}><time>${terminalTimestamp(index)}</time><span class="step-label">${step.label}</span><span class="step-detail">${step.detail ?? ""}</span></li>`)}</ol>` : html`<p class="empty" aria-live="polite">${copyStatus}</p>`}
         </div>
-        <div slot="footer" class="footer" role="status"><span>${copyStatus || this.noEffectLabel}</span><slot name="footer-actions"></slot></div>
+        <div slot="footer" class="footer"><span class="copy-status" role="status" aria-live="polite">${copyStatus}</span><slot name="footer-actions"></slot></div>
       </courier-terminal>
     `;
   }

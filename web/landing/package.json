@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run check:budget",
+    "check:budget": "node ./scripts/check-budget.mjs",
     "test": "vitest run --coverage"
   },
   "dependencies": {
