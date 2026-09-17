@@ -69,13 +69,14 @@ describe("administration React application", () => {
     document.body.append(root);
     mountAdmin(root);
     await waitFor(() => expect(root.textContent).toContain("No live Courier servers"));
-    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-tech-v1");
+    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-mark-v2");
   });
 
   it("loads, selects, preserves SSE selection, falls back, localizes, and unsubscribes", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => response(snapshot)));
     const view = render(<AdminApp />);
     await screen.findByText("server-a");
+    expect(document.querySelector("[data-courier-metrics]")).toBeTruthy();
     expect(screen.getByText("Unreachable")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Refresh registry" }));
     await screen.findByText("server-b");

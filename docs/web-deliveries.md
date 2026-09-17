@@ -54,4 +54,4 @@ Without `--background`, the initiating process owns a foreground lease. Interrup
 
 `--no-ui` disables the HTML entry point and returns a small versioned JSON description after authorization. Versioned metadata, session, upload, and download endpoints remain available under the opaque delivery URL. Static UI assets contain no delivery metadata or credentials.
 
-The embedded delivery application is a React root composed from the repository-owned shadcn [`@courier/ui`](../web/ui) package. It reuses the compact square Relay pigeon only as decoration; authentication, metadata, upload, and download behavior remain native semantic controls backed exclusively by the versioned API.
+The embedded delivery application is a React root composed from the repository-owned shadcn [`@courier/ui`](../web/ui) package. It uses the square Relay mark in product chrome, the full mascot only as decoration, and a continuous lightweight manifest surface instead of nested bordered cards; authentication, metadata, upload, and download behavior remain native semantic controls backed exclusively by the versioned API.

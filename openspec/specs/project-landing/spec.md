@@ -171,17 +171,17 @@ Courier SHALL project the shipped route matrix into compact Source and Destinati
 
 ### Requirement: Compact landing composition
 
-The landing SHALL use one continuous document canvas with content-driven spacing, local color fields, and no full-page panorama. Its fixed masthead SHALL link the Courier identity to the first section and expose only Installation and CLI in-page navigation plus GitHub, theme, and locale actions.
+The landing SHALL use one continuous document canvas with content-driven spacing, restrained tonal fields, and no full-page panorama. The route headline, Relay illustration, endpoint controls, command, and options SHALL form one composition rather than separate bordered islands. Installation SHALL not introduce section-edge rules, and the CLI registry SHALL use one responsive shared surface instead of separate outlined columns. The fixed masthead SHALL link the Courier identity to the first section and expose Installation and CLI navigation plus GitHub, theme, and locale actions.
 
 #### Scenario: A visitor scans the page
 
 - **WHEN** the visitor moves between the three sections
-- **THEN** the sections follow one another as ordinary document blocks without snapping, full-screen sizing, image stacking, background seams, or disconnected poster composition
+- **THEN** sections and related controls follow one another as ordinary document content with no nested card-on-card framing, hard section seam, full-screen sizing, image stacking, or disconnected poster composition
 
 #### Scenario: A visitor scans the complete page
 
 - **WHEN** the visitor scrolls through the landing
-- **THEN** the combined route hero, installation, and CLI reference follow one another without snapping, clipping, viewport fillers, or removed standalone content
+- **THEN** the combined route hero, installation, and CLI reference remain visually continuous while preserving their semantic headings and independent interaction regions
 
 ### Requirement: Viewport-aware installation chooser
 
@@ -199,22 +199,22 @@ Courier SHALL present every supported installation channel through compact, icon
 
 ### Requirement: Minimal masthead composition
 
-Courier SHALL align section navigation beside the product identity and group GitHub, theme, and locale actions at the opposite edge without bottom rules or separators. GitHub SHALL use the same shared control-frame dimensions, border, padding, radius, surface, hover, focus, and theme tokens as the preference controls while preserving link semantics. The safe-area-aware masthead SHALL remain fully visible and its measured height SHALL define section anchor offsets. Its active navigation SHALL follow a header-aware reading band through variable-height sections. Every link whose destination leaves the landing page SHALL open a new browsing context without retaining opener access; in-page navigation SHALL remain in the current context and SHALL scroll smoothly unless reduced motion is requested.
+Courier SHALL render the compact Relay mark beside the literal wordmark `COURIER CLI`, place Installation and CLI navigation directly after that brand cluster, and align GitHub, theme, and locale actions at the opposite edge without bottom rules or separators. GitHub and preference actions SHALL share the same quiet control treatment while preserving link and button semantics. Every link whose destination leaves the landing page SHALL open a new browsing context without retaining opener access; in-page navigation SHALL remain in the current context and SHALL scroll smoothly unless reduced motion is requested.
+
+#### Scenario: The masthead is rendered
+
+- **WHEN** the landing loads at desktop width
+- **THEN** the brand and in-page navigation form one left-aligned cluster while GitHub and preference controls form the right-aligned cluster without a full-width divider
 
 #### Scenario: A visitor scrolls through natural sections
 
 - **WHEN** a landing section crosses the reading band below the masthead
-- **THEN** the complete masthead remains inside the visual viewport and the matching route, installation, or CLI link exposes `aria-current`
+- **THEN** the complete masthead remains inside the visual viewport and the corresponding in-page link exposes `aria-current`
 
 #### Scenario: A visitor scrolls through snapped sections
 
 - **WHEN** the visitor scrolls through the landing after mandatory snapping has been removed
-- **THEN** the complete masthead remains inside the visual viewport and active navigation follows the header-aware reading band rather than a snap position
-
-#### Scenario: The masthead is rendered
-
-- **WHEN** the landing loads at desktop or mobile width
-- **THEN** route, installation, and CLI links follow page order on the left and GitHub and preference controls share one visual frame grammar on the right without divider lines
+- **THEN** the complete masthead remains inside the visual viewport and navigation follows natural document position rather than a snap target
 
 #### Scenario: A visitor follows an off-landing link
 
@@ -224,7 +224,7 @@ Courier SHALL align section navigation beside the product identity and group Git
 #### Scenario: A visitor follows section navigation
 
 - **WHEN** an in-page link is activated
-- **THEN** its target is offset by the measured masthead height and scrolling is smooth unless the visitor requests reduced motion
+- **THEN** its target remains offset below the sticky masthead and scrolling is smooth unless the visitor requests reduced motion
 
 ### Requirement: Full-width compatible CLI reference
 

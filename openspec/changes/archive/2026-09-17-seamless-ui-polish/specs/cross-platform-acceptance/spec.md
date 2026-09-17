@@ -1,51 +1,4 @@
-# cross-platform-acceptance Specification
-
-## Purpose
-Define the release-candidate acceptance layers for runtime routes, bounded streams, browsers, platforms, distribution packages, and owned-resource cleanup.
-
-## Requirements
-
-### Requirement: Route and transformation acceptance
-
-Courier SHALL exercise all four filesystem directions, browser/webhook route handlers, archive creation/extraction, no-op, collisions, interruption, path safety, Unicode, special paths, partial reporting, and cleanup through isolated acceptance fixtures.
-
-#### Scenario: An acceptance operation is interrupted
-
-- **WHEN** a transfer is canceled after staging data
-- **THEN** Courier returns exit code 130, leaves the previous final namespace unchanged, and removes only its owned partial resources
-
-### Requirement: Bounded performance acceptance
-
-Courier SHALL verify large synthetic streams with bounded buffers, observable backpressure, cancellation, and no payload-sized memory allocation.
-
-#### Scenario: A slow destination blocks
-
-- **WHEN** a source produces data faster than the destination accepts it
-- **THEN** transfer reads remain bounded by the configured buffer and cancellation releases the operation and its staging resources
-
-### Requirement: Cross-platform release acceptance
-
-Courier SHALL run compiled runtime suites on Linux, macOS, and Windows, cross-build the declared primary and BSD helper artifacts, and install matching release packages in isolated Ubuntu, Debian, Arch Linux, Manjaro, Fedora, RHEL-compatible, and Alpine containers. Native Windows acceptance SHALL exercise owner-scoped named pipes using the current-process identity, a unique valid endpoint per test run, bounded connection contexts, cleanup registered before the handshake, rooted filesystem operations across the native-path and `fs.FS` path dialects, portable archive symlink targets, and platform-supported metadata semantics.
-
-#### Scenario: A distribution package check exits
-
-- **WHEN** installation succeeds, fails, or is interrupted
-- **THEN** its cleanup trap removes every uniquely labeled Courier container and proves that no labeled container, network, volume, or temporary file remains
-
-#### Scenario: Windows uses a rooted directory path
-
-- **WHEN** a native Windows path produced by `filepath` crosses into an `fs.FS` operation
-- **THEN** the adapter supplies slash-separated syntax without weakening the rooted confinement boundary
-
-#### Scenario: Windows creates a private control pipe
-
-- **WHEN** Courier resolves the named-pipe security principal
-- **THEN** it queries the supported current-process token and grants pipe access only to that user SID
-
-#### Scenario: Windows pipe acceptance stalls
-
-- **WHEN** a native named-pipe test cannot complete its client-server handshake
-- **THEN** its bounded context terminates the attempt and pre-registered cleanup releases the listener and accept goroutine without waiting for the package timeout
+## MODIFIED Requirements
 
 ### Requirement: Real-browser acceptance
 
@@ -95,12 +48,3 @@ Courier SHALL test the React/shadcn landing, delivery, and administration surfac
 
 - **WHEN** the visitor moves from one landing section to the next
 - **THEN** no panorama or bordered section boundary exists and the shared document canvas remains continuous without an image seam or layout shift
-
-### Requirement: Exact browser coverage
-
-Courier SHALL include first-party `.ts` and `.tsx` sources in exact statement, branch, function, and line coverage gates.
-
-#### Scenario: Unit coverage is measured
-
-- **WHEN** shared UI, landing, delivery, and administration tests complete
-- **THEN** every first-party TypeScript and TSX metric is exactly 100 percent without excluding React component sources

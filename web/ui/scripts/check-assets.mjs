@@ -63,13 +63,14 @@ if (actual.size !== expected.size || [...actual].some((name) => !expected.has(na
   throw new Error("asset directory and provenance manifest differ");
 }
 
-const compactMark = manifest.assets.find((asset) => asset.path === "courier-relay-tech-v1.webp");
-if (manifest.assets.length !== 1
+const fullMascot = manifest.assets.find((asset) => asset.path === "courier-relay-tech-v1.webp");
+const compactMark = manifest.assets.find((asset) => asset.path === "courier-relay-mark-v2.webp");
+if (manifest.assets.length !== 2
+  || !fullMascot
   || !compactMark
-  || compactMark.mediaType !== "image/webp"
-  || compactMark.width !== compactMark.height
-  || compactMark.bytes > 80 * 1024) {
-  throw new Error("the single square ImageGen Relay mark is missing or exceeds its budget");
+  || [fullMascot, compactMark].some((asset) => asset.mediaType !== "image/webp" || asset.width !== asset.height || asset.bytes > 80 * 1024)
+  || fullMascot.bytes + compactMark.bytes > 160 * 1024) {
+  throw new Error("the square ImageGen Relay mascot and compact mark are missing or exceed their budgets");
 }
 
 const expectedBrandAssets = new Set(["provenance.json"]);

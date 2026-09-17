@@ -92,7 +92,8 @@ describe("shared shadcn primitives", () => {
 describe("brand, icon, and geometry helpers", () => {
   it("renders compact and full brands plus the square mascot", () => {
     const { container } = render(<><Brand /><Brand compact className="compact" /><Mascot alt="Relay" className="mascot" /></>);
-    expect(screen.getAllByText("Courier")).toHaveLength(1);
+    expect(screen.getAllByText("COURIER CLI")).toHaveLength(1);
+    expect(container.querySelector('img[src*="courier-relay-mark-v2"]')?.getAttribute("width")).toBe("512");
     const mascot = screen.getByAltText("Relay");
     expect(mascot.getAttribute("width")).toBe("768");
     expect(mascot.getAttribute("height")).toBe("768");

@@ -32,8 +32,8 @@ export function CommandReadout({ heading, command, copyLabel, copiedLabel, copyF
   React.useEffect(() => setStatus("idle"), [sessionKey]);
   const copyCommand = async (): Promise<void> => setStatus(await copy(command) ? "copied" : "failed");
   const live = status === "copied" ? copiedLabel : status === "failed" ? copyFailedLabel : "";
-  return <Card className={cn("overflow-hidden", className)} {...props}>
-    <div className="flex min-h-12 items-center justify-between gap-3 border-b border-border/70 px-4 py-2">
+  return <Card className={cn("overflow-hidden bg-card/48", className)} {...props}>
+    <div className="flex min-h-12 items-center justify-between gap-3 px-4 pt-2">
       <span className="text-xs font-semibold text-muted-foreground">{heading}</span>
       <Button type="button" variant="ghost" size="sm" onClick={copyCommand} disabled={!command}>
         {status === "copied" ? <Check /> : <Copy />}{copyLabel}
@@ -45,6 +45,6 @@ export function CommandReadout({ heading, command, copyLabel, copiedLabel, copyF
       {details}
       <span className="min-h-5 text-xs font-medium text-primary" aria-live="polite">{live}</span>
     </div>
-    {footerActions ? <div className="flex flex-wrap items-center gap-3 border-t border-border/70 px-4 py-3 text-sm">{footerActions}</div> : null}
+    {footerActions ? <div className="flex flex-wrap items-center gap-3 px-4 pb-3 text-sm">{footerActions}</div> : null}
   </Card>;
 }

@@ -32,7 +32,7 @@ describe("delivery React application", () => {
     document.body.append(root);
     mountData(root);
     await waitFor(() => expect(root.textContent).toContain("root"));
-    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-tech-v1");
+    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-mark-v2");
   });
 
   it("loads a directory, navigates into a folder and back, and localizes", async () => {

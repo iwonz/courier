@@ -15,13 +15,14 @@ Playwright runs landing, delivery, and administration in English/Russian and sys
 - exactly three landing sections and the combined headline/route composition;
 - pointer and keyboard selection for every valid route pair;
 - Copy for routes, every installation channel, and CLI commands;
-- single-button theme/locale cycles, browser defaults, persistence, and reduced motion;
+- single-button theme/locale cycles, active-locale flag icons, browser defaults, persistence, and reduced motion;
 - 320×568, 360×740, 390×844, short desktop, and 1440×900 layouts without clipping or horizontal overflow;
-- one compact square transparent Relay request, no generated background or later-section artwork, stable content-height composition, and no external runtime requests;
+- one compact square transparent Relay mark plus one full transparent mascot request, no generated background or later-section artwork, stable content-height composition, and no external runtime requests;
+- continuous route, CLI registry, delivery manifest, administration metrics, and administration workspace composition without unnecessary section or card borders;
 - absence of terminal/refraction code, editable commands, Run/Replay, transcripts, remote fonts, scripts, images, or analytics;
 - protected delivery metadata isolation, authentication, upload/download behavior, admin policy updates, stop actions, selection persistence, and SSE fallback.
 
-Asset validation requires exactly one square transparent raster mark capped at 80 KiB. Landing JavaScript remains below 145 KiB gzip and CSS below 9 KiB gzip. First-party TypeScript and TSX maintain exact 100% statements, branches, functions, and lines.
+Asset validation requires exactly two square transparent Relay rasters capped at 80 KiB each and 160 KiB combined. Landing JavaScript remains below 145 KiB gzip and CSS below 9 KiB gzip. First-party TypeScript and TSX maintain exact 100% statements, branches, functions, and lines.
 
 ## Runtime and cleanup
 

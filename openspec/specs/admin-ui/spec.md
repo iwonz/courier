@@ -61,7 +61,7 @@ Courier SHALL provide bounded same-origin server-sent events containing secret-f
 
 ### Requirement: Shared accessible administration application
 
-Courier SHALL embed a deterministic React operations application built from the repository-owned shadcn component system with typed English/Russian catalogs, cyclic system/light/dark preference, overview counters, a keyboard-operable server/delivery navigator, a selected route and policy inspector, and explicit refresh, save, and stop actions backed only by the guarded API. Selection SHALL persist by UUID across authoritative SSE snapshots when possible and SHALL fall back deterministically when the selected object disappears. The application SHALL provide no terminal prompt or arbitrary execution surface.
+Courier SHALL embed a deterministic React operations application built from the repository-owned shadcn component system with typed English/Russian catalogs, cyclic system/light/dark preference, overview counters, a keyboard-operable server/delivery navigator, a selected route and policy inspector, and explicit refresh, save, and stop actions backed only by the guarded API. Related counters SHALL use one continuous strip and navigator/inspector SHALL use one shared workspace rather than independent bordered cards. Selection SHALL persist by UUID across authoritative SSE snapshots when possible and SHALL fall back deterministically when the selected object disappears. The application SHALL provide no terminal prompt or arbitrary execution surface.
 
 #### Scenario: A snapshot updates the selected delivery
 
@@ -81,7 +81,7 @@ Courier SHALL embed a deterministic React operations application built from the 
 #### Scenario: An operator manages a delivery
 
 - **WHEN** the operator selects a delivery
-- **THEN** shadcn navigation, cards, badges, select controls, checkbox, inputs, alerts, and buttons present current route, counters, policy, save, and stop actions with complete keyboard operation
+- **THEN** lightweight shadcn navigation and policy controls present current route, counters, policy, save, and stop actions with complete keyboard operation and without nested card-on-card framing
 
 #### Scenario: An operator inspects and changes a delivery
 

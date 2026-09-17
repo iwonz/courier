@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createRoot } from "react-dom/client";
-import { relaySource } from "@courier/ui";
+import { relayMarkSource } from "@courier/ui";
 import { DataApp } from "./app";
 
 export function mountData(root: HTMLElement | null): void {
@@ -8,7 +8,7 @@ export function mountData(root: HTMLElement | null): void {
   const favicon = document.createElement("link");
   favicon.rel = "icon";
   favicon.type = "image/webp";
-  favicon.href = relaySource;
+  favicon.href = relayMarkSource;
   document.head.append(favicon);
   createRoot(root).render(<React.StrictMode><DataApp /></React.StrictMode>);
 }

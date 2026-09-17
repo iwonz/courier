@@ -87,7 +87,7 @@
 @layer base {
   * { @apply border-border; }
   html { scroll-behavior: smooth; background: var(--background); }
-  body { @apply m-0 min-w-0 bg-background font-sans text-foreground antialiased; background-image: radial-gradient(circle at 12% 2%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 31rem), radial-gradient(circle at 92% 12%, color-mix(in oklch, var(--ring) 10%, transparent), transparent 28rem); }
+  body { @apply m-0 min-w-0 bg-background font-sans text-foreground antialiased; background-image: radial-gradient(circle at 10% 1%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 32rem), radial-gradient(circle at 92% 18%, color-mix(in oklch, var(--ring) 9%, transparent), transparent 30rem), radial-gradient(circle at 16% 58%, color-mix(in oklch, var(--accent) 34%, transparent), transparent 34rem), radial-gradient(circle at 86% 88%, color-mix(in oklch, var(--primary) 7%, transparent), transparent 36rem); background-repeat: no-repeat; }
   button, input, select { font: inherit; }
   button, a { -webkit-tap-highlight-color: transparent; }
   ::selection { background: color-mix(in oklch, var(--primary) 24%, transparent); }

@@ -77,7 +77,7 @@ describe("React landing", () => {
     document.body.append(root);
     mountLanding(root);
     await waitFor(() => expect(root.querySelector("h1")?.textContent).toBe("From here to anywhere."));
-    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-tech-v1");
+    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-mark-v2");
   });
 
   it("renders three natural sections, a compact square mascot, and secure external links", () => {
@@ -169,8 +169,13 @@ describe("React landing", () => {
 
   it("cycles locale without introducing removed explanatory labels", () => {
     render(<LandingApp />);
+    expect(document.querySelector("[data-courier-route-composition]")).toBeTruthy();
+    expect(document.querySelector("[data-courier-cli-registry]")).toBeTruthy();
+    expect(screen.getByText("COURIER CLI")).toBeTruthy();
     const localeButton = screen.getByRole("button", { name: /Language:/ });
+    expect(localeButton.querySelector('[data-locale-icon="en"]')?.textContent).toBe("🇬🇧");
     fireEvent.click(localeButton);
+    expect(localeButton.querySelector('[data-locale-icon="ru"]')?.textContent).toBe("🇷🇺");
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Отсюда — куда угодно.");
     expect(document.body.textContent).not.toContain("Все связи взяты из опубликованного контракта CLI");
   });

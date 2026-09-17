@@ -25,6 +25,7 @@ async function selectRussian(page: Page): Promise<void> {
   const button = page.getByRole("button", { name: /Language:|Язык:/ });
   if ((await button.getAttribute("aria-label"))?.startsWith("Language:")) await button.click();
   await expect(button).toHaveAttribute("aria-label", /Русский/);
+  await expect(button.locator('[data-locale-icon="ru"]')).toHaveText("🇷🇺");
   await expect.poll(() => page.evaluate(() => localStorage.getItem("courier.locale"))).toBe("ru");
 }
 
@@ -38,10 +39,16 @@ test("landing uses a compact square Relay and three natural shadcn sections", as
   await page.goto(landingURL);
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("From here to anywhere.");
+  await expect(page.getByText("COURIER CLI")).toBeVisible();
   await expect(page.locator("main > section")).toHaveCount(3);
   expect(await page.locator("main > section").evaluateAll((sections) => sections.map((section) => section.id))).toEqual(["route", "install", "cli"]);
   await expect(page.getByRole("button", { name: /Run|Replay/ })).toHaveCount(0);
-  await expect(page.locator('img[src*="courier-relay-tech-v1"]')).toHaveCount(2);
+  await expect(page.locator('img[src*="courier-relay-mark-v2"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-tech-v1"]')).toHaveCount(1);
+  await expect(page.locator("[data-courier-route-composition]")).toHaveCount(1);
+  await expect(page.locator("[data-courier-cli-registry]")).toHaveCount(1);
+  expect(await page.locator("header").evaluate((node) => getComputedStyle(node).borderBottomWidth)).toBe("0px");
+  expect(await page.locator("#install").evaluate((node) => [getComputedStyle(node).borderTopWidth, getComputedStyle(node).borderBottomWidth])).toEqual(["0px", "0px"]);
   const heroMascot = page.locator('#route img[width="768"][height="768"]');
   await expect(heroMascot).toBeVisible();
   expect(await heroMascot.evaluate((image) => Math.abs(image.getBoundingClientRect().width - image.getBoundingClientRect().height))).toBeLessThanOrEqual(1);
@@ -110,7 +117,8 @@ test("protected delivery reveals no metadata before authentication", async ({ pa
   await page.route("**/api/v1/meta*", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ name: secretMarker, path: secretMarker, type: "file" }) }));
   await page.goto(dataURL);
   await expect(page.locator('input[type="password"]')).toBeVisible();
-  await expect(page.locator('img[src*="courier-relay-tech-v1"]')).toHaveCount(2);
+  await expect(page.locator('img[src*="courier-relay-mark-v2"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-tech-v1"]')).toHaveCount(1);
   await expect(page.locator("body")).not.toContainText(secretMarker);
   await exerciseThemes(page);
   await selectRussian(page);
@@ -135,6 +143,7 @@ test("admin keeps secrets out of the shadcn control plane and mutates through AP
   await page.route("**/policy", (route) => { mutations.push(route.request().url()); return route.fulfill({ status: 204 }); });
   await page.goto(adminURL);
   await expect(page.locator("body")).toContainText("127.0.0.1:8080");
+  await expect(page.locator("[data-courier-metrics]")).toHaveCount(1);
   await expect(page.locator("body")).not.toContainText(secretMarker);
   await page.getByRole("button", { name: "Apply policy" }).click();
   await expect.poll(() => mutations.some((url) => url.endsWith("/policy"))).toBe(true);

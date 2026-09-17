@@ -12,9 +12,20 @@
       "sha256": "37bc30a2c14b5242a15358bbc06670f421dd78009bc6ec47725b8561e6ef0b29",
       "width": 768,
       "height": 768,
-      "use": "Image-generated compact square technological Relay pigeon for product chrome, favicons, README, and landing hero",
+      "use": "Image-generated compact square technological Relay pigeon for README and editorial browser illustration",
       "prompt": "Compact square technological pigeon mascot on a genuinely transparent background, deliberately manufactured rather than lifelike, with a rounded graphite and cobalt armored body, tucked segmented wings, short tail, integrated courier module, restrained cyan routing lights, and one small orange waypoint beacon; mature product character, centered three-quarter view, compact one-to-one silhouette readable at icon size; no scenery, city, cyberpunk background, text, letters, interface, logo, watermark, weapon, or wide flying pose.",
       "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-7194b759-5e55-4ef4-9a95-01664b775938"
+    },
+    {
+      "path": "courier-relay-mark-v2.webp",
+      "mediaType": "image/webp",
+      "bytes": 34492,
+      "sha256": "471100c85e42540c3b2b7212e130322e7f09376be3f890cf246b32258dec5b0c",
+      "width": 512,
+      "height": 512,
+      "use": "Image-generated square technological Relay head-and-shoulders mark for headers, compact product chrome, and favicons",
+      "prompt": "Redesign the referenced technological Relay pigeon as a truly square, compact icon silhouette. Preserve the graphite, cobalt, off-white, cyan-light, and single orange-waypoint identity, but make the character read as a manufactured navigation device rather than a cute bird. Use a near-frontal three-quarter head-and-armored-shoulders composition inside an almost square outer silhouette, with broad angular shoulder blocks and a concise pigeon beak. Center one subject on a genuinely transparent background and fill the square evenly. No feet, tail fan, perch, ground contact, wide wings, circular chicken-like body, text, letters, UI, external logo, scenery, watermark, weapon, or cute expression.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-1ef9db03-169e-4cd5-b6dc-234ce3ee39c1"
     }
   ],
   "excluded": [

@@ -4,10 +4,10 @@ Courier's landing, delivery, and administration applications are independent Rea
 
 ## Shared primitives
 
-- `Brand` and `Mascot` render the local ImageGen-authored square Relay pigeon and Courier wordmark.
+- `Brand` renders the dedicated square Relay product mark with `COURIER CLI`; `Mascot` renders the full local ImageGen-authored Relay illustration.
 - shadcn `Button`, `Card`, `Badge`, `Checkbox`, `Input`, `Select`, `Tabs`, `Tooltip`, `Progress`, `Separator`, `ScrollArea`, and `Alert` provide one accessible control grammar.
 - `CommandReadout` presents immutable command text, Copy, reserved localized feedback, details, and footer actions.
-- `ThemeSelector` and `LocaleSelector` are single cyclic icon buttons backed by one shared React preference provider and browser controller.
+- `ThemeSelector` and `LocaleSelector` are single cyclic icon buttons backed by one shared React preference provider and browser controller; locale visibly identifies its active language.
 - `RouteDisplay`, `Icon`, and `BrandIcon` retain native semantics and bundle code-native or pinned official geometry locally.
 
 There is no browser shell, free command input, fake terminal prompt, pointer refraction layer, or arbitrary command execution.
@@ -22,11 +22,11 @@ Product copy and source documentation remain English. `Source` and `Destination`
 
 The landing combines its headline and route instrument, then presents installation and the contract-generated command registry. Delivery is a destination workbench around a real protected password form and authorized manifest. Administration is an operations workbench with counters, a keyboard-operable delivery navigator, and a selected policy inspector whose UUID selection survives SSE snapshots while valid.
 
-All applications use the same ink/cobalt/off-white token system with restrained cyan routing light and orange waypoint state. Shared shadcn surfaces use generous rounded boundaries, high-contrast translucent layers, and lightweight shadows. Monospace is limited to operational values. Layouts expand on narrow screens, preserve semantic actions, and avoid horizontal overflow.
+All applications use the same ink/cobalt/off-white token system with restrained cyan routing light and orange waypoint state. Shared shadcn surfaces use one continuous canvas, restrained tonal layers, and borders only for inputs, focus, destructive emphasis, or meaningful internal division. Monospace is limited to operational values. Layouts expand on narrow screens, preserve semantic actions, and avoid horizontal overflow.
 
 ## Assets and loading
 
-`assets.ts` exports one transparent 768×768 WebP. The same compact Relay asset is reused for product chrome and optional above-fold decoration; no responsive scene family, generated background, panorama, or pointer-effect duplicate is shipped. All artwork, system fonts, icons, styles, and scripts are local.
+`assets.ts` exports the transparent 768×768 full Relay mascot and the separate transparent 512×512 compact Relay mark. The full mascot is editorial; the mark is used by product chrome and favicons. No responsive scene family, generated background, panorama, or pointer-effect duplicate is shipped. All artwork, system fonts, icons, styles, and scripts are local.
 
 ## Verification
 

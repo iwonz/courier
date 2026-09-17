@@ -9,8 +9,8 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
-        secondary: "border border-border bg-secondary/80 text-secondary-foreground hover:bg-secondary",
-        outline: "border border-border/90 bg-background/55 text-foreground shadow-sm backdrop-blur-md hover:border-primary/45 hover:bg-accent/70",
+        secondary: "bg-secondary/70 text-secondary-foreground hover:bg-secondary",
+        outline: "bg-muted/48 text-foreground shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--border)_62%,transparent)] backdrop-blur-md hover:bg-accent/70 hover:shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--primary)_35%,transparent)]",
         ghost: "text-foreground hover:bg-accent/75",
         destructive: "bg-destructive text-white shadow-sm hover:bg-destructive/90",
       },

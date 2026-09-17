@@ -83,6 +83,7 @@ describe("React preference controls", () => {
     const buttons = screen.getAllByRole("button");
     expect(buttons).toHaveLength(2);
     expect(buttons[0]!.getAttribute("aria-label")).toContain("System");
+    expect(buttons[1]!.querySelector('[data-locale-icon="en"]')?.textContent).toBe("🇬🇧");
     fireEvent.click(buttons[0]!);
     expect(buttons[0]!.getAttribute("aria-label")).toContain("Light");
     fireEvent.click(buttons[0]!);
@@ -91,6 +92,7 @@ describe("React preference controls", () => {
     expect(buttons[0]!.getAttribute("aria-label")).toContain("System");
     fireEvent.click(buttons[1]!);
     expect(buttons[1]!.getAttribute("aria-label")).toContain("Русский");
+    expect(buttons[1]!.querySelector('[data-locale-icon="ru"]')?.textContent).toBe("🇷🇺");
     expect(preferenceThemeOrder).toEqual(["system", "light", "dark"]);
     expect(preferenceLocaleOrder).toEqual(["en", "ru"]);
   });
