@@ -13,9 +13,9 @@ export class CourierCheckbox extends LitElement {
     input { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     .box { position: relative; display: grid; width: 1.25rem; height: 1.25rem; place-items: center; border: 1px solid currentColor; border-radius: 0.25rem; background: color-mix(in srgb, currentColor 6%, transparent); transition: color var(--courier-duration, 160ms) var(--courier-ease, ease), background var(--courier-duration, 160ms) var(--courier-ease, ease), transform var(--courier-duration, 160ms) var(--courier-ease, ease); }
     .box::after { content: ""; width: 0.55rem; height: 0.3rem; border-bottom: 2px solid currentColor; border-left: 2px solid currentColor; opacity: 0; transform: translateY(-0.08rem) rotate(-45deg) scale(0.65); transition: opacity var(--courier-duration, 160ms) var(--courier-ease, ease), transform var(--courier-duration, 160ms) var(--courier-ease, ease); }
-    input:checked + .box { border-color: var(--courier-signal, #d4ff45); color: var(--courier-graphite-950, #10120f); background: var(--courier-signal, #d4ff45); }
+    input:checked + .box { border-color: var(--courier-color-accent-solid, #ff704c); color: var(--courier-color-accent-ink, #091a33); background: var(--courier-color-accent-solid, #ff704c); }
     input:checked + .box::after { opacity: 1; transform: translateY(-0.08rem) rotate(-45deg) scale(1); }
-    input:focus-visible + .box { outline: 3px solid var(--courier-beak, #ff8758); outline-offset: 2px; }
+    input:focus-visible + .box { outline: 3px solid var(--courier-color-accent, #c83f23); outline-offset: 2px; }
     label:hover .box { transform: translateY(-1px); }
     :host([disabled]) { opacity: 0.52; }
     :host([disabled]) label { cursor: not-allowed; }

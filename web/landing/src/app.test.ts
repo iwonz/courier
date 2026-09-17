@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 it("projects routes, endpoint vocabulary, exact route flags, and command compatibility", () => {
-  expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-mark-v2");
+  expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-swift-mark-v1");
   const pairs = expandRoutePairs(contractData.routes);
   expect(pairs).toContainEqual(expect.objectContaining({ source: "local", destination: "ssh", routeName: "path-to-path" }));
   expect(pairs).toContainEqual(expect.objectContaining({ source: "webhook", destination: "local", routeName: "webhook-to-path" }));
@@ -114,9 +114,9 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   expect(text).not.toContain("PATH-TO-PATH");
   expect(text).not.toContain("One generated reference for the public command tree");
   expect([...root.querySelectorAll("section")].map((section) => section.id)).toEqual(["route", "install", "cli"]);
-  expect(root.querySelectorAll("courier-scene")).toHaveLength(1);
-  expect(root.querySelector("main > courier-scene.page-panorama")).not.toBeNull();
-  expect(root.querySelector("section courier-scene")).toBeNull();
+  expect(root.querySelectorAll("courier-scene")).toHaveLength(0);
+  expect(root.querySelectorAll(".hero-art courier-mascot")).toHaveLength(1);
+  expect(root.querySelector("main > courier-scene.page-panorama")).toBeNull();
   expect(root.querySelector("#route h1")?.textContent).toBe("From here to anywhere.");
   expect(element.style.getPropertyValue("--masthead-height")).toBe("78px");
   expect(root.querySelector(".route-connector path")?.getAttribute("d")).toContain(" C ");
@@ -130,13 +130,10 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   expect(githubAnchor?.rel).toBe("noopener noreferrer");
   expect([...root.querySelectorAll<HTMLAnchorElement>('a[href^="https://"]')].every((link) => link.target === "_blank" && link.rel === "noopener noreferrer")).toBe(true);
 
-  const scenes = [...root.querySelectorAll("courier-scene")];
-  await Promise.all(scenes.map((scene) => scene.updateComplete));
-  const baseSources = scenes.map((scene) => scene.shadowRoot?.querySelector(".base") as HTMLElement);
-  await Promise.all(baseSources.map((mascot) => (mascot as unknown as { updateComplete: Promise<unknown> }).updateComplete));
-  expect(baseSources.map((mascot) => mascot.shadowRoot?.querySelector("img")?.src)).toEqual([
-    expect.stringContaining("landing-panorama-wide-v2"),
-  ]);
+  const hero = root.querySelector(".hero-art courier-mascot")!;
+  await hero.updateComplete;
+  expect(hero.shadowRoot?.querySelector("img")?.src).toContain("landing-hero-wide-v1");
+  expect(hero.shadowRoot?.querySelector("source")?.srcset).toContain("landing-hero-mobile-v1");
 
   const installSection = root.querySelector("#install") as HTMLElement;
   installSection.scrollIntoView = vi.fn();

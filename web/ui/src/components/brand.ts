@@ -7,9 +7,9 @@ export { courierMarkSource };
 export class CourierBrand extends LitElement {
   static styles = css`
     :host { display: inline-flex; min-width: 0; color: var(--courier-color-text, #0e0f0d); font-family: var(--courier-font-sans, sans-serif); }
-    .lockup { display: inline-flex; min-width: 0; align-items: center; gap: 0.58rem; color: inherit; }
-    img { flex: 0 0 auto; width: 2.45rem; height: 2.1rem; object-fit: contain; filter: drop-shadow(0 0.32rem 0.55rem rgb(14 15 13 / 0.16)); }
-    strong { font-family: var(--courier-font-display, sans-serif); font-size: 1.08rem; font-weight: 820; letter-spacing: -0.045em; }
+    .lockup { display: inline-flex; min-width: 0; align-items: center; gap: 0.52rem; color: inherit; }
+    img { flex: 0 0 auto; width: 2.7rem; height: 2.25rem; object-fit: contain; filter: drop-shadow(0 0.4rem 0.7rem rgb(27 70 143 / 0.2)); }
+    strong { font-family: var(--courier-font-display, sans-serif); font-size: 1.08rem; font-weight: 840; letter-spacing: -0.05em; }
   `;
 
   protected render() {
@@ -47,12 +47,12 @@ export class CourierRoute extends LitElement {
   static styles = css`
     :host { display: grid; color: var(--courier-color-text, #0e0f0d); font-family: var(--courier-font-mono, monospace); }
     .route { display: grid; grid-template-columns: minmax(0, 1fr) minmax(3rem, 0.55fr) minmax(0, 1fr); align-items: center; gap: 0.65rem; }
-    .node { overflow: hidden; padding: 0.62rem 0; border-bottom: 1px solid var(--courier-color-border, #cbc5b8); font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
+    .node { overflow: hidden; padding: 0.62rem 0; border-bottom: 1px solid var(--courier-color-border, #c8d5e7); font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
     .node:last-child { text-align: right; }
     .connector { position: relative; height: 2rem; }
-    svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; color: var(--courier-color-border-strong, #8f8a81); }
+    svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; color: var(--courier-color-border-strong, #8295b1); }
     path { fill: none; stroke: currentColor; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-    .terminal { position: absolute; top: 50%; width: 0.65rem; height: 0.65rem; aspect-ratio: 1; border: 2px solid var(--courier-color-accent, #ad431d); border-radius: 50%; background: var(--courier-color-canvas, #f2efe6); transform: translateY(-50%); }
+    .terminal { position: absolute; top: 50%; width: 0.65rem; height: 0.65rem; aspect-ratio: 1; border: 2px solid var(--courier-color-accent, #c83f23); border-radius: 50%; background: var(--courier-color-canvas, #f8faff); transform: translateY(-50%); }
     .terminal.source { left: 0; transform: translate(-50%, -50%); }
     .terminal.destination { right: 0; transform: translate(50%, -50%); }
   `;

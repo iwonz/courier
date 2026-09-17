@@ -1,5 +1,5 @@
-import panoramaMobile from "../assets/landing-panorama-mobile-v2.webp";
-import panoramaWide from "../assets/landing-panorama-wide-v2.webp";
+import heroMobile from "../assets/landing-hero-mobile-v1.webp";
+import heroWide from "../assets/landing-hero-wide-v1.webp";
 
-export const landingPanoramaSource = panoramaWide;
-export const landingPanoramaMobileSource = panoramaMobile;
+export const landingHeroSource = heroWide;
+export const landingHeroMobileSource = heroMobile;

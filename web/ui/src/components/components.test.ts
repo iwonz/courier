@@ -15,7 +15,7 @@ import { cubicBezierPath } from "../geometry";
 import { CourierIcon, iconNames, resolveIcon } from "../icons";
 import { adminOperationsMobileSource, adminOperationsSource } from "../admin-scenes";
 import { deliveryAccessMobileSource, deliveryAccessSource } from "../delivery-scenes";
-import { landingPanoramaMobileSource, landingPanoramaSource } from "../landing-scenes";
+import { landingHeroMobileSource, landingHeroSource } from "../landing-scenes";
 import { courierMarkSource } from "../identity-assets";
 import { BrowserPreferenceController, browserPreferenceController, nextPreference, preferenceLocaleOrder, preferenceThemeOrder, resetBrowserPreferenceController } from "../preferences";
 
@@ -95,21 +95,21 @@ describe("shared components", () => {
     await brand.updateComplete;
     expect(brand.shadowRoot?.textContent).toContain("Courier");
     expect(brand.shadowRoot?.textContent).not.toContain("Operations");
-    expect(brand.shadowRoot?.querySelector("img")?.src).toContain("courier-mark-v2");
+    expect(brand.shadowRoot?.querySelector("img")?.src).toContain("courier-swift-mark-v1");
     expect(brand.shadowRoot?.querySelector("img")?.alt).toBe("");
 
     const mascot = document.createElement("courier-mascot") as CourierMascot;
-    mascot.alt = "Courier moth";
+    mascot.alt = "Courier swift";
     mascot.eager = true;
-    mascot.mobileSource = landingPanoramaMobileSource;
+    mascot.mobileSource = landingHeroMobileSource;
     mascot.source = courierMarkSource;
     document.body.append(mascot);
     await mascot.updateComplete;
-    expect(mascot.shadowRoot?.querySelector("img")?.alt).toBe("Courier moth");
-    expect(mascot.shadowRoot?.querySelector("img")?.src).toContain("courier-mark-v2");
+    expect(mascot.shadowRoot?.querySelector("img")?.alt).toBe("Courier swift");
+    expect(mascot.shadowRoot?.querySelector("img")?.src).toContain("courier-swift-mark-v1");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("loading")).toBe("eager");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("high");
-    expect(mascot.shadowRoot?.querySelector("source")?.srcset).toContain("landing-panorama-mobile");
+    expect(mascot.shadowRoot?.querySelector("source")?.srcset).toContain("landing-hero-mobile");
     mascot.mobileSource = "";
     mascot.eager = false;
     await mascot.updateComplete;
@@ -117,9 +117,9 @@ describe("shared components", () => {
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("loading")).toBe("lazy");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("auto");
 
-    expect([deliveryAccessMobileSource, deliveryAccessSource].every((source) => source.includes("delivery-access-"))).toBe(true);
-    expect([adminOperationsMobileSource, adminOperationsSource].every((source) => source.includes("admin-operations-"))).toBe(true);
-    expect([landingPanoramaMobileSource, landingPanoramaSource].every((source) => source.includes("landing-panorama-"))).toBe(true);
+    expect([deliveryAccessMobileSource, deliveryAccessSource].every((source) => source.includes("landing-hero-"))).toBe(true);
+    expect([adminOperationsMobileSource, adminOperationsSource].every((source) => source.includes("landing-hero-"))).toBe(true);
+    expect([landingHeroMobileSource, landingHeroSource].every((source) => source.includes("landing-hero-"))).toBe(true);
 
     const route = document.createElement("courier-route") as CourierRoute;
     route.source = "./data";
@@ -258,8 +258,8 @@ describe("shared components", () => {
     const request = vi.fn();
     vi.stubGlobal("requestAnimationFrame", request);
     const scene = document.createElement("courier-scene") as CourierScene;
-    scene.source = landingPanoramaSource;
-    scene.mobileSource = landingPanoramaMobileSource;
+    scene.source = landingHeroSource;
+    scene.mobileSource = landingHeroMobileSource;
     scene.eager = true;
     document.body.append(scene);
     await scene.updateComplete;
@@ -279,7 +279,7 @@ describe("shared components", () => {
     }
     vi.stubGlobal("IntersectionObserver", IntersectionObserverStub);
     const scene = document.createElement("courier-scene") as CourierScene;
-    scene.source = landingPanoramaSource;
+    scene.source = landingHeroSource;
     document.body.append(scene);
     await scene.updateComplete;
     expect(scene.shadowRoot?.querySelector("courier-mascot")).toBeNull();

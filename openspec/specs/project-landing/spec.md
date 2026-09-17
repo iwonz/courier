@@ -49,51 +49,66 @@ Courier SHALL automatically publish the deterministic landing artifact after eve
 
 ### Requirement: Brand-led product narrative
 
-The landing SHALL consist of exactly three naturally scrolling sections ordered as a combined hero and route instrument, installation, and combined shipped command/option reference. The first section SHALL present `From here to anywhere.` in English and `Отсюда — куда угодно.` in Russian, occupy at least one small viewport on capable desktop layouts, expand without clipping on constrained layouts, and contain the contract-backed Source-to-Destination interaction without a separate routing introduction, visible endpoint explanation, installation command, or execution simulation.
+The landing SHALL consist of exactly three naturally scrolling, content-height sections ordered as a combined hero and route instrument, installation, and combined shipped command/option reference. No section SHALL use viewport-relative minimum height or behave as a mandatory screen. The first section SHALL present `From here to anywhere.` in English and `Отсюда — куда угодно.` in Russian and contain the contract-backed Source-to-Destination interaction without a separate routing introduction, visible endpoint explanation, installation command, or execution simulation.
+
+#### Scenario: A visitor reads the complete landing
+
+- **WHEN** the visitor scrolls from the route hero through installation and CLI reference
+- **THEN** every section occupies only the height required by its content and responsive spacing without snap behavior, viewport-height filler, clipping, or artificial blank regions
 
 #### Scenario: A new visitor opens Courier
 
 - **WHEN** the landing loads at a supported viewport
-- **THEN** the visitor sees the localized promise, Vector identity, Source and Destination controls, selected route, immutable command, Copy action, and applicable options in the first section
+- **THEN** the visitor sees the localized promise, swift identity, Source and Destination controls, selected route, immutable command, Copy action, and applicable options in the first content-height section
 
 #### Scenario: A new visitor moves through the landing
 
-- **WHEN** the landing loads at a supported viewport and the visitor scrolls through its sections
-- **THEN** the combined hero and route instrument occupies at least the initial capable desktop viewport, subsequent content follows natural document flow, and every claim remains backed by shipped contract or repository-owned distribution data
+- **WHEN** the visitor scrolls through the landing
+- **THEN** route, installation, and CLI content follow natural document flow without any section being expanded to a viewport target
 
 #### Scenario: A new visitor arrives
 
 - **WHEN** the landing loads at a supported viewport
-- **THEN** the visitor can identify Courier from the localized headline and Vector route instrument, explore valid routes, inspect installation channels, inspect commands and options, and reach source or releases without encountering unshipped claims
+- **THEN** the visitor can identify Courier, explore valid routes, inspect installation channels, inspect commands and options, and reach source or releases without encountering unshipped claims
 
 #### Scenario: The first viewport is constrained
 
-- **WHEN** the first section cannot fit safely within one viewport
-- **THEN** it expands in natural flow without clipping controls, command content, or horizontal overflow
+- **WHEN** the first section cannot fit within the initial viewport
+- **THEN** it expands in normal document flow without clipping controls, commands, artwork, or horizontal overflow
 
 ### Requirement: Illustrated operational landing
 
-The landing SHALL present one optional uninterrupted Vector journey through a single responsive desktop/mobile panorama pair shared by all three sections. Artwork SHALL use a soft organic editorial composition with rounded forms and continuous route geometry, remain static, contain no required information, and use no section-specific image overlay, visible boundary, pointer-following, refraction, remote asset, text, fake UI, logo, credential, or watermark.
+The landing SHALL use a repository-local responsive wide/portrait hero illustration inside the first section rather than a full-page or per-section background. The artwork SHALL present the ImageGen-authored swift courier in a vivid editorial route composition, remain decorative, contain no required information, and create no seam, repeated tile, pointer-following effect, remote request, text, fake UI, logo lettering, credential, or watermark.
+
+#### Scenario: The landing loads
+
+- **WHEN** a supported browser opens the landing
+- **THEN** it requests only the browser-selected hero illustration and compact mark while installation and CLI remain image-free content sections
+
+#### Scenario: Artwork is unavailable
+
+- **WHEN** the hero illustration cannot load
+- **THEN** the headline, route choices, command, options, and every interaction remain complete and readable
 
 #### Scenario: The first section loads
 
 - **WHEN** a supported browser opens the landing
-- **THEN** it requests exactly one browser-selected full-page panorama source eagerly while the alternate responsive source remains unrequested
+- **THEN** it requests exactly one browser-selected local hero source eagerly while the alternate responsive source remains unrequested
 
 #### Scenario: A pointer moves over artwork
 
-- **WHEN** a visitor moves any pointer across the panorama
-- **THEN** no image translates, refracts, duplicates, or schedules pointer animation work
+- **WHEN** a visitor moves any pointer across the hero illustration
+- **THEN** the artwork remains stable and decorative without translation, refraction, duplicate images, or animation work
 
 #### Scenario: A visitor moves across a landing scene
 
-- **WHEN** any fine pointer moves over the page
-- **THEN** the single static panorama remains unchanged and functional state responds only to explicit controls
+- **WHEN** any fine pointer moves over the first section
+- **THEN** functional state responds only to explicit semantic controls
 
 #### Scenario: Motion or precise pointer input is unavailable
 
 - **WHEN** reduced motion is requested or the device uses coarse pointer input
-- **THEN** artwork remains readable and route signaling becomes static without allocating alternate scene behavior
+- **THEN** artwork remains readable and route signaling becomes static without alternate image behavior
 
 #### Scenario: A visitor interacts with the hero scene
 
@@ -102,13 +117,13 @@ The landing SHALL present one optional uninterrupted Vector journey through a si
 
 #### Scenario: A visitor scans the project story
 
-- **WHEN** the visitor moves from the combined route hero through installation and CLI reference
-- **THEN** one continuous background depicts the journey with no image seam, repeated horizon, uncovered region, hard section band, or remote asset request
+- **WHEN** the visitor moves from the route hero through installation and CLI reference
+- **THEN** local color fields continue the identity without a full-page image, image seam, repeated horizon, uncovered region, or hard poster boundary
 
 #### Scenario: A visitor opens the repository README
 
 - **WHEN** GitHub renders the README
-- **THEN** the locally versioned text-free Vector route banner remains legible in light and dark GitHub themes
+- **THEN** the locally versioned text-free Courier banner remains legible in light and dark GitHub themes
 
 ### Requirement: Contract-backed interactive route illustration
 
@@ -151,17 +166,17 @@ Courier SHALL project the shipped route matrix into compact Source and Destinati
 
 ### Requirement: Compact landing composition
 
-The landing SHALL omit a separate hero tagline, route section, route heading, route introduction, section indices, endpoint prose, examples, documentation, footer, execution preview, and simulated transcript. Its fixed masthead SHALL link the Courier identity to the first section and expose only Installation and CLI in-page navigation plus GitHub, theme, and locale actions.
+The landing SHALL use one continuous document canvas with content-driven spacing, local color fields, and no full-page panorama. Its fixed masthead SHALL link the Courier identity to the first section and expose only Installation and CLI in-page navigation plus GitHub, theme, and locale actions.
 
 #### Scenario: A visitor scans the page
 
-- **WHEN** the visitor moves from the combined first section through installation and CLI reference
-- **THEN** exactly three sections form one continuous composition with no removed standalone content or duplicated route introduction
+- **WHEN** the visitor moves between the three sections
+- **THEN** the sections follow one another as ordinary document blocks without snapping, full-screen sizing, image stacking, background seams, or disconnected poster composition
 
 #### Scenario: A visitor scans the complete page
 
 - **WHEN** the visitor scrolls through the landing
-- **THEN** the combined route hero, installation, and CLI reference follow one another without snapping, clipping, disconnected tiles, or removed standalone content
+- **THEN** the combined route hero, installation, and CLI reference follow one another without snapping, clipping, viewport fillers, or removed standalone content
 
 ### Requirement: Viewport-aware installation chooser
 
@@ -222,21 +237,21 @@ Courier SHALL present generated commands and options in a full-width, invariant 
 
 ### Requirement: Terminal-composed illustrated landing
 
-The project landing SHALL use purpose-composed wide and portrait panorama segments for hero, routing, installation, and CLI reference. The stationary responsive backgrounds SHALL form one continuous Relay journey and reserve quiet space for transparent read-only command and reference surfaces. The hero SHALL remain non-interactive and SHALL depict a decorative handoff between circular `Source` and `Destination` terminals.
+The project landing SHALL use one purpose-composed wide/portrait inline hero pair inside the first content-height section. Installation and CLI SHALL remain image-free, and functional route, command, and reference information SHALL be rendered as semantic interface content rather than embedded artwork. The hero artwork SHALL remain non-interactive.
 
 #### Scenario: A fine pointer crosses a scene
 
-- **WHEN** it moves over the base, optional refracted, glow, or veil layers
-- **THEN** the local effect follows smoothly without hit-test jitter, base translation, functional state change, or continuous work after convergence
+- **WHEN** it moves over the inline hero artwork
+- **THEN** the static image remains unchanged without pointer tracking, refraction, translation, functional state change, or continuous work
 
 ### Requirement: Transparent masthead integration
 
-Courier SHALL keep the safe-area-aware measured masthead permanently visible using a transparent multi-stop scene fade and masked backdrop blur without an opaque band or lower rule.
+Courier SHALL keep the safe-area-aware measured masthead permanently visible using a compact translucent canvas surface, backdrop blur, shared control chrome, and no lower rule. Its measured height SHALL drive exact section anchor offsets.
 
 #### Scenario: A visitor scrolls across contrasting scenes
 
-- **WHEN** any slide aligns with the viewport
-- **THEN** navigation and actions remain legible while the masthead blends gradually into the scene and remains fully within the visual viewport
+- **WHEN** any natural-height section reaches the masthead
+- **THEN** navigation and actions remain legible while the masthead remains fully within the visual viewport and does not expose a strip of the preceding section at the target anchor
 
 ### Requirement: Read-only landing command surfaces
 
@@ -254,19 +269,19 @@ Courier SHALL present the selected route and installation commands as immutable 
 
 ### Requirement: Proximity-loaded landing panorama
 
-Courier SHALL render one responsive full-page panorama picture beneath the complete landing, request its selected desktop or mobile source eagerly with high fetch priority, and never create section-specific panorama elements. Stable page layout SHALL not depend on image decoding, and only the selected responsive source SHALL be requested.
+Courier SHALL NOT render a full-page or segmented landing panorama. It SHALL render one responsive hero picture with stable dimensions inside the first section, eagerly request only the selected wide or portrait source, and keep later sections independent of image decoding.
 
 #### Scenario: The landing first loads
 
-- **WHEN** the initial viewport becomes interactive
-- **THEN** exactly one selected full-page panorama source has been requested and no segmented section panorama exists
+- **WHEN** the first section becomes interactive
+- **THEN** exactly one responsive hero source is requested and no full-page panorama or later-section artwork is allocated
 
 #### Scenario: A visitor approaches a later section
 
-- **WHEN** later content enters the viewport
-- **THEN** no additional landing panorama is allocated or requested and section geometry remains stable
+- **WHEN** installation or CLI enters the viewport
+- **THEN** no additional landing artwork is allocated or requested and section geometry remains stable
 
 #### Scenario: Intersection observation is unavailable
 
 - **WHEN** the browser lacks IntersectionObserver
-- **THEN** the single responsive panorama remains available without requiring observation or changing accessible content order
+- **THEN** the eager responsive hero remains available without observation or a change in accessible content order

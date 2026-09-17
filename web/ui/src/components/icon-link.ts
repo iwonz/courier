@@ -28,7 +28,7 @@ export class CourierIconLink extends LitElement {
     }
     a:hover { border-color: var(--courier-control-frame-hover-border, var(--courier-color-accent, #d4ff45)); color: var(--courier-control-frame-hover-color, var(--courier-color-text, #151714)); background: var(--courier-control-frame-hover-surface, color-mix(in srgb, var(--courier-color-surface-raised, #fff) 72%, transparent)); }
     a:active { transform: translateY(1px); }
-    a:focus-visible { outline: var(--courier-control-frame-focus-width, 3px) solid var(--courier-control-frame-focus, var(--courier-beak, #ff8758)); outline-offset: 2px; }
+    a:focus-visible { outline: var(--courier-control-frame-focus-width, 3px) solid var(--courier-control-frame-focus, var(--courier-color-accent, #c83f23)); outline-offset: 2px; }
     courier-icon { width: 1.05rem; height: 1.05rem; }
   `;
 

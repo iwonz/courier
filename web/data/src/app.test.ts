@@ -64,8 +64,8 @@ it("renders login failure, signs in, and retries", async () => {
   await flush(element);
   expect(element.shadowRoot?.textContent).toContain("authorization is required");
   const accessArt = element.shadowRoot?.querySelector("courier-scene") as HTMLElement & { source: string; mobileSource: string };
-  expect(accessArt.source).toContain("delivery-access-wide");
-  expect(accessArt.mobileSource).toContain("delivery-access-mobile");
+  expect(accessArt.source).toContain("landing-hero-wide");
+  expect(accessArt.mobileSource).toContain("landing-hero-mobile");
   expect(element.shadowRoot?.querySelector("courier-workbench.access")).not.toBeNull();
   expect(element.shadowRoot?.textContent).not.toContain("report.pdf");
   const form = element.shadowRoot?.querySelector("form") as HTMLFormElement;

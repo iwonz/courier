@@ -40,14 +40,14 @@ export class CourierDataApp extends LitElement {
     .muted { color: var(--courier-color-muted); }
     .access { display: grid; grid-template-columns: minmax(0, 1fr) minmax(11rem, 0.45fr); gap: 1rem; overflow: hidden; border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-lg); background: var(--courier-color-surface-raised); box-shadow: var(--courier-shadow); }
     .access-copy { display: grid; align-content: center; gap: 1rem; padding: clamp(1.5rem, 5vw, 3.5rem); }
-    .access-art { position: relative; min-height: 24rem; overflow: hidden; background: var(--courier-graphite-900); }
+    .access-art { position: relative; min-height: 24rem; overflow: hidden; background: var(--courier-blue-deep); }
     .access-art::before { content: ""; position: absolute; inset: 0; opacity: 0.15; background-image: linear-gradient(rgb(243 244 233 / 0.2) 1px, transparent 1px), linear-gradient(90deg, rgb(243 244 233 / 0.2) 1px, transparent 1px); background-size: 2rem 2rem; }
     .access-art courier-mascot { position: absolute; right: -15%; bottom: -2%; width: 130%; }
     .error { padding: 0.85rem 1rem; border-left: 3px solid var(--courier-warning); color: var(--courier-color-text); background: color-mix(in srgb, var(--courier-warning) 12%, transparent); }
     form { display: grid; gap: 0.75rem; }
     .signin { grid-template-columns: minmax(0, 1fr) auto; }
     .field { display: grid; min-width: 0; gap: 0.35rem; color: var(--courier-color-muted); font-family: var(--courier-font-mono); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-    button.link:focus-visible, a:focus-visible { outline: 3px solid var(--courier-beak); outline-offset: 2px; }
+    button.link:focus-visible, a:focus-visible { outline: 3px solid var(--courier-color-accent); outline-offset: 2px; }
     .route-overview { display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-md); background: var(--courier-color-surface); }
     .delivery-panel { display: grid; gap: 1.25rem; padding: clamp(1.25rem, 4vw, 2rem); border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-lg); background: var(--courier-color-surface-raised); box-shadow: var(--courier-shadow); }
     .delivery-title { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }

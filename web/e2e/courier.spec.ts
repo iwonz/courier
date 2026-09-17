@@ -29,7 +29,7 @@ async function selectRussian(page: Page, root: string): Promise<void> {
   await expect.poll(() => page.evaluate(() => localStorage.getItem("courier.locale"))).toBe("ru");
 }
 
-test("landing presents one continuous illustrated journey without execution surfaces", async ({ page, context }) => {
+test("landing presents a vivid natural flow without execution surfaces", async ({ page, context }) => {
   const externalRequests: string[] = [];
   const sceneRequests: string[] = [];
   page.on("request", (request) => {
@@ -45,12 +45,12 @@ test("landing presents one continuous illustrated journey without execution surf
   await expect(page.locator(`${root} section`)).toHaveCount(3);
   expect(await page.locator(`${root} section`).evaluateAll((sections) => sections.map((section) => section.id))).toEqual(["route", "install", "cli"]);
   await expect(page.locator(`${root} button[title*="Run"], ${root} button[title*="Replay"], ${root} textarea, ${root} [contenteditable="true"]`)).toHaveCount(0);
-  await expect(page.locator(`${root} courier-scene`)).toHaveCount(1);
-  await expect(page.locator(`${root} main > courier-scene.page-panorama .base img`)).toHaveCount(1);
+  await expect(page.locator(`${root} courier-scene`)).toHaveCount(0);
+  await expect(page.locator(`${root} .hero-art courier-mascot img`)).toHaveCount(1);
   await expect(page.locator(`${root} section courier-scene`)).toHaveCount(0);
   await page.waitForLoadState("networkidle");
-  expect(sceneRequests.filter((url) => url.includes("landing-panorama-"))).toHaveLength(1);
-  expect(sceneRequests.some((url) => url.includes("landing-panorama-wide-v2"))).toBe(true);
+  expect(sceneRequests.filter((url) => url.includes("landing-hero-"))).toHaveLength(1);
+  expect(sceneRequests.some((url) => url.includes("landing-hero-wide-v1"))).toBe(true);
 
   await expect(page.locator(`${root} .source-endpoints > strong`)).toHaveText("Source");
   await expect(page.locator(`${root} .destination-endpoints > strong`)).toHaveText("Destination");
@@ -113,11 +113,11 @@ test("landing presents one continuous illustrated journey without execution surf
 
   for (const id of ["install", "cli"] as const) {
     await page.locator(`${root} #${id}`).evaluate((section) => section.scrollIntoView({ block: "start" }));
-    await expect(page.locator(`${root} main > courier-scene.page-panorama .base img`)).toHaveCount(1);
+    await expect(page.locator(`${root} .hero-art courier-mascot img`)).toHaveCount(1);
     await expect(page.locator(`${root} nav a[href="#${id}"]`)).toHaveAttribute("aria-current", "page");
   }
-  await expect.poll(() => page.locator(`${root} courier-scene .base img`).count()).toBe(1);
-  expect(sceneRequests.filter((url) => url.includes("landing-panorama-"))).toHaveLength(1);
+  await expect.poll(() => page.locator(`${root} .hero-art courier-mascot img`).count()).toBe(1);
+  expect(sceneRequests.filter((url) => url.includes("landing-hero-"))).toHaveLength(1);
 
   const routeInstrument = page.locator(`${root} .route-instrument`);
   const routeReadout = page.locator(`${root} .route-readout`);
@@ -162,13 +162,12 @@ test("landing presents one continuous illustrated journey without execution surf
       await page.locator(`${root} #${target}`).evaluate((section) => section.scrollIntoView({ block: "start" }));
       const geometry = await page.locator(`${root} #${target}`).evaluate((section) => {
         const bounds = section.getBoundingClientRect();
-        const scene = (section.getRootNode() as ShadowRoot).querySelector(".page-panorama")!.getBoundingClientRect();
+        const minHeight = getComputedStyle(section).minHeight;
         const header = (section.getRootNode() as ShadowRoot).querySelector(".masthead-wrap")!.getBoundingClientRect();
-        return { bounds, scene, header, visualHeight: visualViewport?.height ?? innerHeight, overflow: document.documentElement.scrollWidth - innerWidth };
+        return { bounds, minHeight, header, visualHeight: visualViewport?.height ?? innerHeight, overflow: document.documentElement.scrollWidth - innerWidth };
       });
       expect(geometry.bounds.height).toBeGreaterThan(0);
-      expect(Math.abs(geometry.scene.left)).toBeLessThan(2);
-      expect(Math.abs(geometry.scene.right - viewport.width)).toBeLessThan(2);
+      expect(geometry.minHeight).toBe("0px");
       expect(geometry.header.top).toBeGreaterThanOrEqual(-0.5);
       expect(geometry.header.bottom).toBeLessThanOrEqual(geometry.visualHeight + 0.5);
       expect(geometry.overflow).toBeLessThanOrEqual(0);
@@ -176,19 +175,19 @@ test("landing presents one continuous illustrated journey without execution surf
     expect(await page.locator(`${root} .endpoint-terminal`).evaluateAll((nodes) => nodes.every((node) => Math.abs(node.getBoundingClientRect().width - node.getBoundingClientRect().height) <= 1))).toBe(true);
   }
 
-  expect(await page.locator(`${root} courier-scene`).evaluateAll((scenes) => scenes.length === 1 && scenes.every((scene) => scene.shadowRoot!.querySelectorAll("courier-mascot").length === 1))).toBe(true);
+  await expect(page.locator(`${root} .hero-art courier-mascot img`)).toHaveAttribute("src", /landing-hero-wide-v1/);
   expect(externalRequests).toEqual([]);
 });
 
-test("touch landing keeps static scenes and no horizontal overflow", async ({ browser }) => {
+test("touch landing keeps static hero artwork and no horizontal overflow", async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   await page.goto(landingURL);
-  const scene = page.locator("courier-landing-app main > courier-scene.page-panorama");
-  const before = await scene.locator(".base").evaluate((node) => getComputedStyle(node).transform);
+  const scene = page.locator("courier-landing-app .hero-art");
+  const before = await scene.evaluate((node) => getComputedStyle(node).transform);
   await page.touchscreen.tap(250, 420);
-  expect(await scene.locator(".base").evaluate((node) => getComputedStyle(node).transform)).toBe(before);
-  await expect(scene.locator("courier-mascot")).toHaveCount(1);
+  expect(await scene.evaluate((node) => getComputedStyle(node).transform)).toBe(before);
+  await expect(scene.locator("courier-mascot img")).toHaveCount(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await context.close();
 });
@@ -199,7 +198,7 @@ test("protected delivery keeps metadata private before authentication", async ({
   const root = "courier-data-app";
   const password = page.locator(`${root} input[type="password"]`);
   await expect(password).toBeVisible();
-  await expect(page.locator(`${root} courier-scene .base img`)).toHaveAttribute("src", /delivery-access-wide/);
+  await expect(page.locator(`${root} courier-scene .base img`)).toHaveAttribute("src", /landing-hero-wide/);
   await expect(page.locator(`${root} courier-workbench.access`)).toBeVisible();
   await expect(page.locator(root)).not.toContainText(secretMarker);
   await exerciseThemes(page, root);
@@ -229,7 +228,7 @@ test("admin exposes a secret-free navigator and API-backed controls", async ({ p
   await page.goto(adminURL);
   const root = "courier-admin-app";
   await expect(page.locator(root)).toContainText("127.0.0.1:8080");
-  await expect(page.locator(`${root} courier-scene .base img`)).toHaveAttribute("src", /admin-operations-wide/);
+  await expect(page.locator(`${root} courier-scene .base img`)).toHaveAttribute("src", /landing-hero-wide/);
   await expect(page.locator(`${root} courier-workbench.registry-workbench`)).toBeVisible();
   await expect(page.locator(`${root} .delivery-nav[aria-pressed="true"]`)).toContainText("path-to-web");
   await expect(page.locator(root)).not.toContainText(secretMarker);

@@ -17,11 +17,11 @@ Playwright runs landing, delivery, and administration in English/Russian and sys
 - Copy for routes, every installation channel, and CLI commands;
 - single-button theme/locale cycles, browser defaults, persistence, and reduced motion;
 - 320×568, 360×740, 390×844, short desktop, and 1440×900 layouts without clipping or horizontal overflow;
-- exactly one responsive landing panorama request, no section-local scene or image seam, stable composition, and no external runtime requests;
+- exactly one responsive inline hero request, no full-page or later-section artwork, stable content-height composition, and no external runtime requests;
 - absence of terminal/refraction code, editable commands, Run/Replay, transcripts, remote fonts, scripts, images, or analytics;
 - protected delivery metadata isolation, authentication, upload/download behavior, admin policy updates, stop actions, selection persistence, and SSE fallback.
 
-Asset validation caps each landing panorama at 420 KiB, the responsive pair at 700 KiB, the compact raster mark at 96 KiB, and each delivery/admin scene at 200 KiB. Landing JavaScript remains below 45 KiB gzip and CSS below 9 KiB gzip. First-party TypeScript maintains exact 100% statements, branches, functions, and lines.
+Asset validation caps each hero source at 100 KiB, the responsive pair at 180 KiB, and the compact raster mark at 80 KiB. Landing JavaScript remains below 45 KiB gzip and CSS below 9 KiB gzip. First-party TypeScript maintains exact 100% statements, branches, functions, and lines.
 
 ## Runtime and cleanup
 

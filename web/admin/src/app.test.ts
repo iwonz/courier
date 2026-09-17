@@ -79,8 +79,8 @@ it("loads, renders, receives events, localizes, and disconnects", async () => {
   await element.updateComplete;
   expect(element.shadowRoot?.textContent).toContain("No live Courier servers");
   const operationsArt = element.shadowRoot?.querySelector("courier-scene") as HTMLElement & { source: string; mobileSource: string };
-  expect(operationsArt.source).toContain("admin-operations-wide");
-  expect(operationsArt.mobileSource).toContain("admin-operations-mobile");
+  expect(operationsArt.source).toContain("landing-hero-wide");
+  expect(operationsArt.mobileSource).toContain("landing-hero-mobile");
   expect(element.shadowRoot?.querySelector("courier-workbench.registry-workbench")).not.toBeNull();
   element.setLocale(new CustomEvent("courier-locale", { detail: "ru" }));
   await element.updateComplete;

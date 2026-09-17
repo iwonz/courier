@@ -63,26 +63,21 @@ if (actual.size !== expected.size || [...actual].some((name) => !expected.has(na
   throw new Error("asset directory and provenance manifest differ");
 }
 
-const landingAssets = manifest.assets.filter((asset) => asset.sequence?.name === "organic-panorama");
+const landingAssets = manifest.assets.filter((asset) => asset.sequence?.name === "vivid-hero");
 const landingBytes = landingAssets.reduce((total, asset) => total + asset.bytes, 0);
-if (landingAssets.length !== 2 || landingBytes > 700 * 1024) {
-  throw new Error("landing panorama asset count or aggregate budget is invalid");
+if (landingAssets.length !== 2 || landingBytes > 180 * 1024) {
+  throw new Error("landing hero asset count or aggregate budget is invalid");
 }
 for (const orientation of ["wide", "portrait"]) {
   const sequence = landingAssets.filter((asset) => asset.sequence.orientation === orientation);
-  if (sequence.length !== 1 || sequence.some((asset) => asset.sequence.position !== 1 || asset.sequence.total !== 1 || asset.bytes > 420 * 1024)) {
-    throw new Error(`landing ${orientation} panorama sequence or per-file budget is invalid`);
+  if (sequence.length !== 1 || sequence.some((asset) => asset.sequence.position !== 1 || asset.sequence.total !== 1 || asset.bytes > 100 * 1024)) {
+    throw new Error(`landing ${orientation} hero sequence or per-file budget is invalid`);
   }
 }
 
-const compactMark = manifest.assets.find((asset) => asset.path === "courier-mark-v2.webp");
-if (!compactMark || compactMark.mediaType !== "image/webp" || compactMark.bytes > 96 * 1024) {
+const compactMark = manifest.assets.find((asset) => asset.path === "courier-swift-mark-v1.webp");
+if (!compactMark || compactMark.mediaType !== "image/webp" || compactMark.bytes > 80 * 1024) {
   throw new Error("ImageGen compact mark is missing or exceeds its budget");
-}
-
-const productScenes = manifest.assets.filter((asset) => /^(delivery-access|admin-operations)-/.test(asset.path));
-if (productScenes.length !== 4 || productScenes.some((asset) => asset.bytes > 200 * 1024)) {
-  throw new Error("delivery/admin scene count or per-file budget is invalid");
 }
 
 const expectedBrandAssets = new Set(["provenance.json"]);

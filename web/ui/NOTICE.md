@@ -1,8 +1,8 @@
 # Courier UI asset notice
 
-The Courier logos, functional icon geometry, visual tokens, and Vector mascot are Courier project assets distributed under the repository MIT license.
+The Courier logos, functional icon geometry, visual tokens, and swift mascot are Courier project assets distributed under the repository MIT license.
 
-The Courier moth and contextual illustration family were created with the built-in OpenAI image generation workflow from the direction recorded in [`docs/brand.md`](../../docs/brand.md). The compact transparent raster mark, one continuous wide/portrait landing panorama pair, four delivery/administration scenes, and the README banner are stored locally and verified through `assets/provenance.json`. The manifest records the prompt, role, sequence metadata, generation lineage, dimensions, byte count, and SHA-256 digest for every raster. WebP delivery copies were encoded locally from generated PNG results without adding third-party imagery. Temporary studies and superseded segmented scenes are not shipped.
+The Courier swift and responsive hero composition were created with the built-in OpenAI image generation workflow from the direction recorded in [`docs/brand.md`](../../docs/brand.md). The compact transparent raster mark and wide/portrait hero pair are stored locally and verified through `assets/provenance.json`; the wide hero also provides the repository banner and both hero sources may be reused as optional decorative product artwork. The manifest records the prompt, role, sequence metadata, generation lineage, dimensions, byte count, and SHA-256 digest for every raster. WebP delivery copies were encoded locally from generated PNG results without adding third-party imagery. Temporary studies and superseded moth or panorama assets are not shipped.
 
 The retired Relay identity is not shipped. Browser-injected scripts, remote resources, reference-page executable code, the obsolete robot mascot and banner, and mirror-oriented artwork or messaging were deliberately excluded.
 

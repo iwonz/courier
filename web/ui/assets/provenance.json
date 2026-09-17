@@ -6,99 +6,44 @@
   },
   "assets": [
     {
-      "path": "courier-mark-v2.webp",
+      "path": "courier-swift-mark-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 67292,
-      "sha256": "8d9124cdecb5b8fe6a9092dd7c655766c2fd844bd941dda8a9c657bda2bdca42",
-      "width": 512,
-      "height": 427,
-      "use": "Image-generated transparent Courier moth mark for product chrome and favicons",
-      "prompt": "A mature organic courier moth emblem viewed straight on, broad softly rounded wings, warm off-white and carbon-black engraved editorial texture, delicate cartographic route lines across the wings and one small burnt-orange waypoint, transparent background, balanced compact silhouette readable at icon size; no text, UI, logo lettering, border, credentials, weapon, or watermark.",
-      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-49a3af9f-93f4-4f2c-89c3-97e59b4a3bb8"
+      "bytes": 39026,
+      "sha256": "3bf4412ac5d1110c99c609c9f723beb858aceec514c6d08bbee232a3c9d421b5",
+      "width": 640,
+      "height": 534,
+      "use": "Image-generated transparent Courier swift mark for product chrome and favicons",
+      "prompt": "A mature courier swift bird mascot in a forward flying pose with a compact dispatch satchel, contemporary editorial 3D paper-cut illustration with rounded shapes and matte texture, deep navy, cobalt, warm cream, coral accents and one mint detail, genuinely transparent background, compact silhouette readable at product-chrome size; no text, letters, border, interface, credentials, weapons, moth features, or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-6a7920a9-4f51-4088-bf37-19126bc6dd2d"
     },
     {
-      "path": "landing-panorama-wide-v2.webp",
+      "path": "landing-hero-wide-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 286212,
-      "sha256": "2e73c1598565d4b52b0379bfdbf3fa5c0bb3da5924de6f11e9c4796d2d3d931e",
-      "width": 1024,
-      "height": 1536,
-      "use": "Continuous full-page landing panorama for wide viewports",
-      "prompt": "One uninterrupted tall Courier landing-page panorama, warm off-white paper and soft carbon graphite editorial landscape, an organic moth courier following one continuous restrained burnt-orange route from departure through mountain passages to a quiet destination, rounded cloud and terrain forms, gentle engraved print texture, large calm negative-space regions for readable interface content, absolutely no horizontal bands, section seams, frames, tiles, text, UI, commands, logos, credentials, weapons, or watermark.",
-      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-f57e7288-82ba-4f40-b39e-0521a5dff846",
-      "sequence": { "name": "organic-panorama", "orientation": "wide", "position": 1, "total": 1 }
+      "bytes": 53756,
+      "sha256": "b6819284af0c612e1435ab6c2cd8e383fbfd2ef5b15a7082c3a5f4df674eedb7",
+      "width": 1440,
+      "height": 960,
+      "use": "Wide inline landing hero and shared decorative product artwork",
+      "prompt": "Wide contemporary editorial paper-cut illustration of the canonical Courier swift moving along a clear coral Source-to-Destination route through large rounded cobalt, sky, cream and mint fields with two circular waypoints and small parcel-like data capsules, bright premium developer-product composition with quiet space and no text, UI, commands, logos, credentials, hard bands, weapons, or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-17a638b2-38d3-4f49-b10f-cc7fd69f0548",
+      "sequence": { "name": "vivid-hero", "orientation": "wide", "position": 1, "total": 1 }
     },
     {
-      "path": "landing-panorama-mobile-v2.webp",
+      "path": "landing-hero-mobile-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 350968,
-      "sha256": "abb71c6be01922ec617a1014f53674c5d2dd49fb26e75cc7a3262c51563a8e8a",
-      "width": 941,
-      "height": 1672,
-      "use": "Continuous full-page landing panorama composed for narrow viewports",
-      "prompt": "One uninterrupted portrait Courier landing-page panorama composed for a narrow mobile crop, warm off-white paper and soft carbon graphite mountains and clouds, an organic moth courier following one centered continuous burnt-orange route from departure to a quiet destination, rounded forms and gentle engraved texture, generous central negative space for interface content, absolutely no horizontal bands, section seams, frames, tiles, text, UI, commands, logos, credentials, weapons, or watermark.",
-      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-f47f76bc-2195-4cc8-ab17-70c3698d184e",
-      "sequence": { "name": "organic-panorama", "orientation": "portrait", "position": 1, "total": 1 }
-    },
-    {
-      "path": "delivery-access-wide-v1.webp",
-      "mediaType": "image/webp",
-      "bytes": 158344,
-      "sha256": "c84354d901f34a594043945ca78b6d2044cf0fbeb82d59b6ae0825a9c6d7e78a",
-      "width": 1672,
-      "height": 941,
-      "use": "Wide protected-destination access scene",
-      "prompt": "Wide carbon-and-chalk aerospace editorial secure destination environment with canonical Vector guarding a geometric access aperture, sparse burnt-orange route signal and deliberate quiet authentication and manifest regions; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
-      "lineage": "imagegen:exec-15a72585-093c-402a-823d-88ab61678d1f"
-    },
-    {
-      "path": "delivery-access-mobile-v1.webp",
-      "mediaType": "image/webp",
-      "bytes": 46620,
-      "sha256": "e455123f869a2f53e499e617dbb130d285bd390e9e2745595bb278d296746227",
-      "width": 941,
-      "height": 1672,
-      "use": "Portrait protected-destination access scene",
-      "prompt": "Portrait carbon-and-chalk aerospace editorial secure destination environment with canonical Vector guarding a geometric access aperture, sparse burnt-orange route signal and deliberate quiet stacked authentication and manifest regions; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
-      "lineage": "imagegen:exec-0e135c40-36f5-4363-a6fb-5f4b1fcb076f"
-    },
-    {
-      "path": "admin-operations-wide-v1.webp",
-      "mediaType": "image/webp",
-      "bytes": 142820,
-      "sha256": "1fd70d75ca5b15047e1c4b50082f072411ed43054e594bee9d18e67c8512edd1",
-      "width": 1672,
-      "height": 941,
-      "use": "Wide operations-workbench scene",
-      "prompt": "Wide carbon-and-chalk aerospace editorial operations environment with canonical Vector navigating abstract route geometry, sparse burnt-orange status signals and deliberate quiet navigator and policy-inspector regions; no text, UI, charts, logos, credentials, watermark, weapons, or required information.",
-      "lineage": "imagegen:exec-d9e7b71b-f7b0-47c2-a8d8-07c3a388c8b8"
-    },
-    {
-      "path": "admin-operations-mobile-v1.webp",
-      "mediaType": "image/webp",
-      "bytes": 52360,
-      "sha256": "a02d8e448f42ddf2a9711c146f15cbe062923409daabd5c787ff680914ae9cc7",
-      "width": 941,
-      "height": 1672,
-      "use": "Portrait operations-workbench scene",
-      "prompt": "Portrait carbon-and-chalk aerospace editorial operations environment with canonical Vector navigating abstract route geometry, sparse burnt-orange status signals and deliberate quiet stacked navigator and policy-inspector regions; no text, UI, charts, logos, credentials, watermark, weapons, or required information.",
-      "lineage": "imagegen:exec-cf2ccec4-59ec-42fb-a2f4-f8a6a815c0b0"
-    },
-    {
-      "path": "readme-vector-banner.webp",
-      "mediaType": "image/webp",
-      "bytes": 230792,
-      "sha256": "a1033a451f3901b8fac97ee6f02a3902c64d281b9f07bf2eb4c6c9878c507c8e",
-      "width": 2172,
-      "height": 724,
-      "use": "Full-width text-free Vector route banner for the repository README",
-      "prompt": "Extremely wide black-and-off-white aerospace editorial panorama with canonical geometric Vector moth navigating one burnt-orange cartographic route across abstract source and destination fields, printed texture and clear central rhythm; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
-      "lineage": "imagegen:exec-d52c30a7-a1ad-4054-919e-ac749b579ad9"
+      "bytes": 47504,
+      "sha256": "52ccb418bf6ef70ce6ac59582c2f7def038bb32a59db859b145b99692e649e89",
+      "width": 960,
+      "height": 1200,
+      "use": "Portrait inline landing hero and shared decorative product artwork",
+      "prompt": "Portrait responsive companion to the wide Courier hero preserving the canonical swift, paper-cut material, palette, route language, circular waypoints and parcels, composed as a vertically flowing Source-to-Destination journey with generous breathing room and no text, UI, commands, logos, credentials, hard bands, weapons, or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-a4e8f74e-3aaa-4791-8b10-4f99d3657a43",
+      "sequence": { "name": "vivid-hero", "orientation": "portrait", "position": 1, "total": 1 }
     }
   ],
   "excluded": [
-    "temporary generation sources and storyboards",
+    "temporary generation sources and discarded studies",
     "browser-injected scripts and remote resources",
-    "superseded Relay identity assets, terminal scenes, and signal-lime product messaging"
+    "superseded moth marks, engraved panoramas, product scenes, and README artwork"
   ]
 }

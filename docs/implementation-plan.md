@@ -47,6 +47,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 41 | `feat/041-continuous-landing-flow` | `continuous-landing-flow` | Natural three-stage panorama loading, copy-only command readouts, and page-performance budgets |
 | 42 | `feat/042-vector-identity-system` | `vector-identity-system` | Vector moth identity, three-section landing, cyclic preferences, neutral workbenches, and static responsive scenes |
 | 43 | `feat/043-organic-identity-polish` | `organic-identity-polish` | ImageGen raster mark, continuous landing panorama, reliable heading contrast, and softened workbench geometry |
+| 44 | `feat/044-vivid-editorial-flow` | `vivid-editorial-flow` | Vivid swift identity, inline responsive hero, natural-height landing flow, and refreshed shared workbenches |
 
 ## Definition of Done
 
