@@ -1,15 +1,14 @@
 # Browser UI architecture
 
-Courier's landing, delivery, and administration applications share the Lit package in `web/ui`. The package owns tokens, identity, localization, preferences, icons, route geometry, static scenes, form styling, workbenches, and immutable command readouts.
+Courier's landing, delivery, and administration applications are independent React roots that share the repository-owned shadcn package in `web/ui`. The package owns Tailwind tokens, identity, localization, preferences, icons, route geometry, semantic controls, and immutable command readouts. Radix supplies behavior for checkbox, select, tabs, tooltip, progress, separator, and scroll-area primitives; Courier owns their local React source and styling.
 
 ## Shared primitives
 
-- `courier-brand` renders the local ImageGen-authored raster swift mark and Courier wordmark without a product descriptor.
-- `courier-scene` performs responsive eager or one-shot proximity loading and static compositing.
-- `courier-workbench` provides a neutral structured surface with heading, body, actions, status, and footer slots.
-- `courier-command-readout` presents immutable command text, Copy, reserved localized feedback, details, and footer actions.
-- `courier-theme-selector` and `courier-locale-selector` are single cyclic icon buttons backed by one shared browser preference controller.
-- `courier-icon-link`, form controls, status, progress, route, checkbox, and brand-icon components retain native semantics and normalized Courier chrome.
+- `Brand` and `Mascot` render the local ImageGen-authored square Relay pigeon and Courier wordmark.
+- shadcn `Button`, `Card`, `Badge`, `Checkbox`, `Input`, `Select`, `Tabs`, `Tooltip`, `Progress`, `Separator`, `ScrollArea`, and `Alert` provide one accessible control grammar.
+- `CommandReadout` presents immutable command text, Copy, reserved localized feedback, details, and footer actions.
+- `ThemeSelector` and `LocaleSelector` are single cyclic icon buttons backed by one shared React preference provider and browser controller.
+- `RouteDisplay`, `Icon`, and `BrandIcon` retain native semantics and bundle code-native or pinned official geometry locally.
 
 There is no browser shell, free command input, fake terminal prompt, pointer refraction layer, or arbitrary command execution.
 
@@ -23,19 +22,12 @@ Product copy and source documentation remain English. `Source` and `Destination`
 
 The landing combines its headline and route instrument, then presents installation and the contract-generated command registry. Delivery is a destination workbench around a real protected password form and authorized manifest. Administration is an operations workbench with counters, a keyboard-operable delivery navigator, and a selected policy inspector whose UUID selection survives SSE snapshots while valid.
 
-All applications use the same deep-ink/cobalt/cream/coral/mint token system. Shared workbenches use generous rounded boundaries, high-contrast translucent surfaces, and lightweight shadows instead of sharp bands or engraved texture. Monospace is limited to operational values. Layouts expand on narrow screens, preserve semantic actions, and avoid horizontal overflow.
+All applications use the same ink/cobalt/off-white token system with restrained cyan routing light and orange waypoint state. Shared shadcn surfaces use generous rounded boundaries, high-contrast translucent layers, and lightweight shadows. Monospace is limited to operational values. Layouts expand on narrow screens, preserve semantic actions, and avoid horizontal overflow.
 
 ## Assets and loading
 
-Surface modules export role-based scene URLs:
-
-- `landing-scenes.ts`;
-- `delivery-scenes.ts`;
-- `admin-scenes.ts`;
-- `identity-assets.ts`.
-
-The landing scene module exports one responsive hero pair used by an eager inline picture in the first section. Delivery and administration may reuse that local pair as restrained above-fold atmosphere. Any non-eager reusable scene creates no image request until the proximity boundary; browsers without `IntersectionObserver` fall back to native lazy loading. Every observer is disconnected on activation or element teardown. All assets, fonts, icons, and scripts are local.
+`assets.ts` exports one transparent 768×768 WebP. The same compact Relay asset is reused for product chrome and optional above-fold decoration; no responsive scene family, generated background, panorama, or pointer-effect duplicate is shipped. All artwork, system fonts, icons, styles, and scripts are local.
 
 ## Verification
 
-Vitest enforces exactly 100% statements, branches, functions, and lines for first-party TypeScript. Asset validation checks dimensions, hashes, lineage, responsive sequence, licenses, and budgets. Playwright covers localization, theme/locale cycling and persistence, keyboard operation, route selection, Copy feedback, responsive artwork, lazy loading, security isolation, API controls, and overflow across supported viewports.
+Vitest with React Testing Library enforces exactly 100% statements, branches, functions, and lines for first-party TypeScript and TSX. Asset validation checks dimensions, square geometry, hash, lineage, licenses, and budget. Playwright covers localization, theme/locale cycling and persistence, keyboard operation, route selection, Copy feedback, compact mascot geometry, security isolation, API controls, and overflow across supported viewports.

@@ -49,7 +49,7 @@ Courier SHALL run compiled runtime suites on Linux, macOS, and Windows, cross-bu
 
 ### Requirement: Real-browser acceptance
 
-Courier SHALL test landing, delivery, and administration in Chromium for English/Russian catalogs, cyclic system/light/dark preferences, reduced motion, touch and fine-pointer input, keyboard operation, responsive layouts, protected-metadata isolation, exactly three natural-height landing sections, one responsive local hero illustration, raster identity use, external-request isolation, and layout stability. The gate SHALL cap each hero source at 100 KiB, the responsive pair at 180 KiB, the compact mark at 80 KiB, landing JavaScript at 45 KiB gzip, and landing CSS at 9 KiB gzip.
+Courier SHALL test the React/shadcn landing, delivery, and administration surfaces in Chromium for English/Russian catalogs, cyclic system/light/dark preferences, reduced motion, touch and fine-pointer input, keyboard operation, responsive layouts, protected-metadata isolation, exactly three natural-height landing sections, one compact local Relay raster, external-request isolation, and layout stability. The gate SHALL cap the Relay raster at 80 KiB, landing JavaScript at 145 KiB gzip, and landing CSS at 9 KiB gzip.
 
 #### Scenario: The landing first renders
 
@@ -64,7 +64,7 @@ Courier SHALL test landing, delivery, and administration in Chromium for English
 #### Scenario: Static artwork is inspected
 
 - **WHEN** the page loads or a pointer crosses the hero composition
-- **THEN** one browser-selected local hero source remains stable, later sections allocate no decorative raster, and no external image, font, script, or analytics request occurs
+- **THEN** one local Relay raster remains stable, later sections allocate no decorative raster, and no external image, font, script, or analytics request occurs
 
 #### Scenario: Preferences are activated
 
@@ -74,24 +74,33 @@ Courier SHALL test landing, delivery, and administration in Chromium for English
 #### Scenario: Product applications are exercised
 
 - **WHEN** browser acceptance authenticates, transfers data, receives administration snapshots, changes policy, or stops a target
-- **THEN** the refreshed workbench UI preserves existing guarded API behavior, secret isolation, and authoritative state
+- **THEN** the React/shadcn applications preserve existing guarded API behavior, secret isolation, authoritative state, and current selection where valid
 
 #### Scenario: Protected delivery returns an authentication error
 
 - **WHEN** the data page receives an unauthenticated response containing an adversarial secret marker
 - **THEN** the marker is not rendered in either locale and the accessible generic authentication state is shown
 
-#### Scenario: A visitor uses natural navigation
-
-- **WHEN** the visitor scrolls or activates installation or CLI navigation
-- **THEN** the page does not snap, the masthead identifies the section at its reading band, and reduced motion removes smooth scrolling
-
-#### Scenario: A visitor crosses a panorama boundary
-
-- **WHEN** the visitor crosses from one landing section to the next
-- **THEN** no panorama boundary exists and the shared document canvas remains continuous without an image seam or layout shift
-
 #### Scenario: A visitor uses landing command surfaces
 
 - **WHEN** route, installation, or CLI Copy is activated in English or Russian
 - **THEN** the exact immutable command is offered to the clipboard and localized status is announced without simulation, API mutation, or layout shift
+
+#### Scenario: A visitor uses natural navigation
+
+- **WHEN** the visitor scrolls or activates installation or CLI navigation
+- **THEN** the page does not snap, active navigation follows the current content block, and reduced motion removes smooth scrolling
+
+#### Scenario: A visitor crosses a panorama boundary
+
+- **WHEN** the visitor moves from one landing section to the next
+- **THEN** no panorama boundary exists and the shared document canvas remains continuous without an image seam or layout shift
+
+### Requirement: Exact browser coverage
+
+Courier SHALL include first-party `.ts` and `.tsx` sources in exact statement, branch, function, and line coverage gates.
+
+#### Scenario: Unit coverage is measured
+
+- **WHEN** shared UI, landing, delivery, and administration tests complete
+- **THEN** every first-party TypeScript and TSX metric is exactly 100 percent without excluding React component sources

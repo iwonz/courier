@@ -1,10 +1,10 @@
 # Courier UI asset notice
 
-The Courier logos, functional icon geometry, visual tokens, and swift mascot are Courier project assets distributed under the repository MIT license.
+The Courier logos, functional icon geometry, visual tokens, and Relay pigeon mascot are Courier project assets distributed under the repository MIT license.
 
-The Courier swift and responsive hero composition were created with the built-in OpenAI image generation workflow from the direction recorded in [`docs/brand.md`](../../docs/brand.md). The compact transparent raster mark and wide/portrait hero pair are stored locally and verified through `assets/provenance.json`; the wide hero also provides the repository banner and both hero sources may be reused as optional decorative product artwork. The manifest records the prompt, role, sequence metadata, generation lineage, dimensions, byte count, and SHA-256 digest for every raster. WebP delivery copies were encoded locally from generated PNG results without adding third-party imagery. Temporary studies and superseded moth or panorama assets are not shipped.
+The compact square technological Relay pigeon was created with the built-in OpenAI image generation workflow from the direction recorded in [`docs/brand.md`](../../docs/brand.md). The transparent raster asset is stored locally and verified through `assets/provenance.json`; it is reused in product chrome, the landing, README, delivery, and administration without generated scenery. The manifest records the prompt, role, generation lineage, dimensions, byte count, and SHA-256 digest. The WebP delivery copy was encoded locally from the generated PNG without adding third-party imagery. Temporary studies and superseded moth, swift, realistic-pigeon, wide-wing, panorama, and cyberpunk-city assets are not shipped.
 
-The retired Relay identity is not shipped. Browser-injected scripts, remote resources, reference-page executable code, the obsolete robot mascot and banner, and mirror-oriented artwork or messaging were deliberately excluded.
+Browser-injected scripts, remote resources, reference-page executable code, obsolete mascot art, generated backgrounds, and mirror-oriented artwork or messaging were deliberately excluded.
 
 ## Third-party brand marks
 

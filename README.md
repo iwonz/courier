@@ -1,7 +1,7 @@
 # Courier CLI
 
 <p align="center">
-  <img src="web/ui/assets/landing-hero-wide-v1.webp" width="100%" alt="Courier swift carrying data from Source to Destination">
+  <img src="web/ui/assets/courier-relay-tech-v1.webp" width="420" alt="Relay, Courier's compact technological pigeon mascot">
 </p>
 
 Courier is an extensible, cross-platform CLI for safely transferring files and directories across local, SSH, browser, and webhook endpoints.
@@ -134,9 +134,9 @@ Development is spec-first: every task owns a path under `openspec/changes`, a co
 
 The machine-readable [CLI contract](docs/cli-contract.yaml) is the source of truth for shipped and planned commands. Its generated [command reference](docs/cli-reference.md) is checked against the live Cobra tree during every verification run.
 
-Browser delivery pages, the administration interface, and the project landing page share the Lit-based [`@courier/ui`](web/ui) package. Its [UI architecture guide](docs/ui.md) documents assets, themes, localization, components, and the exact TypeScript coverage gate.
+Browser delivery pages, the administration interface, and the project landing page share the React/shadcn-based [`@courier/ui`](web/ui) package. Its [UI architecture guide](docs/ui.md) documents local components, assets, themes, localization, and the exact TypeScript coverage gate.
 
-The [brand system](docs/brand.md) defines Courier's positioning, swift courier, visual language, operational vocabulary, accessibility rules, and approved communication patterns.
+The [brand system](docs/brand.md) defines Courier's positioning, compact technological Relay pigeon, visual language, operational vocabulary, accessibility rules, and approved communication patterns.
 
 See [Browser deliveries](docs/web-deliveries.md) for `web://` URLs, authentication, safe navigation, transactional uploads, and foreground/background lifecycle behavior.
 

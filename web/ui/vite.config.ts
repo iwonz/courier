@@ -1,6 +1,9 @@
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  plugins: [react(), tailwindcss()],
   build: {
     emptyOutDir: true,
     lib: {
@@ -10,7 +13,7 @@ export default defineConfig({
       cssFileName: "courier-ui",
     },
     rollupOptions: {
-      external: [/^lit(?:\/.*)?$/],
+      external: [/^react(?:\/.*)?$/, /^react-dom(?:\/.*)?$/],
     },
   },
 });

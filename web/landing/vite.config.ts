@@ -1,11 +1,13 @@
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  plugins: [react(), tailwindcss()],
   base: "/courier/",
   resolve: {
     alias: {
-      "@courier/ui/landing-scenes": fileURLToPath(new URL("../ui/src/landing-scenes.ts", import.meta.url)),
       "@courier/ui": fileURLToPath(new URL("../ui/src/index.ts", import.meta.url)),
     },
   },

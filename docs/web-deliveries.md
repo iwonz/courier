@@ -53,3 +53,5 @@ With `--extract`, the uploaded object must be tar.gz. Courier inspects every ent
 Without `--background`, the initiating process owns a foreground lease. Interrupting it stops only that delivery and closes its endpoint resources. With `--background`, the worker retains the delivery after the command exits; the printed UUID is the stable control identity used by the server-control commands once they ship.
 
 `--no-ui` disables the HTML entry point and returns a small versioned JSON description after authorization. Versioned metadata, session, upload, and download endpoints remain available under the opaque delivery URL. Static UI assets contain no delivery metadata or credentials.
+
+The embedded delivery application is a React root composed from the repository-owned shadcn [`@courier/ui`](../web/ui) package. It reuses the compact square Relay pigeon only as decoration; authentication, metadata, upload, and download behavior remain native semantic controls backed exclusively by the versioned API.

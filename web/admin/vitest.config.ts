@@ -1,10 +1,12 @@
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      "@courier/ui/admin-scenes": fileURLToPath(new URL("../ui/src/admin-scenes.ts", import.meta.url)),
       "@courier/ui": fileURLToPath(new URL("../ui/src/index.ts", import.meta.url)),
     },
   },
@@ -12,8 +14,8 @@ export default defineConfig({
     environment: "jsdom",
     coverage: {
       provider: "v8",
-      include: ["src/**/*.ts"],
-      exclude: ["src/**/*.test.ts"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}"],
       reporter: ["text"],
       thresholds: { statements: 100, branches: 100, functions: 100, lines: 100 },
     },

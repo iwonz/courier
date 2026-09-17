@@ -1,0 +1,50 @@
+import * as React from "react";
+import { Check, Copy } from "lucide-react";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
+import { cn } from "../lib/utils";
+
+export async function copyText(text: string, clipboard: Pick<Clipboard, "writeText"> | undefined = globalThis.navigator?.clipboard): Promise<boolean> {
+  if (!clipboard || !text) return false;
+  try {
+    await clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export interface CommandReadoutProps extends React.HTMLAttributes<HTMLDivElement> {
+  heading: string;
+  command: string;
+  copyLabel: string;
+  copiedLabel: string;
+  copyFailedLabel: string;
+  description?: string;
+  details?: React.ReactNode;
+  footerActions?: React.ReactNode;
+  sessionKey?: string;
+  copy?: typeof copyText;
+}
+
+export function CommandReadout({ heading, command, copyLabel, copiedLabel, copyFailedLabel, description, details, footerActions, sessionKey, copy = copyText, className, ...props }: CommandReadoutProps): React.JSX.Element {
+  const [status, setStatus] = React.useState<"idle" | "copied" | "failed">("idle");
+  React.useEffect(() => setStatus("idle"), [sessionKey]);
+  const copyCommand = async (): Promise<void> => setStatus(await copy(command) ? "copied" : "failed");
+  const live = status === "copied" ? copiedLabel : status === "failed" ? copyFailedLabel : "";
+  return <Card className={cn("overflow-hidden", className)} {...props}>
+    <div className="flex min-h-12 items-center justify-between gap-3 border-b border-border/70 px-4 py-2">
+      <span className="text-xs font-semibold text-muted-foreground">{heading}</span>
+      <Button type="button" variant="ghost" size="sm" onClick={copyCommand} disabled={!command}>
+        {status === "copied" ? <Check /> : <Copy />}{copyLabel}
+      </Button>
+    </div>
+    <div className="grid gap-3 px-4 py-4">
+      {command ? <code className="overflow-x-auto whitespace-pre-wrap break-words font-mono text-sm font-semibold leading-relaxed text-foreground">{command}</code> : null}
+      {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+      {details}
+      <span className="min-h-5 text-xs font-medium text-primary" aria-live="polite">{live}</span>
+    </div>
+    {footerActions ? <div className="flex flex-wrap items-center gap-3 border-t border-border/70 px-4 py-3 text-sm">{footerActions}</div> : null}
+  </Card>;
+}

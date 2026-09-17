@@ -63,21 +63,13 @@ if (actual.size !== expected.size || [...actual].some((name) => !expected.has(na
   throw new Error("asset directory and provenance manifest differ");
 }
 
-const landingAssets = manifest.assets.filter((asset) => asset.sequence?.name === "vivid-hero");
-const landingBytes = landingAssets.reduce((total, asset) => total + asset.bytes, 0);
-if (landingAssets.length !== 2 || landingBytes > 180 * 1024) {
-  throw new Error("landing hero asset count or aggregate budget is invalid");
-}
-for (const orientation of ["wide", "portrait"]) {
-  const sequence = landingAssets.filter((asset) => asset.sequence.orientation === orientation);
-  if (sequence.length !== 1 || sequence.some((asset) => asset.sequence.position !== 1 || asset.sequence.total !== 1 || asset.bytes > 100 * 1024)) {
-    throw new Error(`landing ${orientation} hero sequence or per-file budget is invalid`);
-  }
-}
-
-const compactMark = manifest.assets.find((asset) => asset.path === "courier-swift-mark-v1.webp");
-if (!compactMark || compactMark.mediaType !== "image/webp" || compactMark.bytes > 80 * 1024) {
-  throw new Error("ImageGen compact mark is missing or exceeds its budget");
+const compactMark = manifest.assets.find((asset) => asset.path === "courier-relay-tech-v1.webp");
+if (manifest.assets.length !== 1
+  || !compactMark
+  || compactMark.mediaType !== "image/webp"
+  || compactMark.width !== compactMark.height
+  || compactMark.bytes > 80 * 1024) {
+  throw new Error("the single square ImageGen Relay mark is missing or exceeds its budget");
 }
 
 const expectedBrandAssets = new Set(["provenance.json"]);

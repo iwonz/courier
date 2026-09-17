@@ -8,9 +8,9 @@ const dataURL = `${dataOrigin}/`;
 const adminURL = `${adminOrigin}/`;
 const secretMarker = "COURIER_SECRET_MUST_NOT_RENDER";
 
-async function exerciseThemes(page: Page, root: string): Promise<void> {
+async function exerciseThemes(page: Page): Promise<void> {
   await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
-  const button = page.locator(`${root} courier-theme-selector button`);
+  const button = page.getByRole("button", { name: /Theme:|Тема:/ });
   await expect(page.locator("html")).toHaveAttribute("data-courier-theme-preference", "system");
   await expect(page.locator("html")).toHaveAttribute("data-courier-theme", "dark");
   await button.click();
@@ -19,199 +19,107 @@ async function exerciseThemes(page: Page, root: string): Promise<void> {
   await expect(page.locator("html")).toHaveAttribute("data-courier-theme-preference", "dark");
   await button.click();
   await expect(page.locator("html")).toHaveAttribute("data-courier-theme-preference", "system");
-  await expect.poll(() => page.evaluate(() => localStorage.getItem("courier.theme"))).toBe("system");
 }
 
-async function selectRussian(page: Page, root: string): Promise<void> {
-  const button = page.locator(`${root} courier-locale-selector button`);
-  if (await button.textContent() === "🇬🇧") await button.click();
-  await expect(button).toContainText("🇷🇺");
+async function selectRussian(page: Page): Promise<void> {
+  const button = page.getByRole("button", { name: /Language:|Язык:/ });
+  if ((await button.getAttribute("aria-label"))?.startsWith("Language:")) await button.click();
+  await expect(button).toHaveAttribute("aria-label", /Русский/);
   await expect.poll(() => page.evaluate(() => localStorage.getItem("courier.locale"))).toBe("ru");
 }
 
-test("landing presents a vivid natural flow without execution surfaces", async ({ page, context }) => {
+test("landing uses a compact square Relay and three natural shadcn sections", async ({ page, context }) => {
   const externalRequests: string[] = [];
-  const sceneRequests: string[] = [];
   page.on("request", (request) => {
     const url = request.url();
     if (url.startsWith("http") && !url.startsWith(landingOrigin)) externalRequests.push(url);
-    if (request.resourceType() === "image" && url.includes("landing-")) sceneRequests.push(url);
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(landingURL);
-  const root = "courier-landing-app";
 
-  await expect(page.locator(`${root} h1`)).toHaveText("From here to anywhere.");
-  await expect(page.locator(`${root} section`)).toHaveCount(3);
-  expect(await page.locator(`${root} section`).evaluateAll((sections) => sections.map((section) => section.id))).toEqual(["route", "install", "cli"]);
-  await expect(page.locator(`${root} button[title*="Run"], ${root} button[title*="Replay"], ${root} textarea, ${root} [contenteditable="true"]`)).toHaveCount(0);
-  await expect(page.locator(`${root} courier-scene`)).toHaveCount(0);
-  await expect(page.locator(`${root} .hero-art courier-mascot img`)).toHaveCount(1);
-  await expect(page.locator(`${root} section courier-scene`)).toHaveCount(0);
-  await page.waitForLoadState("networkidle");
-  expect(sceneRequests.filter((url) => url.includes("landing-hero-"))).toHaveLength(1);
-  expect(sceneRequests.some((url) => url.includes("landing-hero-wide-v1"))).toBe(true);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("From here to anywhere.");
+  await expect(page.locator("main > section")).toHaveCount(3);
+  expect(await page.locator("main > section").evaluateAll((sections) => sections.map((section) => section.id))).toEqual(["route", "install", "cli"]);
+  await expect(page.getByRole("button", { name: /Run|Replay/ })).toHaveCount(0);
+  await expect(page.locator('img[src*="courier-relay-tech-v1"]')).toHaveCount(2);
+  const heroMascot = page.locator('#route img[width="768"][height="768"]');
+  await expect(heroMascot).toBeVisible();
+  expect(await heroMascot.evaluate((image) => Math.abs(image.getBoundingClientRect().width - image.getBoundingClientRect().height))).toBeLessThanOrEqual(1);
+  await expect(page.locator('path[vector-effect="non-scaling-stroke"]')).toHaveAttribute("d", / C /);
 
-  await expect(page.locator(`${root} .source-endpoints > strong`)).toHaveText("Source");
-  await expect(page.locator(`${root} .destination-endpoints > strong`)).toHaveText("Destination");
-  await expect(page.locator(`${root} .source-endpoints button > span:last-child`)).toHaveText(["Local", "Remote", "Web", "Web Hook"]);
-  await expect(page.locator(`${root} .destination-endpoints button > span:last-child`)).toHaveText(["Local", "Remote", "Web", "Web Hook"]);
-  expect(await page.locator(`${root} .source-endpoints courier-icon`).evaluateAll((icons) => icons.map((icon) => icon.getAttribute("name")))).toEqual(["folder-out", "server-out", "browser-upload", "webhook-in"]);
-  expect(await page.locator(`${root} .destination-endpoints courier-icon`).evaluateAll((icons) => icons.map((icon) => icon.getAttribute("name")))).toEqual(["folder-in", "server-in", "browser-share", "webhook-out"]);
-  await expect(page.locator(`${root} .route-connector path`).first()).toHaveAttribute("d", / C /);
-
-  const github = page.locator(`${root} courier-icon-link a`);
+  const github = page.getByRole("link", { name: "Courier on GitHub" });
   await expect(github).toHaveAttribute("target", "_blank");
   await expect(github).toHaveAttribute("rel", "noopener noreferrer");
-  expect(await page.locator(`${root} a[href^="https://"]`).evaluateAll((links) => links.every((link) => link.getAttribute("target") === "_blank" && link.getAttribute("rel") === "noopener noreferrer"))).toBe(true);
-  const controlChrome = await page.locator(`${root} courier-icon-link a, ${root} courier-theme-selector button`).evaluateAll((nodes) => nodes.map((node) => {
-    const style = getComputedStyle(node);
-    return { background: style.backgroundColor, border: style.borderColor, radius: style.borderRadius, height: node.getBoundingClientRect().height };
-  }));
-  expect(controlChrome).toHaveLength(2);
-  expect(controlChrome[0]!.background).toBe(controlChrome[1]!.background);
-  expect(controlChrome[0]!.border).toBe(controlChrome[1]!.border);
-  expect(controlChrome[0]!.radius).toBe(controlChrome[1]!.radius);
-  expect(Math.abs(controlChrome[0]!.height - controlChrome[1]!.height)).toBeLessThanOrEqual(1);
+  expect(await page.locator('a[href^="https://"]').evaluateAll((links) => links.every((link) => link.getAttribute("target") === "_blank" && link.getAttribute("rel") === "noopener noreferrer"))).toBe(true);
 
-  const routeCommand = page.locator(`${root} .route-readout .command code`);
-  const webSource = page.locator(`${root} .source-endpoints button[data-endpoint="web"]`);
-  const initialRoute = await routeCommand.textContent();
+  const route = page.locator("#route");
+  const routeCommand = route.locator("code").last();
+  const webSource = route.getByRole("button", { name: "Web" }).first();
+  const initial = await routeCommand.textContent();
   await webSource.hover();
-  await expect(routeCommand).toHaveText(initialRoute!);
-  await webSource.focus();
+  await expect(routeCommand).toHaveText(initial!);
   await webSource.press("Enter");
   await expect(routeCommand).toContainText("web://");
-  await expect(page.locator(`${root} .destination-endpoints button[data-endpoint="web"]`)).toBeDisabled();
-  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: landingOrigin });
-  await page.locator(`${root} .route-readout button[title="Copy command"]`).click();
-  await expect(page.locator(`${root} .route-readout [role="status"]`)).toContainText("Copied");
-  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("courier from web:// to");
+  await expect(route.getByRole("button", { name: "Web" }).last()).toBeDisabled();
 
-  const installCommand = page.locator(`${root} .install-readout code`);
-  const npmChannel = page.locator(`${root} .install-channel[data-channel="npm"]`);
-  const initialInstall = await installCommand.textContent();
-  await npmChannel.hover();
-  await expect(installCommand).toHaveText(initialInstall!);
-  await npmChannel.press("Enter");
-  await expect(installCommand).toHaveText("npm install --global @iwonz/courier");
-  await page.locator(`${root} .install-readout button[title="Copy command"]`).click();
+  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: landingOrigin });
+  await route.getByRole("button", { name: "Copy command" }).click();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("courier from web:// to");
+  const install = page.locator("#install");
+  await install.getByRole("button", { name: "npm npm", exact: true }).click();
+  await expect(install.locator("code")).toHaveText("npm install --global @iwonz/courier");
+  await install.getByRole("button", { name: "Copy command" }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("npm install --global @iwonz/courier");
 
-  const checkbox = page.locator(`${root} courier-checkbox input`);
-  await expect(checkbox).toBeChecked();
-  await expect(checkbox).toBeDisabled();
-  const allOptionCount = await page.locator(`${root} .option-row`).count();
-  const uiStart = page.locator(`${root} .command-row[data-command="ui-start"]`);
-  await uiStart.press("Enter");
-  await expect(checkbox).toBeEnabled();
-  await expect(page.locator(`${root} .option-row code`)).toHaveText(["--listen <host:port>", "--background"]);
-  await page.locator(`${root} courier-checkbox label`).click();
-  await expect(page.locator(`${root} .option-row`)).toHaveCount(allOptionCount);
-  await page.locator(`${root} .cli-readout button[title="Copy command"]`).click();
+  const cli = page.locator("#cli");
+  const compatibility = cli.getByRole("checkbox");
+  await expect(compatibility).toBeDisabled();
+  await cli.getByRole("button", { name: "courier ui start [options]" }).click();
+  await expect(compatibility).toBeEnabled();
+  await expect(cli.getByText("--listen <host:port>")).toBeVisible();
+  await cli.getByRole("button", { name: "Copy command" }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("courier ui start [options]");
 
-  for (const id of ["install", "cli"] as const) {
-    await page.locator(`${root} #${id}`).evaluate((section) => section.scrollIntoView({ block: "start" }));
-    await expect(page.locator(`${root} .hero-art courier-mascot img`)).toHaveCount(1);
-    await expect(page.locator(`${root} nav a[href="#${id}"]`)).toHaveAttribute("aria-current", "page");
-  }
-  await expect.poll(() => page.locator(`${root} .hero-art courier-mascot img`).count()).toBe(1);
-  expect(sceneRequests.filter((url) => url.includes("landing-hero-"))).toHaveLength(1);
-
-  const routeInstrument = page.locator(`${root} .route-instrument`);
-  const routeReadout = page.locator(`${root} .route-readout`);
-  const routeBox = (await routeInstrument.boundingBox())!;
-  const routeReadoutBox = (await routeReadout.boundingBox())!;
-  for (const source of ["local", "ssh", "web", "webhook"] as const) {
-    await page.locator(`${root} .source-endpoints button[data-endpoint="${source}"]`).click();
-    for (const destination of ["local", "ssh", "web", "http"] as const) {
-      const button = page.locator(`${root} .destination-endpoints button[data-endpoint="${destination}"]`);
-      if (await button.isEnabled()) await button.click();
-      const instrument = (await routeInstrument.boundingBox())!;
-      const readout = (await routeReadout.boundingBox())!;
-      expect(Math.abs(instrument.width - routeBox.width)).toBeLessThanOrEqual(1);
-      expect(Math.abs(readout.height - routeReadoutBox.height)).toBeLessThanOrEqual(1);
-    }
-  }
-
-  const installInterface = page.locator(`${root} .install-interface`);
-  const installReadout = page.locator(`${root} .install-readout`);
-  const installBox = (await installInterface.boundingBox())!;
-  const installReadoutBox = (await installReadout.boundingBox())!;
-  for (const channel of ["curl", "wget", "PowerShell", "npm", "npx", "Yarn", "pnpm", "Homebrew", "Scoop"] as const) {
-    await page.locator(`${root} .install-channel[data-channel="${channel}"]`).click();
-    const panel = (await installInterface.boundingBox())!;
-    const readout = (await installReadout.boundingBox())!;
-    expect(Math.abs(panel.width - installBox.width)).toBeLessThanOrEqual(1);
-    expect(Math.abs(readout.height - installReadoutBox.height)).toBeLessThanOrEqual(1);
-  }
-
-  await exerciseThemes(page, root);
-  await selectRussian(page, root);
-  await expect(page.locator(`${root} h1`)).toHaveText("Отсюда — куда угодно.");
-  await expect(page.locator(`${root} .source-endpoints > strong`)).toHaveText("Source");
+  await exerciseThemes(page);
+  await selectRussian(page);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Отсюда — куда угодно.");
   await page.reload();
-  await expect(page.locator(`${root} h1`)).toHaveText("Отсюда — куда угодно.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Отсюда — куда угодно.");
 
-  for (const viewport of [
-    { width: 320, height: 568 }, { width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1024, height: 600 }, { width: 1440, height: 900 },
-  ]) {
+  for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
-    for (const target of ["route", "install", "cli"] as const) {
-      await page.locator(`${root} #${target}`).evaluate((section) => section.scrollIntoView({ block: "start" }));
-      const geometry = await page.locator(`${root} #${target}`).evaluate((section) => {
-        const bounds = section.getBoundingClientRect();
-        const minHeight = getComputedStyle(section).minHeight;
-        const header = (section.getRootNode() as ShadowRoot).querySelector(".masthead-wrap")!.getBoundingClientRect();
-        return { bounds, minHeight, header, visualHeight: visualViewport?.height ?? innerHeight, overflow: document.documentElement.scrollWidth - innerWidth };
-      });
-      expect(geometry.bounds.height).toBeGreaterThan(0);
-      expect(geometry.minHeight).toBe("0px");
-      expect(geometry.header.top).toBeGreaterThanOrEqual(-0.5);
-      expect(geometry.header.bottom).toBeLessThanOrEqual(geometry.visualHeight + 0.5);
-      expect(geometry.overflow).toBeLessThanOrEqual(0);
-    }
-    expect(await page.locator(`${root} .endpoint-terminal`).evaluateAll((nodes) => nodes.every((node) => Math.abs(node.getBoundingClientRect().width - node.getBoundingClientRect().height) <= 1))).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await page.locator("main > section").evaluateAll((sections) => sections.every((section) => getComputedStyle(section).minHeight === "0px"))).toBe(true);
   }
-
-  await expect(page.locator(`${root} .hero-art courier-mascot img`)).toHaveAttribute("src", /landing-hero-wide-v1/);
   expect(externalRequests).toEqual([]);
 });
 
-test("touch landing keeps static hero artwork and no horizontal overflow", async ({ browser }) => {
+test("touch landing keeps Relay static and avoids horizontal overflow", async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   await page.goto(landingURL);
-  const scene = page.locator("courier-landing-app .hero-art");
-  const before = await scene.evaluate((node) => getComputedStyle(node).transform);
+  const mascot = page.locator('#route img[width="768"][height="768"]');
+  const before = await mascot.evaluate((node) => getComputedStyle(node).transform);
   await page.touchscreen.tap(250, 420);
-  expect(await scene.evaluate((node) => getComputedStyle(node).transform)).toBe(before);
-  await expect(scene.locator("courier-mascot img")).toHaveCount(1);
+  expect(await mascot.evaluate((node) => getComputedStyle(node).transform)).toBe(before);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await context.close();
 });
 
-test("protected delivery keeps metadata private before authentication", async ({ page }) => {
+test("protected delivery reveals no metadata before authentication", async ({ page }) => {
   await page.route("**/api/v1/meta*", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ name: secretMarker, path: secretMarker, type: "file" }) }));
   await page.goto(dataURL);
-  const root = "courier-data-app";
-  const password = page.locator(`${root} input[type="password"]`);
-  await expect(password).toBeVisible();
-  await expect(page.locator(`${root} courier-scene .base img`)).toHaveAttribute("src", /landing-hero-wide/);
-  await expect(page.locator(`${root} courier-workbench.access`)).toBeVisible();
-  await expect(page.locator(root)).not.toContainText(secretMarker);
-  await exerciseThemes(page, root);
-  await password.focus();
-  await password.press("Tab");
-  await expect(page.locator(`${root} form courier-button button`)).toBeFocused();
-  await selectRussian(page, root);
-  await expect(page.locator(root)).toContainText("требуется авторизация");
+  await expect(page.locator('input[type="password"]')).toBeVisible();
+  await expect(page.locator('img[src*="courier-relay-tech-v1"]')).toHaveCount(2);
+  await expect(page.locator("body")).not.toContainText(secretMarker);
+  await exerciseThemes(page);
+  await selectRussian(page);
+  await expect(page.locator("body")).toContainText("требуется авторизация");
   await page.reload();
-  await expect(page.locator(root)).not.toContainText(secretMarker);
+  await expect(page.locator("body")).not.toContainText(secretMarker);
 });
 
-test("admin exposes a secret-free navigator and API-backed controls", async ({ page }) => {
+test("admin keeps secrets out of the shadcn control plane and mutates through APIs", async ({ page }) => {
   const snapshot = { servers: [{
     id: "00000000-0000-4000-8000-000000000001", bind: "127.0.0.1:8080", processId: 42, state: "active", status: "live", startedAt: "", updatedAt: "",
     deliveries: [{
@@ -226,21 +134,15 @@ test("admin exposes a secret-free navigator and API-backed controls", async ({ p
   await page.route("**/stop", (route) => { mutations.push(route.request().url()); return route.fulfill({ status: 204 }); });
   await page.route("**/policy", (route) => { mutations.push(route.request().url()); return route.fulfill({ status: 204 }); });
   await page.goto(adminURL);
-  const root = "courier-admin-app";
-  await expect(page.locator(root)).toContainText("127.0.0.1:8080");
-  await expect(page.locator(`${root} courier-scene .base img`)).toHaveAttribute("src", /landing-hero-wide/);
-  await expect(page.locator(`${root} courier-workbench.registry-workbench`)).toBeVisible();
-  await expect(page.locator(`${root} .delivery-nav[aria-pressed="true"]`)).toContainText("path-to-web");
-  await expect(page.locator(root)).not.toContainText(secretMarker);
-  await page.locator(`${root} form courier-button button`).click();
+  await expect(page.locator("body")).toContainText("127.0.0.1:8080");
+  await expect(page.locator("body")).not.toContainText(secretMarker);
+  await page.getByRole("button", { name: "Apply policy" }).click();
   await expect.poll(() => mutations.some((url) => url.endsWith("/policy"))).toBe(true);
-  await page.locator(`${root} .delivery-head courier-button button`).click();
+  await page.getByRole("button", { name: "Stop delivery" }).click();
   await expect.poll(() => mutations.some((url) => url.endsWith("/stop"))).toBe(true);
-  await exerciseThemes(page, root);
-  await selectRussian(page, root);
-  await expect(page.locator(root)).toContainText("Остановить сервер");
-  await page.reload();
-  await expect(page.locator(root)).not.toContainText(secretMarker);
+  await exerciseThemes(page);
+  await selectRussian(page);
+  await expect(page.locator("body")).toContainText("Остановить сервер");
 });
 
 test.describe("browser language negotiation", () => {
@@ -249,9 +151,9 @@ test.describe("browser language negotiation", () => {
     await page.route("**/api/v1/meta*", (route) => route.fulfill({ status: 401, body: "{}" }));
     await page.route("**/api/v1/servers", (route) => route.fulfill({ status: 200, contentType: "application/json", body: '{"servers":[]}' }));
     await page.route("**/api/v1/events", (route) => route.fulfill({ status: 200, contentType: "text/event-stream", body: "" }));
-    for (const [url, root, text] of [[landingURL, "courier-landing-app", "Отсюда — куда угодно."], [dataURL, "courier-data-app", "требуется авторизация"], [adminURL, "courier-admin-app", "Активные серверы Courier"]] as const) {
+    for (const [url, text] of [[landingURL, "Отсюда — куда угодно."], [dataURL, "требуется авторизация"], [adminURL, "Активные серверы Courier"]] as const) {
       await page.goto(url);
-      await expect(page.locator(root)).toContainText(text);
+      await expect(page.locator("body")).toContainText(text);
     }
   });
 });

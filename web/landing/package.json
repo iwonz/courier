@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@courier/ui": "0.0.0-development",
-    "lit": "3.3.3"
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "5.0.0",

@@ -409,7 +409,7 @@ func TestBrowserDownloadMetadataArchiveAndNoUI(t *testing.T) {
 		t.Fatalf("unknown metadata status=%d", response.Code)
 	}
 	response := perform(host, http.MethodGet, base+"/", nil, nil)
-	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "courier-data-app") {
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `<div id="root"></div>`) {
 		t.Fatalf("root=%d %q", response.Code, response.Body.String())
 	}
 	response = perform(host, http.MethodGet, base+"/api/v1/meta", nil, nil)

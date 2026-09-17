@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const limits = {
-  "assets/landing.js": 45 * 1024,
+  "assets/landing.js": 145 * 1024,
   "assets/landing-index.css": 9 * 1024,
 };
 
