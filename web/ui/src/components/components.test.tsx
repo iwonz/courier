@@ -39,6 +39,8 @@ describe("shared shadcn primitives", () => {
     expect(screen.getAllByRole("alert")[0]!.className).toContain("custom");
     expect(screen.getByLabelText("password").getAttribute("type")).toBe("password");
     expect(screen.getByText("Destination").className).toContain("text-right");
+    expect(screen.getByText("Title").parentElement?.parentElement?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
+    expect(screen.getByText("Destination").parentElement?.className).not.toMatch(/rounded|bg-muted/);
     expect(container.querySelectorAll('[data-orientation="vertical"]')).toHaveLength(1);
   });
 
@@ -68,6 +70,7 @@ describe("shared shadcn primitives", () => {
     const transforms = [...container.querySelectorAll<HTMLElement>('[role="progressbar"] > div')].map((node) => node.style.transform);
     expect(transforms).toEqual(["translateX(-0%)", "translateX(-100%)", "translateX(-100%)"]);
     expect(screen.getByText("Scrollable")).toBeTruthy();
+    expect(screen.getByRole("tablist").className).not.toMatch(/rounded|bg-muted|border-border/);
     fireEvent.mouseDown(screen.getByRole("tab", { name: "B" }));
     rerender(<TooltipProvider><Tooltip open><TooltipTrigger>Hint</TooltipTrigger><TooltipContent>Tooltip</TooltipContent></Tooltip></TooltipProvider>);
     expect(screen.getByRole("tooltip")).toBeTruthy();
@@ -131,6 +134,7 @@ describe("command readout", () => {
     expect(await copyText("value", { writeText: vi.fn().mockResolvedValue(undefined) })).toBe(true);
     const copy = vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false);
     const { rerender } = render(<CommandReadout heading="Command" command="courier version" copyLabel="Copy" copiedLabel="Copied" copyFailedLabel="Failed" description="Description" details={<span>Details</span>} footerActions={<a href="#release">Release</a>} sessionKey="one" copy={copy} />);
+    expect(screen.getByText("Command").parentElement?.parentElement?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
     fireEvent.click(screen.getByRole("button", { name: "Copy" }));
     await waitFor(() => expect(screen.getByText("Copied")).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: "Copy" }));

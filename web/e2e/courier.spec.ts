@@ -47,8 +47,28 @@ test("landing uses a compact square Relay and three natural shadcn sections", as
   await expect(page.locator('img[src*="courier-relay-tech-v1"]')).toHaveCount(1);
   await expect(page.locator("[data-courier-route-composition]")).toHaveCount(1);
   await expect(page.locator("[data-courier-cli-registry]")).toHaveCount(1);
-  expect(await page.locator("header").evaluate((node) => getComputedStyle(node).borderBottomWidth)).toBe("0px");
+  for (const selector of ["[data-courier-route-composition]", "[data-courier-cli-registry]"]) {
+    expect(await page.locator(selector).evaluate((node) => {
+      const style = getComputedStyle(node);
+      return [style.backgroundImage, style.borderRadius, style.boxShadow, style.backdropFilter];
+    })).toEqual(["none", "0px", "none", "none"]);
+  }
+  expect(await page.locator("header").evaluate((node) => {
+    const style = getComputedStyle(node);
+    return [style.position, style.backgroundColor, style.backgroundImage, style.backdropFilter, style.borderBottomWidth];
+  })).toEqual(["fixed", "rgba(0, 0, 0, 0)", "none", "none", "0px"]);
   expect(await page.locator("#install").evaluate((node) => [getComputedStyle(node).borderTopWidth, getComputedStyle(node).borderBottomWidth])).toEqual(["0px", "0px"]);
+  const activeSource = page.locator('#route button[aria-label="Local"][aria-pressed="true"]');
+  expect(await activeSource.evaluate((node) => {
+    const style = getComputedStyle(node);
+    return style.backgroundColor !== "rgba(0, 0, 0, 0)" && style.color !== style.backgroundColor;
+  })).toBe(true);
+  const routeBottom = await page.locator("[data-courier-route-composition]").evaluate((node) => node.getBoundingClientRect().bottom + scrollY);
+  const installTop = await page.locator("#install h2").evaluate((node) => node.getBoundingClientRect().top + scrollY);
+  const installBottom = await page.locator("#install > div").evaluate((node) => node.getBoundingClientRect().bottom + scrollY);
+  const cliTop = await page.locator("#cli h2").evaluate((node) => node.getBoundingClientRect().top + scrollY);
+  expect(installTop - routeBottom).toBeLessThanOrEqual(80);
+  expect(cliTop - installBottom).toBeLessThanOrEqual(80);
   const heroMascot = page.locator('#route img[width="768"][height="768"]');
   await expect(heroMascot).toBeVisible();
   expect(await heroMascot.evaluate((image) => Math.abs(image.getBoundingClientRect().width - image.getBoundingClientRect().height))).toBeLessThanOrEqual(1);
@@ -119,6 +139,10 @@ test("protected delivery reveals no metadata before authentication", async ({ pa
   await expect(page.locator('input[type="password"]')).toBeVisible();
   await expect(page.locator('img[src*="courier-relay-mark-v2"]')).toHaveCount(1);
   await expect(page.locator('img[src*="courier-relay-tech-v1"]')).toHaveCount(1);
+  expect(await page.locator("[data-courier-auth-region]").evaluate((node) => {
+    const style = getComputedStyle(node);
+    return [style.backgroundImage, style.borderRadius, style.boxShadow, style.backdropFilter];
+  })).toEqual(["none", "0px", "none", "none"]);
   await expect(page.locator("body")).not.toContainText(secretMarker);
   await exerciseThemes(page);
   await selectRussian(page);
@@ -144,6 +168,12 @@ test("admin keeps secrets out of the shadcn control plane and mutates through AP
   await page.goto(adminURL);
   await expect(page.locator("body")).toContainText("127.0.0.1:8080");
   await expect(page.locator("[data-courier-metrics]")).toHaveCount(1);
+  for (const selector of ["[data-courier-metrics]", "[data-courier-admin-workspace]"]) {
+    expect(await page.locator(selector).evaluate((node) => {
+      const style = getComputedStyle(node);
+      return [style.backgroundImage, style.borderRadius, style.boxShadow, style.backdropFilter];
+    })).toEqual(["none", "0px", "none", "none"]);
+  }
   await expect(page.locator("body")).not.toContainText(secretMarker);
   await page.getByRole("button", { name: "Apply policy" }).click();
   await expect.poll(() => mutations.some((url) => url.endsWith("/policy"))).toBe(true);

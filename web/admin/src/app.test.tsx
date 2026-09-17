@@ -77,6 +77,8 @@ describe("administration React application", () => {
     const view = render(<AdminApp />);
     await screen.findByText("server-a");
     expect(document.querySelector("[data-courier-metrics]")).toBeTruthy();
+    expect(document.querySelector("[data-courier-metrics]")?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
+    expect(document.querySelector("[data-courier-admin-workspace]")?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
     expect(screen.getByText("Unreachable")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Refresh registry" }));
     await screen.findByText("server-b");

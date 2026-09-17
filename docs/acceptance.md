@@ -18,7 +18,8 @@ Playwright runs landing, delivery, and administration in English/Russian and sys
 - single-button theme/locale cycles, active-locale flag icons, browser defaults, persistence, and reduced motion;
 - 320×568, 360×740, 390×844, short desktop, and 1440×900 layouts without clipping or horizontal overflow;
 - one compact square transparent Relay mark plus one full transparent mascot request, no generated background or later-section artwork, stable content-height composition, and no external runtime requests;
-- continuous route, CLI registry, delivery manifest, administration metrics, and administration workspace composition without unnecessary section or card borders;
+- continuous route, CLI registry, delivery manifest, administration metrics, and administration workspace composition with no ordinary card backgrounds, outer radii, shadows, blur, or unnecessary borders;
+- compact landing section spacing, a transparent viewport-fixed masthead with reserved content offset, and visible selected Source/Destination contrast;
 - absence of terminal/refraction code, editable commands, Run/Replay, transcripts, remote fonts, scripts, images, or analytics;
 - protected delivery metadata isolation, authentication, upload/download behavior, admin policy updates, stop actions, selection persistence, and SSE fallback.
 

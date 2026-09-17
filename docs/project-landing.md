@@ -14,11 +14,11 @@ The page contains exactly three naturally scrolling sections:
 2. installation channels and one immutable command readout;
 3. the generated commands and options reference.
 
-Every section uses natural content height and ordinary block spacing: there are no viewport-height targets, full-screen slides, or snap points. The route hero and controls form one continuous composition, installation introduces no border seam, and the CLI registry uses one shared surface. The sticky header places the square Relay mark and `COURIER CLI` beside Install/CLI navigation, with GitHub and preference controls on the opposite edge. GitHub and all other external links open in a new tab with `noopener noreferrer`.
+Every section uses natural content height and compact adjacent spacing: there are no viewport-height targets, full-screen slides, snap points, stacked section padding, rounded section boards, or tinted card islands. The route hero and controls form one transparent composition, installation continues on the same canvas, and the CLI registry uses responsive columns with only a meaningful internal divider. The backgroundless header stays fixed to the viewport; document padding keeps content below it. It places the square Relay mark and `COURIER CLI` beside Install/CLI navigation, with GitHub and preference controls on the opposite edge. GitHub and all other external links open in a new tab with `noopener noreferrer`.
 
 Source and Destination controls expose Local, Remote, Web, and Web Hook using direction-specific icons and assistive descriptions. Descriptions are not visible labels. Selection changes only on click or keyboard activation; invalid destinations use real disabled semantics. A measured cubic Bézier and restrained orange pulse visualize the active contract route. Reduced motion keeps the route static.
 
-Installation uses locally bundled official monochrome marks and compact channel controls. Commands/options use two independently scrollable regions inside one continuous registry surface, selectable generated commands, compatible-option filtering, and Copy. There are no simulations, Run/Replay controls, transcripts, editable commands, shell execution, or browser transfer execution.
+Installation uses locally bundled official monochrome marks and compact channel controls. Commands/options use two independently scrollable transparent regions, selectable generated commands, compatible-option filtering, and Copy. Immutable command readouts sit directly in the document flow. There are no simulations, Run/Replay controls, transcripts, editable commands, shell execution, or browser transfer execution.
 
 ## Compact Relay hero
 

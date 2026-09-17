@@ -66,11 +66,13 @@ describe("delivery React application", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<DataApp />);
     await screen.findByText("The route is unavailable or authorization is required. No delivery metadata was revealed.");
+    expect(document.querySelector("[data-courier-auth-region]")?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
     expect(document.body.textContent).not.toContain("folder");
     const password = screen.getByLabelText("Delivery password") as HTMLInputElement;
     fireEvent.change(password, { target: { value: "secret" } });
     fireEvent.submit(screen.getByRole("button", { name: "Verify access" }).closest("form")!);
     await screen.findByText("folder");
+    expect(document.querySelector("[data-courier-manifest]")?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
     expect(password.value).toBe("");
     fireEvent.click(screen.getByRole("button", { name: "folder" }));
     await screen.findByRole("button", { name: "Retry connection" });

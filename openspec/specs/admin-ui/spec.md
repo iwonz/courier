@@ -61,7 +61,7 @@ Courier SHALL provide bounded same-origin server-sent events containing secret-f
 
 ### Requirement: Shared accessible administration application
 
-Courier SHALL embed a deterministic React operations application built from the repository-owned shadcn component system with typed English/Russian catalogs, cyclic system/light/dark preference, overview counters, a keyboard-operable server/delivery navigator, a selected route and policy inspector, and explicit refresh, save, and stop actions backed only by the guarded API. Related counters SHALL use one continuous strip and navigator/inspector SHALL use one shared workspace rather than independent bordered cards. Selection SHALL persist by UUID across authoritative SSE snapshots when possible and SHALL fall back deterministically when the selected object disappears. The application SHALL provide no terminal prompt or arbitrary execution surface.
+Courier SHALL embed a deterministic React operations application built from the repository-owned shadcn component system with typed English/Russian catalogs, cyclic system/light/dark preference, overview counters, a keyboard-operable server/delivery navigator, a selected route and policy inspector, and explicit refresh, save, and stop actions backed only by the guarded API. Counters, navigator, inspector, route facts, and policy controls SHALL render directly on one continuous canvas without rounded panel backgrounds or nested card islands. Hairline boundaries MAY separate independently scrolling or interactive regions. Selection SHALL persist by UUID across authoritative SSE snapshots when possible and SHALL fall back deterministically when the selected object disappears. The application SHALL provide no terminal prompt or arbitrary execution surface.
 
 #### Scenario: A snapshot updates the selected delivery
 
@@ -92,3 +92,8 @@ Courier SHALL embed a deterministic React operations application built from the 
 
 - **WHEN** an operator cycles to Russian and dark theme
 - **THEN** administration content localizes, the shared theme resolves to dark, and both preferences persist through the shared React preference provider
+
+#### Scenario: An operator inspects a delivery
+
+- **WHEN** the operator chooses a delivery from the server navigator
+- **THEN** current route, counters, policy, save, and stop actions remain keyboard-operable in one borderless document flow without changing guarded API behavior

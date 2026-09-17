@@ -171,6 +171,13 @@ describe("React landing", () => {
     render(<LandingApp />);
     expect(document.querySelector("[data-courier-route-composition]")).toBeTruthy();
     expect(document.querySelector("[data-courier-cli-registry]")).toBeTruthy();
+    expect(document.querySelector("[data-courier-route-composition]")?.className).not.toMatch(/rounded|bg-\[/);
+    expect(document.querySelector("[data-courier-cli-registry]")?.className).not.toMatch(/rounded|bg-card/);
+    expect(document.querySelector("header")?.className).toContain("fixed");
+    expect(document.querySelector("header")?.className).toContain("bg-transparent");
+    const activeLocal = document.querySelector<HTMLButtonElement>('[data-courier-route-composition] button[aria-label="Local"][aria-pressed="true"]');
+    expect(activeLocal?.className).toContain("bg-primary");
+    expect(activeLocal?.className).not.toContain("bg-background");
     expect(screen.getByText("COURIER CLI")).toBeTruthy();
     const localeButton = screen.getByRole("button", { name: /Language:/ });
     expect(localeButton.querySelector('[data-locale-icon="en"]')?.textContent).toBe("🇬🇧");

@@ -171,17 +171,22 @@ Courier SHALL project the shipped route matrix into compact Source and Destinati
 
 ### Requirement: Compact landing composition
 
-The landing SHALL use one continuous document canvas with content-driven spacing, restrained tonal fields, and no full-page panorama. The route headline, Relay illustration, endpoint controls, command, and options SHALL form one composition rather than separate bordered islands. Installation SHALL not introduce section-edge rules, and the CLI registry SHALL use one responsive shared surface instead of separate outlined columns. The fixed masthead SHALL link the Courier identity to the first section and expose Installation and CLI navigation plus GitHub, theme, and locale actions.
+The landing SHALL use one continuous document canvas with compact content-driven spacing and no full-page panorama. Adjacent sections SHALL NOT accumulate large top and bottom padding. The route headline, Relay illustration, endpoint controls, command, and options SHALL form one composition without a rounded or tinted outer container. Installation SHALL flow directly on the same canvas, and the CLI registry SHALL use transparent responsive columns with only a meaningful internal divider rather than an outer surface. The fixed masthead SHALL link the Courier identity to the first section and expose Installation and CLI navigation plus GitHub, theme, and locale actions.
 
 #### Scenario: A visitor scans the page
 
 - **WHEN** the visitor moves between the three sections
-- **THEN** sections and related controls follow one another as ordinary document content with no nested card-on-card framing, hard section seam, full-screen sizing, image stacking, or disconnected poster composition
+- **THEN** sections and related content remain in ordinary document flow without card backgrounds, outer radii, nested islands, hard section seams, full-screen sizing, or disconnected poster composition
 
 #### Scenario: A visitor scans the complete page
 
 - **WHEN** the visitor scrolls through the landing
 - **THEN** the combined route hero, installation, and CLI reference remain visually continuous while preserving their semantic headings and independent interaction regions
+
+#### Scenario: A visitor uses a command surface
+
+- **WHEN** the route, installation, or CLI command changes
+- **THEN** the immutable command, Copy action, status, and details remain aligned directly on the page without gaining a containing card
 
 ### Requirement: Viewport-aware installation chooser
 
@@ -199,12 +204,12 @@ Courier SHALL present every supported installation channel through compact, icon
 
 ### Requirement: Minimal masthead composition
 
-Courier SHALL render the compact Relay mark beside the literal wordmark `COURIER CLI`, place Installation and CLI navigation directly after that brand cluster, and align GitHub, theme, and locale actions at the opposite edge without bottom rules or separators. GitHub and preference actions SHALL share the same quiet control treatment while preserving link and button semantics. Every link whose destination leaves the landing page SHALL open a new browsing context without retaining opener access; in-page navigation SHALL remain in the current context and SHALL scroll smoothly unless reduced motion is requested.
+Courier SHALL render the compact Relay mark beside the literal wordmark `COURIER CLI`, place Installation and CLI navigation directly after that brand cluster, and align GitHub, theme, and locale actions at the opposite edge. The masthead SHALL remain fixed to the visual viewport without a background fill, backdrop blur, lower rule, or separator, while document padding SHALL prevent it from covering content. GitHub and preference actions SHALL share the same quiet control treatment while preserving link and button semantics. Every link whose destination leaves the landing page SHALL open a new browsing context without retaining opener access; in-page navigation SHALL remain in the current context and SHALL scroll smoothly unless reduced motion is requested.
 
 #### Scenario: The masthead is rendered
 
 - **WHEN** the landing loads at desktop width
-- **THEN** the brand and in-page navigation form one left-aligned cluster while GitHub and preference controls form the right-aligned cluster without a full-width divider
+- **THEN** the brand and in-page navigation form one left-aligned cluster while GitHub and preference controls form the right-aligned cluster on a transparent fixed masthead without a full-width divider
 
 #### Scenario: A visitor scrolls through natural sections
 
@@ -224,7 +229,7 @@ Courier SHALL render the compact Relay mark beside the literal wordmark `COURIER
 #### Scenario: A visitor follows section navigation
 
 - **WHEN** an in-page link is activated
-- **THEN** its target remains offset below the sticky masthead and scrolling is smooth unless the visitor requests reduced motion
+- **THEN** its target remains offset below the fixed masthead and scrolling is smooth unless the visitor requests reduced motion
 
 ### Requirement: Full-width compatible CLI reference
 

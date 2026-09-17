@@ -173,12 +173,12 @@ function LandingContent(): React.JSX.Element {
       aria-description={localizedEndpointDescription(name, side, t)}
       disabled={!valid}
       onClick={() => side === "source" ? chooseSource(name) : setSelectedDestination(name)}
-      className="relative z-10 w-full justify-start bg-background/38 sm:w-auto sm:min-w-28"
+      className="relative z-10 w-full justify-start sm:w-auto sm:min-w-28"
     ><Icon name={endpointIcon(name, side)} /><span>{localizedEndpointLabel(name, side, t)}</span></Button>;
   };
 
   return <div className="min-h-screen overflow-x-clip">
-    <header className="sticky top-0 z-50 bg-background/66 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/52">
+    <header className="fixed inset-x-0 top-0 z-50 bg-transparent">
       <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
         <a href="#route" className="shrink-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"><Brand /></a>
         <nav aria-label="Courier" className="hidden items-center gap-1 sm:flex">
@@ -193,9 +193,9 @@ function LandingContent(): React.JSX.Element {
       </div>
     </header>
 
-    <main>
-      <section id="route" className="scroll-mt-20 px-4 py-10 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-        <div data-courier-route-composition className="relative isolate mx-auto grid w-full max-w-7xl gap-8 overflow-hidden rounded-[2.5rem] bg-[linear-gradient(135deg,color-mix(in_oklch,var(--card)_78%,transparent),color-mix(in_oklch,var(--accent)_42%,transparent))] p-6 sm:p-10 lg:p-14">
+    <main className="pt-20">
+      <section id="route" className="scroll-mt-20 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div data-courier-route-composition className="relative isolate mx-auto grid w-full max-w-7xl gap-12">
           <div className="grid min-h-[27rem] lg:grid-cols-[minmax(0,.9fr)_minmax(24rem,1.1fr)] lg:items-center">
             <div aria-hidden="true" className="absolute inset-0 -z-10 opacity-45 [background-image:radial-gradient(circle_at_center,color-mix(in_oklch,var(--primary)_25%,transparent)_1px,transparent_1.5px)] [background-size:28px_28px] [mask-image:linear-gradient(90deg,black,transparent_72%)]" />
             <div className="relative z-10 max-w-3xl self-start lg:self-center"><h1 className="text-balance text-[clamp(3.4rem,8vw,7.8rem)] font-black leading-[.84] tracking-[-.075em] text-foreground">{t("title")}</h1></div>
@@ -219,15 +219,14 @@ function LandingContent(): React.JSX.Element {
                 copyLabel={t("copyCommand")}
                 copiedLabel={t("copiedCommand")}
                 copyFailedLabel={t("copyFailed")}
-                className="bg-background/36"
                 details={<div className="flex flex-wrap gap-2">{routeFlags.map((flag) => <Badge variant="secondary" key={flag.name} className="font-mono font-medium">{flag.syntax}</Badge>)}</div>}
               />
           </div>
         </div>
       </section>
 
-      <section id="install" className="scroll-mt-20 px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-8">
+      <section id="install" className="scroll-mt-20 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div className="mx-auto grid w-full max-w-7xl gap-6">
           <h2 className="text-4xl font-black tracking-[-.055em] sm:text-6xl">{t("install")}</h2>
           <div className="flex flex-wrap gap-2">{installs.map((channel) => <Button key={channel.name} type="button" variant={channel.name === install.name ? "default" : "ghost"} className={channel.name === install.name ? undefined : "bg-muted/38"} size="sm" aria-pressed={channel.name === install.name} onClick={() => setActiveInstall(channel.name)}><BrandIcon name={channel.icon} />{channel.name}</Button>)}</div>
           <CommandReadout
@@ -237,7 +236,6 @@ function LandingContent(): React.JSX.Element {
             copyLabel={t("copyCommand")}
             copiedLabel={t("copiedCommand")}
             copyFailedLabel={t("copyFailed")}
-            className="bg-card/42"
             details={<div className="flex items-center gap-2 text-sm font-semibold text-primary"><BrandIcon name={install.icon} />{install.name}</div>}
             footerActions={<>
               <Button asChild variant="ghost" size="sm"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><PackageOpen />{t("packages")}</a></Button>
@@ -247,15 +245,15 @@ function LandingContent(): React.JSX.Element {
         </div>
       </section>
 
-      <section id="cli" className="scroll-mt-20 px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
-        <div className="mx-auto grid w-full max-w-7xl gap-8">
+      <section id="cli" className="scroll-mt-20 px-4 pb-14 pt-6 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8">
+        <div className="mx-auto grid w-full max-w-7xl gap-6">
           <h2 className="text-4xl font-black tracking-[-.055em] sm:text-6xl">{t("cliTitle")}</h2>
-          <div data-courier-cli-registry className="overflow-hidden rounded-[2rem] bg-card/46">
+          <div data-courier-cli-registry>
             <div className="grid divide-y divide-border/35 lg:grid-cols-[minmax(18rem,.72fr)_minmax(0,1.28fr)] lg:divide-x lg:divide-y-0">
               <section><div className="px-5 pt-5 text-sm font-semibold">{t("commandLabel")}</div><ScrollArea className="h-[31rem]"><div className="grid gap-1 p-2">{contractData.commands.map((command) => <Button key={command.name} type="button" variant={command.name === selectedCommand ? "secondary" : "ghost"} aria-pressed={command.name === selectedCommand} onClick={() => chooseCommand(command.name)} className="h-auto justify-start whitespace-normal px-3 py-3 text-left"><code className="font-mono text-xs leading-relaxed">{command.usage}</code></Button>)}</div></ScrollArea></section>
               <section><div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-5 pt-3"><span className="text-sm font-semibold">{t("optionsLabel")}</span><label className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Checkbox checked={compatibleOnly} disabled={!selectedCommand} onCheckedChange={(checked) => setCompatibleOnly(checked === true)} />{t("compatibleOnly")}</label></div><ScrollArea className="h-[31rem]"><div className="grid gap-1 p-2">{visibleFlags.length ? visibleFlags.map((flag) => <article key={flag.name} className="grid gap-2 rounded-xl px-3 py-3 hover:bg-muted/28"><div className="flex flex-wrap items-baseline justify-between gap-2"><code className="font-mono text-sm font-bold text-primary">{flag.syntax}</code><span className="text-xs text-muted-foreground">{t("optionDefault")}: {flag.default}</span></div><p className="text-xs leading-relaxed text-muted-foreground">{t("repeatable")}: {flag.repeatable ? t("yes") : t("no")} · {t("applies")}: {flag.appliesTo.join(", ")}</p></article>) : <p className="p-5 text-sm text-muted-foreground">{t("noCompatibleOptions")}</p>}</div></ScrollArea></section>
             </div>
-            <CommandReadout className="rounded-none bg-transparent" heading={t("commandLabel")} command={selectedCommandData?.usage ?? ""} description={selectedCommandData ? "" : t("selectCommand")} sessionKey={`${locale}:${selectedCommand}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
+            <CommandReadout className="border-t border-border/35 pt-4" heading={t("commandLabel")} command={selectedCommandData?.usage ?? ""} description={selectedCommandData ? "" : t("selectCommand")} sessionKey={`${locale}:${selectedCommand}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
           </div>
         </div>
       </section>
