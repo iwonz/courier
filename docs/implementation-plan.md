@@ -46,6 +46,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 40 | `feat/040-terminal-ui-system` | `terminal-ui-system` | Read-only terminal workspaces, product UI integration, and cinematic browser scenes |
 | 41 | `feat/041-continuous-landing-flow` | `continuous-landing-flow` | Natural three-stage panorama loading, copy-only command readouts, and page-performance budgets |
 | 42 | `feat/042-vector-identity-system` | `vector-identity-system` | Vector moth identity, three-section landing, cyclic preferences, neutral workbenches, and static responsive scenes |
+| 43 | `feat/043-organic-identity-polish` | `organic-identity-polish` | ImageGen raster mark, continuous landing panorama, reliable heading contrast, and softened workbench geometry |
 
 ## Definition of Done
 

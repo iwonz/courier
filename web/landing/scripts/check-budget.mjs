@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 const limits = {
   "assets/landing.js": 45 * 1024,
-  "assets/landing-index.css": 8 * 1024,
+  "assets/landing-index.css": 9 * 1024,
 };
 
 for (const [relativePath, limit] of Object.entries(limits)) {

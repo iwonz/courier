@@ -1,8 +1,8 @@
-import { vectorMarkSource } from "@courier/ui";
+import { courierMarkSource } from "@courier/ui";
 import "./app";
 
 const favicon = document.createElement("link");
 favicon.rel = "icon";
-favicon.type = "image/svg+xml";
-favicon.href = vectorMarkSource;
+favicon.type = "image/webp";
+favicon.href = courierMarkSource;
 document.head.append(favicon);

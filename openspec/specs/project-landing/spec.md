@@ -73,22 +73,22 @@ The landing SHALL consist of exactly three naturally scrolling sections ordered 
 
 ### Requirement: Illustrated operational landing
 
-The landing SHALL present one optional Vector journey as three separately loadable wide and portrait aerospace-editorial segments with matching transition geometry, carbon/chalk composition, and sparse burnt-orange route signals. Artwork SHALL remain static, contain no required information, and use no pointer-following, refraction, duplicated scene image, remote asset, text, fake UI, logo, credential, or watermark.
+The landing SHALL present one optional uninterrupted Vector journey through a single responsive desktop/mobile panorama pair shared by all three sections. Artwork SHALL use a soft organic editorial composition with rounded forms and continuous route geometry, remain static, contain no required information, and use no section-specific image overlay, visible boundary, pointer-following, refraction, remote asset, text, fake UI, logo, credential, or watermark.
 
 #### Scenario: The first section loads
 
 - **WHEN** a supported browser opens the landing
-- **THEN** it requests the selected first-section source eagerly and at most the next section within the preload boundary while farther artwork remains unrequested
+- **THEN** it requests exactly one browser-selected full-page panorama source eagerly while the alternate responsive source remains unrequested
 
 #### Scenario: A pointer moves over artwork
 
-- **WHEN** a visitor moves any pointer across a scene
-- **THEN** no scene image translates, refracts, duplicates, or schedules pointer animation work
+- **WHEN** a visitor moves any pointer across the panorama
+- **THEN** no image translates, refracts, duplicates, or schedules pointer animation work
 
 #### Scenario: A visitor moves across a landing scene
 
-- **WHEN** any fine pointer moves over an active scene
-- **THEN** the single static base illustration remains unchanged and functional state responds only to explicit controls
+- **WHEN** any fine pointer moves over the page
+- **THEN** the single static panorama remains unchanged and functional state responds only to explicit controls
 
 #### Scenario: Motion or precise pointer input is unavailable
 
@@ -98,12 +98,12 @@ The landing SHALL present one optional Vector journey as three separately loadab
 #### Scenario: A visitor interacts with the hero scene
 
 - **WHEN** the visitor clicks or keyboard-navigates the first section
-- **THEN** only semantic route controls respond while decorative Vector artwork remains inert
+- **THEN** only semantic route controls respond while decorative artwork remains inert
 
 #### Scenario: A visitor scans the project story
 
 - **WHEN** the visitor moves from the combined route hero through installation and CLI reference
-- **THEN** the responsive panorama depicts route selection, verified distribution, and arrival as one optional environment with no uncovered boundary or remote asset request
+- **THEN** one continuous background depicts the journey with no image seam, repeated horizon, uncovered region, hard section band, or remote asset request
 
 #### Scenario: A visitor opens the repository README
 
@@ -254,19 +254,19 @@ Courier SHALL present the selected route and installation commands as immutable 
 
 ### Requirement: Proximity-loaded landing panorama
 
-Courier SHALL load the responsive hero panorama eagerly with high fetch priority, activate the following segment no earlier than one viewport before it is needed, and omit farther image elements and requests until their one-shot preload boundaries are crossed. Browsers without intersection observation SHALL receive native lazy-loaded responsive images. Below-fold sections SHALL use stable intrinsic placeholders and deferred rendering without changing accessible content order.
+Courier SHALL render one responsive full-page panorama picture beneath the complete landing, request its selected desktop or mobile source eagerly with high fetch priority, and never create section-specific panorama elements. Stable page layout SHALL not depend on image decoding, and only the selected responsive source SHALL be requested.
 
 #### Scenario: The landing first loads
 
 - **WHEN** the initial viewport becomes interactive
-- **THEN** only the selected hero source and at most the next responsive panorama segment have been requested
+- **THEN** exactly one selected full-page panorama source has been requested and no segmented section panorama exists
 
 #### Scenario: A visitor approaches a later section
 
-- **WHEN** a non-eager scene enters its preload boundary
-- **THEN** its matching wide or portrait source is activated once without shifting section geometry or requesting the alternate source
+- **WHEN** later content enters the viewport
+- **THEN** no additional landing panorama is allocated or requested and section geometry remains stable
 
 #### Scenario: Intersection observation is unavailable
 
 - **WHEN** the browser lacks IntersectionObserver
-- **THEN** non-hero scenes render responsive images with native lazy loading and remain fully usable
+- **THEN** the single responsive panorama remains available without requiring observation or changing accessible content order

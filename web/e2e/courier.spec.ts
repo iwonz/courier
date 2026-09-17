@@ -29,7 +29,7 @@ async function selectRussian(page: Page, root: string): Promise<void> {
   await expect.poll(() => page.evaluate(() => localStorage.getItem("courier.locale"))).toBe("ru");
 }
 
-test("landing presents the three-stage Vector journey without execution surfaces", async ({ page, context }) => {
+test("landing presents one continuous illustrated journey without execution surfaces", async ({ page, context }) => {
   const externalRequests: string[] = [];
   const sceneRequests: string[] = [];
   page.on("request", (request) => {
@@ -45,11 +45,12 @@ test("landing presents the three-stage Vector journey without execution surfaces
   await expect(page.locator(`${root} section`)).toHaveCount(3);
   expect(await page.locator(`${root} section`).evaluateAll((sections) => sections.map((section) => section.id))).toEqual(["route", "install", "cli"]);
   await expect(page.locator(`${root} button[title*="Run"], ${root} button[title*="Replay"], ${root} textarea, ${root} [contenteditable="true"]`)).toHaveCount(0);
-  await expect(page.locator(`${root} courier-scene`)).toHaveCount(3);
-  await expect(page.locator(`${root} #route courier-scene .base img`)).toHaveCount(1);
+  await expect(page.locator(`${root} courier-scene`)).toHaveCount(1);
+  await expect(page.locator(`${root} main > courier-scene.page-panorama .base img`)).toHaveCount(1);
+  await expect(page.locator(`${root} section courier-scene`)).toHaveCount(0);
   await page.waitForLoadState("networkidle");
-  expect(sceneRequests.some((url) => url.includes("landing-route-wide"))).toBe(true);
-  expect(sceneRequests.some((url) => url.includes("landing-reference"))).toBe(false);
+  expect(sceneRequests.filter((url) => url.includes("landing-panorama-"))).toHaveLength(1);
+  expect(sceneRequests.some((url) => url.includes("landing-panorama-wide-v2"))).toBe(true);
 
   await expect(page.locator(`${root} .source-endpoints > strong`)).toHaveText("Source");
   await expect(page.locator(`${root} .destination-endpoints > strong`)).toHaveText("Destination");
@@ -112,12 +113,11 @@ test("landing presents the three-stage Vector journey without execution surfaces
 
   for (const id of ["install", "cli"] as const) {
     await page.locator(`${root} #${id}`).evaluate((section) => section.scrollIntoView({ block: "start" }));
-    await expect(page.locator(`${root} #${id} courier-scene .base img`)).toHaveCount(1);
+    await expect(page.locator(`${root} main > courier-scene.page-panorama .base img`)).toHaveCount(1);
     await expect(page.locator(`${root} nav a[href="#${id}"]`)).toHaveAttribute("aria-current", "page");
   }
-  await expect.poll(() => page.locator(`${root} courier-scene .base img`).count()).toBe(3);
-  expect(sceneRequests.some((url) => url.includes("landing-install-wide"))).toBe(true);
-  expect(sceneRequests.some((url) => url.includes("landing-reference-wide"))).toBe(true);
+  await expect.poll(() => page.locator(`${root} courier-scene .base img`).count()).toBe(1);
+  expect(sceneRequests.filter((url) => url.includes("landing-panorama-"))).toHaveLength(1);
 
   const routeInstrument = page.locator(`${root} .route-instrument`);
   const routeReadout = page.locator(`${root} .route-readout`);
@@ -162,7 +162,7 @@ test("landing presents the three-stage Vector journey without execution surfaces
       await page.locator(`${root} #${target}`).evaluate((section) => section.scrollIntoView({ block: "start" }));
       const geometry = await page.locator(`${root} #${target}`).evaluate((section) => {
         const bounds = section.getBoundingClientRect();
-        const scene = section.querySelector("courier-scene")!.getBoundingClientRect();
+        const scene = (section.getRootNode() as ShadowRoot).querySelector(".page-panorama")!.getBoundingClientRect();
         const header = (section.getRootNode() as ShadowRoot).querySelector(".masthead-wrap")!.getBoundingClientRect();
         return { bounds, scene, header, visualHeight: visualViewport?.height ?? innerHeight, overflow: document.documentElement.scrollWidth - innerWidth };
       });
@@ -176,7 +176,7 @@ test("landing presents the three-stage Vector journey without execution surfaces
     expect(await page.locator(`${root} .endpoint-terminal`).evaluateAll((nodes) => nodes.every((node) => Math.abs(node.getBoundingClientRect().width - node.getBoundingClientRect().height) <= 1))).toBe(true);
   }
 
-  expect(await page.locator(`${root} courier-scene`).evaluateAll((scenes) => scenes.every((scene) => scene.shadowRoot!.querySelectorAll("courier-mascot").length === 1))).toBe(true);
+  expect(await page.locator(`${root} courier-scene`).evaluateAll((scenes) => scenes.length === 1 && scenes.every((scene) => scene.shadowRoot!.querySelectorAll("courier-mascot").length === 1))).toBe(true);
   expect(externalRequests).toEqual([]);
 });
 
@@ -184,7 +184,7 @@ test("touch landing keeps static scenes and no horizontal overflow", async ({ br
   const context = await browser.newContext({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   await page.goto(landingURL);
-  const scene = page.locator("courier-landing-app #route courier-scene");
+  const scene = page.locator("courier-landing-app main > courier-scene.page-panorama");
   const before = await scene.locator(".base").evaluate((node) => getComputedStyle(node).transform);
   await page.touchscreen.tap(250, 420);
   expect(await scene.locator(".base").evaluate((node) => getComputedStyle(node).transform)).toBe(before);

@@ -8,13 +8,13 @@ Courier is a dependable route for files and directories across local, SSH, brows
 
 Courier makes Source, Destination, policy, progress, and the verified result explicit. It does not present transfer as magic and does not claim guarantees the runtime cannot prove.
 
-## Vector
+## Courier moth
 
-Vector is Courier's original geometric moth navigator. Angular wings form a route-like silhouette, while one burnt-orange waypoint identifies direction and state. Vector is mature and graphic: never cute, robotic, fantasy-themed, weaponized, or derived from a third-party mascot.
+Courier's original moth navigator uses rounded organic wings, fine cartographic lines, and one burnt-orange waypoint to identify direction and state. It is mature and editorial: never cute, robotic, fantasy-themed, weaponized, or derived from a third-party mascot.
 
-Use Vector in the landing journey, protected access scene, operations environment, repository banner, mark, and editorial material. Product meaning must remain complete when artwork is unavailable; Vector never replaces a label, status, or security warning.
+Use the moth in the landing journey, protected access scene, operations environment, repository banner, mark, and editorial material. Product meaning must remain complete when artwork is unavailable; the moth never replaces a label, status, or security warning.
 
-[`vector-mascot.webp`](../web/ui/assets/vector-mascot.webp) is the canonical generated reference. [`vector-mark.svg`](../web/ui/assets/vector-mark.svg) is the deterministic compact mark used in product chrome and favicons. Contextual asset modules are named by surface and role, not by mascot, so a future identity revision does not leak into application architecture.
+[`courier-mark-v2.webp`](../web/ui/assets/courier-mark-v2.webp) is the ImageGen-authored transparent compact mark used in product chrome and favicons. It deliberately remains a raster illustration rather than an SVG approximation. Contextual asset modules are named by surface and role rather than mascot name, so a future identity revision does not leak into application architecture.
 
 ## Visual language
 
@@ -27,13 +27,13 @@ Use Vector in the landing journey, protected access scene, operations environmen
 
 Theme-specific orange variants keep text and focus accessible. Success, warning, and danger use restrained semantic colors only with text or icons. Signal lime is not part of the Vector identity.
 
-Courier uses system fonts only. Oversized display type is tightly composed; monospace is reserved for commands, paths, identifiers, byte counters, and other operational values. Surfaces use negative space, thin instrument lines, restrained transparency, and sparse route geometry instead of filled card stacks, telemetry decoration, fake prompts, or timestamp gutters.
+Courier uses system fonts only. Oversized display type is tightly composed; monospace is reserved for commands, paths, identifiers, byte counters, and other operational values. Surfaces use negative space, soft rounded boundaries, thin instrument lines, restrained transparency, and sparse route geometry instead of sharp bands, filled card stacks, telemetry decoration, fake prompts, or timestamp gutters.
 
 ## Interaction
 
 Theme and locale are each one icon button. Theme cycles `system → light → dark`; locale cycles `English → Russian`. System and browser language remain the defaults until an explicit stored choice overrides them. Every control exposes its current and next value in a localized accessible name.
 
-Scenes are responsive, static composites. They load eagerly only when above the fold and otherwise activate once near the viewport. No scene tracks the pointer, creates a refracted duplicate, or moves the base image. Route pulses are restrained and disappear under reduced motion.
+Scenes are responsive, static composites. The landing uses one eager responsive panorama across its entire document flow so section boundaries can never expose image seams. Product scenes load eagerly only when above the fold and otherwise activate once near the viewport. No scene tracks the pointer, creates a refracted duplicate, or moves the base image. Route pulses are restrained and disappear under reduced motion.
 
 ## Voice
 
@@ -48,6 +48,6 @@ Prefer “route,” “delivery,” “verifying,” “stopped,” “collision
 
 ## Generated asset record
 
-Vector and the editorial scenes were produced with the built-in image-generation workflow from a canonical transparent reference, then encoded as local WebP assets. Generated images contain no text, fake UI, commands, logos, credentials, watermarks, weapons, or required information.
+The Courier moth mark and editorial scenes were produced with the built-in image-generation workflow, then encoded as local WebP assets. Generated images contain no text, fake UI, commands, logos, credentials, watermarks, weapons, or required information.
 
-[`provenance.json`](../web/ui/assets/provenance.json) records role, prompt summary, sequence metadata, dimensions, byte count, SHA-256, and generation lineage. The asset gate verifies the manifest, responsive sequence, per-file and aggregate budgets, and the absence of untracked files. Third-party package-manager and platform marks are documented in [`web/ui/NOTICE.md`](../web/ui/NOTICE.md).
+[`provenance.json`](../web/ui/assets/provenance.json) records role, prompt, sequence metadata, dimensions, byte count, SHA-256, and generation lineage. The asset gate verifies the manifest, responsive panorama pair, compact raster mark, per-file and aggregate budgets, and the absence of untracked files. Third-party package-manager and platform marks are documented in [`web/ui/NOTICE.md`](../web/ui/NOTICE.md).

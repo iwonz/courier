@@ -1,7 +1,7 @@
 # Courier CLI
 
 <p align="center">
-  <img src="web/ui/assets/readme-vector-banner.webp" width="100%" alt="Vector navigating a verified route from Source to Destination">
+  <img src="web/ui/assets/readme-vector-banner.webp" width="100%" alt="Courier moth navigating a verified route from Source to Destination">
 </p>
 
 Courier is an extensible, cross-platform CLI for safely transferring files and directories across local, SSH, browser, and webhook endpoints.
@@ -136,7 +136,7 @@ The machine-readable [CLI contract](docs/cli-contract.yaml) is the source of tru
 
 Browser delivery pages, the administration interface, and the project landing page share the Lit-based [`@courier/ui`](web/ui) package. Its [UI architecture guide](docs/ui.md) documents assets, themes, localization, components, and the exact TypeScript coverage gate.
 
-The [brand system](docs/brand.md) defines Courier's positioning, Vector mascot, visual language, operational vocabulary, accessibility rules, and approved communication patterns.
+The [brand system](docs/brand.md) defines Courier's positioning, moth navigator, visual language, operational vocabulary, accessibility rules, and approved communication patterns.
 
 See [Browser deliveries](docs/web-deliveries.md) for `web://` URLs, authentication, safe navigation, transactional uploads, and foreground/background lifecycle behavior.
 

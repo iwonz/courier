@@ -6,87 +6,39 @@
   },
   "assets": [
     {
-      "path": "vector-mascot.webp",
+      "path": "courier-mark-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 341528,
-      "sha256": "d3e8ef39f0961d97abb00f1b6b0ecfcbb2a08ce70958107b86099c017051ac4c",
-      "width": 1374,
-      "height": 1145,
-      "use": "Canonical transparent Vector moth-navigator identity reference",
-      "prompt": "Mature geometric moth navigator named Vector, symmetrical angular wings forming a route silhouette, carbon-black and warm off-white aerospace editorial print texture, one restrained burnt-orange waypoint, transparent background; graphic rather than cute, robotic, fantasy, or derivative; no text, logo, UI, credentials, weapon, or watermark.",
-      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-2081905e-2ba7-4736-a83f-b417479e95df"
+      "bytes": 67292,
+      "sha256": "8d9124cdecb5b8fe6a9092dd7c655766c2fd844bd941dda8a9c657bda2bdca42",
+      "width": 512,
+      "height": 427,
+      "use": "Image-generated transparent Courier moth mark for product chrome and favicons",
+      "prompt": "A mature organic courier moth emblem viewed straight on, broad softly rounded wings, warm off-white and carbon-black engraved editorial texture, delicate cartographic route lines across the wings and one small burnt-orange waypoint, transparent background, balanced compact silhouette readable at icon size; no text, UI, logo lettering, border, credentials, weapon, or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-49a3af9f-93f4-4f2c-89c3-97e59b4a3bb8"
     },
     {
-      "path": "landing-route-wide-v1.webp",
+      "path": "landing-panorama-wide-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 191670,
-      "sha256": "6c22e7cab18cc2373ebbb3d1407a8e21ddf0b479e57c1971b299fe88edf231db",
-      "width": 1672,
-      "height": 941,
-      "use": "Wide landing journey segment 1: route selection and departure",
-      "prompt": "Wide black-and-off-white aerospace editorial route-selection landscape using the canonical Vector moth navigator, printed texture, large quiet headline field, cartographic curves and sparse burnt-orange waypoints; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
-      "lineage": "imagegen:exec-5fececb1-f57c-4279-bd72-3c2ce877b6a3",
-      "sequence": { "name": "vector-journey", "orientation": "wide", "position": 1, "total": 3 }
+      "bytes": 286212,
+      "sha256": "2e73c1598565d4b52b0379bfdbf3fa5c0bb3da5924de6f11e9c4796d2d3d931e",
+      "width": 1024,
+      "height": 1536,
+      "use": "Continuous full-page landing panorama for wide viewports",
+      "prompt": "One uninterrupted tall Courier landing-page panorama, warm off-white paper and soft carbon graphite editorial landscape, an organic moth courier following one continuous restrained burnt-orange route from departure through mountain passages to a quiet destination, rounded cloud and terrain forms, gentle engraved print texture, large calm negative-space regions for readable interface content, absolutely no horizontal bands, section seams, frames, tiles, text, UI, commands, logos, credentials, weapons, or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-f57e7288-82ba-4f40-b39e-0521a5dff846",
+      "sequence": { "name": "organic-panorama", "orientation": "wide", "position": 1, "total": 1 }
     },
     {
-      "path": "landing-route-mobile-v1.webp",
+      "path": "landing-panorama-mobile-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 140912,
-      "sha256": "dee0f50d9bf39f002005b38fc7b17dd2ea2c7899764b4500d948626540fb630a",
+      "bytes": 350968,
+      "sha256": "abb71c6be01922ec617a1014f53674c5d2dd49fb26e75cc7a3262c51563a8e8a",
       "width": 941,
       "height": 1672,
-      "use": "Portrait landing journey segment 1: route selection and departure",
-      "prompt": "Portrait black-and-off-white aerospace editorial route-selection landscape using the canonical Vector moth navigator, quiet upper headline field, printed cartographic curves and sparse burnt-orange waypoints composed for mobile; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
-      "lineage": "imagegen:exec-90a45912-fad9-4697-b035-5ff6b44144b4",
-      "sequence": { "name": "vector-journey", "orientation": "portrait", "position": 1, "total": 3 }
-    },
-    {
-      "path": "landing-install-wide-v1.webp",
-      "mediaType": "image/webp",
-      "bytes": 143946,
-      "sha256": "48e21b5f8c876c2e8a6802330358a88487e40c1cb2727926b968424f23964e8f",
-      "width": 1672,
-      "height": 941,
-      "use": "Wide landing journey segment 2: verified installation and distribution",
-      "prompt": "Wide aerospace-editorial verification and distribution environment continuing Vector's route, carbon and chalk geometry, printed texture, large quiet workbench region, sparse burnt-orange checksum signals; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
-      "lineage": "imagegen:exec-4ed0bfd0-96f6-49e8-8a81-e6da087550d5",
-      "sequence": { "name": "vector-journey", "orientation": "wide", "position": 2, "total": 3 }
-    },
-    {
-      "path": "landing-install-mobile-v1.webp",
-      "mediaType": "image/webp",
-      "bytes": 67846,
-      "sha256": "e61cb890f6b7c355e8b154c0c6b6aae5f27952189048bce18076e39578033259",
-      "width": 941,
-      "height": 1672,
-      "use": "Portrait landing journey segment 2: verified installation and distribution",
-      "prompt": "Portrait aerospace-editorial verification and distribution environment continuing Vector's route, carbon and chalk geometry, printed texture, quiet stacked workbench region, sparse burnt-orange checksum signals; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
-      "lineage": "imagegen:exec-44c95b50-7c97-4289-9abc-a6081c9c6449",
-      "sequence": { "name": "vector-journey", "orientation": "portrait", "position": 2, "total": 3 }
-    },
-    {
-      "path": "landing-reference-wide-v1.webp",
-      "mediaType": "image/webp",
-      "bytes": 159664,
-      "sha256": "70c9aed747a5b2f7c1f04a6cf99bac7cc00094dfeffbd6869ee0a8de3c86b679",
-      "width": 1672,
-      "height": 941,
-      "use": "Wide landing journey segment 3: command registry and arrival",
-      "prompt": "Wide aerospace-editorial destination registry and archive completing Vector's route, carbon and chalk modular geometry, printed texture, quiet reference-workbench field and one restrained burnt-orange arrival signal; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
-      "lineage": "imagegen:exec-0e9d27f1-96a4-4458-8386-ff76bd0a5e43",
-      "sequence": { "name": "vector-journey", "orientation": "wide", "position": 3, "total": 3 }
-    },
-    {
-      "path": "landing-reference-mobile-v1.webp",
-      "mediaType": "image/webp",
-      "bytes": 62842,
-      "sha256": "b082937ee4ac155b433c63b5af154e51c5b19d389e0a079fca8f64d9907d45ea",
-      "width": 941,
-      "height": 1672,
-      "use": "Portrait landing journey segment 3: command registry and arrival",
-      "prompt": "Portrait aerospace-editorial destination registry and archive completing Vector's route, carbon and chalk modular geometry, printed texture, quiet stacked reference-workbench field and one restrained burnt-orange arrival signal; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
-      "lineage": "imagegen:exec-f0af98db-fb4d-4eef-8574-489c5a9817dd",
-      "sequence": { "name": "vector-journey", "orientation": "portrait", "position": 3, "total": 3 }
+      "use": "Continuous full-page landing panorama composed for narrow viewports",
+      "prompt": "One uninterrupted portrait Courier landing-page panorama composed for a narrow mobile crop, warm off-white paper and soft carbon graphite mountains and clouds, an organic moth courier following one centered continuous burnt-orange route from departure to a quiet destination, rounded forms and gentle engraved texture, generous central negative space for interface content, absolutely no horizontal bands, section seams, frames, tiles, text, UI, commands, logos, credentials, weapons, or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-f47f76bc-2195-4cc8-ab17-70c3698d184e",
+      "sequence": { "name": "organic-panorama", "orientation": "portrait", "position": 1, "total": 1 }
     },
     {
       "path": "delivery-access-wide-v1.webp",
@@ -142,27 +94,6 @@
       "use": "Full-width text-free Vector route banner for the repository README",
       "prompt": "Extremely wide black-and-off-white aerospace editorial panorama with canonical geometric Vector moth navigating one burnt-orange cartographic route across abstract source and destination fields, printed texture and clear central rhythm; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
       "lineage": "imagegen:exec-d52c30a7-a1ad-4054-919e-ac749b579ad9"
-    },
-    {
-      "path": "vector-mark.svg",
-      "mediaType": "image/svg+xml",
-      "bytes": 663,
-      "sha256": "a2bb802bad78eea46087009fa377d4dfabb78ae357c192eea07cf79f287ef2fd",
-      "use": "Deterministic simplified Vector application mark and browser favicon"
-    },
-    {
-      "path": "logo-on-dark.svg",
-      "mediaType": "image/svg+xml",
-      "bytes": 337,
-      "sha256": "8b7a34eec11e4199a9f19b53aa162fb1a2ed8a6c7d24f0d14500c87bb4a5c187",
-      "use": "Courier Vector lockup for carbon surfaces"
-    },
-    {
-      "path": "logo-on-light.svg",
-      "mediaType": "image/svg+xml",
-      "bytes": 337,
-      "sha256": "982ffd585719b6e08877ee67cafd81f875eac5d45c1383f3cb10124ce2729345",
-      "use": "Courier Vector lockup for chalk surfaces"
     }
   ],
   "excluded": [

@@ -62,12 +62,12 @@ Courier SHALL enforce 100% statements, branches, functions, and lines for first-
 
 ### Requirement: Coherent brand identity system
 
-Courier SHALL provide one repository-owned Vector identity across landing, delivery, administration, README, favicons, and wordmarks using carbon `#0E0F0D`, chalk `#F2EFE6`, warm line `#CBC5B8`, and route orange `#D95F2B` as core tokens. Vector SHALL be a mature geometric moth navigator; compact marks SHALL be deterministic local SVG and contextual raster artwork SHALL be checksum-recorded with no remote dependency.
+Courier SHALL provide one repository-owned Vector identity across landing, delivery, administration, README, favicons, and wordmarks using warm carbon, chalk, warm line, and restrained route orange. Vector SHALL be a mature organic moth navigator; the compact mark SHALL be an ImageGen-authored transparent raster with rounded contours, and every contextual raster SHALL be checksum-recorded with no remote dependency.
 
 #### Scenario: A browser surface presents Courier
 
 - **WHEN** the landing, delivery, or administration application renders
-- **THEN** it uses the local Vector identity, shared aerospace-editorial tokens, typography, focus treatment, and operational visual grammar without a Relay asset, signal-lime brand treatment, remote font, or remote image
+- **THEN** it uses the local organic Vector identity, soft editorial tokens, typography, focus treatment, and operational visual grammar without a sharp SVG approximation, unreadable image overlap, remote font, or remote image
 
 ### Requirement: Non-essential mascot guidance
 
@@ -214,18 +214,18 @@ Courier SHALL use role-specific Vector illustrations that preserve the moth navi
 
 ### Requirement: Vector compact mark
 
-Courier SHALL use a recognizable, repository-local deterministic Vector SVG as its compact product mark across browser components, wordmarks, and favicons.
+Courier SHALL use a recognizable repository-local ImageGen-authored raster Vector mark across browser components, wordmarks, and favicons. The transparent mark SHALL retain rounded organic contours and one restrained orange route waypoint while remaining readable at compact product-chrome sizes.
 
 #### Scenario: A compact Courier identity is rendered
 
 - **WHEN** the wordmark has limited space or a favicon is displayed
-- **THEN** the local mark depicts Vector's angular route-form wings and orange waypoint with sufficient light/dark contrast and no remote image dependency
+- **THEN** the local raster mark remains clear against light and dark surfaces without a remote image dependency or vector substitute
 
 ### Requirement: Shared workbench primitive
 
-Courier SHALL provide a neutral accessible workbench with optional heading, actions, status, body, and footer regions for real product state. It SHALL use thin instrument lines, transparent or quiet surfaces, and normal sans-serif content without shell prompts, terminal timestamps, fake execution, or arbitrary command input.
+Courier SHALL provide a neutral accessible workbench with optional heading, actions, status, body, and footer regions for real product state. It SHALL use soft rounded geometry, feathered translucent surfaces, readable local contrast, and normal sans-serif content without hard rectangular bands, shell prompts, terminal timestamps, fake execution, or arbitrary command input.
 
 #### Scenario: A product surface presents state
 
-- **WHEN** delivery or administration renders API-backed content
-- **THEN** shared workbench structure presents it without terminal chrome or copied consumer-specific component implementations
+- **WHEN** landing, delivery, or administration renders structured content
+- **THEN** shared workbench structure presents it with bounded rounded geometry and readable contrast without copied consumer-specific implementations

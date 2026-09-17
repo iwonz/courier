@@ -4,7 +4,7 @@ Courier's landing, delivery, and administration applications share the Lit packa
 
 ## Shared primitives
 
-- `courier-brand` renders the Vector mark and Courier wordmark without a product descriptor.
+- `courier-brand` renders the local ImageGen-authored raster moth mark and Courier wordmark without a product descriptor.
 - `courier-scene` performs responsive eager or one-shot proximity loading and static compositing.
 - `courier-workbench` provides a neutral structured surface with heading, body, actions, status, and footer slots.
 - `courier-command-readout` presents immutable command text, Copy, reserved localized feedback, details, and footer actions.
@@ -23,7 +23,7 @@ Product copy and source documentation remain English. `Source` and `Destination`
 
 The landing combines its headline and route instrument, then presents installation and the contract-generated command registry. Delivery is a destination workbench around a real protected password form and authorized manifest. Administration is an operations workbench with counters, a keyboard-operable delivery navigator, and a selected policy inspector whose UUID selection survives SSE snapshots while valid.
 
-All applications use the same carbon/chalk/warm-line/orange token system. Monospace is limited to operational values. Layouts expand on narrow screens, preserve semantic actions, and avoid horizontal overflow.
+All applications use the same carbon/chalk/warm-line/orange token system. Shared workbenches use rounded translucent boundaries, gentle blur, and local contrast instead of sharp top-and-bottom bands. Monospace is limited to operational values. Layouts expand on narrow screens, preserve semantic actions, and avoid horizontal overflow.
 
 ## Assets and loading
 
@@ -34,7 +34,7 @@ Surface modules export role-based scene URLs:
 - `admin-scenes.ts`;
 - `identity-assets.ts`.
 
-The first visible scene is eager. Below-fold scenes create no image request until the proximity boundary; browsers without `IntersectionObserver` fall back to native lazy loading. Every observer is disconnected on activation or element teardown. All assets, fonts, icons, and scripts are local.
+The landing scene module exports a single responsive panorama pair used by one eager full-page scene. Delivery and administration keep one eager above-fold scene each. Any non-eager reusable scene creates no image request until the proximity boundary; browsers without `IntersectionObserver` fall back to native lazy loading. Every observer is disconnected on activation or element teardown. All assets, fonts, icons, and scripts are local.
 
 ## Verification
 

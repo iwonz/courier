@@ -1,19 +1,19 @@
 import { LitElement, css, html } from "lit";
-import vectorMark from "../../assets/vector-mark.svg";
+import { courierMarkSource } from "../identity-assets";
 import { cubicBezierPath } from "../geometry";
 
-export const vectorMarkSource = vectorMark;
+export { courierMarkSource };
 
 export class CourierBrand extends LitElement {
   static styles = css`
     :host { display: inline-flex; min-width: 0; color: var(--courier-color-text, #0e0f0d); font-family: var(--courier-font-sans, sans-serif); }
     .lockup { display: inline-flex; min-width: 0; align-items: center; gap: 0.58rem; color: inherit; }
-    img { flex: 0 0 auto; width: 2.2rem; height: 2.2rem; object-fit: contain; }
+    img { flex: 0 0 auto; width: 2.45rem; height: 2.1rem; object-fit: contain; filter: drop-shadow(0 0.32rem 0.55rem rgb(14 15 13 / 0.16)); }
     strong { font-family: var(--courier-font-display, sans-serif); font-size: 1.08rem; font-weight: 820; letter-spacing: -0.045em; }
   `;
 
   protected render() {
-    return html`<span class="lockup"><img part="mark" src=${vectorMark} alt="" decoding="async"><strong part="wordmark">Courier</strong></span>`;
+    return html`<span class="lockup"><img part="mark" src=${courierMarkSource} alt="" decoding="async"><strong part="wordmark">Courier</strong></span>`;
   }
 }
 

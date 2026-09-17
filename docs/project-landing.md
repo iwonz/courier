@@ -20,14 +20,10 @@ Source and Destination controls expose Local, Remote, Web, and Web Hook using di
 
 Installation uses locally bundled official monochrome marks and compact channel controls. Commands/options use two independently scrollable workbench columns, selectable generated commands, compatible-option filtering, and Copy. There are no simulations, Run/Replay controls, transcripts, editable commands, shell execution, or browser transfer execution.
 
-## Responsive editorial sequence
+## Continuous editorial panorama
 
-Six WebP scenes form one Vector journey in wide and portrait orientations:
+One responsive wide/portrait WebP pair spans the complete page behind all three semantic sections. The selected image depicts one uninterrupted journey from route selection through installation to the command registry; sections never create their own scene, image mask, repeated horizon, or overlap. A page-wide theme-aware veil and feathered heading fields preserve contrast without turning headings into opaque cards. Product information never depends on the decorative panorama.
 
-1. route selection and departure;
-2. verified installation and distribution;
-3. command registry and arrival.
+Each panorama is at most 420 KiB, the pair totals at most 700 KiB, and the ImageGen-authored compact raster mark is at most 96 KiB. Exactly one browser-selected panorama source loads eagerly at high priority; the alternate responsive source is not requested.
 
-Each landing WebP is at most 225 KiB and all six total at most 1.2 MiB. The hero loads eagerly; later segments activate within one viewport and do not create premature requests. Product information never depends on the decorative scene.
-
-The production bundle is capped at 45 KiB gzip JavaScript and 8 KiB gzip CSS. Build locally with `make pages-build`. `main` deploys automatically through `.github/workflows/pages.yml`; an authenticated maintainer can rebuild and dispatch the synchronized revision with `make pages-publish`.
+The production bundle is capped at 45 KiB gzip JavaScript and 9 KiB gzip CSS. Build locally with `make pages-build`. `main` deploys automatically through `.github/workflows/pages.yml`; an authenticated maintainer can rebuild and dispatch the synchronized revision with `make pages-publish`.

@@ -1,3 +1,3 @@
-import vectorMascot from "../assets/vector-mascot.webp";
+import courierMark from "../assets/courier-mark-v2.webp";
 
-export const vectorMascotSource = vectorMascot;
+export const courierMarkSource = courierMark;
