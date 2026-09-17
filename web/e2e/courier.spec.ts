@@ -25,7 +25,7 @@ async function selectRussian(page: Page): Promise<void> {
   const button = page.getByRole("button", { name: /Language:|Язык:/ });
   if ((await button.getAttribute("aria-label"))?.startsWith("Language:")) await button.click();
   await expect(button).toHaveAttribute("aria-label", /Русский/);
-  await expect(button.locator('[data-locale-icon="ru"]')).toHaveText("🇷🇺");
+  await expect(button.locator('[data-locale-icon="ru"] i')).toHaveCount(3);
   await expect.poll(() => page.evaluate(() => localStorage.getItem("courier.locale"))).toBe("ru");
 }
 
@@ -43,8 +43,9 @@ test("landing uses a compact square Relay and three natural shadcn sections", as
   await expect(page.locator("main > section")).toHaveCount(3);
   expect(await page.locator("main > section").evaluateAll((sections) => sections.map((section) => section.id))).toEqual(["route", "install", "cli"]);
   await expect(page.getByRole("button", { name: /Run|Replay/ })).toHaveCount(0);
-  await expect(page.locator('img[src*="courier-relay-mark-v2"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-tech-v1"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-mark-v1"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-route-v1"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-delivery-v1"], img[src*="courier-relay-pixel-admin-v1"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
   await expect(page.locator("[data-courier-route-composition]")).toHaveCount(1);
   await expect(page.locator("[data-courier-cli-registry]")).toHaveCount(1);
   for (const selector of ["[data-courier-route-composition]", "[data-courier-cli-registry]"]) {
@@ -69,10 +70,10 @@ test("landing uses a compact square Relay and three natural shadcn sections", as
   const cliTop = await page.locator("#cli h2").evaluate((node) => node.getBoundingClientRect().top + scrollY);
   expect(installTop - routeBottom).toBeLessThanOrEqual(80);
   expect(cliTop - installBottom).toBeLessThanOrEqual(80);
-  const heroMascot = page.locator('#route img[width="768"][height="768"]');
+  const heroMascot = page.locator('#route img[width="512"][height="512"]');
   await expect(heroMascot).toBeVisible();
   expect(await heroMascot.evaluate((image) => Math.abs(image.getBoundingClientRect().width - image.getBoundingClientRect().height))).toBeLessThanOrEqual(1);
-  await expect(page.locator('path[vector-effect="non-scaling-stroke"]')).toHaveAttribute("d", / C /);
+  await expect(page.locator('path[vector-effect="non-scaling-stroke"]')).toHaveAttribute("d", / H .* V /);
 
   const github = page.getByRole("link", { name: "Courier on GitHub" });
   await expect(github).toHaveAttribute("target", "_blank");
@@ -93,7 +94,7 @@ test("landing uses a compact square Relay and three natural shadcn sections", as
   await route.getByRole("button", { name: "Copy command" }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("courier from web:// to");
   const install = page.locator("#install");
-  await install.getByRole("button", { name: "npm npm", exact: true }).click();
+  await install.getByRole("button", { name: "npm", exact: true }).click();
   await expect(install.locator("code")).toHaveText("npm install --global @iwonz/courier");
   await install.getByRole("button", { name: "Copy command" }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("npm install --global @iwonz/courier");
@@ -125,7 +126,7 @@ test("touch landing keeps Relay static and avoids horizontal overflow", async ({
   const context = await browser.newContext({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   await page.goto(landingURL);
-  const mascot = page.locator('#route img[width="768"][height="768"]');
+  const mascot = page.locator('#route img[width="512"][height="512"]');
   const before = await mascot.evaluate((node) => getComputedStyle(node).transform);
   await page.touchscreen.tap(250, 420);
   expect(await mascot.evaluate((node) => getComputedStyle(node).transform)).toBe(before);
@@ -137,8 +138,9 @@ test("protected delivery reveals no metadata before authentication", async ({ pa
   await page.route("**/api/v1/meta*", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ name: secretMarker, path: secretMarker, type: "file" }) }));
   await page.goto(dataURL);
   await expect(page.locator('input[type="password"]')).toBeVisible();
-  await expect(page.locator('img[src*="courier-relay-mark-v2"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-tech-v1"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-mark-v1"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-delivery-v1"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-route-v1"], img[src*="courier-relay-pixel-admin-v1"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
   expect(await page.locator("[data-courier-auth-region]").evaluate((node) => {
     const style = getComputedStyle(node);
     return [style.backgroundImage, style.borderRadius, style.boxShadow, style.backdropFilter];
@@ -167,6 +169,9 @@ test("admin keeps secrets out of the shadcn control plane and mutates through AP
   await page.route("**/policy", (route) => { mutations.push(route.request().url()); return route.fulfill({ status: 204 }); });
   await page.goto(adminURL);
   await expect(page.locator("body")).toContainText("127.0.0.1:8080");
+  await expect(page.locator('img[src*="courier-relay-pixel-mark-v1"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-admin-v1"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-route-v1"], img[src*="courier-relay-pixel-delivery-v1"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
   await expect(page.locator("[data-courier-metrics]")).toHaveCount(1);
   for (const selector of ["[data-courier-metrics]", "[data-courier-admin-workspace]"]) {
     expect(await page.locator(selector).evaluate((node) => {

@@ -17,13 +17,14 @@ Playwright runs landing, delivery, and administration in English/Russian and sys
 - Copy for routes, every installation channel, and CLI commands;
 - single-button theme/locale cycles, active-locale flag icons, browser defaults, persistence, and reduced motion;
 - 320×568, 360×740, 390×844, short desktop, and 1440×900 layouts without clipping or horizontal overflow;
-- one compact square transparent Relay mark plus one full transparent mascot request, no generated background or later-section artwork, stable content-height composition, and no external runtime requests;
-- continuous route, CLI registry, delivery manifest, administration metrics, and administration workspace composition with no ordinary card backgrounds, outer radii, shadows, blur, or unnecessary borders;
+- one compact transparent pixel mark plus the exact route, delivery, or administration role sprite required by the current surface, stable identity anatomy across every pose, no generated background or unrelated role request, and no external runtime requests;
+- the fixed twelve-color light/dark mapping, local Cyrillic Pixelify Sans display scope, eight-pixel dither, pixelated sprites, crisp icon registries, chamfered controls, and a grid-snapped route with reduced-motion-safe stepped motion;
+- continuous route, CLI registry, delivery manifest, administration metrics, and administration workspace composition with no ordinary card backgrounds, outer radii, smooth shadows, blur, or unnecessary borders;
 - compact landing section spacing, a transparent viewport-fixed masthead with reserved content offset, and visible selected Source/Destination contrast;
-- absence of terminal/refraction code, editable commands, Run/Replay, transcripts, remote fonts, scripts, images, or analytics;
+- absence of terminal/refraction code, editable commands, Run/Replay, transcripts, emoji flags, Lucide imports, remote fonts, scripts, images, or analytics;
 - protected delivery metadata isolation, authentication, upload/download behavior, admin policy updates, stop actions, selection persistence, and SSE fallback.
 
-Asset validation requires exactly two square transparent Relay rasters capped at 80 KiB each and 160 KiB combined. Landing JavaScript remains below 145 KiB gzip and CSS below 9 KiB gzip. First-party TypeScript and TSX maintain exact 100% statements, branches, functions, and lines.
+Asset validation requires exactly five square transparent lossless Relay WebPs: mark ≤24 KiB, neutral/route ≤64 KiB each, delivery/admin ≤48 KiB each, and ≤248 KiB combined. It verifies that neutral is the canonical identity reference, role variants preserve the declared invariant physiology, the pinned Pixelify Sans WOFF2 is ≤48 KiB, the OFL notice and source revision match, and undeclared or legacy assets fail. Landing JavaScript remains below 145 KiB gzip and CSS below 9 KiB gzip. First-party TypeScript and TSX maintain exact 100% statements, branches, functions, and lines.
 
 ## Runtime and cleanup
 

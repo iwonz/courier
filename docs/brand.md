@@ -1,6 +1,6 @@
 # Courier brand system
 
-Courier is a dependable route for files and directories across local, SSH, browser, and webhook boundaries. The identity is energetic, technically mature, and precise without looking institutional.
+Courier is a dependable route for files and directories across local, SSH, browser, and webhook boundaries. The identity is precise, compact, and technically mature without looking institutional.
 
 ## Promise
 
@@ -10,31 +10,42 @@ Courier makes Source, Destination, policy, progress, and the verified result exp
 
 ## Relay pigeon
 
-Relay is a compact technological pigeon: a deliberately manufactured product character built from rounded graphite, cobalt, and off-white volumes, tucked segmented wing plates, an integrated courier module, restrained cyan routing lights, and one orange waypoint beacon. Its silhouette is square and compact rather than a realistic bird or a wide flying illustration. It is mature and recognizable without becoming cute, militarized, fantasy-themed, or derived from a third-party mascot.
+Relay is one consistent 8-bit courier pigeon, not a collection of loosely related birds. Its canonical anatomy is compact and nearly square: a blue-gray head, one large orange-ringed pigeon eye, short ivory beak, pale folded wings, compact dark tail, coral feet, one small left-side earpiece, and one cobalt courier satchel. The neutral mascot is the identity reference for every other sprite.
 
-Use the full Relay mascot for editorial browser illustration and README identity. Use the compact Relay mark in headers, favicons, and other product chrome. Product meaning remains complete when artwork is unavailable; neither asset replaces a label, status, or security warning. Generated scenery, cyberpunk cities, stitched panoramas, and per-section background art are not part of the identity.
+Across the mark, route, delivery, and administration roles, Relay keeps the same silhouette, physiology, body-to-head proportions, eye and beak geometry, plumage, earpiece, and satchel. Only pose, role equipment or clothing, and a carried or attached object may change. Every new role starts as an identity-preserving derivative of the canonical neutral sprite; an independent mascot redraw is not an acceptable variation. Relay never gains armor, a helmet, visor, glowing face panel, exoskeleton, metallic chest plate, police or military equipment, photorealism, smooth 3D shading, scenery, text, or a watermark.
 
-[`courier-relay-tech-v1.webp`](../web/ui/assets/courier-relay-tech-v1.webp) is the full ImageGen-authored transparent 1:1 mascot. [`courier-relay-mark-v2.webp`](../web/ui/assets/courier-relay-mark-v2.webp) is its separate 1:1 head-and-shoulders product mark: broad, architectural, and square without feet, a perch, tail fan, or rounded chicken-like body. Both deliberately remain raster identity assets rather than SVG approximations and each is capped at 80 KiB.
+Use [`courier-relay-pixel-mark-v1.webp`](../web/ui/assets/courier-relay-pixel-mark-v1.webp) in headers and favicons. Use the neutral, route, delivery, and administration sprites only in their declared roles. Product meaning remains complete when artwork is unavailable; a sprite never replaces a label, status, or security warning. Every sprite is transparent, square, lossless WebP rendered with pixelated sampling.
 
-## Visual language
+## Pixel visual language
 
-| Role | Value | Use |
+The shared palette contains exactly these twelve brand and semantic colors:
+
+| Token | Value | Role |
 |---|---|---|
-| Deep ink | `#091A33` | Primary text and dark canvas |
-| Cobalt | `#2864E8` | Product identity and active navigation |
-| Warm cream | `#FFF8EC` | Illustration ground and warm contrast |
-| Cyan signal | theme token | Restrained routing light and focus |
-| Waypoint orange | theme token | Important route state |
+| Ink | `#0B1020` | Dark canvas and primary text |
+| Navy | `#17233B` | Dark secondary surface and hard shadow |
+| Slate | `#3F506B` | Muted dark text and dividers |
+| Steel | `#7C8DA5` | Quiet lines and disabled structure |
+| Ice | `#DCECF7` | Light secondary surface |
+| Paper | `#F8FBFF` | Light canvas and selected text |
+| Cobalt | `#2556C7` | Selection and product action |
+| Cyan | `#35B6D4` | Route signal and accent |
+| Rust | `#A63F14` | Light-theme focus and warning |
+| Orange | `#F07A32` | Dark-theme focus and waypoint |
+| Green | `#23845D` | Success |
+| Red | `#C83B4E` | Failure and destructive action |
 
-Theme-specific coral and cobalt variants keep text and focus accessible. Success, warning, and danger use restrained semantic colors only with text or icons.
+Light and dark themes remap those tokens without introducing decorative colors. The canvas uses a restrained hard-edged eight-pixel dither. Controls follow a four-pixel unit with four-pixel chamfers, one-pixel semantic dividers, two-pixel focus, and hard two-to-four-pixel interaction shadows. Ordinary layout remains transparent: pixel frames belong to controls, fields, alerts, status, focus, and boundaries that explain independent behavior—not to decorative card islands.
 
-Courier uses system fonts only. Display type is tightly composed; monospace is reserved for commands, paths, identifiers, byte counters, and other operational values. Surfaces use negative space, restrained tonal fields, clear contrast, and flowing route geometry instead of repeated borders, nested card islands, large shadows, engraved texture, sharp bands, telemetry decoration, fake prompts, or timestamp gutters.
+Pixelify Sans is pinned locally at upstream commit `39df74aba80df8157546034b878e8be1eb565ced` and is used only for the wordmark, H1/H2 headings, and compact display labels. Its local WOFF2 contains Cyrillic and ships with the OFL 1.1 notice. Body copy stays system sans; commands, paths, identifiers, and counters stay system monospace.
+
+First-party actions and endpoint concepts use shared code-native pixel-grid icons. Package-manager, platform, and GitHub marks are reviewed monochrome pixel-grid derivatives of pinned official geometry. Locale buttons use local 16×12 pixel flags rather than platform emoji. Third-party attribution and trademark notices live in [`web/ui/NOTICE.md`](../web/ui/NOTICE.md).
 
 ## Interaction
 
-Theme and locale are each one icon button. Theme cycles `system → light → dark`; locale cycles `English → Russian` and visibly shows the flag of the active language. System and browser language remain the defaults until an explicit stored choice overrides them. Every control exposes its current and next value in a localized accessible name.
+Theme and locale are each one icon button. Theme cycles `system → light → dark`; locale cycles `English → Russian` and visibly shows the active local pixel flag. System and browser language remain defaults until an explicit stored choice overrides them. Every control exposes its current and next value in a localized accessible name.
 
-The landing composes the transparent square mascot with code-native route geometry. Installation and CLI are image-free content sections. No artwork tracks the pointer, creates a refracted duplicate, supplies a generated background, or moves the base image. Route pulses are restrained and disappear under reduced motion.
+Route geometry starts from measured cubic Bézier coordinates, samples the curve, snaps samples to the four-pixel grid, and renders a crisp stepped path. A decorative packet may move with `steps()` timing. Reduced motion removes travel and repeated decorative animation without hiding route state.
 
 ## Voice
 
@@ -49,6 +60,6 @@ Prefer “route,” “delivery,” “verifying,” “stopped,” “collision
 
 ## Generated asset record
 
-The full Relay mascot and compact square product mark were produced with the built-in image-generation workflow, then encoded as local transparent WebP assets. They contain no text, fake UI, commands, external logos, credentials, watermark, weapon, scenery, or required information.
+The canonical neutral Relay was generated first with the built-in ImageGen workflow. The mark and role sprites were generated or cleaned with the neutral asset as their explicit identity reference. Accepted PNG sources were reviewed, nearest-neighbor resized, reduced to a shared hard 32-color raster treatment, and encoded as lossless transparent WebP. Temporary generations are not shipped.
 
-[`provenance.json`](../web/ui/assets/provenance.json) records role, prompt, dimensions, byte count, SHA-256, and generation lineage. The asset gate verifies both square rasters, per-file and combined budgets, and the absence of untracked files. Third-party package-manager and platform marks are documented in [`web/ui/NOTICE.md`](../web/ui/NOTICE.md).
+[`provenance.json`](../web/ui/assets/provenance.json) records the identity invariants, allowed variations, prompt, reference lineage, role, dimensions, byte count, SHA-256, font revision, and license. The asset gate verifies exactly five declared Relay sprites, alpha transparency, square dimensions, the 24/64/64/48/48 KiB per-role limits, the 248 KiB combined limit, the pinned local font and OFL notice, and the absence of undeclared or legacy armored assets.

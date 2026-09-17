@@ -4,11 +4,11 @@ Courier's landing, delivery, and administration applications are independent Rea
 
 ## Shared primitives
 
-- `Brand` renders the dedicated square Relay product mark with `COURIER CLI`; `Mascot` renders the full local ImageGen-authored Relay illustration.
+- `Brand` renders the 256×256 pixel Relay mark with a Pixelify Sans `COURIER CLI` wordmark. `RelaySprite` accepts the typed `neutral`, `route`, `delivery`, or `admin` role and resolves only that role's local asset.
 - shadcn `Button`, `Card`, `Badge`, `Checkbox`, `Input`, `Select`, `Tabs`, `Tooltip`, `Progress`, `Separator`, `ScrollArea`, and `Alert` provide one accessible control grammar. `Card` is a transparent structural wrapper, not a visual panel.
 - `CommandReadout` presents immutable command text, Copy, reserved localized feedback, details, and footer actions directly on the document canvas.
 - `ThemeSelector` and `LocaleSelector` are single cyclic icon buttons backed by one shared React preference provider and browser controller; locale visibly identifies its active language.
-- `RouteDisplay`, `Icon`, and `BrandIcon` retain native semantics and bundle code-native or pinned official geometry locally.
+- `RouteDisplay`, `PixelIcon`, and `PixelBrandIcon` retain native semantics and render reviewed grid data with `currentColor` and crisp edges. Compatibility exports keep existing consumers source-compatible.
 
 There is no browser shell, free command input, fake terminal prompt, pointer refraction layer, or arbitrary command execution.
 
@@ -22,12 +22,12 @@ Product copy and source documentation remain English. `Source` and `Destination`
 
 The landing combines its headline and route instrument, then presents installation and the contract-generated command registry. Delivery is a destination workbench around a real protected password form and authorized manifest. Administration is an operations workbench with counters, a keyboard-operable delivery navigator, and a selected policy inspector whose UUID selection survives SSE snapshots while valid.
 
-All applications use the same ink/cobalt/off-white token system with restrained cyan routing light and orange waypoint state. The document background is the only page-scale surface: ordinary wrappers add no card fill, outer radius, shadow, border, or blur. Spacing, type, alignment, and occasional hairline boundaries between independently scrolling regions provide hierarchy. Inputs, alerts, focus, selected controls, status, and destructive actions retain explicit chrome because it communicates state. Monospace is limited to operational values. Layouts expand on narrow screens, preserve semantic actions, and avoid horizontal overflow.
+All applications use the same fixed twelve-color light/dark mapping, eight-pixel dither canvas, four-pixel geometry unit, chamfered controls, crisp lines, cobalt selection, and hard interaction shadows. The document background is the only page-scale surface: ordinary wrappers add no card fill, outer radius, shadow, border, or blur. Spacing, type, alignment, and occasional hairline boundaries between independently scrolling regions provide hierarchy. Inputs, alerts, focus, selected controls, status, and destructive actions retain explicit chrome because it communicates state. Pixelify Sans is limited to brand and H1/H2 display type; system sans serves body copy and system monospace serves operational values. Layouts expand on narrow screens, preserve semantic actions, and avoid horizontal overflow.
 
 ## Assets and loading
 
-`assets.ts` exports the transparent 768×768 full Relay mascot and the separate transparent 512×512 compact Relay mark. The full mascot is editorial; the mark is used by product chrome and favicons. No responsive scene family, generated background, panorama, or pointer-effect duplicate is shipped. All artwork, system fonts, icons, styles, and scripts are local.
+`assets.ts` exports the 256×256 mark, the typed `RelayRole`, and one resolver for the 512×512 neutral/route and 384×384 delivery/admin sprites. The neutral sprite is the immutable identity reference: every role is derived from it, keeps its anatomy, proportions, plumage, eye, beak, earpiece, and satchel, and varies only pose, equipment or clothing, and carried or attached objects. Independent mascot redraws are rejected by the family provenance gate. The local Pixelify Sans WOFF2 and OFL notice are part of the audited asset set. No responsive scene family, generated background, panorama, pointer duplicate, emoji flag, Lucide import, or runtime asset request is shipped.
 
 ## Verification
 
-Vitest with React Testing Library enforces exactly 100% statements, branches, functions, and lines for first-party TypeScript and TSX. Asset validation checks dimensions, square geometry, hash, lineage, licenses, and budget. Playwright covers localization, theme/locale cycling and persistence, keyboard operation, route selection, Copy feedback, compact mascot geometry, security isolation, API controls, and overflow across supported viewports.
+Vitest with React Testing Library enforces exactly 100% statements, branches, functions, and lines for first-party TypeScript and TSX. Asset validation checks role resolution, identity-reference lineage, alpha, square geometry, hashes, licenses, and budgets and rejects undeclared assets, legacy Relay names, emoji flags, and browser Lucide imports. Playwright covers localization, theme/locale cycling and persistence, keyboard operation, route selection, Copy feedback, per-surface role sprites, pixel rendering, security isolation, API controls, and overflow across supported viewports.

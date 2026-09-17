@@ -51,6 +51,7 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 45 | `feat/045-cyber-relay-shadcn-ui` | `cyber-relay-shadcn-ui` | Compact technological Relay pigeon and complete React/shadcn migration for landing, delivery, and administration |
 | 46 | `feat/046-seamless-ui-polish` | `seamless-ui-polish` | Square Relay product mark, active-locale icon, and lighter continuous browser compositions |
 | 47 | `feat/047-borderless-ui-flow` | `borderless-ui-flow` | Borderless continuous browser flow with structural cards and semantic-only chrome |
+| 48 | `feat/048-pixel-identity-system` | `pixel-identity-system` | Square 8-bit Relay family, local pixel font and icons, and shared pixel browser surfaces |
 
 ## Definition of Done
 

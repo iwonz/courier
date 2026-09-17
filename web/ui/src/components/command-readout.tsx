@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Check, Copy } from "lucide-react";
+import { PixelIcon } from "../icons-react";
 import { Button } from "./ui/button";
 import { cn } from "../lib/utils";
 
@@ -35,7 +35,7 @@ export function CommandReadout({ heading, command, copyLabel, copiedLabel, copyF
     <div className="flex min-h-12 items-center justify-between gap-3">
       <span className="text-xs font-semibold text-muted-foreground">{heading}</span>
       <Button type="button" variant="ghost" size="sm" onClick={copyCommand} disabled={!command}>
-        {status === "copied" ? <Check /> : <Copy />}{copyLabel}
+        <PixelIcon name={status === "copied" ? "check" : "copy"} />{copyLabel}
       </Button>
     </div>
     <div className="grid gap-3 py-2">

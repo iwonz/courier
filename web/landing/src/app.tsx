@@ -9,17 +9,17 @@ import {
   Github,
   Icon,
   LocaleSelector,
-  Mascot,
+  PixelIcon,
   PreferenceProvider,
+  RelaySprite,
   ScrollArea,
   Separator,
   ThemeSelector,
-  cubicBezierPath,
+  pixelBezierPath,
   type BrandIconName,
   type IconName,
   usePreferences,
 } from "@courier/ui";
-import { Download, PackageOpen } from "lucide-react";
 import { landingText, type LandingMessage } from "./catalog";
 import { contractData, type LandingCommand, type LandingFlag, type LandingRoute } from "./contract";
 
@@ -114,7 +114,7 @@ function useRouteConnector(source: string, destination: string): {
       if (bounds.width <= 0 || bounds.height <= 0) return;
       setGeometry({
         viewBox: `0 0 ${bounds.width} ${bounds.height}`,
-        path: cubicBezierPath(
+        path: pixelBezierPath(
           { x: sourceBounds.right - bounds.left, y: sourceBounds.top + sourceBounds.height / 2 - bounds.top },
           { x: destinationBounds.left - bounds.left, y: destinationBounds.top + destinationBounds.height / 2 - bounds.top },
         ),
@@ -180,13 +180,13 @@ function LandingContent(): React.JSX.Element {
   return <div className="min-h-screen overflow-x-clip">
     <header className="fixed inset-x-0 top-0 z-50 bg-transparent">
       <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
-        <a href="#route" className="shrink-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"><Brand /></a>
+        <a href="#route" className="courier-pixel-focus shrink-0 outline-none"><Brand /></a>
         <nav aria-label="Courier" className="hidden items-center gap-1 sm:flex">
           <Button asChild variant="ghost" size="sm"><a href="#install">{t("installShort")}</a></Button>
           <Button asChild variant="ghost" size="sm"><a href="#cli">{t("cliShort")}</a></Button>
         </nav>
         <div className="ml-auto flex items-center gap-2">
-          <Button asChild variant="ghost" size="icon" className="bg-muted/45"><a href="https://github.com/iwonz/courier" target="_blank" rel="noopener noreferrer" aria-label={t("githubLabel")}><Github /></a></Button>
+          <Button asChild variant="ghost" size="icon"><a href="https://github.com/iwonz/courier" target="_blank" rel="noopener noreferrer" aria-label={t("githubLabel")}><Github /></a></Button>
           <ThemeSelector />
           <LocaleSelector />
         </div>
@@ -197,18 +197,14 @@ function LandingContent(): React.JSX.Element {
       <section id="route" className="scroll-mt-20 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div data-courier-route-composition className="relative isolate mx-auto grid w-full max-w-7xl gap-12">
           <div className="grid min-h-[27rem] lg:grid-cols-[minmax(0,.9fr)_minmax(24rem,1.1fr)] lg:items-center">
-            <div aria-hidden="true" className="absolute inset-0 -z-10 opacity-45 [background-image:radial-gradient(circle_at_center,color-mix(in_oklch,var(--primary)_25%,transparent)_1px,transparent_1.5px)] [background-size:28px_28px] [mask-image:linear-gradient(90deg,black,transparent_72%)]" />
-            <div className="relative z-10 max-w-3xl self-start lg:self-center"><h1 className="text-balance text-[clamp(3.4rem,8vw,7.8rem)] font-black leading-[.84] tracking-[-.075em] text-foreground">{t("title")}</h1></div>
+            <div className="relative z-10 max-w-3xl self-start lg:self-center"><h1 className="text-balance text-[clamp(3.4rem,8vw,7.8rem)] font-bold leading-[.84] tracking-[-.04em] text-foreground">{t("title")}</h1></div>
             <div className="relative grid min-h-72 place-items-center lg:min-h-[25rem]">
-              <div className="absolute inset-x-4 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-primary/10 via-primary/70 to-warning/80" />
-              <span className="absolute left-4 top-1/2 size-5 -translate-y-1/2 rounded-full border-4 border-background bg-primary shadow-[0_0_0_8px_color-mix(in_oklch,var(--primary)_16%,transparent)]" />
-              <span className="absolute right-4 top-1/2 size-5 -translate-y-1/2 rounded-full border-4 border-background bg-warning shadow-[0_0_0_8px_color-mix(in_oklch,var(--warning)_16%,transparent)]" />
-              <Mascot className="relative z-10 w-[min(34rem,95%)] drop-shadow-[0_30px_32px_rgba(15,35,80,.28)]" />
+              <RelaySprite role="route" className="relative z-10 w-[min(32rem,92%)]" />
             </div>
           </div>
           <div className="grid gap-5">
               <div ref={connector.containerRef} className="relative grid grid-cols-2 gap-5 sm:gap-16">
-                {connector.path ? <svg className="pointer-events-none absolute inset-0 z-0 size-full overflow-visible" viewBox={connector.viewBox} preserveAspectRatio="none" aria-hidden="true"><path d={connector.path} fill="none" stroke="currentColor" strokeWidth="2" className="text-primary/38" vectorEffect="non-scaling-stroke" /><circle r="4" fill="currentColor" className="text-warning" style={{ offsetPath: `path('${connector.path}')`, animation: "courier-pulse-route 2.8s linear infinite" }} /></svg> : null}
+                {connector.path ? <svg className="pointer-events-none absolute inset-0 z-0 size-full overflow-visible" viewBox={connector.viewBox} preserveAspectRatio="none" aria-hidden="true"><path d={connector.path} fill="none" stroke="currentColor" strokeWidth="2" className="text-primary/60" vectorEffect="non-scaling-stroke" shapeRendering="crispEdges" /><rect width="8" height="8" fill="currentColor" className="text-warning" style={{ offsetPath: `path('${connector.path}')`, animation: "courier-pixel-route 2.8s steps(16,end) infinite" }} /></svg> : null}
                 <div className="grid content-start gap-2"><span className="px-1 text-xs font-semibold text-muted-foreground">{t("sourceLabel")}</span>{sourceEndpoints.map((name) => endpointButton(name, "source"))}</div>
                 <div className="grid content-start gap-2"><span className="px-1 text-xs font-semibold text-muted-foreground">{t("destinationLabel")}</span>{destinationEndpoints.map((name) => endpointButton(name, "destination"))}</div>
               </div>
@@ -238,8 +234,8 @@ function LandingContent(): React.JSX.Element {
             copyFailedLabel={t("copyFailed")}
             details={<div className="flex items-center gap-2 text-sm font-semibold text-primary"><BrandIcon name={install.icon} />{install.name}</div>}
             footerActions={<>
-              <Button asChild variant="ghost" size="sm"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><PackageOpen />{t("packages")}</a></Button>
-              <Button asChild variant="ghost" size="sm"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><Download />{t("direct")}</a></Button>
+              <Button asChild variant="ghost" size="sm"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><PixelIcon name="package" />{t("packages")}</a></Button>
+              <Button asChild variant="ghost" size="sm"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><PixelIcon name="download" />{t("direct")}</a></Button>
             </>}
           />
         </div>
@@ -251,7 +247,7 @@ function LandingContent(): React.JSX.Element {
           <div data-courier-cli-registry>
             <div className="grid divide-y divide-border/35 lg:grid-cols-[minmax(18rem,.72fr)_minmax(0,1.28fr)] lg:divide-x lg:divide-y-0">
               <section><div className="px-5 pt-5 text-sm font-semibold">{t("commandLabel")}</div><ScrollArea className="h-[31rem]"><div className="grid gap-1 p-2">{contractData.commands.map((command) => <Button key={command.name} type="button" variant={command.name === selectedCommand ? "secondary" : "ghost"} aria-pressed={command.name === selectedCommand} onClick={() => chooseCommand(command.name)} className="h-auto justify-start whitespace-normal px-3 py-3 text-left"><code className="font-mono text-xs leading-relaxed">{command.usage}</code></Button>)}</div></ScrollArea></section>
-              <section><div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-5 pt-3"><span className="text-sm font-semibold">{t("optionsLabel")}</span><label className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Checkbox checked={compatibleOnly} disabled={!selectedCommand} onCheckedChange={(checked) => setCompatibleOnly(checked === true)} />{t("compatibleOnly")}</label></div><ScrollArea className="h-[31rem]"><div className="grid gap-1 p-2">{visibleFlags.length ? visibleFlags.map((flag) => <article key={flag.name} className="grid gap-2 rounded-xl px-3 py-3 hover:bg-muted/28"><div className="flex flex-wrap items-baseline justify-between gap-2"><code className="font-mono text-sm font-bold text-primary">{flag.syntax}</code><span className="text-xs text-muted-foreground">{t("optionDefault")}: {flag.default}</span></div><p className="text-xs leading-relaxed text-muted-foreground">{t("repeatable")}: {flag.repeatable ? t("yes") : t("no")} · {t("applies")}: {flag.appliesTo.join(", ")}</p></article>) : <p className="p-5 text-sm text-muted-foreground">{t("noCompatibleOptions")}</p>}</div></ScrollArea></section>
+              <section><div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-5 pt-3"><span className="text-sm font-semibold">{t("optionsLabel")}</span><label className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Checkbox checked={compatibleOnly} disabled={!selectedCommand} onCheckedChange={(checked) => setCompatibleOnly(checked === true)} />{t("compatibleOnly")}</label></div><ScrollArea className="h-[31rem]"><div className="grid gap-1 p-2">{visibleFlags.length ? visibleFlags.map((flag) => <article key={flag.name} className="grid gap-2 px-3 py-3 hover:bg-muted"><div className="flex flex-wrap items-baseline justify-between gap-2"><code className="font-mono text-sm font-bold text-primary">{flag.syntax}</code><span className="text-xs text-muted-foreground">{t("optionDefault")}: {flag.default}</span></div><p className="text-xs leading-relaxed text-muted-foreground">{t("repeatable")}: {flag.repeatable ? t("yes") : t("no")} · {t("applies")}: {flag.appliesTo.join(", ")}</p></article>) : <p className="p-5 text-sm text-muted-foreground">{t("noCompatibleOptions")}</p>}</div></ScrollArea></section>
             </div>
             <CommandReadout className="border-t border-border/35 pt-4" heading={t("commandLabel")} command={selectedCommandData?.usage ?? ""} description={selectedCommandData ? "" : t("selectCommand")} sessionKey={`${locale}:${selectedCommand}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
           </div>

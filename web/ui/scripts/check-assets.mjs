@@ -9,7 +9,7 @@ const manifest = JSON.parse(await readFile(resolve(assetRoot, "provenance.json")
 const brandAssetRoot = resolve(packageRoot, "src", "brand-assets");
 const brandManifest = JSON.parse(await readFile(resolve(brandAssetRoot, "provenance.json"), "utf8"));
 
-if (manifest.schemaVersion !== 2 || !Array.isArray(manifest.assets) || manifest.assets.length === 0) {
+if (manifest.schemaVersion !== 3 || !Array.isArray(manifest.assets) || manifest.assets.length === 0) {
   throw new Error("asset provenance manifest is invalid");
 }
 if (brandManifest.schemaVersion !== 1 || !Array.isArray(brandManifest.assets) || brandManifest.assets.length === 0) {
@@ -23,15 +23,15 @@ function uint24(data, offset) {
 function rasterDimensions(data, mediaType) {
   if (mediaType === "image/png") {
     if (data.toString("hex", 0, 8) !== "89504e470d0a1a0a") throw new Error("invalid PNG header");
-    return { width: data.readUInt32BE(16), height: data.readUInt32BE(20) };
+    return { width: data.readUInt32BE(16), height: data.readUInt32BE(20), alpha: [4, 6].includes(data[25]) };
   }
   if (data.toString("ascii", 0, 4) !== "RIFF" || data.toString("ascii", 8, 12) !== "WEBP") throw new Error("invalid WebP header");
   const chunk = data.toString("ascii", 12, 16);
-  if (chunk === "VP8X") return { width: uint24(data, 24) + 1, height: uint24(data, 27) + 1 };
-  if (chunk === "VP8 ") return { width: data.readUInt16LE(26) & 0x3fff, height: data.readUInt16LE(28) & 0x3fff };
+  if (chunk === "VP8X") return { width: uint24(data, 24) + 1, height: uint24(data, 27) + 1, alpha: Boolean(data[20] & 0x10) };
+  if (chunk === "VP8 ") return { width: data.readUInt16LE(26) & 0x3fff, height: data.readUInt16LE(28) & 0x3fff, alpha: false };
   if (chunk === "VP8L") {
     const bits = data.readUInt32LE(21);
-    return { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 };
+    return { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1, alpha: Boolean((bits >>> 28) & 1) };
   }
   throw new Error(`unsupported WebP chunk: ${chunk}`);
 }
@@ -52,7 +52,7 @@ for (const asset of manifest.assets) {
       throw new Error(`raster provenance is incomplete: ${asset.path}`);
     }
     const dimensions = rasterDimensions(data, asset.mediaType);
-    if (dimensions.width !== asset.width || dimensions.height !== asset.height) {
+    if (dimensions.width !== asset.width || dimensions.height !== asset.height || (asset.transparent && !dimensions.alpha)) {
       throw new Error(`asset dimensions mismatch: ${asset.path}`);
     }
   }
@@ -63,14 +63,53 @@ if (actual.size !== expected.size || [...actual].some((name) => !expected.has(na
   throw new Error("asset directory and provenance manifest differ");
 }
 
-const fullMascot = manifest.assets.find((asset) => asset.path === "courier-relay-tech-v1.webp");
-const compactMark = manifest.assets.find((asset) => asset.path === "courier-relay-mark-v2.webp");
-if (manifest.assets.length !== 2
-  || !fullMascot
-  || !compactMark
-  || [fullMascot, compactMark].some((asset) => asset.mediaType !== "image/webp" || asset.width !== asset.height || asset.bytes > 80 * 1024)
-  || fullMascot.bytes + compactMark.bytes > 160 * 1024) {
-  throw new Error("the square ImageGen Relay mascot and compact mark are missing or exceed their budgets");
+const relayBudgets = new Map([
+  ["courier-relay-pixel-mark-v1.webp", 24 * 1024],
+  ["courier-relay-pixel-neutral-v1.webp", 64 * 1024],
+  ["courier-relay-pixel-route-v1.webp", 64 * 1024],
+  ["courier-relay-pixel-delivery-v1.webp", 48 * 1024],
+  ["courier-relay-pixel-admin-v1.webp", 48 * 1024],
+]);
+const relayAssets = manifest.assets.filter((asset) => relayBudgets.has(asset.path));
+const canonical = manifest.identityFamily?.canonicalAsset;
+const expectedInvariants = [
+  "one compact near-square pigeon body",
+  "one large orange-ringed pigeon eye and short ivory beak",
+  "blue-gray head, pale folded wings, compact dark tail and coral feet",
+  "one small left-side earpiece and one cobalt courier satchel",
+];
+const expectedVariations = ["pose", "role equipment", "clothing", "carried or attached object"];
+const expectedForbidden = ["body proportions", "physiology", "base plumage", "eye geometry", "armor", "helmet", "visor", "police or military styling"];
+if (relayAssets.length !== relayBudgets.size
+  || canonical !== "courier-relay-pixel-neutral-v1.webp"
+  || manifest.identityFamily?.revision !== "relay-pixel-v1"
+  || !manifest.identityFamily?.generationRule?.includes("identity-preserving derivative")
+  || manifest.identityFamily?.invariants?.join("\n") !== expectedInvariants.join("\n")
+  || manifest.identityFamily?.allowedVariations?.join("\n") !== expectedVariations.join("\n")
+  || manifest.identityFamily?.forbiddenVariations?.join("\n") !== expectedForbidden.join("\n")
+  || relayAssets.some((asset) => asset.mediaType !== "image/webp"
+    || asset.width !== asset.height
+    || !asset.transparent
+    || asset.bytes > relayBudgets.get(asset.path)
+    || !asset.prompt
+    || !asset.lineage
+    || asset.identityRevision !== manifest.identityFamily.revision
+    || (asset.path !== canonical && asset.identityReference !== canonical))
+  || relayAssets.reduce((total, asset) => total + asset.bytes, 0) > 248 * 1024) {
+  throw new Error("the consistent transparent Relay pixel family is missing or exceeds its budgets");
+}
+
+const font = manifest.assets.find((asset) => asset.path === "pixelify-sans-v1.woff2");
+const fontLicense = manifest.assets.find((asset) => asset.path === "pixelify-sans-ofl-1.1.txt");
+if (!font || !fontLicense
+  || font.mediaType !== "font/woff2"
+  || font.bytes > 48 * 1024
+  || font.revision !== "39df74aba80df8157546034b878e8be1eb565ced"
+  || font.repository !== "https://github.com/eifetx/Pixelify-Sans"
+  || font.license !== "OFL-1.1"
+  || fontLicense.revision !== font.revision
+  || !(await readFile(resolve(assetRoot, fontLicense.path), "utf8")).includes("SIL OPEN FONT LICENSE Version 1.1")) {
+  throw new Error("the pinned local Pixelify Sans font or OFL notice is invalid");
 }
 
 const expectedBrandAssets = new Set(["provenance.json"]);
@@ -121,4 +160,15 @@ if (searchable.includes("local.adguard.org") || searchable.includes("<script")) 
   throw new Error("executable reference content was retained");
 }
 
-console.log(`verified ${manifest.assets.length} Courier identity assets and ${brandManifest.assets.length} pinned brand assets`);
+const sourceRoots = [packageRoot, resolve(packageRoot, "..", "landing"), resolve(packageRoot, "..", "data"), resolve(packageRoot, "..", "admin")].map((root) => resolve(root, "src"));
+const sourceEntries = await Promise.all(sourceRoots.map(async (root) => ({ root, files: (await readdir(root, { recursive: true })).filter((name) => /\.(?:ts|tsx|css)$/.test(name)) })));
+const browserSource = (await Promise.all(sourceEntries.flatMap(({ root, files }) => files.map((name) => readFile(resolve(root, name), "utf8"))))).join("\n");
+if (browserSource.includes("lucide-react")
+  || browserSource.includes("🇬🇧")
+  || browserSource.includes("🇷🇺")
+  || browserSource.includes("courier-relay-tech")
+  || browserSource.includes("courier-relay-mark-v2")) {
+  throw new Error("legacy icons, emoji flags, or Relay assets remain in browser source");
+}
+
+console.log(`verified ${relayAssets.length} consistent Relay sprites, the pinned display font, and ${brandManifest.assets.length} pinned brand sources`);

@@ -21,12 +21,12 @@ Courier SHALL provide one React and TypeScript UI package for delivery, administ
 
 ### Requirement: Auditable identity assets
 
-Courier SHALL retain only approved Courier identity assets and notices with local digests and SHALL exclude injected scripts, credentials, remote resources, obsolete mirror messaging, reference-page executable code, and superseded swift, moth, panorama, realistic-pigeon, or cyberpunk-city artwork. Every shipped Relay raster SHALL record its role, dimensions, byte count, generation prompt, lineage, and SHA-256 digest.
+Courier SHALL retain exactly the declared five transparent pixel Relay WebP assets and one pinned local display font with role, dimensions, byte count, generation prompt, lineage or upstream revision, license, and SHA-256 digest. The mark SHALL remain at most 24 KiB, neutral and route sprites at most 64 KiB each, delivery and administration sprites at most 48 KiB each, all Relay assets at most 248 KiB combined, and the display font at most 48 KiB.
 
 #### Scenario: Asset integrity check
 
-- **WHEN** the repository quality gate runs
-- **THEN** only the declared transparent Relay raster is shipped and its manifest digest, dimensions, role, provenance, and budget match the file on disk
+- **WHEN** repository verification runs
+- **THEN** undeclared assets, legacy armored Relay files, missing provenance, missing licenses, incorrect dimensions, or an exceeded budget fail the gate
 
 ### Requirement: User-selectable themes
 
@@ -72,12 +72,19 @@ Courier SHALL enforce 100% statements, branches, functions, and lines for first-
 
 ### Requirement: Coherent brand identity system
 
-Courier SHALL use one repository-local technological Relay identity across landing, delivery, administration, README, and product chrome. The full Relay mascot SHALL remain an ImageGen-authored square transparent pigeon illustration, while compact product chrome SHALL use a distinct ImageGen-authored head-and-shoulders Relay mark with a broad near-square silhouette, no feet, perch, tail fan, or rounded chicken-like body. Both SHALL use compact graphite, cobalt, and off-white volumes, restrained cyan routing light, and one orange waypoint beacon.
+Courier SHALL use one repository-local modern 8-bit Relay identity across landing, delivery, administration, README, favicon, and product chrome. Relay SHALL be a compact square pigeon courier with a satchel, parcel, folded wings, compact tail, short beak, visible eye, and at most one small earpiece. The transparent ImageGen-authored mark, neutral mascot, route pose, delivery pose, and administration pose SHALL use hard pixel edges and SHALL NOT depict armor, a helmet, visor, glowing face panel, exoskeleton, metallic chest plate, police or military equipment, photorealism, smooth 3D shading, scenery, text, logos, or watermarks.
+
+The neutral sprite SHALL be the canonical identity reference. Every role sprite SHALL be an identity-preserving derivative of that canonical asset and SHALL preserve its body size, body-to-head proportions, physiology, head, eye, beak, folded wings, compact tail, base plumage, earpiece, and satchel. Only pose, role equipment, clothing, and carried or attached objects MAY vary. Independent mascot redraws SHALL NOT be accepted as role variants.
 
 #### Scenario: A browser surface presents Courier
 
 - **WHEN** landing, delivery, or administration renders
-- **THEN** its header uses the compact Relay mark beside `COURIER CLI`, editorial usage may use the full mascot, and both remain local, decorative, and legible without a remote font or image
+- **THEN** its header uses the square pixel Relay mark beside `COURIER CLI`, its optional role sprite matches the surface, and complete product meaning remains available without either image
+
+#### Scenario: Relay changes roles
+
+- **WHEN** the landing, delivery, administration, README, and header assets are compared
+- **THEN** they depict the same recognizable mascot proportions and physiology while only the declared pose and role equipment differ
 
 ### Requirement: Non-essential mascot guidance
 
@@ -99,17 +106,17 @@ Courier SHALL use concise, concrete, non-alarmist language that identifies actio
 
 ### Requirement: Intentional control appearance
 
-Courier SHALL present theme, locale, form, file, policy, navigation, and command controls through one shared lightweight shadcn visual grammar. Ordinary layout wrappers SHALL be transparent and SHALL NOT add card backgrounds, outer radii, shadows, blur, or borders. Explicit chrome SHALL be reserved for interactive controls, form inputs, alerts, focus, selection, destructive emphasis, status, or a divider that explains separate scrolling or interaction regions.
+Courier SHALL present semantic browser controls through one shared modern pixel grammar using the declared twelve-color palette, four-pixel geometry unit, crisp dividers, chamfered interactive frames, hard offset state shadows, and visible two-pixel focus. Ordinary layout wrappers SHALL remain transparent and SHALL NOT add card backgrounds, outer radii, blur, soft shadows, or borders. Body content SHALL remain system sans, commands SHALL remain system monospace, and the locally bundled Cyrillic Pixelify Sans font SHALL be limited to brand and display headings.
 
 #### Scenario: A user operates a Courier control
 
-- **WHEN** the control is rendered, focused, selected, disabled, or activated with a keyboard or pointer
-- **THEN** it uses Courier tokens and visible semantic state while preserving the expected role, accessible name, focus order, and change behavior without an unnecessary surrounding border
+- **WHEN** a control is rendered, focused, selected, disabled, or activated
+- **THEN** its pixel state remains contrast-safe, keyboard-operable, semantically native, and free of an unnecessary surrounding island
 
 #### Scenario: A product surface groups related content
 
 - **WHEN** content is grouped for layout without its own interactive state
-- **THEN** it remains on the continuous document canvas and uses spacing, typography, alignment, or a meaningful hairline divider instead of a card island
+- **THEN** it remains on the continuous document canvas and uses spacing, typography, alignment, or a meaningful crisp divider instead of a card island
 
 ### Requirement: Compact icon preference controls
 
@@ -127,12 +134,17 @@ Courier SHALL render theme and locale selectors as separate semantic React icon 
 
 ### Requirement: Local official brand marks
 
-Courier SHALL provide a shared brand-icon primitive that renders pinned, repository-bundled official geometry in Courier monochrome without runtime network requests. Third-party source, license, attribution, and trademark constraints SHALL be recorded separately from Courier-owned identity assets.
+Courier SHALL provide typed first-party and third-party pixel icon registries rendered from reviewed sixteen- or twenty-four-pixel grids with crisp edges and current color. Installation, platform, operating-system, GitHub, endpoint, preference, file, transfer, status, and administration icons SHALL be local. Third-party pixel derivatives SHALL retain pinned official source, license, attribution, and trademark records. Locale controls SHALL use local pixel flags rather than platform emoji.
+
+#### Scenario: A browser surface renders an icon
+
+- **WHEN** Courier renders a functional icon, channel mark, or locale flag
+- **THEN** it uses the declared local pixel registry with an accessible name where needed and makes no runtime request
 
 #### Scenario: A branded channel is rendered
 
 - **WHEN** a supported package manager, shell, operating system, or distribution mark appears
-- **THEN** the UI uses its registered official geometry, inherits the requested Courier color, and exposes no remote asset URL
+- **THEN** the UI uses its reviewed pixel-grid derivative, inherits the requested Courier color, retains its pinned source record, and exposes no remote asset URL
 
 ### Requirement: Shared styled checkbox
 
@@ -145,12 +157,17 @@ Courier SHALL provide a shared checkbox primitive with custom visual treatment, 
 
 ### Requirement: Shared Bezier route geometry
 
-Courier SHALL provide deterministic cubic Bezier path generation for source-to-destination route presentations without coupling consumers to a specific layout.
+Courier SHALL preserve measured cubic route positioning while sampling and snapping its visual points to the four-pixel grid. Decorative route packets and status signals SHALL use short stepped motion only, and reduced motion SHALL render the same state without travel or repeated animation.
+
+#### Scenario: A route is rendered
+
+- **WHEN** finite Source and Destination positions are supplied
+- **THEN** a deterministic crisp polyline connects them, its terminals remain fixed-aspect, and any packet animation stops under reduced motion
 
 #### Scenario: A consumer supplies two endpoint positions
 
 - **WHEN** a route path is requested for finite coordinates
-- **THEN** the helper returns a stable horizontal cubic Bezier path spanning those positions
+- **THEN** the helper returns a stable cubic source path and a deterministic four-pixel-grid sample for the rendered connector
 
 ### Requirement: Fixed-aspect route terminals
 

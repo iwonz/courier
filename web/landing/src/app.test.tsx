@@ -77,15 +77,16 @@ describe("React landing", () => {
     document.body.append(root);
     mountLanding(root);
     await waitFor(() => expect(root.querySelector("h1")?.textContent).toBe("From here to anywhere."));
-    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-mark-v2");
+    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v1");
   });
 
   it("renders three natural sections, a compact square mascot, and secure external links", () => {
     render(<LandingApp />);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("From here to anywhere.");
     expect(document.querySelectorAll("main > section")).toHaveLength(3);
-    const mascot = document.querySelector<HTMLImageElement>('img[width="768"][height="768"]')!;
-    expect(mascot.src).toContain("courier-relay-tech-v1");
+    const mascot = document.querySelector<HTMLImageElement>('img[width="512"][height="512"]')!;
+    expect(mascot.src).toContain("courier-relay-pixel-route-v1");
+    expect(mascot.className).toContain("courier-pixel-image");
     expect(document.body.textContent).not.toContain("Run demo");
     expect(document.body.textContent).not.toContain("One binary plans the route");
     expect([...document.querySelectorAll<HTMLAnchorElement>('a[href^="https://"]')].every((link) => link.target === "_blank" && link.rel === "noopener noreferrer")).toBe(true);
@@ -112,7 +113,7 @@ describe("React landing", () => {
     expect(screen.getByText(/courier from web:\/\//).textContent).toContain("./backup/");
   });
 
-  it("measures a bezier connector, responds to resize, and cleans its observer", () => {
+  it("measures a grid-snapped bezier connector, responds to resize, and cleans its observer", () => {
     const disconnect = vi.fn();
     let callback: ResizeObserverCallback | undefined;
     class ResizeObserverStub {
@@ -129,7 +130,7 @@ describe("React landing", () => {
       return rect(0, 0, 820, 300);
     });
     const view = render(<LandingApp />);
-    expect(document.querySelector('path[vector-effect="non-scaling-stroke"]')?.getAttribute("d")).toContain(" C ");
+    expect(document.querySelector('path[vector-effect="non-scaling-stroke"]')?.getAttribute("d")).toContain(" H ");
     callback?.([], {} as ResizeObserver);
     fireEvent(globalThis, new Event("resize"));
     view.unmount();
@@ -180,9 +181,9 @@ describe("React landing", () => {
     expect(activeLocal?.className).not.toContain("bg-background");
     expect(screen.getByText("COURIER CLI")).toBeTruthy();
     const localeButton = screen.getByRole("button", { name: /Language:/ });
-    expect(localeButton.querySelector('[data-locale-icon="en"]')?.textContent).toBe("🇬🇧");
+    expect(localeButton.querySelector('[data-locale-icon="en"] svg')).toBeTruthy();
     fireEvent.click(localeButton);
-    expect(localeButton.querySelector('[data-locale-icon="ru"]')?.textContent).toBe("🇷🇺");
+    expect(localeButton.querySelectorAll('[data-locale-icon="ru"] i')).toHaveLength(3);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Отсюда — куда угодно.");
     expect(document.body.textContent).not.toContain("Все связи взяты из опубликованного контракта CLI");
   });

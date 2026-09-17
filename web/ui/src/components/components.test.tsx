@@ -3,10 +3,10 @@ import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrandIcon, brandIconNames, resolveBrandIcon } from "../brand-icons-react";
-import { cubicBezierPath } from "../geometry";
-import { Icon, iconNames, resolveIcon } from "../icons-react";
+import { cubicBezierPath, pixelBezierPath } from "../geometry";
+import { Check, Copy, Github, Icon, PixelIcon, Route, ServerCog, iconNames, resolveIcon, resolvePixelIcon } from "../icons-react";
 import { cn } from "../lib/utils";
-import { Brand, Mascot } from "./brand-react";
+import { Brand, RelaySprite } from "./brand-react";
 import { CommandReadout, copyText } from "./command-readout";
 import { RouteDisplay } from "./route-display";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
@@ -93,37 +93,46 @@ describe("shared shadcn primitives", () => {
 });
 
 describe("brand, icon, and geometry helpers", () => {
-  it("renders compact and full brands plus the square mascot", () => {
-    const { container } = render(<><Brand /><Brand compact className="compact" /><Mascot alt="Relay" className="mascot" /></>);
+  it("renders compact and full brands plus the consistent role sprites", () => {
+    const { container } = render(<><Brand /><Brand compact className="compact" />{(["neutral", "route", "delivery", "admin"] as const).map((role) => <RelaySprite key={role} role={role} alt={role} className="mascot" />)}</>);
     expect(screen.getAllByText("COURIER CLI")).toHaveLength(1);
-    expect(container.querySelector('img[src*="courier-relay-mark-v2"]')?.getAttribute("width")).toBe("512");
-    const mascot = screen.getByAltText("Relay");
-    expect(mascot.getAttribute("width")).toBe("768");
-    expect(mascot.getAttribute("height")).toBe("768");
+    expect(container.querySelector('img[src*="courier-relay-pixel-mark-v1"]')?.getAttribute("width")).toBe("256");
+    expect(screen.getByAltText("neutral").getAttribute("width")).toBe("512");
+    expect(screen.getByAltText("route").getAttribute("height")).toBe("512");
+    expect(screen.getByAltText("delivery").getAttribute("width")).toBe("384");
+    expect(screen.getByAltText("admin").className).toContain("courier-pixel-image");
     expect(container.querySelector(".compact")).toBeTruthy();
   });
 
   it("resolves and renders every semantic icon and fallback", () => {
     expect(resolveIcon("unknown")).toBe("parcel");
-    const { container } = render(<>{iconNames.map((name) => <Icon key={name} name={name} label={name} />)}<Icon name="unknown" /></>);
-    expect(container.querySelectorAll("svg")).toHaveLength(iconNames.length + 1);
+    expect(resolvePixelIcon("unknown")).toBe("parcel");
+    const { container } = render(<>{iconNames.map((name) => <Icon key={name} name={name} label={name} />)}<PixelIcon name="unknown" /><Github /><Copy /><Check /><Route /><ServerCog /></>);
+    expect(container.querySelectorAll("svg")).toHaveLength(iconNames.length + 6);
     expect(screen.getByLabelText("github")).toBeTruthy();
     expect(container.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
   });
 
-  it("resolves and renders official brand masks and wget fallback", () => {
+  it("resolves and renders every local pixel-grid brand derivative", () => {
     expect(resolveBrandIcon("missing")).toBe("linux");
-    const { container } = render(<>{brandIconNames.map((name) => <BrandIcon key={name} name={name} />)}<BrandIcon name="missing" label="Fallback" className="custom" /></>);
-    expect(screen.getByLabelText("GNU Wget").querySelector("svg")).toBeTruthy();
-    expect(screen.getByLabelText("Fallback").className).toContain("custom");
+    const { container } = render(<>{brandIconNames.map((name) => <BrandIcon key={name} name={name} label={name === "wget" ? "GNU Wget" : name} />)}<BrandIcon name="missing" label="Fallback" className="custom" /><BrandIcon name="npm" /></>);
+    expect(screen.getByLabelText("GNU Wget").tagName).toBe("svg");
+    expect(screen.getByLabelText("Fallback").getAttribute("class")).toContain("custom");
     expect(container.querySelectorAll('[role="img"]')).toHaveLength(brandIconNames.length + 1);
+    expect(container.querySelector('svg[aria-hidden="true"]')?.getAttribute("data-brand-name")).toBe("npm");
   });
 
-  it("merges utility classes and builds rounded finite bezier paths", () => {
+  it("merges utility classes and builds smooth and grid-snapped finite bezier paths", () => {
     expect(cn("px-2", false && "hidden", "px-4")).toBe("px-4");
     expect(cubicBezierPath({ x: 0, y: 1.234 }, { x: 100, y: 50 })).toBe("M 0 1.23 C 42 1.23, 58 50, 100 50");
     expect(cubicBezierPath({ x: 100, y: 50 }, { x: 80, y: 20 })).toBe("M 100 50 C 68 50, 112 20, 80 20");
     expect(() => cubicBezierPath({ x: Number.NaN, y: 0 }, { x: 0, y: 0 })).toThrow(TypeError);
+    const pixelPath = pixelBezierPath({ x: 1, y: 3 }, { x: 101, y: 51 }, 4, 8);
+    expect(pixelPath).toMatch(/^M 0 4 H /);
+    expect(pixelPath).toContain(" V ");
+    expect(() => pixelBezierPath({ x: 0, y: 0 }, { x: 2, y: 2 }, 0)).toThrow(TypeError);
+    expect(() => pixelBezierPath({ x: 0, y: 0 }, { x: 2, y: 2 }, 4, 1)).toThrow(TypeError);
+    expect(pixelBezierPath({ x: 0, y: 0 }, { x: 0, y: 0 })).toMatch(/^M 0 0 H /);
   });
 });
 

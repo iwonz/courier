@@ -1,7 +1,7 @@
 # Courier CLI
 
 <p align="center">
-  <img src="web/ui/assets/courier-relay-tech-v1.webp" width="420" alt="Relay, Courier's compact technological pigeon mascot">
+  <img src="web/ui/assets/courier-relay-pixel-neutral-v1.webp" width="420" alt="Relay, Courier's compact 8-bit pigeon courier mascot">
 </p>
 
 Courier is an extensible, cross-platform CLI for safely transferring files and directories across local, SSH, browser, and webhook endpoints.
@@ -136,7 +136,7 @@ The machine-readable [CLI contract](docs/cli-contract.yaml) is the source of tru
 
 Browser delivery pages, the administration interface, and the project landing page share the React/shadcn-based [`@courier/ui`](web/ui) package. Its [UI architecture guide](docs/ui.md) documents local components, assets, themes, localization, and the exact TypeScript coverage gate.
 
-The [brand system](docs/brand.md) defines Courier's positioning, compact technological Relay pigeon, visual language, operational vocabulary, accessibility rules, and approved communication patterns.
+The [brand system](docs/brand.md) defines Courier's positioning, compact 8-bit Relay pigeon, pixel visual language, operational vocabulary, accessibility rules, and approved communication patterns.
 
 See [Browser deliveries](docs/web-deliveries.md) for `web://` URLs, authentication, safe navigation, transactional uploads, and foreground/background lifecycle behavior.
 

@@ -1,36 +1,125 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "source": {
     "path": "docs/brand.md#generated-asset-record",
-    "disposition": "generated for Courier and retained locally"
+    "disposition": "generated for Courier, reviewed, quantized to 32 colors, and retained locally"
+  },
+  "identityFamily": {
+    "name": "Relay pixel courier",
+    "revision": "relay-pixel-v1",
+    "canonicalAsset": "courier-relay-pixel-neutral-v1.webp",
+    "generationRule": "Every role variant is an identity-preserving derivative of the canonical neutral asset; independent mascot redraws are not accepted.",
+    "invariants": [
+      "one compact near-square pigeon body",
+      "one large orange-ringed pigeon eye and short ivory beak",
+      "blue-gray head, pale folded wings, compact dark tail and coral feet",
+      "one small left-side earpiece and one cobalt courier satchel"
+    ],
+    "allowedVariations": ["pose", "role equipment", "clothing", "carried or attached object"],
+    "forbiddenVariations": ["body proportions", "physiology", "base plumage", "eye geometry", "armor", "helmet", "visor", "police or military styling"]
   },
   "assets": [
     {
-      "path": "courier-relay-tech-v1.webp",
+      "path": "courier-relay-pixel-mark-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 62976,
-      "sha256": "37bc30a2c14b5242a15358bbc06670f421dd78009bc6ec47725b8561e6ef0b29",
-      "width": 768,
-      "height": 768,
-      "use": "Image-generated compact square technological Relay pigeon for README and editorial browser illustration",
-      "prompt": "Compact square technological pigeon mascot on a genuinely transparent background, deliberately manufactured rather than lifelike, with a rounded graphite and cobalt armored body, tucked segmented wings, short tail, integrated courier module, restrained cyan routing lights, and one small orange waypoint beacon; mature product character, centered three-quarter view, compact one-to-one silhouette readable at icon size; no scenery, city, cyberpunk background, text, letters, interface, logo, watermark, weapon, or wide flying pose.",
-      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-7194b759-5e55-4ef4-9a95-01664b775938"
+      "bytes": 5484,
+      "sha256": "7a33e329dd68ba0d793a346546e64fe91807e67ef9f2f28803f383b187127d80",
+      "width": 256,
+      "height": 256,
+      "transparent": true,
+      "role": "mark",
+      "identityRevision": "relay-pixel-v1",
+      "identityReference": "courier-relay-pixel-neutral-v1.webp",
+      "use": "Compact header, product chrome, and favicon mark",
+      "prompt": "Use case: stylized-concept. Asset type: compact square logo sprite. Input image: canonical neutral Relay as the identity reference. Preserve Relay's exact head, eye, beak, earpiece, folded-wing proportions, plumage, satchel and parcel; tighten only the crop and pose for recognition at icon size. Hard-edged 8-bit pixel art on a genuinely transparent background. No gradients, smooth 3D shading, armor, helmet, visor, scenery, text, logo or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-93e232b8-ad5a-4fb7-8f43-0526c8e8f36c"
     },
     {
-      "path": "courier-relay-mark-v2.webp",
+      "path": "courier-relay-pixel-neutral-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 34492,
-      "sha256": "471100c85e42540c3b2b7212e130322e7f09376be3f890cf246b32258dec5b0c",
+      "bytes": 13642,
+      "sha256": "350157936f89e604df58a7ab0a6e841ce56e64aa1eab336e60d2730b48c6e749",
       "width": 512,
       "height": 512,
-      "use": "Image-generated square technological Relay head-and-shoulders mark for headers, compact product chrome, and favicons",
-      "prompt": "Redesign the referenced technological Relay pigeon as a truly square, compact icon silhouette. Preserve the graphite, cobalt, off-white, cyan-light, and single orange-waypoint identity, but make the character read as a manufactured navigation device rather than a cute bird. Use a near-frontal three-quarter head-and-armored-shoulders composition inside an almost square outer silhouette, with broad angular shoulder blocks and a concise pigeon beak. Center one subject on a genuinely transparent background and fill the square evenly. No feet, tail fan, perch, ground contact, wide wings, circular chicken-like body, text, letters, UI, external logo, scenery, watermark, weapon, or cute expression.",
-      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-1ef9db03-169e-4cd5-b6dc-234ce3ee39c1"
+      "transparent": true,
+      "role": "neutral",
+      "identityRevision": "relay-pixel-v1",
+      "identityReference": "self",
+      "use": "Canonical identity reference and README mascot",
+      "prompt": "Use case: stylized-concept. Asset type: canonical transparent mascot sprite. Create one compact, near-square 8-bit pigeon courier with one obvious orange-ringed pigeon eye, short ivory beak, blue-gray head, pale folded wings, compact dark tail, coral feet, a cobalt satchel containing a parcel, and one small earpiece. Mature product mascot, not a cute bird; hard-edged pixel clusters with no gradients or smooth pseudo-3D shading. No armor, helmet, visor, glowing face panel, exoskeleton, metallic chest plate, police or military styling, scenery, text, logo or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-2c7af194-7458-4e60-ae68-04da54a7525d"
+    },
+    {
+      "path": "courier-relay-pixel-route-v1.webp",
+      "mediaType": "image/webp",
+      "bytes": 11320,
+      "sha256": "7ed4494e4f25902984902c20e1e7abc527a213038ea8ad4efb6fdba15fe4760a",
+      "width": 512,
+      "height": 512,
+      "transparent": true,
+      "role": "route",
+      "identityRevision": "relay-pixel-v1",
+      "identityReference": "courier-relay-pixel-neutral-v1.webp",
+      "use": "Landing route-selection pose",
+      "prompt": "Use case: precise-object-edit. Asset type: final transparent 8-bit Courier route mascot sprite cleanup. Image 1 is the edit target route sprite and Image 2 is the canonical neutral Relay identity reference. Remove every detached opaque or semi-transparent speck. Retain only the cyan Source waypoint, canonical Relay with satchel and parcel, and orange Destination waypoint. Preserve exact compact physiology, body-to-head proportions, blue-gray head, large orange-ringed eye, short ivory beak, pale folded wing, compact dark tail, coral feet, left-side earpiece, cobalt satchel, parcel, walking pose, scale and waypoint positions. Hard-edged pixel art with alpha zero outside the three intended groups. No redraw, crop, rescale, reposition, gradients, smooth shading, background, shadow, glow, particles, text, logo or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-87c645af-b3f0-4fc5-898c-fd8966d67257; identity-reference:courier-relay-pixel-neutral-v1.webp; cleanup-parent:imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-f4fb4300-11dd-4a2c-b5b1-f3da8f4b5a6c; original-role-source:imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-14fd3461-fe62-4557-8e53-51642f92e33e"
+    },
+    {
+      "path": "courier-relay-pixel-delivery-v1.webp",
+      "mediaType": "image/webp",
+      "bytes": 9248,
+      "sha256": "a63aa1a637c642d5798fcf7631fe44ec8fcd5019c87d8c4e3458b4295b743fc5",
+      "width": 384,
+      "height": 384,
+      "transparent": true,
+      "role": "delivery",
+      "identityRevision": "relay-pixel-v1",
+      "identityReference": "courier-relay-pixel-neutral-v1.webp",
+      "use": "Authenticated delivery workspace pose",
+      "prompt": "Use case: stylized-concept. Asset type: transparent delivery sprite. Input image: canonical neutral Relay as the identity reference. Keep the exact same body size, physiology, plumage, eye, beak, wings, tail, feet, earpiece and satchel. Change only the working pose so Relay holds the same small parcel securely in both wings, with one restrained success spark. Hard-edged 8-bit pixels; no gradient, smooth 3D shading, scenery, text, logo or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-feeeed5e-5545-43bd-98ed-1e5fbe671c29"
+    },
+    {
+      "path": "courier-relay-pixel-admin-v1.webp",
+      "mediaType": "image/webp",
+      "bytes": 11100,
+      "sha256": "875e6139f4ad52d0b629a527a58d2e723c20595d7bcb19441bcf0a3f60bf4dbb",
+      "width": 384,
+      "height": 384,
+      "transparent": true,
+      "role": "admin",
+      "identityRevision": "relay-pixel-v1",
+      "identityReference": "courier-relay-pixel-neutral-v1.webp",
+      "use": "Administration operations pose",
+      "prompt": "Use case: stylized-concept. Asset type: transparent administration sprite. Input image: canonical neutral Relay as the identity reference. Keep the exact same body size, physiology, plumage, eye, beak, wings, tail, feet, earpiece and satchel. Change only the working pose and add a small clipboard with an abstract node route. Hard-edged 8-bit pixels; no gradient, smooth 3D shading, scenery, readable text, logo or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-6c7fb2bf-1fe0-4e23-abe4-18b6539a0d09"
+    },
+    {
+      "path": "pixelify-sans-v1.woff2",
+      "mediaType": "font/woff2",
+      "bytes": 22984,
+      "sha256": "807d95f498d0ccc257522b02d34ed48efe4e01496ffa345dab3779dd84ad08f5",
+      "use": "Local Cyrillic-capable display font for wordmarks and headings",
+      "repository": "https://github.com/eifetx/Pixelify-Sans",
+      "revision": "39df74aba80df8157546034b878e8be1eb565ced",
+      "sourcePath": "fonts/webfonts/PixelifySans[wght].woff2",
+      "license": "OFL-1.1"
+    },
+    {
+      "path": "pixelify-sans-ofl-1.1.txt",
+      "mediaType": "text/plain",
+      "bytes": 4488,
+      "sha256": "b66ba46f511a851ab09998b5a5a9fdbb102545a3864cb993095e1745996873a7",
+      "use": "Pixelify Sans license notice",
+      "repository": "https://github.com/eifetx/Pixelify-Sans",
+      "revision": "39df74aba80df8157546034b878e8be1eb565ced",
+      "sourcePath": "OFL.txt",
+      "license": "OFL-1.1"
     }
   ],
   "excluded": [
     "temporary generation sources and discarded studies",
     "browser-injected scripts and remote resources",
-    "superseded moth, swift, realistic-pigeon, wide-wing, panorama, product-scene, and cyberpunk-city studies"
+    "superseded armored, Robocop-style, moth, swift, realistic-pigeon, panorama, product-scene and cyberpunk-city studies"
   ]
 }

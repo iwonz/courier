@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { PixelIcon } from "./icons-react";
 import { browserPreferenceController, preferenceLocaleOrder, preferenceThemeOrder, type BrowserPreferenceController } from "./preferences";
 import { translate, type Locale } from "./i18n";
 import { type ThemePreference } from "./theme";
@@ -36,8 +36,8 @@ export function ThemeSelector(): React.JSX.Element {
   const currentLabel = translate(locale, `theme.${theme}`);
   const nextLabel = translate(locale, `theme.${next}`);
   const label = `${translate(locale, "theme.label")}: ${currentLabel}. ${translate(locale, "preference.next")}: ${nextLabel}`;
-  const ThemeIcon = theme === "light" ? Sun : theme === "dark" ? Moon : Monitor;
-  return <TooltipProvider><Tooltip><TooltipTrigger asChild><Button type="button" size="icon" variant="ghost" className="bg-muted/45" aria-label={label} onClick={() => controller.cycleTheme()}><ThemeIcon /></Button></TooltipTrigger><TooltipContent>{currentLabel}</TooltipContent></Tooltip></TooltipProvider>;
+  const icon = theme === "light" ? "sun" : theme === "dark" ? "moon" : "system";
+  return <TooltipProvider><Tooltip><TooltipTrigger asChild><Button type="button" size="icon" variant="ghost" aria-label={label} onClick={() => controller.cycleTheme()}><PixelIcon name={icon} /></Button></TooltipTrigger><TooltipContent>{currentLabel}</TooltipContent></Tooltip></TooltipProvider>;
 }
 
 export function LocaleSelector(): React.JSX.Element {
@@ -46,5 +46,5 @@ export function LocaleSelector(): React.JSX.Element {
   const currentLabel = translate(locale, `locale.${locale}`);
   const nextLabel = translate(locale, `locale.${next}`);
   const label = `${translate(locale, "locale.label")}: ${currentLabel}. ${translate(locale, "preference.next")}: ${nextLabel}`;
-  return <TooltipProvider><Tooltip><TooltipTrigger asChild><Button type="button" size="icon" variant="ghost" className="bg-muted/45" aria-label={label} onClick={() => controller.cycleLocale()}><span aria-hidden="true" data-locale-icon={locale} className="text-base leading-none">{locale === "ru" ? "🇷🇺" : "🇬🇧"}</span><span className="sr-only">{currentLabel}</span></Button></TooltipTrigger><TooltipContent>{currentLabel}</TooltipContent></Tooltip></TooltipProvider>;
+  return <TooltipProvider><Tooltip><TooltipTrigger asChild><Button type="button" size="icon" variant="ghost" aria-label={label} onClick={() => controller.cycleLocale()}><span aria-hidden="true" data-locale-icon={locale} className="grid h-3 w-4 overflow-hidden border border-foreground/35">{locale === "ru" ? <><i className="block h-1 bg-[var(--pixel-paper)]" /><i className="block h-1 bg-[var(--pixel-cobalt)]" /><i className="block h-1 bg-[var(--pixel-red)]" /></> : <svg viewBox="0 0 16 12" className="size-full" shapeRendering="crispEdges"><path fill="var(--pixel-cobalt)" d="M0 0h16v12H0z"/><path fill="var(--pixel-paper)" d="M0 0h3l13 9v3h-3L0 3zm16 0h-3L0 9v3h3l13-9zM6 0h4v12H6zM0 4h16v4H0z"/><path fill="var(--pixel-red)" d="M7 0h2v12H7zM0 5h16v2H0zM0 0h1l6 4v1H6L0 1zm16 0h-1L9 4v1h1l6-4zM0 12h1l6-4V7H6l-6 4zm16 0h-1L9 8V7h1l6 4z"/></svg>}</span><span className="sr-only">{currentLabel}</span></Button></TooltipTrigger><TooltipContent>{currentLabel}</TooltipContent></Tooltip></TooltipProvider>;
 }
