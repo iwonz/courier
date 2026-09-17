@@ -1,7 +1,6 @@
 import { parseLocale, type Locale } from "@courier/ui";
 
 const en = {
-  brandProduct: "Operations control",
   eyebrow: "Local control plane",
   title: "Delivery control",
   intro: "Inspect live routes, confirmed volume, and delivery policy from one private local console.",
@@ -36,7 +35,6 @@ const en = {
 type Catalog = { readonly [Key in keyof typeof en]: string };
 
 const ru = {
-  brandProduct: "Операционный контроль",
   eyebrow: "Локальный контур управления",
   title: "Управление доставками",
   intro: "Проверяйте активные маршруты, подтверждённый объём и правила доставки в одной приватной локальной консоли.",

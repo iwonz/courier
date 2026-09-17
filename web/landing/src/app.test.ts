@@ -30,12 +30,12 @@ afterEach(() => {
 });
 
 it("projects routes, endpoint vocabulary, exact route flags, and command compatibility", () => {
-  expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("relay-mark");
+  expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("data:image/svg+xml");
   const pairs = expandRoutePairs(contractData.routes);
   expect(pairs).toContainEqual(expect.objectContaining({ source: "local", destination: "ssh", routeName: "path-to-path" }));
   expect(pairs).toContainEqual(expect.objectContaining({ source: "webhook", destination: "local", routeName: "webhook-to-path" }));
   expect(endpointExample("local", "source")).toBe("./project");
-  expect(endpointExample("ssh", "destination")).toBe("relay@host:/srv/destination/");
+  expect(endpointExample("ssh", "destination")).toBe("courier@host:/srv/destination/");
   expect(endpointExample("future", "source")).toBe("future");
   expect(endpointMessage("ssh", "source")).toBe("endpointRemote");
   expect(endpointMessage("http", "destination")).toBe("endpointWebHook");
@@ -99,7 +99,7 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   const root = element.shadowRoot!;
   const text = root.textContent ?? "";
 
-  expect(text).toContain("Move files. Keep control.");
+  expect(text).toContain("From here to anywhere.");
   expect(text).toContain("courier from <source> to <destination>");
   expect(text).toContain("path-to-path");
   expect(text).toContain("Source");
@@ -113,17 +113,15 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   expect(text).not.toContain("All connections come from the published CLI contract");
   expect(text).not.toContain("PATH-TO-PATH");
   expect(text).not.toContain("One generated reference for the public command tree");
-  expect([...root.querySelectorAll("section")].map((section) => section.id)).toEqual(["hero", "routes", "install", "cli"]);
-  expect(root.querySelectorAll("courier-scene")).toHaveLength(4);
-  expect(root.querySelector("#hero button")).toBeNull();
-  expect(root.querySelector("#hero [aria-pressed]")).toBeNull();
-  expect(root.querySelector(".hero-route path")?.getAttribute("d")).toContain(" C ");
+  expect([...root.querySelectorAll("section")].map((section) => section.id)).toEqual(["route", "install", "cli"]);
+  expect(root.querySelectorAll("courier-scene")).toHaveLength(3);
+  expect(root.querySelector("#route h1")?.textContent).toBe("From here to anywhere.");
   expect(element.style.getPropertyValue("--masthead-height")).toBe("78px");
   expect(root.querySelector(".route-connector path")?.getAttribute("d")).toContain(" C ");
   expect(resizeInstances[0]?.observe).toHaveBeenCalledTimes(2);
-  const navigationObserver = sectionInstances.find((instance) => instance.observe.mock.calls.length === 4)!;
+  const navigationObserver = sectionInstances.find((instance) => instance.observe.mock.calls.length === 3)!;
   expect(navigationObserver.options?.rootMargin).toContain("-78px");
-  const github = root.querySelector(".github-link")!;
+  const github = root.querySelector("courier-icon-link")!;
   await github.updateComplete;
   const githubAnchor = github.shadowRoot?.querySelector("a");
   expect(githubAnchor?.target).toBe("_blank");
@@ -138,15 +136,15 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   const baseSources = scenes.map((scene) => scene.shadowRoot?.querySelector(".base") as HTMLElement);
   await Promise.all(baseSources.map((mascot) => (mascot as unknown as { updateComplete: Promise<unknown> }).updateComplete));
   expect(baseSources.map((mascot) => mascot.shadowRoot?.querySelector("img")?.src)).toEqual(expect.arrayContaining([
-    expect.stringContaining("relay-journey-hero-wide"), expect.stringContaining("relay-journey-install-wide"), expect.stringContaining("relay-journey-routing-wide"), expect.stringContaining("relay-journey-cli-wide"),
+    expect.stringContaining("landing-route-wide"), expect.stringContaining("landing-install-wide"), expect.stringContaining("landing-reference-wide"),
   ]));
 
-  const routeSection = root.querySelector("#routes") as HTMLElement;
-  routeSection.scrollIntoView = vi.fn();
+  const installSection = root.querySelector("#install") as HTMLElement;
+  installSection.scrollIntoView = vi.fn();
   const pushState = vi.spyOn(history, "pushState");
-  (root.querySelector('nav a[href="#routes"]') as HTMLAnchorElement).click();
-  expect(routeSection.scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "smooth" });
-  expect(pushState).toHaveBeenCalledWith(null, "", "#routes");
+  (root.querySelector('nav a[href="#install"]') as HTMLAnchorElement).click();
+  expect(installSection.scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "smooth" });
+  expect(pushState).toHaveBeenCalledWith(null, "", "#install");
 
   const routeReadout = root.querySelector(".route-readout") as HTMLElement & { command: string };
   const routeCommand = () => routeReadout.command;
@@ -156,15 +154,14 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   source("web").dispatchEvent(new Event("pointerenter"));
   source("web").dispatchEvent(new FocusEvent("focus"));
   await element.updateComplete;
-  expect(routeCommand()).toContain("./project to relay@host:/srv/destination/");
+  expect(routeCommand()).toContain("./project to courier@host:/srv/destination/");
   source("web").click();
   await element.updateComplete;
-  expect(routeCommand()).toContain("web:// to relay@host:/srv/destination/");
+  expect(routeCommand()).toContain("web:// to courier@host:/srv/destination/");
   expect(destination("web").disabled).toBe(true);
-  expect(destination("web").getAttribute("aria-disabled")).toBe("true");
   destination("web").click();
   await element.updateComplete;
-  expect(routeCommand()).toContain("web:// to relay@host:/srv/destination/");
+  expect(routeCommand()).toContain("web:// to courier@host:/srv/destination/");
   destination("local").click();
   await element.updateComplete;
   expect(routeCommand()).toContain("web:// to ./backup/");
@@ -243,13 +240,19 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   expect(root.querySelectorAll(".option-row")).toHaveLength(17);
 
   navigationObserver.callback([
-    { target: root.querySelector("#routes")!, isIntersecting: true, intersectionRatio: 0.8 },
+    { target: root.querySelector("#install")!, isIntersecting: true, intersectionRatio: 0.8 },
   ] as IntersectionObserverEntry[], {} as IntersectionObserver);
   await element.updateComplete;
-  expect(root.querySelector('nav a[href="#routes"]')?.getAttribute("aria-current")).toBe("page");
+  expect(root.querySelector('nav a[href="#install"]')?.getAttribute("aria-current")).toBe("page");
   navigationObserver.callback([
-    { target: root.querySelector("#routes")!, isIntersecting: false, intersectionRatio: 0 },
-    { target: root.querySelector("#hero")!, isIntersecting: true, intersectionRatio: 0.9 },
+    { target: root.querySelector("#cli")!, isIntersecting: true, intersectionRatio: 0.8 },
+  ] as IntersectionObserverEntry[], {} as IntersectionObserver);
+  await element.updateComplete;
+  expect(root.querySelector('nav a[href="#cli"]')?.getAttribute("aria-current")).toBe("page");
+  navigationObserver.callback([
+    { target: root.querySelector("#install")!, isIntersecting: false, intersectionRatio: 0 },
+    { target: root.querySelector("#cli")!, isIntersecting: false, intersectionRatio: 0 },
+    { target: root.querySelector("#route")!, isIntersecting: true, intersectionRatio: 0.9 },
   ] as IntersectionObserverEntry[], {} as IntersectionObserver);
   await element.updateComplete;
   expect(root.querySelector("nav [aria-current]")).toBeNull();
@@ -261,8 +264,8 @@ it("renders stable non-interactive scenes and activation-only route, install, an
   expect((element as unknown as { describeEndpoint(name: string, side: "source" | "destination"): string }).describeEndpoint("future", "destination")).toBe("future");
   element.setLocale(new CustomEvent("courier-locale", { detail: "ru" }));
   await element.updateComplete;
-  expect(root.textContent).toContain("Переносите файлы. Сохраняйте контроль.");
-  expect(root.textContent).toContain("Команда");
+  expect(root.textContent).toContain("Отсюда — куда угодно.");
+  expect((root.querySelector("courier-command-readout") as HTMLElement & { heading: string }).heading).toBe("Команда");
   expect(root.textContent).toContain("Source");
   expect(root.textContent).toContain("Destination");
   expect(root.textContent).toContain("Remote");
@@ -303,10 +306,10 @@ it("covers zero-layout and detached observer-free lifecycle safely", async () =>
   missing.href = "#missing";
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
   internals.navigate({ preventDefault: vi.fn(), currentTarget: missing } as unknown as MouseEvent);
-  const routes = element.shadowRoot?.querySelector("#routes") as HTMLElement;
+  const routes = element.shadowRoot?.querySelector("#route") as HTMLElement;
   routes.scrollIntoView = vi.fn();
   const routeLink = document.createElement("a");
-  routeLink.href = "#routes";
+  routeLink.href = "#route";
   internals.navigate({ preventDefault: vi.fn(), currentTarget: routeLink } as unknown as MouseEvent);
   expect(routes.scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "auto" });
   element.remove();

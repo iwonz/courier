@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import "./main";
-import { CourierAdminApp } from "./app";
+import { CourierAdminApp, reconcileDeliverySelection } from "./app";
 import type { Delivery, Snapshot } from "./api";
 
 const policy = {
@@ -45,13 +45,13 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-async function mount(fetcher = vi.fn(async () => new Response(JSON.stringify(snapshot), { status: 200 }))): Promise<CourierAdminApp> {
+async function mount(fetcher = vi.fn(async () => new Response(JSON.stringify(snapshot), { status: 200 })), marker = "server-a"): Promise<CourierAdminApp> {
   vi.stubGlobal("fetch", fetcher);
   const element = new CourierAdminApp();
   document.body.append(element);
   await vi.waitFor(async () => {
     await element.updateComplete;
-    expect(element.shadowRoot?.textContent).toContain("server-a");
+    expect(element.shadowRoot?.textContent).toContain(marker);
   });
   return element;
 }
@@ -61,26 +61,39 @@ it("loads, renders, receives events, localizes, and disconnects", async () => {
   const element = await mount();
   expect(element.shadowRoot?.textContent).toContain("server-a");
   expect(element.shadowRoot?.textContent).toContain("Unreachable");
+  let form = element.shadowRoot!.querySelector("form") as HTMLFormElement;
+  expect((form.elements.namedItem("auth") as HTMLSelectElement).value).toBe("none");
+  expect((form.elements.namedItem("failAction") as HTMLSelectElement).value).toBe("ban");
+  const second = [...element.shadowRoot!.querySelectorAll<HTMLButtonElement>(".delivery-nav")].find((button) => button.textContent?.includes("delivery-b"))!;
+  second.click();
+  await element.updateComplete;
   expect(element.shadowRoot?.textContent).toContain("Unavailable");
-  const forms = [...element.shadowRoot!.querySelectorAll("form")];
-  expect((forms[0]!.elements.namedItem("auth") as HTMLSelectElement).value).toBe("none");
-  expect((forms[0]!.elements.namedItem("failAction") as HTMLSelectElement).value).toBe("ban");
-  expect((forms[1]!.elements.namedItem("auth") as HTMLSelectElement).value).toBe("password");
-  expect((forms[1]!.elements.namedItem("failAction") as HTMLSelectElement).value).toBe("stop");
-  expect((forms[1]!.elements.namedItem("noUi") as HTMLInputElement).checked).toBe(true);
+  form = element.shadowRoot!.querySelector("form") as HTMLFormElement;
+  expect((form.elements.namedItem("auth") as HTMLSelectElement).value).toBe("password");
+  expect((form.elements.namedItem("failAction") as HTMLSelectElement).value).toBe("stop");
+  expect((form.elements.namedItem("noUi") as HTMLInputElement).checked).toBe(true);
+  eventListener!(new MessageEvent("snapshot", { data: JSON.stringify(snapshot) }));
+  await element.updateComplete;
+  expect(element.shadowRoot?.querySelector('.delivery-nav[aria-pressed="true"]')?.textContent).toContain("delivery-b");
   eventListener!(new MessageEvent("snapshot", { data: JSON.stringify({ servers: [] }) }));
   await element.updateComplete;
   expect(element.shadowRoot?.textContent).toContain("No live Courier servers");
   const operationsArt = element.shadowRoot?.querySelector("courier-scene") as HTMLElement & { source: string; mobileSource: string };
-  expect(operationsArt.source).toContain("relay-terminal-admin-wide");
-  expect(operationsArt.mobileSource).toContain("relay-terminal-admin-mobile");
-  expect(element.shadowRoot?.querySelector("courier-terminal.registry-terminal")).not.toBeNull();
+  expect(operationsArt.source).toContain("admin-operations-wide");
+  expect(operationsArt.mobileSource).toContain("admin-operations-mobile");
+  expect(element.shadowRoot?.querySelector("courier-workbench.registry-workbench")).not.toBeNull();
   element.setLocale(new CustomEvent("courier-locale", { detail: "ru" }));
   await element.updateComplete;
   expect(element.shadowRoot?.textContent).toContain("Активные серверы Courier");
   element.remove();
   expect(eventClose).toHaveBeenCalledOnce();
   new CourierAdminApp().disconnectedCallback();
+});
+
+it("preserves a valid selected delivery and falls back deterministically", () => {
+  expect(reconcileDeliverySelection(snapshot, "delivery-b")).toBe("delivery-b");
+  expect(reconcileDeliverySelection(snapshot, "missing")).toBe("delivery-a");
+  expect(reconcileDeliverySelection({ servers: [] }, "delivery-a")).toBeUndefined();
 });
 
 it("runs server and delivery stop actions", async () => {
@@ -146,4 +159,12 @@ it("renders initial loading state and does not redefine the element", async () =
   vi.resetModules();
   await import("./main");
   expect(customElements.get("courier-admin-app")).toBe(CourierAdminApp);
+});
+
+it("renders a live server with no selectable deliveries", async () => {
+  const serverOnly: Snapshot = { servers: [snapshot.servers[1]!] };
+  const element = await mount(vi.fn(async () => new Response(JSON.stringify(serverOnly), { status: 200 })), "server-b");
+  expect(element.shadowRoot?.querySelectorAll(".delivery-nav")).toHaveLength(0);
+  expect(element.shadowRoot?.textContent).toContain("No live Courier servers");
+  expect((element.shadowRoot?.querySelector("courier-workbench.operations") as HTMLElement & { status: string }).status).toBe("Live");
 });

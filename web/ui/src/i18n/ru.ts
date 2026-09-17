@@ -8,6 +8,7 @@ export const ru = {
   "locale.label": "Язык",
   "locale.en": "Английский",
   "locale.ru": "Русский",
+  "preference.next": "Следующая",
   "progress.label": "Ход доставки",
   "action.cancel": "Отмена",
   "action.close": "Закрыть",

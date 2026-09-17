@@ -1,152 +1,53 @@
 # Courier brand system
 
-Courier is a dependable delivery layer for files and directories. Its identity should feel like a field manual connected to a live network control room: direct, organized, technically credible, and calm under pressure.
+Courier is a dependable route for files and directories across local, SSH, browser, and webhook boundaries. The identity is calm, technically mature, and precise without looking institutional.
 
-## Core idea
+## Promise
 
-**Positioning:** Courier is the cross-platform CLI for moving files across local, SSH, browser, and webhook boundaries while keeping the route, destination, and result explicit.
+**From here to anywhere.**
 
-**Promise:** Move files. Keep control.
+Courier makes Source, Destination, policy, progress, and the verified result explicit. It does not present transfer as magic and does not claim guarantees the runtime cannot prove.
 
-**Supporting line:** One self-contained binary. Explicit routes. Verified arrival.
+## Vector
 
-Courier is not positioned as magic infrastructure or as a replacement for every synchronization product. It is a focused transfer tool whose useful guarantees are visible before, during, and after delivery.
+Vector is Courier's original geometric moth navigator. Angular wings form a route-like silhouette, while one burnt-orange waypoint identifies direction and state. Vector is mature and graphic: never cute, robotic, fantasy-themed, weaponized, or derived from a third-party mascot.
 
-## Personality
+Use Vector in the landing journey, protected access scene, operations environment, repository banner, mark, and editorial material. Product meaning must remain complete when artwork is unavailable; Vector never replaces a label, status, or security warning.
 
-- **Capable:** knows the route, checks the handoff, and reports what actually happened.
-- **Composed:** treats routine work, interruption, and failure with the same measured tone.
-- **Plain-spoken:** uses concrete verbs and technical facts instead of abstractions.
-- **Protective:** makes unsafe collisions, trust failures, and credential boundaries visible.
-- **Quietly human:** warm details and Relay add character without turning operational work into a joke.
-
-The result should be more mature than a playful developer toy and more welcoming than military, cyberpunk, or enterprise-security theater.
-
-## Relay, the field operator
-
-Relay is Courier's original pigeon mascot: an adult courier pigeon wearing a compact graphite utility harness with signal-lime route tabs and a sealed data capsule. Relay is observant, prepared, and approachable. The character represents dependable movement and a verified handoff, not speed at any cost.
-
-Use Relay:
-
-- in the landing hero and brand storytelling;
-- to orient a user at an authentication or empty state;
-- at meaningful confirmation moments;
-- in editorial material where a human presence improves comprehension.
-
-Do not use Relay:
-
-- as the only way to communicate state or meaning;
-- inside dense tables, repeated list rows, or every panel;
-- to make light of a failure, security decision, or lost connection;
-- with speech bubbles that imitate a human support agent;
-- as a child, toy, robot, superhero, soldier, or weapon-bearing character;
-- with third-party uniforms, delivery-company symbols, or another product's mascot treatment.
-
-[`relay-mascot.png`](../web/ui/assets/relay-mascot.png) is the canonical character reference. Product surfaces use context-specific scenes instead of repeating that neutral pose:
-
-| Role | Surface | Situation |
-|---|---|---|
-| Dispatch navigator | Landing hero | Flies a visible Source-to-Destination route between precise signal stations |
-| Route cartographer | Landing routing | Supervises a physical signal junction while the route terminal remains readable |
-| Integrity inspector | Landing installation | Checks unbranded release parcels as they pass through a verification gate |
-| Archive operator | Landing command reference | Organizes unlabeled route instruments around the generated command registry |
-| Access controller | Delivery | Guards a secure arrival hall around authentication and the authorized manifest |
-| Operations controller | Administration | Observes live relay stations around registry, server, and policy workspaces |
-| Courier in flight | README | Carries a confirmed handoff from source to destination |
-
-Wardrobe and tools change only to explain the role. Relay's adult anatomy, graphite harness, cream capsule, signal-lime route tabs, orange beak, and editorial line work remain stable. Every scene is decorative in product UI unless surrounding editorial copy specifically describes Relay; the interface must remain complete when the image is unavailable.
+[`vector-mascot.webp`](../web/ui/assets/vector-mascot.webp) is the canonical generated reference. [`vector-mark.svg`](../web/ui/assets/vector-mark.svg) is the deterministic compact mark used in product chrome and favicons. Contextual asset modules are named by surface and role, not by mascot, so a future identity revision does not leak into application architecture.
 
 ## Visual language
 
-### Palette
-
-| Role | Color | Use |
+| Role | Value | Use |
 |---|---|---|
-| Graphite 900 | `#151714` | Dark canvas, primary ink, inverse surfaces |
-| Paper 50 | `#f3f4e9` | Light canvas, text on graphite |
-| Signal lime | `#d4ff45` | Primary route, active state, decisive action |
-| Beak orange | `#ff8758` | Focus rings and small human accents |
-| Danger coral | `#ff6b5f` | Stopped or unsafe states only |
-| Field gray | `#737b6d` | Secondary operational detail |
+| Carbon | `#0E0F0D` | Dark canvas and primary ink |
+| Chalk | `#F2EFE6` | Light canvas and inverse text |
+| Warm line | `#CBC5B8` | Registration and workbench structure |
+| Route orange | `#D95F2B` | Active routes, important state, and focus |
 
-Signal lime is a locator, not wallpaper. Large surfaces stay graphite, paper, or neutral field colors. Orange never competes with the main action; its main product role is keyboard focus. Status colors always appear with text, never as color-only meaning.
+Theme-specific orange variants keep text and focus accessible. Success, warning, and danger use restrained semantic colors only with text or icons. Signal lime is not part of the Vector identity.
 
-### Typography
+Courier uses system fonts only. Oversized display type is tightly composed; monospace is reserved for commands, paths, identifiers, byte counters, and other operational values. Surfaces use negative space, thin instrument lines, restrained transparency, and sparse route geometry instead of filled card stacks, telemetry decoration, fake prompts, or timestamp gutters.
 
-Courier uses system-resident fonts and ships no remote font dependency. Display text is compact, heavy, and slightly tightened. Body copy is neutral and readable. Labels, routes, byte counts, versions, and commands use a monospaced stack with tabular numerals.
+## Interaction
 
-- Headlines use sentence case, not title case.
-- Operational labels may use tracked uppercase at small sizes.
-- Long paths must wrap or truncate intentionally; they must never force viewport overflow.
-- Commands retain their exact capitalization and punctuation.
+Theme and locale are each one icon button. Theme cycles `system → light → dark`; locale cycles `English → Russian`. System and browser language remain the defaults until an explicit stored choice overrides them. Every control exposes its current and next value in a localized accessible name.
 
-### Shape and composition
+Scenes are responsive, static composites. They load eagerly only when above the fold and otherwise activate once near the viewport. No scene tracks the pointer, creates a refracted duplicate, or moves the base image. Route pulses are restrained and disappear under reduced motion.
 
-The layout uses a disciplined grid, visible registration lines, circular route terminals, compact status dots, and transparent terminal workspaces. Terminal surfaces use hairline borders, a timestamp gutter, lime prompts, orange focus, restrained transparency, and monospaced operational content. Structural surfaces use slightly rounded corners; short choices use precise tags when that improves scanning. Shadows are restrained. Route lines and Relay's directional posture provide motion. Full-bleed cinematic editorial scenes form an environmental backdrop with deliberate quiet zones composed around the real interface. The UI is not arranged as stacks of filled dashboard cards, and neon spectacle, detached 3D objects, or fake terminal decoration do not define the system.
-
-The Courier mark is a compact profile of Relay with the orange beak, alert eye, and signal-lime capsule harness retained at favicon size. It may appear without the wordmark in compact contexts. Do not rotate it, add speed lines, recolor individual features arbitrarily, or place it on insufficient contrast.
-
-### Motion
-
-Motion confirms state changes and direction. Transitions remain short and interruptible. No essential information depends on animation. Illustrated scene bases do not pan or scale with the pointer; any pointer response is confined to a local multi-lobed highlight and restrained refractive lens created only after fine-pointer interaction. The stable scene host owns hit testing and every decorative child ignores pointer input. Fine-pointer targets converge through one elapsed-time loop rather than snapping, pursue the newest coalesced position, return gently to ambient, and then release the duplicate image. Coarse pointers use a fixed ambient treatment and never create refraction. `prefers-reduced-motion` removes non-essential travel, breathing, refraction, and smooth scrolling.
-
-### Controls
-
-Courier controls never expose unstyled browser chrome. Small fixed choices such as theme and locale use icon-only shared segmented radio groups with localized programmatic names, visible selection, arrow-key navigation, and one focus stop. External icon links beside them use the same control-frame dimensions, border, surface, radius, hover, focus, and theme tokens while remaining semantic anchors. Form inputs, selects, and checkboxes keep dependable platform semantics but normalize appearance, spacing, indicators, hover, focus, and disabled states through the shared UI kit. Boolean policy values use a switch treatment; view filters use a designed checkbox; file selection uses a designed action surface while retaining a real keyboard-operable file input.
-
-Custom appearance must not recreate browser responsibilities badly. Labels remain programmatic, Enter and Space activate buttons, arrow keys move within segmented groups, validation remains available, and the orange focus ring is never removed.
-
-## Communication system
-
-### Voice rules
+## Voice
 
 1. Start with the current state or required action.
-2. Name the object: route, source, destination, archive, server, or delivery.
-3. Use a concrete verb: prepare, connect, send, receive, verify, stop, retry.
-4. Report only what Courier can prove. “Confirmed” is stronger and more useful than “done.”
+2. Name the object: Source, Destination, route, archive, server, or delivery.
+3. Use concrete verbs: prepare, connect, send, receive, verify, stop, retry.
+4. Report only confirmed outcomes.
 5. State what remains safe after failure when known.
-6. Keep credentials, query secrets, and private metadata out of copy, URLs, logs, and examples.
+6. Never include credentials, query secrets, or protected metadata.
 
-### Operational vocabulary
-
-| Prefer | Avoid |
-|---|---|
-| route | pipeline, tunnel magic |
-| delivery | job, payload blast |
-| preparing | working on it |
-| sending / receiving | syncing when no synchronization occurs |
-| verifying | almost done |
-| verified arrival | guaranteed delivery |
-| stopped | killed, died |
-| blocked by a collision | something went wrong |
-| confirmed bytes | transferred bytes when confirmation is unknown |
-
-Canonical state sequence: **Preparing → Routing → Sending or receiving → Verifying → Complete**. A failure message follows: **what stopped + why + safe next action**.
-
-Examples:
-
-- “Route ready. Choose a file to dispatch.”
-- “Verifying the archive before commit.”
-- “Delivery stopped: the final path already exists. No destination data was changed.”
-- “Administration data is temporarily unavailable. Retry the local connection.”
-
-Avoid unsupported guarantees, breathless superlatives, fake urgency, blame, jokes in error states, and claims that Courier is “military-grade,” “unbreakable,” or “the fastest.”
-
-## Product surfaces
-
-- **Landing:** a continuous dispatch journey. Lead with the promise and a non-interactive `Source` to `Destination` handoff between crisp circular terminals, then let routing, installation, and the generated command registry follow at natural content height without snapping. The visible tagline is omitted. Route, installation, and selected CLI usage appear only as immutable Copy readouts with localized status; there are no Run/Replay controls, transcripts, timers, editable inputs, or browser execution surfaces.
-- **Delivery UI:** a transfer terminal. Authentication remains a real protected form, while authorized breadcrumbs, manifests, upload, and download actions use the terminal grammar and only the existing versioned API. Protected metadata appears only after authorization; no shell prompt is introduced.
-- **Administration UI:** an operations terminal. Prioritize live registry state, bindings, Source/Destination routes, confirmed counters, policy changes, and explicit stop actions backed only by the existing API. SSE refreshes state rather than recreating an imaginary command session.
-- **CLI and documentation:** use the same route, delivery, verification, collision, and confirmed-byte vocabulary. Decorative identity never interferes with copy-and-paste commands.
-
-## Accessibility and integrity
-
-Every control is reachable by keyboard with a visible orange focus ring. Light, dark, and system themes retain text and state contrast. English is the fallback language and Russian catalogs preserve intent rather than translating slogans literally. Layouts support 360-pixel viewports, long UUIDs, Unicode paths, zoom, and reduced motion.
-
-Identity assets are local, checksum-recorded, and covered by the MIT license notice. No UI build may fetch a font, image, script, tracking pixel, or theme resource from a third party.
+Prefer “route,” “delivery,” “verifying,” “stopped,” “collision,” and “confirmed bytes.” Avoid magic-infrastructure language, fake urgency, blame, jokes in failure states, or unsupported superlatives.
 
 ## Generated asset record
 
-Relay and every contextual scene were produced with the built-in OpenAI image generation workflow for this repository using the canonical character as the identity reference. Temporary wide and portrait continuity storyboards established route geometry, terrain, perspective, light, and transition bands; they are not shipped. Eight final landing WebPs are separately composed wide and portrait segments for departure, routing junction, verification depot, and destination archive. Together they read as one masked journey while reserving usable regions for the real interface. The four existing delivery/administration WebPs and README panorama remain unchanged. Every prompt prohibits text, terminal UI, logos, watermarks, weapons, credentials, required product information, and third-party mascot imitation. Superseded landing scenes and temporary generation artifacts are not retained in the repository.
+Vector and the editorial scenes were produced with the built-in image-generation workflow from a canonical transparent reference, then encoded as local WebP assets. Generated images contain no text, fake UI, commands, logos, credentials, watermarks, weapons, or required information.
 
-The auditable prompt summaries, roles, sequence positions, dimensions, byte counts, and SHA-256 digests are stored in [`web/ui/assets/provenance.json`](../web/ui/assets/provenance.json). Product illustrations use optimized local WebP delivery assets; each landing segment is at most 225 KiB and all eight total at most 1.6 MiB. No runtime surface fetches generated art remotely.
+[`provenance.json`](../web/ui/assets/provenance.json) records role, prompt summary, sequence metadata, dimensions, byte count, SHA-256, and generation lineage. The asset gate verifies the manifest, responsive sequence, per-file and aggregate budgets, and the absence of untracked files. Third-party package-manager and platform marks are documented in [`web/ui/NOTICE.md`](../web/ui/NOTICE.md).

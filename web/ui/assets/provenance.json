@@ -6,181 +6,168 @@
   },
   "assets": [
     {
-      "path": "relay-mark.png",
-      "mediaType": "image/png",
-      "bytes": 291367,
-      "sha256": "9e777a3f37e3e928a9f48fce4f86098c7dc79a42b61c76a4e5fed8d2846783e0",
-      "width": 512,
-      "height": 512,
-      "use": "Generated compact Relay application mark, wordmark companion, and browser favicon",
-      "prompt": "Compact head-and-upper-chest portrait of the canonical adult Relay courier pigeon in three-quarter profile, preserving graphite plumage, alert orange eye and beak, graphite harness, cream capsule, and one signal-lime route tab; mature flat editorial screen-print treatment, transparent background, readable at 24–40 pixels, no badge, arrow, text, logo, watermark, toy styling, robot parts, or third-party references."
-    },
-    {
-      "path": "relay-mascot.png",
-      "mediaType": "image/png",
-      "bytes": 808035,
-      "sha256": "83a6fd19101ac110920c5bb385bf8884100542144cdf204f4939a9142a3e46ea",
-      "width": 928,
-      "height": 960,
-      "use": "Canonical Relay courier-pigeon character reference",
-      "prompt": "Adult courier pigeon in a compact graphite utility harness carrying a sealed cream data capsule with sparse signal-lime tabs; transparent editorial screen-print cutout; no text, logo, weaponry, robot parts, childlike proportions, or third-party mascot imitation."
-    },
-    {
-      "path": "relay-journey-hero-wide-v1.webp",
+      "path": "vector-mascot.webp",
       "mediaType": "image/webp",
-      "bytes": 189206,
-      "sha256": "7a280ca556a165349c06c9394814cb32fad155d4096083eae6ce061f20b41f54",
+      "bytes": 341528,
+      "sha256": "d3e8ef39f0961d97abb00f1b6b0ecfcbb2a08ce70958107b86099c017051ac4c",
+      "width": 1374,
+      "height": 1145,
+      "use": "Canonical transparent Vector moth-navigator identity reference",
+      "prompt": "Mature geometric moth navigator named Vector, symmetrical angular wings forming a route silhouette, carbon-black and warm off-white aerospace editorial print texture, one restrained burnt-orange waypoint, transparent background; graphic rather than cute, robotic, fantasy, or derivative; no text, logo, UI, credentials, weapon, or watermark.",
+      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-2081905e-2ba7-4736-a83f-b417479e95df"
+    },
+    {
+      "path": "landing-route-wide-v1.webp",
+      "mediaType": "image/webp",
+      "bytes": 191670,
+      "sha256": "6c22e7cab18cc2373ebbb3d1407a8e21ddf0b479e57c1971b299fe88edf231db",
       "width": 1672,
       "height": 941,
-      "use": "Wide landing journey segment 1: Relay departure and route overview",
-      "prompt": "Wide cinematic editorial departure derived from the top quarter of the continuity storyboard: canonical mature Relay leaves a source station above a warm-paper and graphite mountain transit landscape; broad quiet headline space and a signal-lime route continue through a low-detail bottom transition; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
-      "sequence": { "name": "landing-journey", "orientation": "wide", "position": 1, "total": 4 }
+      "use": "Wide landing journey segment 1: route selection and departure",
+      "prompt": "Wide black-and-off-white aerospace editorial route-selection landscape using the canonical Vector moth navigator, printed texture, large quiet headline field, cartographic curves and sparse burnt-orange waypoints; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
+      "lineage": "imagegen:exec-5fececb1-f57c-4279-bd72-3c2ce877b6a3",
+      "sequence": { "name": "vector-journey", "orientation": "wide", "position": 1, "total": 3 }
     },
     {
-      "path": "relay-journey-hero-mobile-v1.webp",
+      "path": "landing-route-mobile-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 215870,
-      "sha256": "a3fe5237871e86e31f05e02e6ad10a28b88098fe774493e524e91c98920b14e4",
+      "bytes": 140912,
+      "sha256": "dee0f50d9bf39f002005b38fc7b17dd2ea2c7899764b4500d948626540fb630a",
       "width": 941,
       "height": 1672,
-      "use": "Portrait landing journey segment 1: Relay departure and route overview",
-      "prompt": "Portrait cinematic editorial departure derived from the left quarter of the continuity storyboard: canonical mature Relay crosses a warm-paper dawn above a graphite transit landscape while a signal-lime route approaches the next segment; quiet mobile headline field; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
-      "sequence": { "name": "landing-journey", "orientation": "portrait", "position": 1, "total": 4 }
+      "use": "Portrait landing journey segment 1: route selection and departure",
+      "prompt": "Portrait black-and-off-white aerospace editorial route-selection landscape using the canonical Vector moth navigator, quiet upper headline field, printed cartographic curves and sparse burnt-orange waypoints composed for mobile; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
+      "lineage": "imagegen:exec-90a45912-fad9-4697-b035-5ff6b44144b4",
+      "sequence": { "name": "vector-journey", "orientation": "portrait", "position": 1, "total": 3 }
     },
     {
-      "path": "relay-journey-routing-wide-v1.webp",
+      "path": "landing-install-wide-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 223166,
-      "sha256": "33cfdb2269bd9de6c1933c136071d94500c9065b432a49959b4f62757aac8673",
+      "bytes": 143946,
+      "sha256": "48e21b5f8c876c2e8a6802330358a88487e40c1cb2727926b968424f23964e8f",
       "width": 1672,
       "height": 941,
-      "use": "Wide landing journey segment 2: routing junction",
-      "prompt": "Wide cinematic editorial routing junction continuing the preceding mountain landscape and signal-lime route through curved graphite bridges toward a depot, with canonical mature Relay supervising from the perimeter and quiet control space; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
-      "sequence": { "name": "landing-journey", "orientation": "wide", "position": 2, "total": 4 }
+      "use": "Wide landing journey segment 2: verified installation and distribution",
+      "prompt": "Wide aerospace-editorial verification and distribution environment continuing Vector's route, carbon and chalk geometry, printed texture, large quiet workbench region, sparse burnt-orange checksum signals; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
+      "lineage": "imagegen:exec-4ed0bfd0-96f6-49e8-8a81-e6da087550d5",
+      "sequence": { "name": "vector-journey", "orientation": "wide", "position": 2, "total": 3 }
     },
     {
-      "path": "relay-journey-routing-mobile-v1.webp",
+      "path": "landing-install-mobile-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 222674,
-      "sha256": "ef5edaeb8af109aeb3489b80c844ffb2576c900e280138fd919f9a8a95416392",
+      "bytes": 67846,
+      "sha256": "e61cb890f6b7c355e8b154c0c6b6aae5f27952189048bce18076e39578033259",
       "width": 941,
       "height": 1672,
-      "use": "Portrait landing journey segment 2: routing junction",
-      "prompt": "Portrait cinematic editorial routing junction continuing the preceding mobile landscape and signal-lime route through mountain bridges toward a depot, with canonical mature Relay on a side perch and quiet stacked-control space; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
-      "sequence": { "name": "landing-journey", "orientation": "portrait", "position": 2, "total": 4 }
+      "use": "Portrait landing journey segment 2: verified installation and distribution",
+      "prompt": "Portrait aerospace-editorial verification and distribution environment continuing Vector's route, carbon and chalk geometry, printed texture, quiet stacked workbench region, sparse burnt-orange checksum signals; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
+      "lineage": "imagegen:exec-44c95b50-7c97-4289-9abc-a6081c9c6449",
+      "sequence": { "name": "vector-journey", "orientation": "portrait", "position": 2, "total": 3 }
     },
     {
-      "path": "relay-journey-install-wide-v1.webp",
+      "path": "landing-reference-wide-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 207048,
-      "sha256": "313744b3017d766e04de8bfa6f940ecbed3db9ae0ec828218eaf571cdadd61b1",
+      "bytes": 159664,
+      "sha256": "70c9aed747a5b2f7c1f04a6cf99bac7cc00094dfeffbd6869ee0a8de3c86b679",
       "width": 1672,
       "height": 941,
-      "use": "Wide landing journey segment 3: verified distribution and checksum depot",
-      "prompt": "Wide cinematic editorial verification depot continuing the preceding route into restrained signal-lime checksum gates and unbranded cream parcel channels, with canonical mature Relay inspecting from the perimeter and quiet installation-control space; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
-      "sequence": { "name": "landing-journey", "orientation": "wide", "position": 3, "total": 4 }
+      "use": "Wide landing journey segment 3: command registry and arrival",
+      "prompt": "Wide aerospace-editorial destination registry and archive completing Vector's route, carbon and chalk modular geometry, printed texture, quiet reference-workbench field and one restrained burnt-orange arrival signal; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
+      "lineage": "imagegen:exec-0e9d27f1-96a4-4458-8386-ff76bd0a5e43",
+      "sequence": { "name": "vector-journey", "orientation": "wide", "position": 3, "total": 3 }
     },
     {
-      "path": "relay-journey-install-mobile-v1.webp",
+      "path": "landing-reference-mobile-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 205728,
-      "sha256": "f7b2b1339165144bf92cd8e0fd1223ab02b5bc13401735842e1c5f8506f88ed6",
+      "bytes": 62842,
+      "sha256": "b082937ee4ac155b433c63b5af154e51c5b19d389e0a079fca8f64d9907d45ea",
       "width": 941,
       "height": 1672,
-      "use": "Portrait landing journey segment 3: verified distribution and checksum depot",
-      "prompt": "Portrait cinematic editorial verification depot continuing the preceding route through restrained signal-lime gates and cream parcel channels, with canonical mature Relay at a side platform and quiet mobile installation space; no text, code, fake UI, logos, credentials, watermarks, weapons, people, or required information.",
-      "sequence": { "name": "landing-journey", "orientation": "portrait", "position": 3, "total": 4 }
+      "use": "Portrait landing journey segment 3: command registry and arrival",
+      "prompt": "Portrait aerospace-editorial destination registry and archive completing Vector's route, carbon and chalk modular geometry, printed texture, quiet stacked reference-workbench field and one restrained burnt-orange arrival signal; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
+      "lineage": "imagegen:exec-f0af98db-fb4d-4eef-8574-489c5a9817dd",
+      "sequence": { "name": "vector-journey", "orientation": "portrait", "position": 3, "total": 3 }
     },
     {
-      "path": "relay-journey-cli-wide-v1.webp",
+      "path": "delivery-access-wide-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 196452,
-      "sha256": "eba5b32ed1ae5fd7cf7c025e8114b76fc0edfc37fc613846883ccc9b0a389dba",
+      "bytes": 158344,
+      "sha256": "c84354d901f34a594043945ca78b6d2044cf0fbeb82d59b6ae0825a9c6d7e78a",
       "width": 1672,
       "height": 941,
-      "use": "Wide landing journey segment 4: destination control and archive",
-      "prompt": "Wide cinematic editorial destination archive continuing the depot passage and signal-lime route to a restrained endpoint plinth, with modular unlabeled drawers, quiet work surfaces, and canonical mature Relay completing delivery; no text, code, fake UI, logos, charts, credentials, watermarks, weapons, people, or required information.",
-      "sequence": { "name": "landing-journey", "orientation": "wide", "position": 4, "total": 4 }
+      "use": "Wide protected-destination access scene",
+      "prompt": "Wide carbon-and-chalk aerospace editorial secure destination environment with canonical Vector guarding a geometric access aperture, sparse burnt-orange route signal and deliberate quiet authentication and manifest regions; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
+      "lineage": "imagegen:exec-15a72585-093c-402a-823d-88ab61678d1f"
     },
     {
-      "path": "relay-journey-cli-mobile-v1.webp",
+      "path": "delivery-access-mobile-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 212616,
-      "sha256": "df7b5c0400c6e69189289846fd14e936bb42161d1f5262bab284914f56f1fc00",
+      "bytes": 46620,
+      "sha256": "e455123f869a2f53e499e617dbb130d285bd390e9e2745595bb278d296746227",
       "width": 941,
       "height": 1672,
-      "use": "Portrait landing journey segment 4: destination control and archive",
-      "prompt": "Portrait cinematic editorial destination archive continuing the mobile depot passage and route to a restrained endpoint, with modular unlabeled drawers, quiet work surfaces, and canonical mature Relay completing delivery; no text, code, fake UI, logos, charts, credentials, watermarks, weapons, people, or required information.",
-      "sequence": { "name": "landing-journey", "orientation": "portrait", "position": 4, "total": 4 }
+      "use": "Portrait protected-destination access scene",
+      "prompt": "Portrait carbon-and-chalk aerospace editorial secure destination environment with canonical Vector guarding a geometric access aperture, sparse burnt-orange route signal and deliberate quiet stacked authentication and manifest regions; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
+      "lineage": "imagegen:exec-0e135c40-36f5-4363-a6fb-5f4b1fcb076f"
     },
     {
-      "path": "relay-terminal-delivery-wide-v2.webp",
+      "path": "admin-operations-wide-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 128404,
-      "sha256": "af3fca8d7dc48b807ec4222f592a99371a24200d876aec1bc0b87e2838527622",
+      "bytes": 142820,
+      "sha256": "1fd70d75ca5b15047e1c4b50082f072411ed43054e594bee9d18e67c8512edd1",
       "width": 1672,
       "height": 941,
-      "use": "Wide protected-delivery scene with quiet authentication and manifest regions",
-      "prompt": "Wide cinematic editorial secure transit hall: canonical mature Relay guards an arrival bay with a circular gateway, narrow signal lanes and unbranded sealed parcels; reserve the center and right for protected terminal UI; no text, fake UI, logos, watermarks, weapons, credentials, people, or required information."
+      "use": "Wide operations-workbench scene",
+      "prompt": "Wide carbon-and-chalk aerospace editorial operations environment with canonical Vector navigating abstract route geometry, sparse burnt-orange status signals and deliberate quiet navigator and policy-inspector regions; no text, UI, charts, logos, credentials, watermark, weapons, or required information.",
+      "lineage": "imagegen:exec-d9e7b71b-f7b0-47c2-a8d8-07c3a388c8b8"
     },
     {
-      "path": "relay-terminal-delivery-mobile-v2.webp",
+      "path": "admin-operations-mobile-v1.webp",
       "mediaType": "image/webp",
-      "bytes": 164460,
-      "sha256": "c19b2ed07f82355cd5e4b56c88dc9303249afeca8aa2ac08a83b30f821b8fe62",
+      "bytes": 52360,
+      "sha256": "a02d8e448f42ddf2a9711c146f15cbe062923409daabd5c787ff680914ae9cc7",
       "width": 941,
       "height": 1672,
-      "use": "Portrait protected-delivery scene with quiet stacked authentication and manifest regions",
-      "prompt": "Portrait cinematic editorial secure transit hall independently composed for mobile: canonical mature Relay guards a circular gateway and unbranded parcels; reserve the center and lower field for protected terminal UI; no text, fake UI, logos, watermarks, weapons, credentials, people, or required information."
+      "use": "Portrait operations-workbench scene",
+      "prompt": "Portrait carbon-and-chalk aerospace editorial operations environment with canonical Vector navigating abstract route geometry, sparse burnt-orange status signals and deliberate quiet stacked navigator and policy-inspector regions; no text, UI, charts, logos, credentials, watermark, weapons, or required information.",
+      "lineage": "imagegen:exec-cf2ccec4-59ec-42fb-a2f4-f8a6a815c0b0"
     },
     {
-      "path": "relay-terminal-admin-wide-v2.webp",
+      "path": "readme-vector-banner.webp",
       "mediaType": "image/webp",
-      "bytes": 177604,
-      "sha256": "6239f15e2132cbd049fc407b9ce37541dfe8379ed040f576ae40772c881aa2b8",
-      "width": 1672,
-      "height": 941,
-      "use": "Wide operations-observatory scene with quiet registry and policy regions",
-      "prompt": "Wide cinematic editorial operations observatory: canonical mature Relay coordinates distant relay stations and abstract status beacons; reserve the left and center for registry, server and policy terminal workspaces; no text, fake UI, charts, logos, watermarks, weapons, credentials, people, or required information."
-    },
-    {
-      "path": "relay-terminal-admin-mobile-v2.webp",
-      "mediaType": "image/webp",
-      "bytes": 168016,
-      "sha256": "03c85081cf8ee85641c938edde64f21f70557de217c8f295ae2f0d2e9071cb90",
-      "width": 941,
-      "height": 1672,
-      "use": "Portrait operations-observatory scene with quiet stacked registry and policy regions",
-      "prompt": "Portrait cinematic editorial operations observatory independently composed for mobile: canonical mature Relay coordinates distant signal routes and beacons; reserve the center and lower field for stacked operations workspaces; no text, fake UI, charts, logos, watermarks, weapons, credentials, people, or required information."
-    },
-    {
-      "path": "readme-route-banner.webp",
-      "mediaType": "image/webp",
-      "bytes": 301712,
-      "sha256": "8e0d7cec6c0546b6dd5840e008d5cec878153feba7f82166efcfef7a017786af",
+      "bytes": 230792,
+      "sha256": "a1033a451f3901b8fac97ee6f02a3902c64d281b9f07bf2eb4c6c9878c507c8e",
       "width": 2172,
       "height": 724,
-      "use": "Full-width README route panorama",
-      "prompt": "Extremely wide 3:1 panorama of Relay flying a sealed capsule along a signal-lime route from a local workstation outpost to a remote server station across a graphite dusk network landscape; no text or logos."
+      "use": "Full-width text-free Vector route banner for the repository README",
+      "prompt": "Extremely wide black-and-off-white aerospace editorial panorama with canonical geometric Vector moth navigating one burnt-orange cartographic route across abstract source and destination fields, printed texture and clear central rhythm; no text, UI, commands, logos, credentials, watermark, weapons, or required information.",
+      "lineage": "imagegen:exec-d52c30a7-a1ad-4054-919e-ac749b579ad9"
+    },
+    {
+      "path": "vector-mark.svg",
+      "mediaType": "image/svg+xml",
+      "bytes": 663,
+      "sha256": "a2bb802bad78eea46087009fa377d4dfabb78ae357c192eea07cf79f287ef2fd",
+      "use": "Deterministic simplified Vector application mark and browser favicon"
     },
     {
       "path": "logo-on-dark.svg",
       "mediaType": "image/svg+xml",
-      "bytes": 336,
-      "sha256": "c936b0c83fbd01072288f9c04857821a4e79656b2d15a971f28024fcc97a4149",
-      "use": "Courier lockup on graphite surfaces using the generated Relay mark"
+      "bytes": 337,
+      "sha256": "8b7a34eec11e4199a9f19b53aa162fb1a2ed8a6c7d24f0d14500c87bb4a5c187",
+      "use": "Courier Vector lockup for carbon surfaces"
     },
     {
       "path": "logo-on-light.svg",
       "mediaType": "image/svg+xml",
-      "bytes": 336,
-      "sha256": "95cdd5c828febbd518d861b2c0fa0a68ef5631a813913f8593862aa72c520ce9",
-      "use": "Courier lockup on paper surfaces using the generated Relay mark"
+      "bytes": 337,
+      "sha256": "982ffd585719b6e08877ee67cafd81f875eac5d45c1383f3cb10124ce2729345",
+      "use": "Courier Vector lockup for chalk surfaces"
     }
   ],
   "excluded": [
-    "AdGuard-injected scripts and remote resources",
-    "reference-page JavaScript and HTML",
-    "the obsolete mirror icon, robot mascot, banner, and mirror product messaging"
+    "temporary generation sources and storyboards",
+    "browser-injected scripts and remote resources",
+    "superseded Relay identity assets, terminal scenes, and signal-lime product messaging"
   ]
 }

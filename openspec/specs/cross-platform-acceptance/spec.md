@@ -49,29 +49,44 @@ Courier SHALL run compiled runtime suites on Linux, macOS, and Windows, cross-bu
 
 ### Requirement: Real-browser acceptance
 
-Courier SHALL test data UI, admin UI, and landing behavior in Chromium for English/Russian catalogs, system/light/dark preferences, reduced motion, touch and fine-pointer input, keyboard navigation, responsive viewports, protected-metadata non-disclosure, natural landing scrolling, responsive panorama loading, external-request isolation, and layout stability. The acceptance gate SHALL enforce a maximum of 225 KiB per landing WebP, 1.6 MiB for all eight landing panorama assets, 45 KiB gzip for landing JavaScript, and 8 KiB gzip for landing CSS.
+Courier SHALL test landing, delivery, and administration in Chromium for English/Russian catalogs, cyclic system/light/dark preferences, reduced motion, touch and fine-pointer input, keyboard operation, responsive layouts, protected-metadata isolation, three-section natural landing flow, static responsive artwork loading, external-request isolation, and layout stability. The gate SHALL enforce at most 225 KiB per landing WebP, 1.2 MiB for all six landing segments, 200 KiB per delivery/admin scene, 45 KiB gzip landing JavaScript, and 8 KiB gzip landing CSS.
+
+#### Scenario: The landing first renders
+
+- **WHEN** the initial landing viewport loads at a supported wide or portrait size
+- **THEN** it presents the localized Vector headline and route instrument, contains exactly three sections, has no visible endpoint explanations or terminal simulation, and requests only the selected hero source plus at most the installation segment
+
+#### Scenario: Preferences are activated
+
+- **WHEN** theme and locale buttons are activated by pointer or keyboard and the page reloads
+- **THEN** each control advances one cyclic value, announces the current and next value, and persists the valid preference without a radiogroup
+
+#### Scenario: Product applications are exercised
+
+- **WHEN** browser acceptance authenticates, transfers data, receives administration snapshots, changes policy, or stops a target
+- **THEN** the new workbench UI preserves existing guarded API behavior, secret isolation, and authoritative state
+
+#### Scenario: Static artwork is inspected
+
+- **WHEN** the pointer moves across any scene in any motion mode
+- **THEN** the base image remains single and stationary with no pointer listener outcome, duplicate image, refraction, or external request
 
 #### Scenario: Protected delivery returns an authentication error
 
 - **WHEN** the data page receives an unauthenticated response containing an adversarial secret marker
 - **THEN** the marker is not rendered in either locale and the accessible generic authentication state is shown
 
-#### Scenario: The landing first renders
-
-- **WHEN** the initial landing viewport loads at a supported wide or portrait size
-- **THEN** it contains no visible tagline, Run or Replay action, transcript stage, editable command, horizontal overflow, or external runtime request and it requests only the selected hero asset plus at most the next panorama segment
-
 #### Scenario: A visitor uses natural navigation
 
-- **WHEN** the visitor scrolls or activates route, installation, or CLI navigation
-- **THEN** the page does not snap between sections, the masthead identifies the section at its header-aware reading band, and reduced-motion preference removes smooth scrolling
+- **WHEN** the visitor scrolls or activates installation or CLI navigation
+- **THEN** the page does not snap, the masthead identifies the section at its reading band, and reduced motion removes smooth scrolling
 
 #### Scenario: A visitor crosses a panorama boundary
 
 - **WHEN** adjacent landing sections are visible together at a supported viewport
-- **THEN** their matching responsive segments overlap without uncovered background, visible tiling, geometry shift, or loading the inactive responsive source
+- **THEN** matching responsive segments overlap without uncovered background, visible tiling, geometry shift, or loading the inactive responsive source
 
 #### Scenario: A visitor uses landing command surfaces
 
 - **WHEN** route, installation, or CLI Copy is activated in English or Russian
-- **THEN** the exact immutable command is offered to the clipboard and localized status is announced without a simulation, API mutation, or layout shift
+- **THEN** the exact immutable command is offered to the clipboard and localized status is announced without simulation, API mutation, or layout shift

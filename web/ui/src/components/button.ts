@@ -26,7 +26,11 @@ export class CourierButton extends LitElement {
   type: "button" | "submit" = "button";
   variant: "primary" | "secondary" = "secondary";
 
+  private forwardSubmit(): void {
+    if (this.type === "submit") this.closest("form")?.requestSubmit();
+  }
+
   protected render() {
-    return html`<button type=${this.type} ?disabled=${this.disabled}><slot></slot></button>`;
+    return html`<button type=${this.type} ?disabled=${this.disabled} @click=${this.forwardSubmit}><slot></slot></button>`;
   }
 }

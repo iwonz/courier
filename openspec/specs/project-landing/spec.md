@@ -49,55 +49,80 @@ Courier SHALL automatically publish the deterministic landing artifact after eve
 
 ### Requirement: Brand-led product narrative
 
-The landing SHALL introduce Courier through a hero with a minimum height of one small viewport and no visible tagline, installation command, or action button, then present routing, installation, and the combined shipped command/option registry as naturally sized sections in that order. Routing and installation SHALL have a minimum height of `42rem` or `78svh`, whichever is greater for the active viewport, while the CLI reference SHALL have a minimum height of `52rem` or `88svh`, whichever is greater; every section SHALL expand when its content requires more space.
+The landing SHALL consist of exactly three naturally scrolling sections ordered as a combined hero and route instrument, installation, and combined shipped command/option reference. The first section SHALL present `From here to anywhere.` in English and `Отсюда — куда угодно.` in Russian, occupy at least one small viewport on capable desktop layouts, expand without clipping on constrained layouts, and contain the contract-backed Source-to-Destination interaction without a separate routing introduction, visible endpoint explanation, installation command, or execution simulation.
+
+#### Scenario: A new visitor opens Courier
+
+- **WHEN** the landing loads at a supported viewport
+- **THEN** the visitor sees the localized promise, Vector identity, Source and Destination controls, selected route, immutable command, Copy action, and applicable options in the first section
 
 #### Scenario: A new visitor moves through the landing
 
 - **WHEN** the landing loads at a supported viewport and the visitor scrolls through its sections
-- **THEN** the hero occupies at least the initial viewport, subsequent content follows natural document flow without clipping, and every product claim remains backed by shipped contract or repository-owned distribution data
+- **THEN** the combined hero and route instrument occupies at least the initial capable desktop viewport, subsequent content follows natural document flow, and every claim remains backed by shipped contract or repository-owned distribution data
 
 #### Scenario: A new visitor arrives
 
 - **WHEN** the landing loads at a supported viewport
-- **THEN** the visitor can identify Courier from its headline and decorative Source-to-Destination story without a visible tagline, explore valid endpoint routes, inspect every installation channel, inspect commands and options, and reach source or releases without encountering unshipped claims
+- **THEN** the visitor can identify Courier from the localized headline and Vector route instrument, explore valid routes, inspect installation channels, inspect commands and options, and reach source or releases without encountering unshipped claims
+
+#### Scenario: The first viewport is constrained
+
+- **WHEN** the first section cannot fit safely within one viewport
+- **THEN** it expands in natural flow without clipping controls, command content, or horizontal overflow
 
 ### Requirement: Illustrated operational landing
 
-The project landing and repository README SHALL use responsive, context-specific Relay scenes without obscuring interactive route data, installation commands, or the combined CLI reference. The landing SHALL present one continuous journey as four adjacent wide and portrait panorama segments with matching transition geometry, lighting, perspective, and palette; masked overlap SHALL prevent uncovered or visibly tiled section boundaries. Landing backgrounds SHALL remain positionally stationary while a non-essential, reduced-motion-safe amorphous spotlight and demand-created restrained refractive lens MAY follow a fine pointer. The landing hero SHALL remain non-interactive and SHALL depict a decorative handoff between crisp `Source` and `Destination` route points.
+The landing SHALL present one optional Vector journey as three separately loadable wide and portrait aerospace-editorial segments with matching transition geometry, carbon/chalk composition, and sparse burnt-orange route signals. Artwork SHALL remain static, contain no required information, and use no pointer-following, refraction, duplicated scene image, remote asset, text, fake UI, logo, credential, or watermark.
+
+#### Scenario: The first section loads
+
+- **WHEN** a supported browser opens the landing
+- **THEN** it requests the selected first-section source eagerly and at most the next section within the preload boundary while farther artwork remains unrequested
+
+#### Scenario: A pointer moves over artwork
+
+- **WHEN** a visitor moves any pointer across a scene
+- **THEN** no scene image translates, refracts, duplicates, or schedules pointer animation work
 
 #### Scenario: A visitor moves across a landing scene
 
-- **WHEN** a fine pointer first moves over an active landing scene
-- **THEN** a local irregular highlight and on-demand restrained lens converge smoothly without snapping, translating the base illustration, changing functional state, or remaining allocated after the pointer returns to ambient
+- **WHEN** any fine pointer moves over an active scene
+- **THEN** the single static base illustration remains unchanged and functional state responds only to explicit controls
 
 #### Scenario: Motion or precise pointer input is unavailable
 
 - **WHEN** reduced motion is requested or the device uses coarse pointer input
-- **THEN** the scene remains readable with a fixed ambient treatment and does not create a pointer-driven refracted image
+- **THEN** artwork remains readable and route signaling becomes static without allocating alternate scene behavior
 
 #### Scenario: A visitor interacts with the hero scene
 
-- **WHEN** the visitor moves a pointer across, clicks, or keyboard-navigates the hero illustration
-- **THEN** only the non-essential local spotlight may respond to a fine pointer while the decorative `Source` to `Destination` handoff remains non-interactive and unchanged
+- **WHEN** the visitor clicks or keyboard-navigates the first section
+- **THEN** only semantic route controls respond while decorative Vector artwork remains inert
 
 #### Scenario: A visitor scans the project story
 
-- **WHEN** the visitor moves from the landing hero through routing, installation, and CLI reference
-- **THEN** the responsive panorama depicts departure, route selection, verified distribution, and destination control as one continuous optional environment with no uncovered boundary or remote asset request
+- **WHEN** the visitor moves from the combined route hero through installation and CLI reference
+- **THEN** the responsive panorama depicts route selection, verified distribution, and arrival as one optional environment with no uncovered boundary or remote asset request
 
 #### Scenario: A visitor opens the repository README
 
 - **WHEN** GitHub renders the README
-- **THEN** the existing locally versioned, full-width, text-free Courier route panorama remains unchanged and legible in light and dark GitHub themes
+- **THEN** the locally versioned text-free Vector route banner remains legible in light and dark GitHub themes
 
 ### Requirement: Contract-backed interactive route illustration
 
-Courier SHALL project the shipped route matrix into one keyboard- and pointer-operable `from <source> to <destination>` illustration without maintaining a second route capability list. `Source` and `Destination` SHALL identify endpoint roles. The landing SHALL present endpoint types as `Local`, `Remote`, `Web`, and `Web Hook`, mapping `Remote` to SSH, source `Web Hook` to incoming `webhook://`, and destination `Web Hook` to outgoing HTTP(S). Each role SHALL use semantic, directional iconography and concise role-specific explanation. Selection SHALL change only through activation, and a measured cubic Bezier connector SHALL join the compact selected endpoint controls without affecting layout.
+Courier SHALL project the shipped route matrix into compact Source and Destination endpoint controls integrated with the first-section artwork, a measured cubic Bezier connector, a reduced-motion-safe route signal, an immutable generated command, and applicable options. Endpoint descriptions SHALL remain available to assistive technology but SHALL not render as visible explanatory copy. Selection SHALL change only through activation and invalid destinations SHALL use disabled button semantics.
+
+#### Scenario: A route is selected
+
+- **WHEN** a visitor activates a valid Source or Destination
+- **THEN** the selected controls, connector, command, and applicable options update from generated contract data without layout movement
 
 #### Scenario: A visitor compares endpoint roles
 
-- **WHEN** the route explorer renders its source and destination choices
-- **THEN** both sides show Local, Remote, Web, and Web Hook while Web and Web Hook communicate upload, serving, receiving, or sending according to the selected side
+- **WHEN** the route instrument renders its choices
+- **THEN** both sides show Local, Remote, Web, and Web Hook with directional iconography and assistive role descriptions while visible copy remains limited to endpoint names
 
 #### Scenario: A visitor previews an endpoint
 
@@ -107,26 +132,36 @@ Courier SHALL project the shipped route matrix into one keyboard- and pointer-op
 #### Scenario: A visitor activates a source or destination
 
 - **WHEN** the visitor clicks or keyboard-activates a valid endpoint
-- **THEN** the selected pair, Bezier connector, example syntax, and applicable options update from the generated contract while panel bounds remain unchanged
+- **THEN** the selected pair, Bezier connector, example syntax, and applicable options update from the generated contract while bounds remain unchanged
 
 #### Scenario: A visitor explores a source endpoint
 
 - **WHEN** the visitor hovers or focuses a source endpoint
-- **THEN** the control indicates its affordance without changing the selected route, and only activation highlights its valid destinations and updates contract-backed details
+- **THEN** only affordance changes until activation highlights valid destinations and updates contract-backed details
 
 #### Scenario: A visitor explores a destination endpoint
 
 - **WHEN** the visitor hovers or focuses a valid destination
-- **THEN** the control indicates its affordance without changing the selected route, and only activation updates the route while remaining operable without hover
+- **THEN** only affordance changes until activation updates the route and the control remains operable without hover
+
+#### Scenario: A visitor hovers an endpoint
+
+- **WHEN** a pointer or keyboard focus enters an endpoint
+- **THEN** visual affordance changes without changing route selection or exposing visible explanatory prose
 
 ### Requirement: Compact landing composition
 
-The landing SHALL consist of exactly four sections ordered hero, route explorer, installation chooser, and combined CLI reference. It SHALL use natural document scrolling without mandatory scroll snapping and SHALL omit a separate route-card grid, safety narrative, statistics strip, examples section, documentation section, full-contract link, closing call to action, and footer while keeping GitHub source access in the masthead.
+The landing SHALL omit a separate hero tagline, route section, route heading, route introduction, section indices, endpoint prose, examples, documentation, footer, execution preview, and simulated transcript. Its fixed masthead SHALL link the Courier identity to the first section and expose only Installation and CLI in-page navigation plus GitHub, theme, and locale actions.
+
+#### Scenario: A visitor scans the page
+
+- **WHEN** the visitor moves from the combined first section through installation and CLI reference
+- **THEN** exactly three sections form one continuous composition with no removed standalone content or duplicated route introduction
 
 #### Scenario: A visitor scans the complete page
 
 - **WHEN** the visitor scrolls through the landing
-- **THEN** each naturally sized section follows the previous section without snapping, clipping, or a disconnected visual tile and no removed standalone content interrupts the sequence
+- **THEN** the combined route hero, installation, and CLI reference follow one another without snapping, clipping, disconnected tiles, or removed standalone content
 
 ### Requirement: Viewport-aware installation chooser
 

@@ -6,9 +6,8 @@ import { CourierIconLink } from "./components/icon-link";
 import { CourierLocaleSelector } from "./components/locale-selector";
 import { CourierPanel } from "./components/panel";
 import { CourierProgress } from "./components/progress";
-import { CourierSegmentedControl } from "./components/segmented-control";
 import { CourierThemeSelector } from "./components/theme-selector";
-import { CourierCommandReadout, CourierTerminal } from "./components/terminal";
+import { CourierCommandReadout, CourierWorkbench } from "./components/workbench";
 import { CourierScene } from "./components/scene";
 import { CourierIcon } from "./icons";
 
@@ -30,10 +29,9 @@ const elements = {
   "courier-progress": CourierProgress,
   "courier-route": CourierRoute,
   "courier-scene": CourierScene,
-  "courier-segmented-control": CourierSegmentedControl,
   "courier-status": CourierStatus,
   "courier-theme-selector": CourierThemeSelector,
-  "courier-terminal": CourierTerminal,
+  "courier-workbench": CourierWorkbench,
   "courier-command-readout": CourierCommandReadout,
 } as const;
 

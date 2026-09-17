@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@courier/ui/relay-landing": fileURLToPath(new URL("../ui/src/relay-landing.ts", import.meta.url)),
+      "@courier/ui/landing-scenes": fileURLToPath(new URL("../ui/src/landing-scenes.ts", import.meta.url)),
       "@courier/ui": fileURLToPath(new URL("../ui/src/index.ts", import.meta.url)),
     },
   },

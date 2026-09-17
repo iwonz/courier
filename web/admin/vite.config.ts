@@ -5,7 +5,7 @@ export default defineConfig({
   base: "/",
   resolve: {
     alias: {
-      "@courier/ui/relay-admin": fileURLToPath(new URL("../ui/src/relay-admin.ts", import.meta.url)),
+      "@courier/ui/admin-scenes": fileURLToPath(new URL("../ui/src/admin-scenes.ts", import.meta.url)),
       "@courier/ui": fileURLToPath(new URL("../ui/src/index.ts", import.meta.url)),
     },
   },

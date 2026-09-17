@@ -46,7 +46,7 @@ export const controlStyles = css`
 
   button:focus-visible,
   select:focus-visible {
-    outline: 3px solid var(--courier-beak, #ff8758);
+    outline: 3px solid var(--courier-color-accent, #ad431d);
     outline-offset: 2px;
   }
 `;
@@ -97,7 +97,7 @@ export const formControlStyles = css`
   input:not([type="checkbox"]):not([type="file"]):focus-visible,
   select:focus-visible,
   input[type="checkbox"]:focus-visible {
-    outline: 3px solid var(--courier-beak, #ff8758);
+    outline: 3px solid var(--courier-color-accent, #ad431d);
     outline-offset: 2px;
   }
 
@@ -173,7 +173,7 @@ export const formControlStyles = css`
   }
 
   .courier-file-action:has(input[type="file"]:focus-visible) {
-    outline: 3px solid var(--courier-beak, #ff8758);
+    outline: 3px solid var(--courier-color-accent, #ad431d);
     outline-offset: 2px;
   }
 `;

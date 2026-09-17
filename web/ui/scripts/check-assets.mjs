@@ -63,16 +63,21 @@ if (actual.size !== expected.size || [...actual].some((name) => !expected.has(na
   throw new Error("asset directory and provenance manifest differ");
 }
 
-const landingAssets = manifest.assets.filter((asset) => asset.sequence?.name === "landing-journey");
+const landingAssets = manifest.assets.filter((asset) => asset.sequence?.name === "vector-journey");
 const landingBytes = landingAssets.reduce((total, asset) => total + asset.bytes, 0);
-if (landingAssets.length !== 8 || landingBytes > Math.floor(1.6 * 1024 * 1024)) {
+if (landingAssets.length !== 6 || landingBytes > Math.floor(1.2 * 1024 * 1024)) {
   throw new Error("landing panorama asset count or aggregate budget is invalid");
 }
 for (const orientation of ["wide", "portrait"]) {
   const sequence = landingAssets.filter((asset) => asset.sequence.orientation === orientation).sort((left, right) => left.sequence.position - right.sequence.position);
-  if (sequence.length !== 4 || sequence.some((asset, index) => asset.sequence.position !== index + 1 || asset.sequence.total !== 4 || asset.bytes > 225 * 1024)) {
+  if (sequence.length !== 3 || sequence.some((asset, index) => asset.sequence.position !== index + 1 || asset.sequence.total !== 3 || asset.bytes > 225 * 1024)) {
     throw new Error(`landing ${orientation} panorama sequence or per-file budget is invalid`);
   }
+}
+
+const productScenes = manifest.assets.filter((asset) => /^(delivery-access|admin-operations)-/.test(asset.path));
+if (productScenes.length !== 4 || productScenes.some((asset) => asset.bytes > 200 * 1024)) {
+  throw new Error("delivery/admin scene count or per-file budget is invalid");
 }
 
 const expectedBrandAssets = new Set(["provenance.json"]);

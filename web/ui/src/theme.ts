@@ -82,14 +82,3 @@ export class ThemeState {
     this.root.dataset.courierThemePreference = this.preference;
   }
 }
-
-export function browserThemeState(): ThemeState {
-  let storage: Storage | undefined;
-  try {
-    storage = globalThis.localStorage;
-  } catch {
-    storage = undefined;
-  }
-  const media = globalThis.matchMedia?.("(prefers-color-scheme: dark)");
-  return new ThemeState(document.documentElement, storage, media);
-}

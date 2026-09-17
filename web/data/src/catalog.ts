@@ -1,7 +1,6 @@
 import { parseLocale, type Locale } from "@courier/ui";
 
 const en = {
-  brandProduct: "Delivery terminal",
   title: "Courier delivery",
   privateRoute: "Private route",
   loading: "Preparing the delivery route…",
@@ -30,7 +29,6 @@ const en = {
 type Catalog = { readonly [Key in keyof typeof en]: string };
 
 const ru = {
-  brandProduct: "Терминал доставки",
   title: "Доставка Courier",
   privateRoute: "Приватный маршрут",
   loading: "Подготовка маршрута доставки…",

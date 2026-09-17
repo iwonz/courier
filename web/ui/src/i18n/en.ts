@@ -6,6 +6,7 @@ export const en = {
   "locale.label": "Language",
   "locale.en": "English",
   "locale.ru": "Russian",
+  "preference.next": "Next",
   "progress.label": "Delivery progress",
   "action.cancel": "Cancel",
   "action.close": "Close",

@@ -42,6 +42,10 @@ Work is split into stacked branches. Each branch is based on the previous branch
 | 36 | `feat/036-interactive-landing-system` | `interactive-landing-system` | Icon-only preferences, Relay product mark, compact install channels, interactive route explorer, and unified CLI reference |
 | 37 | `feat/037-immersive-landing-sections` | `immersive-landing-sections` | Full-bleed responsive Relay scenes, four snap sections, blended masthead, and scene-aware interactions |
 | 38 | `feat/038-landing-interaction-polish` | `landing-interaction-polish` | Safe-area masthead, stationary refractive scenes, click-only selectors, official brand marks, invariant panels, and command-compatible option filtering |
+| 39 | `feat/039-landing-scene-integration` | `landing-scene-integration` | Continuous scene integration, pointer spotlight refinement, and responsive route/install composition |
+| 40 | `feat/040-terminal-ui-system` | `terminal-ui-system` | Read-only terminal workspaces, product UI integration, and cinematic browser scenes |
+| 41 | `feat/041-continuous-landing-flow` | `continuous-landing-flow` | Natural three-stage panorama loading, copy-only command readouts, and page-performance budgets |
+| 42 | `feat/042-vector-identity-system` | `vector-identity-system` | Vector moth identity, three-section landing, cyclic preferences, neutral workbenches, and static responsive scenes |
 
 ## Definition of Done
 

@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ThemeState,
-  browserThemeState,
   parseTheme,
   readTheme,
   resolveTheme,
@@ -76,25 +75,4 @@ describe("theme state", () => {
     explicit.destroy();
   });
 
-  it("creates browser state with and without browser storage", () => {
-    localStorage.setItem(themeStorageKey, "dark");
-    const media = {
-      matches: false,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    };
-    vi.stubGlobal("matchMedia", vi.fn(() => media));
-    const state = browserThemeState();
-    expect(state.preference).toBe("dark");
-    state.destroy();
-
-    const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
-    Object.defineProperty(globalThis, "localStorage", { configurable: true, get: () => { throw new Error("blocked"); } });
-    const restricted = browserThemeState();
-    expect(restricted.preference).toBe("system");
-    restricted.destroy();
-    if (descriptor) {
-      Object.defineProperty(globalThis, "localStorage", descriptor);
-    }
-  });
 });

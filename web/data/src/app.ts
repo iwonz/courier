@@ -1,6 +1,6 @@
 import { LitElement, css, html, nothing } from "lit";
-import { browserLocale, browserThemeState, defineCourierElements, formControlStyles, type Locale, type ThemeState } from "@courier/ui";
-import { relayAccessMobileSource, relayAccessSource } from "@courier/ui/relay-delivery";
+import { browserLocale, defineCourierElements, formControlStyles, type Locale } from "@courier/ui";
+import { deliveryAccessMobileSource, deliveryAccessSource } from "@courier/ui/delivery-scenes";
 import { childPath, downloadURL, loadMetadata, login, parentPath, upload, type Entry, type Metadata } from "./api";
 import { dataText } from "./catalog";
 
@@ -63,27 +63,24 @@ export class CourierDataApp extends LitElement {
     .entry-name { min-width: 0; overflow-wrap: anywhere; }
     .size { color: var(--courier-color-muted); font-family: var(--courier-font-mono); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
     .loading { display: grid; min-height: 14rem; place-items: center; border: 1px solid var(--courier-color-border); border-radius: var(--courier-radius-lg); color: var(--courier-color-muted); background: var(--courier-color-surface-raised); font-family: var(--courier-font-mono); }
-    .page-scene { position: fixed; z-index: 0; inset: 0; }
+    .page-scene { position: fixed; z-index: 0; inset: 0; opacity: 0.38; }
     main { position: relative; z-index: 2; }
-    :host { background: var(--courier-graphite-900); }
-    :host::after { content: ""; position: fixed; z-index: 1; inset: 0; background: linear-gradient(90deg, rgb(9 12 9 / 0.72), rgb(9 12 9 / 0.34) 62%, rgb(9 12 9 / 0.55)); pointer-events: none; }
-    header { color: var(--courier-paper-50); border-bottom-color: rgb(203 208 195 / 0.25); }
-    header courier-brand { --courier-color-text: var(--courier-paper-50); --courier-color-muted: #b9c0b1; }
-    .workspace, .operation-head { color: var(--courier-paper-50); }
+    :host::after { content: ""; position: fixed; z-index: 1; inset: 0; background: linear-gradient(90deg, var(--courier-color-canvas) 0 24%, color-mix(in srgb, var(--courier-color-canvas) 72%, transparent) 62%, color-mix(in srgb, var(--courier-color-canvas) 88%, transparent)); pointer-events: none; }
+    header { border-bottom-color: color-mix(in srgb, var(--courier-color-border) 65%, transparent); }
     .operation-head { border-bottom: 0; }
     .access { display: block; min-height: 0; }
-    .access-copy { min-height: 20rem; color: var(--courier-terminal-text); }
+    .access-copy { min-height: 20rem; color: var(--courier-color-text); }
     .access-art { display: none; }
     .route-overview { padding: 0.85rem; border: 0; border-radius: 0; background: transparent; }
     .delivery-panel { display: block; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
     .delivery-title, .toolbar, .upload-zone, .delivery-panel > ul, .delivery-panel > p { margin: 0.75rem; }
-    .delivery-title { color: var(--courier-terminal-text); }
-    .toolbar { border-color: var(--courier-terminal-border); }
-    .upload-zone { border-color: var(--courier-terminal-border); color: var(--courier-terminal-text); background: rgb(255 255 255 / 0.025); }
-    ul { border-top-color: var(--courier-terminal-border); }
-    li { border-bottom-color: var(--courier-terminal-border); }
-    a, button.link { color: var(--courier-terminal-text); }
-    .muted, .size { color: var(--courier-terminal-muted); }
+    .delivery-title { color: var(--courier-color-text); }
+    .toolbar { border-color: var(--courier-workbench-line); }
+    .upload-zone { border-color: var(--courier-workbench-line); color: var(--courier-color-text); background: color-mix(in srgb, var(--courier-color-surface) 64%, transparent); }
+    ul { border-top-color: var(--courier-workbench-line); }
+    li { border-bottom-color: var(--courier-workbench-line); }
+    a, button.link { color: var(--courier-color-text); }
+    .muted, .size { color: var(--courier-color-muted); }
     .loading { min-height: 10rem; padding: 1rem; }
     @media (max-width: 44rem) {
       header { align-items: flex-start; padding: 1rem 0; }
@@ -102,16 +99,13 @@ export class CourierDataApp extends LitElement {
   private metadata?: Metadata;
   private failed = false;
   private csrf = "";
-  private theme?: ThemeState;
 
   connectedCallback(): void {
     super.connectedCallback();
-    this.theme = browserThemeState();
     void this.refresh();
   }
 
   disconnectedCallback(): void {
-    this.theme?.destroy();
     super.disconnectedCallback();
   }
 
@@ -177,16 +171,16 @@ export class CourierDataApp extends LitElement {
   render() {
     const entries = this.metadata?.entries ?? [];
     return html`
-      <courier-scene class="page-scene" eager .source=${relayAccessSource} .mobileSource=${relayAccessMobileSource}></courier-scene>
+      <courier-scene class="page-scene" eager .source=${deliveryAccessSource} .mobileSource=${deliveryAccessMobileSource}></courier-scene>
       <main>
         <header>
-          <courier-brand product=${this.t("brandProduct")}></courier-brand>
+          <courier-brand></courier-brand>
           <nav><courier-theme-selector .locale=${this.locale}></courier-theme-selector><courier-locale-selector @courier-locale-change=${this.setLocale}></courier-locale-selector></nav>
         </header>
         <div class="workspace">
           <div class="operation-head"><div><span class="eyebrow">${this.t("privateRoute")}</span><h1>${this.t("title")}</h1></div>${this.metadata ? html`<courier-status tone="signal">${this.t("ready")}</courier-status>` : nothing}</div>
           ${this.failed ? html`
-            <courier-terminal class="access" .heading=${this.t("privateRoute")} status="authentication required">
+            <courier-workbench class="access" .heading=${this.t("privateRoute")} status="authentication required">
               <div class="access-copy">
                 <span class="eyebrow">${this.t("privateRoute")}</span>
                 <h2>${this.t("accessTitle")}</h2>
@@ -195,11 +189,11 @@ export class CourierDataApp extends LitElement {
                 <form class="signin" @submit=${this.signIn}><label class="field"><span>${this.t("password")}</span><input name="password" type="password" autocomplete="current-password" placeholder=${this.t("password")}></label><courier-button type="submit" variant="primary">${this.t("signIn")}</courier-button></form>
                 <courier-button @click=${this.refresh}>${this.t("retry")}</courier-button>
               </div>
-            </courier-terminal>
+            </courier-workbench>
           ` : nothing}
           ${this.metadata ? html`
-            <courier-terminal class="route-overview" .heading=${this.t("confirmed")} status="verified"><courier-route source="sender" destination=${this.metadata.name}></courier-route></courier-terminal>
-            <courier-terminal class="delivery-panel" .heading=${this.t("manifest")} .status=${this.t("ready")}>
+            <courier-workbench class="route-overview" .heading=${this.t("confirmed")} status="verified"><courier-route source="sender" destination=${this.metadata.name}></courier-route></courier-workbench>
+            <courier-workbench class="delivery-panel" .heading=${this.t("manifest")} .status=${this.t("ready")}>
               <div class="delivery-title"><div><span class="eyebrow">${this.t("manifest")}</span><h2>${this.metadata.name}</h2></div><courier-status tone="signal">${this.t("ready")}</courier-status></div>
               ${this.metadata.type === "upload" ? html`
                 <div class="upload-zone"><h2>${this.t("uploadTitle")}</h2><p class="muted">${this.t("uploadHelp")}</p><label class="courier-file-action"><courier-icon name="upload"></courier-icon><span>${this.t("upload")}</span><input type="file" @change=${this.sendFile}></label></div>
@@ -209,8 +203,8 @@ export class CourierDataApp extends LitElement {
                   ${entries.length === 0 ? html`<p class="muted">${this.t("empty")}</p>` : html`<ul>${entries.map((entry) => this.entry(entry))}</ul>`}
                 `}
               `}
-            </courier-terminal>
-          ` : !this.failed ? html`<courier-terminal class="loading" .heading=${this.t("privateRoute")} status="running"><courier-status>${this.t("loading")}</courier-status></courier-terminal>` : nothing}
+            </courier-workbench>
+          ` : !this.failed ? html`<courier-workbench class="loading" .heading=${this.t("privateRoute")} status="running"><courier-status>${this.t("loading")}</courier-status></courier-workbench>` : nothing}
         </div>
       </main>
     `;

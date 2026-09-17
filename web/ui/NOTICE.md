@@ -1,10 +1,10 @@
 # Courier UI asset notice
 
-The Courier logos, functional icon geometry, visual tokens, and Relay mascot are Courier project assets distributed under the repository MIT license.
+The Courier logos, functional icon geometry, visual tokens, and Vector mascot are Courier project assets distributed under the repository MIT license.
 
-Relay and the contextual illustration family were created for Courier with the built-in OpenAI image generation workflow from the direction recorded in [`docs/brand.md`](../../docs/brand.md). The canonical character image, eight wide/portrait segments of the continuous landing journey, four existing delivery/administration scenes, and the unchanged README scene are stored locally and verified through `assets/provenance.json`. The manifest records final prompt summary, role, landing sequence position, dimensions, byte count, and SHA-256 digest for every raster. WebP delivery copies were encoded locally from generated PNG results without adding third-party imagery. Temporary continuity storyboards and superseded landing scenes are not shipped.
+Vector and the contextual illustration family were created for Courier with the built-in OpenAI image generation workflow from the direction recorded in [`docs/brand.md`](../../docs/brand.md). The canonical character image, six wide/portrait segments of the three-stage landing journey, four delivery/administration scenes, and the README banner are stored locally and verified through `assets/provenance.json`. The manifest records final prompt summary, role, sequence position, generation lineage, dimensions, byte count, and SHA-256 digest for every raster. WebP delivery copies were encoded locally from generated PNG results without adding third-party imagery. Temporary storyboards and superseded scenes are not shipped.
 
-The earlier local identity reference is not shipped. Browser-injected AdGuard scripts, remote resources, reference-page executable code, the obsolete robot mascot and banner, and mirror-oriented artwork or messaging were deliberately excluded.
+The retired Relay identity is not shipped. Browser-injected scripts, remote resources, reference-page executable code, the obsolete robot mascot and banner, and mirror-oriented artwork or messaging were deliberately excluded.
 
 ## Third-party brand marks
 

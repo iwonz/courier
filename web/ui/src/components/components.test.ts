@@ -7,26 +7,24 @@ import { CourierIconLink } from "./icon-link";
 import { CourierLocaleSelector } from "./locale-selector";
 import { CourierPanel } from "./panel";
 import { CourierProgress, progressRatio } from "./progress";
-import { CourierSegmentedControl, nextSegmentIndex } from "./segmented-control";
 import { CourierThemeSelector } from "./theme-selector";
-import { CourierScene, pointerPosition, sceneAmbientPosition, smoothPointerPosition } from "./scene";
-import { CourierCommandReadout, CourierTerminal } from "./terminal";
+import { CourierScene } from "./scene";
+import { CourierCommandReadout, CourierWorkbench } from "./workbench";
 import { defineCourierElements, type ElementRegistry } from "../define";
 import { cubicBezierPath } from "../geometry";
 import { CourierIcon, iconNames, resolveIcon } from "../icons";
-import { relayOperationsMobileSource, relayOperationsSource } from "../relay-admin";
-import { relayAccessMobileSource, relayAccessSource } from "../relay-delivery";
+import { adminOperationsMobileSource, adminOperationsSource } from "../admin-scenes";
+import { deliveryAccessMobileSource, deliveryAccessSource } from "../delivery-scenes";
 import {
-  relayCliMobileSource,
-  relayCliSource,
-  relayHeroMobileSource,
-  relayHeroSource,
-  relayInstallMobileSource,
-  relayInstallSource,
-  relayRoutingMobileSource,
-  relayRoutingSource,
-} from "../relay-landing";
-import { relayMascotSource } from "../relay-mascot";
+  landingInstallMobileSource,
+  landingInstallSource,
+  landingReferenceMobileSource,
+  landingReferenceSource,
+  landingRouteMobileSource,
+  landingRouteSource,
+} from "../landing-scenes";
+import { vectorMascotSource } from "../identity-assets";
+import { BrowserPreferenceController, browserPreferenceController, nextPreference, preferenceLocaleOrder, preferenceThemeOrder, resetBrowserPreferenceController } from "../preferences";
 
 beforeAll(() => defineCourierElements());
 
@@ -35,6 +33,7 @@ afterEach(() => {
   document.documentElement.removeAttribute("data-courier-theme");
   document.documentElement.removeAttribute("data-courier-theme-preference");
   localStorage.clear();
+  resetBrowserPreferenceController();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -48,10 +47,10 @@ describe("element registry", () => {
     };
     defineCourierElements(registry);
     expect([...values.keys()].sort()).toEqual([
-      "courier-brand", "courier-brand-icon", "courier-button", "courier-checkbox", "courier-command-readout", "courier-icon", "courier-icon-link", "courier-locale-selector", "courier-mascot", "courier-panel", "courier-progress", "courier-route", "courier-scene", "courier-segmented-control", "courier-status", "courier-terminal", "courier-theme-selector",
+      "courier-brand", "courier-brand-icon", "courier-button", "courier-checkbox", "courier-command-readout", "courier-icon", "courier-icon-link", "courier-locale-selector", "courier-mascot", "courier-panel", "courier-progress", "courier-route", "courier-scene", "courier-status", "courier-theme-selector", "courier-workbench",
     ]);
     defineCourierElements(registry);
-    expect(values.size).toBe(17);
+    expect(values.size).toBe(16);
   });
 });
 
@@ -69,6 +68,20 @@ describe("shared components", () => {
     expect(nativeButton?.type).toBe("submit");
     expect(button.getAttribute("variant")).toBe("primary");
 
+    const form = document.createElement("form");
+    const submit = document.createElement("courier-button") as CourierButton;
+    submit.type = "submit";
+    const requestSubmit = vi.spyOn(form, "requestSubmit").mockImplementation(() => undefined);
+    form.append(submit);
+    document.body.append(form);
+    await submit.updateComplete;
+    (submit.shadowRoot?.querySelector("button") as HTMLButtonElement).click();
+    expect(requestSubmit).toHaveBeenCalledOnce();
+    const detachedSubmit = new CourierButton();
+    detachedSubmit.type = "submit";
+    expect(() => (detachedSubmit as unknown as { forwardSubmit(): void }).forwardSubmit()).not.toThrow();
+    expect(() => (new CourierButton() as unknown as { forwardSubmit(): void }).forwardSubmit()).not.toThrow();
+
     const panel = document.createElement("courier-panel") as CourierPanel;
     panel.heading = "Delivery";
     panel.textContent = "Cargo";
@@ -85,26 +98,25 @@ describe("shared components", () => {
 
   it("renders the shared identity, mascot, route, and status grammar", async () => {
     const brand = document.createElement("courier-brand") as CourierBrand;
-    brand.product = "Operations";
     document.body.append(brand);
     await brand.updateComplete;
     expect(brand.shadowRoot?.textContent).toContain("Courier");
-    expect(brand.shadowRoot?.textContent).toContain("Operations");
-    expect(brand.shadowRoot?.querySelector("img")?.src).toContain("relay-mark");
+    expect(brand.shadowRoot?.textContent).not.toContain("Operations");
+    expect(brand.shadowRoot?.querySelector("img")?.src).toContain("data:image/svg+xml");
     expect(brand.shadowRoot?.querySelector("img")?.alt).toBe("");
 
     const mascot = document.createElement("courier-mascot") as CourierMascot;
-    mascot.alt = "Relay";
+    mascot.alt = "Vector";
     mascot.eager = true;
-    mascot.mobileSource = relayHeroMobileSource;
-    mascot.source = relayMascotSource;
+    mascot.mobileSource = landingRouteMobileSource;
+    mascot.source = vectorMascotSource;
     document.body.append(mascot);
     await mascot.updateComplete;
-    expect(mascot.shadowRoot?.querySelector("img")?.alt).toBe("Relay");
-    expect(mascot.shadowRoot?.querySelector("img")?.src).toContain("relay-mascot");
+    expect(mascot.shadowRoot?.querySelector("img")?.alt).toBe("Vector");
+    expect(mascot.shadowRoot?.querySelector("img")?.src).toContain("vector-mascot");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("loading")).toBe("eager");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("high");
-    expect(mascot.shadowRoot?.querySelector("source")?.srcset).toContain("relay-journey-hero-mobile");
+    expect(mascot.shadowRoot?.querySelector("source")?.srcset).toContain("landing-route-mobile");
     mascot.mobileSource = "";
     mascot.eager = false;
     await mascot.updateComplete;
@@ -112,11 +124,12 @@ describe("shared components", () => {
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("loading")).toBe("lazy");
     expect(mascot.shadowRoot?.querySelector("img")?.getAttribute("fetchpriority")).toBe("auto");
 
-    expect([relayAccessMobileSource, relayAccessSource, relayOperationsMobileSource, relayOperationsSource].every((source) => source.includes("relay-terminal-"))).toBe(true);
+    expect([deliveryAccessMobileSource, deliveryAccessSource].every((source) => source.includes("delivery-access-"))).toBe(true);
+    expect([adminOperationsMobileSource, adminOperationsSource].every((source) => source.includes("admin-operations-"))).toBe(true);
     expect([
-      relayCliMobileSource, relayCliSource, relayHeroMobileSource, relayHeroSource,
-      relayInstallMobileSource, relayInstallSource, relayRoutingMobileSource, relayRoutingSource,
-    ].every((source) => source.includes("relay-journey-"))).toBe(true);
+      landingInstallMobileSource, landingInstallSource, landingReferenceMobileSource,
+      landingReferenceSource, landingRouteMobileSource, landingRouteSource,
+    ].every((source) => source.includes("landing-"))).toBe(true);
 
     const route = document.createElement("courier-route") as CourierRoute;
     route.source = "./data";
@@ -196,7 +209,7 @@ describe("shared components", () => {
     expect(anchor?.rel).toBe("noopener noreferrer");
     expect(anchor?.getAttribute("aria-label")).toBe("Courier on GitHub");
     expect((CourierIconLink.styles as { cssText: string }).cssText).toContain("--courier-control-frame-size");
-    expect((CourierSegmentedControl.styles as { cssText: string }).cssText).toContain("--courier-control-frame-size");
+    expect((CourierThemeSelector.styles as { cssText: string }).cssText).toContain("--courier-control-frame-size");
   });
 
   it("renders pinned monochrome brand marks and the Wget fallback glyph", async () => {
@@ -251,69 +264,20 @@ describe("shared components", () => {
     expect(() => cubicBezierPath({ x: Number.NaN, y: 0 }, { x: 1, y: 1 })).toThrow("finite");
   });
 
-  it("tracks a fine pointer without transforming the stationary base scene", async () => {
-    expect(pointerPosition({ left: 0, top: 0, width: 0, height: 0 }, 10, 10)).toEqual({ x: 50, y: 50 });
-    expect(pointerPosition({ left: 10, top: 20, width: 100, height: 200 }, -20, 300)).toEqual({ x: 0, y: 100 });
-    expect(sceneAmbientPosition).toEqual({ x: 72, y: 42 });
-    expect(smoothPointerPosition({ x: 1, y: 1 }, { x: 1, y: 1 }, 16)).toEqual({ position: { x: 1, y: 1 }, settled: true });
-    expect(smoothPointerPosition({ x: 0, y: 0 }, { x: 100, y: 100 }, -1)).toEqual({ position: { x: 0, y: 0 }, settled: false });
-    expect(smoothPointerPosition({ x: 0, y: 0 }, { x: 100, y: 100 }, 100).position.x).toBeGreaterThan(50);
-
-    const media = vi.fn((query: string) => ({ matches: query.includes("pointer: fine"), addEventListener: vi.fn(), removeEventListener: vi.fn() }));
-    const callbacks: FrameRequestCallback[] = [];
-    const request = vi.fn((handler: FrameRequestCallback) => { callbacks.push(handler); return request.mock.calls.length; });
-    const cancel = vi.fn();
-    vi.stubGlobal("matchMedia", media);
+  it("renders one stationary scene without pointer or refraction machinery", async () => {
+    const request = vi.fn();
     vi.stubGlobal("requestAnimationFrame", request);
-    vi.stubGlobal("cancelAnimationFrame", cancel);
-
     const scene = document.createElement("courier-scene") as CourierScene;
-    scene.source = relayHeroSource;
-    scene.mobileSource = relayHeroMobileSource;
+    scene.source = landingRouteSource;
+    scene.mobileSource = landingRouteMobileSource;
     scene.eager = true;
-    scene.getBoundingClientRect = () => ({ left: 10, top: 20, width: 100, height: 200, right: 110, bottom: 220, x: 10, y: 20, toJSON: () => ({}) });
     document.body.append(scene);
     await scene.updateComplete;
-    const base = scene.shadowRoot?.querySelector(".base") as HTMLElement;
-    expect(base.getAttribute("style")).toBeNull();
     expect(scene.shadowRoot?.querySelectorAll("courier-mascot")).toHaveLength(1);
+    expect(scene.shadowRoot?.querySelector(".refraction, .glow")).toBeNull();
     expect((CourierScene.styles as { cssText: string }).cssText).toContain("pointer-events: none");
-    scene.dispatchEvent(new MouseEvent("pointermove", { clientX: 85, clientY: 70 }));
-    scene.dispatchEvent(new MouseEvent("pointermove", { clientX: 90, clientY: 80 }));
-    await scene.updateComplete;
-    expect(scene.shadowRoot?.querySelectorAll("courier-mascot")).toHaveLength(2);
-    expect(request).toHaveBeenCalledTimes(1);
-    callbacks.shift()?.(16);
-    expect(parseFloat(scene.style.getPropertyValue("--scene-pointer-x"))).toBeGreaterThan(72);
-    expect(parseFloat(scene.style.getPropertyValue("--scene-pointer-x"))).toBeLessThan(80);
-    expect(parseFloat(scene.style.getPropertyValue("--scene-pointer-y"))).toBeLessThan(42);
-    expect(callbacks).toHaveLength(1);
-    let timestamp = 16;
-    for (let index = 0; index < 200 && callbacks.length; index += 1) {
-      timestamp += 16;
-      callbacks.shift()?.(timestamp);
-    }
-    expect(scene.style.getPropertyValue("--scene-pointer-x")).toBe("80%");
-    expect(scene.style.getPropertyValue("--scene-pointer-y")).toBe("30%");
-    scene.dispatchEvent(new MouseEvent("pointerleave"));
-    for (let index = 0; index < 200 && callbacks.length; index += 1) {
-      timestamp += 16;
-      callbacks.shift()?.(timestamp);
-    }
-    expect(scene.style.getPropertyValue("--scene-pointer-x")).toBe("");
-    expect(scene.style.getPropertyValue("--scene-pointer-y")).toBe("");
-    await scene.updateComplete;
-    expect(scene.shadowRoot?.querySelectorAll("courier-mascot")).toHaveLength(1);
-    expect(cancel).not.toHaveBeenCalled();
-
     scene.dispatchEvent(new MouseEvent("pointermove", { clientX: 50, clientY: 50 }));
-    const activeFrame = request.mock.results.at(-1)?.value;
-    scene.remove();
-    expect(cancel).toHaveBeenCalledWith(activeFrame);
-
-    const detached = new CourierScene();
-    (detached as unknown as { advance(timestamp: number): void }).advance(1);
-    detached.disconnectedCallback();
+    expect(request).not.toHaveBeenCalled();
   });
 
   it("activates non-eager scenes once near the viewport and cleans observers", async () => {
@@ -325,11 +289,11 @@ describe("shared components", () => {
     }
     vi.stubGlobal("IntersectionObserver", IntersectionObserverStub);
     const scene = document.createElement("courier-scene") as CourierScene;
-    scene.source = relayHeroSource;
+    scene.source = landingRouteSource;
     document.body.append(scene);
     await scene.updateComplete;
     expect(scene.shadowRoot?.querySelector("courier-mascot")).toBeNull();
-    expect(instances[0]?.options?.rootMargin).toBe("50% 0px");
+    expect(instances[0]?.options?.rootMargin).toBe("100% 0px");
     expect(instances[0]?.observe).toHaveBeenCalledWith(scene);
     instances[0]!.callback([{ isIntersecting: false } as IntersectionObserverEntry], {} as IntersectionObserver);
     await scene.updateComplete;
@@ -349,33 +313,32 @@ describe("shared components", () => {
     eager.disconnectedCallback();
     eager.connectedCallback();
     eager.disconnectedCallback();
+
+    vi.stubGlobal("IntersectionObserver", undefined);
+    const fallback = document.createElement("courier-scene") as CourierScene;
+    document.body.append(fallback);
+    await fallback.updateComplete;
+    expect(fallback.shadowRoot?.querySelector("courier-mascot.base")).not.toBeNull();
+
+    const promoted = document.createElement("courier-scene") as CourierScene;
+    promoted.eager = true;
+    document.body.append(promoted);
+    await promoted.updateComplete;
+    expect(promoted.shadowRoot?.querySelector("courier-mascot.base")).not.toBeNull();
   });
 
-  it("keeps scene pointer state fixed for coarse pointers and reduced motion", async () => {
-    const request = vi.fn();
-    vi.stubGlobal("requestAnimationFrame", request);
-    vi.stubGlobal("cancelAnimationFrame", vi.fn());
-    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: query.includes("prefers-reduced-motion"), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
-    const scene = document.createElement("courier-scene") as CourierScene;
-    document.body.append(scene);
-    await scene.updateComplete;
-    scene.dispatchEvent(new MouseEvent("pointermove", { clientX: 1, clientY: 1 }));
-    scene.dispatchEvent(new MouseEvent("pointerleave"));
-    expect(request).not.toHaveBeenCalled();
-  });
-
-  it("renders terminals and immutable command readouts with reserved copy feedback", async () => {
-    const terminal = document.createElement("courier-terminal") as CourierTerminal;
-    terminal.heading = "Operations";
-    terminal.status = "ready";
-    terminal.textContent = "Transcript";
-    document.body.append(terminal);
-    await terminal.updateComplete;
-    expect(terminal.shadowRoot?.textContent).toContain("Operations");
-    expect(terminal.shadowRoot?.textContent).toContain("ready");
-    terminal.status = "";
-    await terminal.updateComplete;
-    expect(terminal.shadowRoot?.querySelector(".status")).toBeNull();
+  it("renders workbenches and immutable command readouts with reserved copy feedback", async () => {
+    const workbench = document.createElement("courier-workbench") as CourierWorkbench;
+    workbench.heading = "Operations";
+    workbench.status = "ready";
+    workbench.textContent = "Registry";
+    document.body.append(workbench);
+    await workbench.updateComplete;
+    expect(workbench.shadowRoot?.textContent).toContain("Operations");
+    expect(workbench.shadowRoot?.textContent).toContain("ready");
+    workbench.status = "";
+    await workbench.updateComplete;
+    expect(workbench.shadowRoot?.querySelector(".status")).toBeNull();
 
     const readout = document.createElement("courier-command-readout") as CourierCommandReadout;
     readout.command = "courier from ./data to ./backup";
@@ -412,40 +375,7 @@ describe("shared components", () => {
 });
 
 describe("preference selectors", () => {
-  it("moves through branded segments with radio keyboard behavior", async () => {
-    expect(nextSegmentIndex("ArrowLeft", 0, 3)).toBe(2);
-    expect(nextSegmentIndex("ArrowUp", 1, 3)).toBe(0);
-    expect(nextSegmentIndex("ArrowRight", 2, 3)).toBe(0);
-    expect(nextSegmentIndex("ArrowDown", 0, 3)).toBe(1);
-    expect(nextSegmentIndex("Home", 2, 3)).toBe(0);
-    expect(nextSegmentIndex("End", 0, 3)).toBe(2);
-    expect(nextSegmentIndex("Tab", 0, 3)).toBeUndefined();
-    expect(nextSegmentIndex("ArrowRight", 0, 0)).toBeUndefined();
-
-    const control = document.createElement("courier-segmented-control") as CourierSegmentedControl;
-    control.label = "Mode";
-    control.value = "one";
-    control.options = [{ value: "one", label: "One" }, { value: "two", label: "Two" }];
-    const changes: string[] = [];
-    control.addEventListener("courier-segment-change", (event) => changes.push((event as CustomEvent<string>).detail));
-    document.body.append(control);
-    await control.updateComplete;
-    const buttons = [...control.shadowRoot!.querySelectorAll("button")];
-    expect(buttons[0].getAttribute("aria-checked")).toBe("true");
-    buttons[0].click();
-    expect(changes).toEqual([]);
-    buttons[0].removeAttribute("data-value");
-    buttons[0].click();
-    expect(changes).toEqual([]);
-    buttons[0].dataset.value = "one";
-    buttons[0].dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
-    buttons[0].dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
-    await control.updateComplete;
-    expect(changes).toEqual(["two"]);
-    expect(control.value).toBe("two");
-  });
-
-  it("persists theme changes and follows system state", async () => {
+  it("cycles and persists theme through one semantic button", async () => {
     const listeners = new Set<() => void>();
     const media = {
       matches: true,
@@ -460,26 +390,32 @@ describe("preference selectors", () => {
     document.body.append(selector);
     await selector.updateComplete;
     expect(document.documentElement.dataset.courierTheme).toBe("dark");
-    const control = selector.shadowRoot?.querySelector("courier-segmented-control") as CourierSegmentedControl;
-    await control.updateComplete;
-    expect(control.iconOnly).toBe(true);
-    expect(control.shadowRoot?.querySelector("legend")?.classList.contains("sr-only")).toBe(true);
-    expect(control.shadowRoot?.querySelectorAll("button courier-icon")).toHaveLength(3);
-    expect(control.shadowRoot?.querySelector("button span")).toBeNull();
-    expect(control.shadowRoot?.querySelector('button[data-value="system"]')?.getAttribute("aria-label")).toBe("Системная");
-    (control.shadowRoot?.querySelector('button[data-value="light"]') as HTMLButtonElement).click();
+    const control = selector.shadowRoot?.querySelector("button") as HTMLButtonElement;
+    expect(selector.shadowRoot?.querySelector("[role=radiogroup]")).toBeNull();
+    expect(control.getAttribute("aria-label")).toContain("Системная");
+    expect(control.getAttribute("aria-label")).toContain("Светлая");
+    control.click();
     await selector.updateComplete;
     expect(detail).toBe("light");
     expect(localStorage.getItem("courier.theme")).toBe("light");
-    expect(control.label).toBe("Тема");
+    control.click();
+    await selector.updateComplete;
+    expect(detail).toBe("dark");
+    control.click();
+    await selector.updateComplete;
+    expect(detail).toBe("system");
     selector.remove();
+    resetBrowserPreferenceController();
     expect(listeners.size).toBe(0);
 
     const disconnected = new CourierThemeSelector();
+    (disconnected as unknown as { synchronize(): void }).synchronize();
+    (disconnected as unknown as { cycle(): void }).cycle();
+    expect(disconnected.preference).toBe("light");
     disconnected.disconnectedCallback();
   });
 
-  it("negotiates and persists locale changes", async () => {
+  it("cycles and persists locale through one semantic button", async () => {
     localStorage.setItem("courier.locale", "ru");
     const selector = document.createElement("courier-locale-selector") as CourierLocaleSelector;
     let detail = "";
@@ -487,23 +423,58 @@ describe("preference selectors", () => {
     document.body.append(selector);
     await selector.updateComplete;
     expect(selector.locale).toBe("ru");
-    const control = selector.shadowRoot?.querySelector("courier-segmented-control") as CourierSegmentedControl;
-    await control.updateComplete;
-    expect(control.iconOnly).toBe(true);
-    expect(control.shadowRoot?.querySelectorAll("button courier-icon")).toHaveLength(0);
-    expect([...control.shadowRoot!.querySelectorAll("button .symbol")].map((symbol) => symbol.textContent)).toEqual(["🇬🇧", "🇷🇺"]);
-    expect(control.shadowRoot?.querySelector('button[data-value="en"]')?.getAttribute("aria-label")).toBe("Английский");
-    control.dispatchEvent(new CustomEvent("courier-segment-change", { detail: "unsupported", bubbles: true }));
+    const control = selector.shadowRoot?.querySelector("button") as HTMLButtonElement;
+    expect(control.textContent).toContain("🇷🇺");
+    expect(control.getAttribute("aria-label")).toContain("Русский");
+    expect(control.getAttribute("aria-label")).toContain("Английский");
+    control.click();
     await selector.updateComplete;
     expect(selector.locale).toBe("en");
     expect(detail).toBe("en");
     expect(localStorage.getItem("courier.locale")).toBe("en");
+    control.click();
+    await selector.updateComplete;
+    expect(detail).toBe("ru");
 
-    const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const disconnected = new CourierLocaleSelector();
+    (disconnected as unknown as { synchronize(): void }).synchronize();
+    (disconnected as unknown as { cycle(): void }).cycle();
+    expect(disconnected.locale).toBe("ru");
+    disconnected.disconnectedCallback();
+  });
+
+  it("centralizes browser defaults, explicit overrides, cycling, and storage failures", () => {
+    expect(nextPreference(preferenceThemeOrder, "system")).toBe("light");
+    expect(nextPreference(preferenceThemeOrder, "dark")).toBe("system");
+    expect(nextPreference(preferenceLocaleOrder, "ru")).toBe("en");
+    const listeners = new Set<() => void>();
+    const media = { matches: true, addEventListener: (_type: "change", listener: () => void) => listeners.add(listener), removeEventListener: (_type: "change", listener: () => void) => listeners.delete(listener) };
+    const root = { dataset: {} as DOMStringMap };
+    const storage = { getItem: (key: string) => key === "courier.theme" ? "light" : "ru", setItem: vi.fn() };
+    const controller = new BrowserPreferenceController(root, storage, media, ["en-US"]);
+    const changes = vi.fn();
+    controller.addEventListener("change", changes);
+    expect(controller.theme).toBe("light");
+    expect(controller.locale).toBe("ru");
+    expect(controller.cycleTheme()).toBe("dark");
+    expect(controller.setLocale("en")).toBe("en");
+    expect(controller.cycleLocale()).toBe("ru");
+    expect(changes).toHaveBeenCalledTimes(3);
+    controller.destroy();
+    expect(listeners.size).toBe(0);
+
+    const restricted = { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); } };
+    expect(() => new BrowserPreferenceController(root, restricted, undefined, ["ru-RU"], "system").cycleTheme()).not.toThrow();
+
+    resetBrowserPreferenceController();
+    const storageDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
     Object.defineProperty(globalThis, "localStorage", { configurable: true, get: () => { throw new Error("blocked"); } });
-    expect(() => control.dispatchEvent(new CustomEvent("courier-segment-change", { detail: "ru", bubbles: true }))).not.toThrow();
-    if (descriptor) {
-      Object.defineProperty(globalThis, "localStorage", descriptor);
-    }
+    Object.defineProperty(globalThis, "navigator", { configurable: true, value: undefined });
+    expect(browserPreferenceController().theme).toBe("system");
+    expect(browserPreferenceController().locale).toBe("en");
+    resetBrowserPreferenceController();
+    if (storageDescriptor) Object.defineProperty(globalThis, "localStorage", storageDescriptor);
+    if (navigatorDescriptor) Object.defineProperty(globalThis, "navigator", navigatorDescriptor);
   });
 });
