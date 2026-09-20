@@ -43,9 +43,9 @@ test("landing keeps the static header, official brands, route signal, and comman
   await expect(page.locator("main > section")).toHaveCount(3);
   expect(await page.locator("main > section").evaluateAll((sections) => sections.map((section) => section.id))).toEqual(["route", "install", "cli"]);
   await expect(page.getByRole("button", { name: /Run|Replay/ })).toHaveCount(0);
-  await expect(page.locator('img[src*="courier-relay-pixel-mark-v2"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-route-v2"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-delivery-v2"], img[src*="courier-relay-pixel-admin-v2"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
+  await expect(page.locator('img[src*="courier-relay-pixel-mark-v3"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-route-v3"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-delivery-v3"], img[src*="courier-relay-pixel-admin-v3"], img[src*="courier-relay-pixel-neutral-v3"]')).toHaveCount(0);
   await expect(page.locator("[data-courier-route-composition]")).toHaveCount(1);
   await expect(page.locator("[data-courier-cli-registry]")).toHaveCount(1);
   for (const selector of ["[data-courier-route-composition]", "[data-courier-cli-registry]"]) {
@@ -58,7 +58,7 @@ test("landing keeps the static header, official brands, route signal, and comman
   expect(await page.locator("header").evaluate((node) => {
     const style = getComputedStyle(node);
     return [style.position, style.backgroundColor, style.backgroundImage, style.backdropFilter, style.borderBottomWidth];
-  })).toEqual(["static", "rgba(0, 0, 0, 0)", "none", "none", "0px"]);
+  })).toEqual(["static", "rgb(255, 255, 255)", "none", "none", "1px"]);
   const headerCenters = await page.locator("header").evaluate((header) => {
     const brand = header.querySelector(":scope > div > a")!.getBoundingClientRect();
     const controls = Array.from(header.querySelectorAll(":scope > div > div > a, :scope > div > div > button"));
@@ -131,7 +131,7 @@ test("landing keeps the static header, official brands, route signal, and comman
   await route.getByRole("button", { name: "Copy command" }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("courier from web:// to");
   const install = page.locator("#install");
-  await install.getByRole("button", { name: "npm", exact: true }).click();
+  await install.getByRole("tab", { name: "npm", exact: true }).click();
   await expect(install.locator("code")).toHaveText("npm install --global @iwonz/courier");
   await install.getByRole("button", { name: "Copy command" }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("npm install --global @iwonz/courier");
@@ -139,12 +139,16 @@ test("landing keeps the static header, official brands, route signal, and comman
   const cli = page.locator("#cli");
   const compatibility = cli.getByRole("checkbox", { name: "Compatible with selected command" });
   await expect(compatibility).toBeDisabled();
-  for (const selector of ["[data-courier-cli-columns]", "[data-courier-cli-columns] > section", "[data-courier-cli-readout]"]) {
+  for (const selector of ["[data-courier-cli-columns]", "[data-courier-cli-columns] > section"]) {
     expect(await cli.locator(selector).evaluateAll((nodes) => nodes.every((node) => {
       const style = getComputedStyle(node);
       return style.borderTopWidth === "0px" && style.borderRightWidth === "0px" && style.borderBottomWidth === "0px" && style.borderLeftWidth === "0px";
     }))).toBe(true);
   }
+  expect(await cli.locator("[data-courier-cli-readout]").evaluate((node) => {
+    const style = getComputedStyle(node);
+    return [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth];
+  })).toEqual(["1px", "0px", "1px", "0px"]);
   await cli.getByRole("button", { name: "courier from <source> to <destination> [options]" }).click();
   await expect(compatibility).toBeEnabled();
   await cli.getByRole("textbox", { name: "source" }).fill("folder one");
@@ -176,6 +180,21 @@ test("landing keeps the static header, official brands, route signal, and comman
       await page.setViewportSize(viewport);
       await page.reload();
       await expect(page.locator("html")).toHaveAttribute("data-courier-theme", theme);
+      expect(await page.evaluate(() => {
+        const root = getComputedStyle(document.documentElement);
+        const body = getComputedStyle(document.body);
+        const heading = getComputedStyle(document.querySelector("h1")!);
+        return {
+          background: root.getPropertyValue("--background").trim(),
+          surface: root.getPropertyValue("--card").trim(),
+          primary: root.getPropertyValue("--primary").trim(),
+          actionFill: root.getPropertyValue("--terminal-fill-action").trim(),
+          selectionFill: root.getPropertyValue("--terminal-fill-selection").trim(),
+          destructive: root.getPropertyValue("--destructive").trim(),
+          bodyFont: body.fontFamily,
+          headingFont: heading.fontFamily,
+        };
+      })).toEqual(theme === "dark" ? expect.objectContaining({ background: "#000000", surface: "#0D1015", primary: "#71FFF6", actionFill: "#71FFF6", selectionFill: "#FAD14F", destructive: "#C94A55", bodyFont: expect.stringContaining("Overpass Mono"), headingFont: expect.stringContaining("Pixelify Sans") }) : expect.objectContaining({ background: "#FFFFFF", surface: "rgba(0, 0, 0, .04)", primary: "#006B67", actionFill: "#71FFF6", selectionFill: "#FAD14F", destructive: "#C94A55", bodyFont: expect.stringContaining("Overpass Mono"), headingFont: expect.stringContaining("Pixelify Sans") }));
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       expect(await page.locator("main > section").evaluateAll((sections) => sections.every((section) => getComputedStyle(section).minHeight === "0px"))).toBe(true);
     }
@@ -199,9 +218,9 @@ test("protected delivery reveals no metadata before authentication", async ({ pa
   await page.route("**/api/v1/meta*", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ name: secretMarker, path: secretMarker, type: "file" }) }));
   await page.goto(dataURL);
   await expect(page.locator('input[type="password"]')).toBeVisible();
-  await expect(page.locator('img[src*="courier-relay-pixel-mark-v2"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-delivery-v2"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-route-v2"], img[src*="courier-relay-pixel-admin-v2"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
+  await expect(page.locator('img[src*="courier-relay-pixel-mark-v3"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-delivery-v3"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-route-v3"], img[src*="courier-relay-pixel-admin-v3"], img[src*="courier-relay-pixel-neutral-v3"]')).toHaveCount(0);
   expect(await page.locator("[data-courier-auth-region]").evaluate((node) => {
     const style = getComputedStyle(node);
     return [style.backgroundImage, style.borderRadius, style.boxShadow, style.backdropFilter];
@@ -230,9 +249,9 @@ test("admin keeps secrets out of the shadcn control plane and mutates through AP
   await page.route("**/policy", (route) => { mutations.push(route.request().url()); return route.fulfill({ status: 204 }); });
   await page.goto(adminURL);
   await expect(page.locator("body")).toContainText("127.0.0.1:8080");
-  await expect(page.locator('img[src*="courier-relay-pixel-mark-v2"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-admin-v2"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-route-v2"], img[src*="courier-relay-pixel-delivery-v2"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
+  await expect(page.locator('img[src*="courier-relay-pixel-mark-v3"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-admin-v3"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-route-v3"], img[src*="courier-relay-pixel-delivery-v3"], img[src*="courier-relay-pixel-neutral-v3"]')).toHaveCount(0);
   await expect(page.locator("[data-courier-metrics]")).toHaveCount(1);
   for (const selector of ["[data-courier-metrics]", "[data-courier-admin-workspace]"]) {
     expect(await page.locator(selector).evaluate((node) => {

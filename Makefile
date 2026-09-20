@@ -6,7 +6,7 @@ SHELLCHECK_VERSION := v0.11.0
 SHELLCHECK ?= .cache/tools/shellcheck
 OPENSPEC ?= openspec
 
-.PHONY: all fmt-check vet contract-check workflow-check openspec-check test npm-test ui-test browser-test pages-build pages-publish goreleaser-check formula-test snapshot package-test verify precommit hooks release clean
+.PHONY: all fmt-check vet contract-check workflow-check openspec-check test npm-test ui-test browser-test pages-build pages-publish goreleaser-check formula-test snapshot package-test verify precommit hooks release ship clean
 
 all: verify
 
@@ -79,6 +79,9 @@ hooks:
 
 release:
 	./scripts/release.sh $(VERSION)
+
+ship:
+	./scripts/ship.sh "$(VERSION)" "$(CHANGE)" "$(MESSAGE)"
 
 clean:
 	rm -rf dist .cache coverage.out coverage.html web/ui/dist web/ui/coverage web/data/coverage web/admin/coverage web/landing/dist web/landing/coverage web/test-results web/playwright-report

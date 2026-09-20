@@ -37,7 +37,13 @@ if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; the
   exit 1
 fi
 
-make verify
+verified_commit=${COURIER_RELEASE_VERIFIED_COMMIT:-}
+current_commit=$(git rev-parse HEAD)
+if [ "$verified_commit" = "$current_commit" ]; then
+  printf '%s\n' "Using the full verification already completed for $current_commit"
+else
+  make verify
+fi
 [ -z "$(git status --porcelain)" ] || { printf '%s\n' "Verification changed tracked files; review them before release" >&2; exit 1; }
 
 if [ "${COURIER_RELEASE_YES:-0}" != 1 ]; then
@@ -54,4 +60,28 @@ if ! git push origin "$tag"; then
   printf '%s\n' "Push failed. The local annotated tag remains at $tag; fix connectivity and run: git push origin $tag" >&2
   exit 1
 fi
-printf '%s\n' "Release workflow started for $tag: https://github.com/iwonz/courier/actions/workflows/release.yml"
+
+run_id=
+attempt=0
+while [ "$attempt" -lt 60 ]; do
+  run_id=$(gh run list --repo iwonz/courier --workflow release.yml --event push --limit 30 --json databaseId,headBranch,headSha --jq ".[] | select(.headBranch == \"$tag\" and .headSha == \"$current_commit\") | .databaseId" | sed -n '1p')
+  [ -n "$run_id" ] && break
+  attempt=$((attempt + 1))
+  sleep 2
+done
+[ -n "$run_id" ] || {
+  printf '%s\n' "GitHub did not register the release workflow for $tag" >&2
+  exit 1
+}
+
+printf '%s\n' "Watching release workflow $run_id for $tag"
+gh run watch "$run_id" --repo iwonz/courier --exit-status --interval 10
+
+git fetch origin main --quiet
+git merge --ff-only origin/main
+./scripts/publish-pages.sh
+
+release_url=$(gh release view "$tag" --repo iwonz/courier --json url --jq .url)
+pages_url=$(gh api repos/iwonz/courier/pages --jq .html_url)
+printf '%s\n' "Published Courier $tag: $release_url"
+printf '%s\n' "Published Courier landing: $pages_url"

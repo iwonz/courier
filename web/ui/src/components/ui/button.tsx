@@ -4,15 +4,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 export const buttonVariants = cva(
-  "courier-pixel-control courier-pixel-focus inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap border border-transparent text-sm font-semibold outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-75 ease-[steps(1,end)] disabled:pointer-events-none disabled:opacity-45 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none [&_svg]:pointer-events-none [&_svg]:size-4",
+  "courier-pixel-control courier-pixel-focus inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap border border-transparent text-sm font-semibold outline-none transition-none disabled:pointer-events-none disabled:opacity-45 [&_svg]:pointer-events-none [&_svg]:size-4",
   {
     variants: {
       variant: {
-        default: "border-primary bg-primary text-primary-foreground shadow-[2px_2px_0_var(--pixel-shadow)] hover:-translate-x-px hover:-translate-y-px hover:shadow-[3px_3px_0_var(--pixel-shadow)]",
-        secondary: "border-primary bg-primary text-primary-foreground shadow-[inset_2px_2px_0_color-mix(in_srgb,var(--pixel-paper)_24%,transparent)]",
-        outline: "border-border bg-background text-foreground shadow-[2px_2px_0_var(--pixel-shadow)] hover:border-primary hover:text-primary",
-        ghost: "text-foreground hover:bg-secondary hover:text-secondary-foreground",
-        destructive: "border-destructive bg-destructive text-white shadow-[2px_2px_0_var(--pixel-shadow)]",
+        default: "border-[var(--terminal-fill-action)] bg-[var(--terminal-fill-action)] text-black hover:border-[var(--terminal-fill-selection)] hover:bg-[var(--terminal-fill-selection)] active:bg-foreground active:text-background",
+        secondary: "border-[var(--terminal-fill-selection)] bg-[var(--terminal-fill-selection)] text-black hover:border-[var(--terminal-fill-action)] hover:bg-[var(--terminal-fill-action)]",
+        outline: "border-border bg-background text-foreground hover:border-primary hover:bg-secondary hover:text-primary",
+        ghost: "text-foreground hover:bg-secondary hover:text-primary active:bg-foreground active:text-background",
+        destructive: "border-destructive bg-destructive text-white hover:bg-background hover:text-destructive",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -96,7 +96,7 @@ describe("brand, icon, and geometry helpers", () => {
   it("renders compact and full brands plus the consistent role sprites", () => {
     const { container } = render(<><Brand /><Brand compact className="compact" />{(["neutral", "route", "delivery", "admin"] as const).map((role) => <RelaySprite key={role} role={role} alt={role} className="mascot" />)}</>);
     expect(screen.getAllByText("COURIER CLI")).toHaveLength(1);
-    expect(container.querySelector('img[src*="courier-relay-pixel-mark-v2"]')?.getAttribute("width")).toBe("256");
+    expect(container.querySelector('img[src*="courier-relay-pixel-mark-v3"]')?.getAttribute("width")).toBe("256");
     expect(screen.getByAltText("neutral").getAttribute("width")).toBe("512");
     expect(screen.getByAltText("route").getAttribute("height")).toBe("512");
     expect(screen.getByAltText("delivery").getAttribute("width")).toBe("384");

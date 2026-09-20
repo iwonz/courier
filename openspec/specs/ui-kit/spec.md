@@ -21,17 +21,17 @@ Courier SHALL provide one React and TypeScript UI package for delivery, administ
 
 ### Requirement: Auditable identity assets
 
-Courier SHALL retain exactly the declared five transparent pixel Relay WebP assets, one pinned local display font, and the declared local transparent PNG third-party marks with role, dimensions, byte count, generation prompt or upstream source, lineage or revision, license, and SHA-256 digest. Pixel treatment SHALL remain limited to Courier/Relay and functional internal icons. Third-party brands SHALL preserve official geometry and color without pixelated image treatment. The canonical neutral-v1 Relay SHALL anchor identity-preserving mark, route, delivery, and administration v2 derivatives with recorded provenance and visual QA. The mark SHALL remain at most 24 KiB, neutral and route sprites at most 64 KiB each, delivery and administration sprites at most 48 KiB each, all Relay assets at most 248 KiB combined, and the display font at most 48 KiB.
+Courier SHALL retain exactly five transparent pixel Relay v3 WebP assets, one pinned local Pixelify Sans display font, four pinned local Overpass Mono Latin/Cyrillic 400/600 subsets totaling at most 48 KiB, their OFL notices, and the declared local transparent PNG third-party marks. Relay SHALL use a compact square-bodied silhouette with a flat stepped crown and angular right-angle pixel clusters in every role. Neutral-v3 SHALL be the identity authority for mark, route, delivery, and administration v3 assets. Provenance SHALL record role, dimensions, byte count, generation prompt or upstream source, lineage or revision, license, consumers, and SHA-256 digest. Legacy Relay v1/v2 files SHALL NOT ship. Existing per-sprite and combined budgets remain unchanged.
 
 #### Scenario: Asset integrity check
 
 - **WHEN** repository verification runs
-- **THEN** undeclared assets, legacy Relay names, missing provenance or licenses, incorrect dimensions, unofficial or pixelated third-party branding, broken neutral lineage, or an exceeded budget fail the gate
+- **THEN** undeclared assets, legacy Relay files, missing provenance or licenses, incorrect dimensions, broken v3 neutral lineage, altered third-party branding, excess font bytes, or an exceeded sprite budget fail the gate
 
 #### Scenario: Identity assets are validated
 
-- **WHEN** the asset gate inspects Relay and third-party media
-- **THEN** it verifies alpha, dimensions, hashes, neutral-source linkage, consumer references, official brand provenance, and the absence of third-party pixel rendering
+- **WHEN** the asset gate inspects Relay, fonts, and third-party media
+- **THEN** it verifies alpha, dimensions, hashes, neutral-v3 linkage, consumers, font licenses and sizes, official brand provenance, and the absence of third-party pixel rendering
 
 ### Requirement: User-selectable themes
 
@@ -77,19 +77,17 @@ Courier SHALL enforce 100% statements, branches, functions, and lines for first-
 
 ### Requirement: Coherent brand identity system
 
-Courier SHALL use one repository-local modern 8-bit Relay identity across landing, delivery, administration, README, favicon, and product chrome. Relay SHALL be a compact square pigeon courier with a satchel, parcel, folded wings, compact tail, short beak, visible eye, and at most one small earpiece. The transparent ImageGen-authored mark, neutral mascot, route pose, delivery pose, and administration pose SHALL use hard pixel edges and SHALL NOT depict armor, a helmet, visor, glowing face panel, exoskeleton, metallic chest plate, police or military equipment, photorealism, smooth 3D shading, scenery, text, logos, or watermarks.
-
-The neutral sprite SHALL be the canonical identity reference. Every role sprite SHALL be an identity-preserving derivative of that canonical asset and SHALL preserve its body size, body-to-head proportions, physiology, head, eye, beak, folded wings, compact tail, base plumage, earpiece, and satchel. Only pose, role equipment, clothing, and carried or attached objects MAY vary. Independent mascot redraws SHALL NOT be accepted as role variants.
+Courier SHALL use one repository-local terminal 8-bit Relay v3 family across landing, delivery, administration, README, favicon, and product chrome. Every v3 role SHALL use the same compact square-bodied silhouette, flat stepped crown, angular feather planes, and right-angle pixel clusters while preserving the established anatomy, fundamental proportions, eye, beak, earpiece, satchel, pose, and working object. The family SHALL use teal in place of cobalt, yellow in place of orange/coral, and a cool black/white neutral plumage ramp. Assets SHALL retain true alpha and hard pixel clusters.
 
 #### Scenario: A browser surface presents Courier
 
 - **WHEN** landing, delivery, or administration renders
-- **THEN** its header uses the square pixel Relay mark beside `COURIER CLI`, its optional role sprite matches the surface, and complete product meaning remains available without either image
+- **THEN** its header uses mark-v3 beside `COURIER CLI`, its optional v3 role sprite matches the surface, and product meaning remains complete without the image
 
 #### Scenario: Relay changes roles
 
-- **WHEN** the landing, delivery, administration, README, and header assets are compared
-- **THEN** they depict the same recognizable mascot proportions and physiology while only the declared pose and role equipment differ
+- **WHEN** all five v3 assets are compared on light, dark, and checkerboard backgrounds
+- **THEN** the same recognizable square-bodied Relay identity, angular silhouette grammar, role poses, object count, dimensions, transparent background, and terminal palette remain visible
 
 ### Requirement: Non-essential mascot guidance
 
@@ -111,17 +109,17 @@ Courier SHALL use concise, concrete, non-alarmist language that identifies actio
 
 ### Requirement: Intentional control appearance
 
-Courier SHALL present semantic browser controls through one shared modern pixel grammar using the declared twelve-color palette, four-pixel geometry unit, crisp dividers, chamfered interactive frames, hard offset state shadows, and visible two-pixel focus. Ordinary layout wrappers SHALL remain transparent and SHALL NOT add card backgrounds, outer radii, blur, soft shadows, or borders. Body content SHALL remain system sans, commands SHALL remain system monospace, and the locally bundled Cyrillic Pixelify Sans font SHALL be limited to brand and display headings.
+Courier SHALL present all three browser surfaces through one terminal data-grid grammar. Dark mode SHALL use `#000000`, `#0D1015`, `#191C20`, white, 70% white secondary text, and 55% white rules. Light mode SHALL invert those roles with white and 4%/9%/70%/55% black. Action/success SHALL use `#71FFF6`, selection/warning `#FAD14F`, destructive/error `#C94A55`, and light-theme teal text `#006B67`. Bright teal and yellow fills SHALL use black text. Controls SHALL use square corners, one-pixel rules, two-pixel focus, and instant step states without chamfer, offset shadow, blur, or soft shadow. Pixelify Sans SHALL be limited to wordmark and H1/H2; Overpass Mono 400/600 SHALL serve interface text, labels, values, and commands.
 
 #### Scenario: A user operates a Courier control
 
-- **WHEN** a control is rendered, focused, selected, disabled, or activated
-- **THEN** its pixel state remains contrast-safe, keyboard-operable, semantically native, and free of an unnecessary surrounding island
+- **WHEN** a control is rendered, focused, selected, disabled, hovered, or pressed in any theme
+- **THEN** it remains contrast-safe, keyboard-operable, square, sharply ruled, and free of soft or offset effects
 
 #### Scenario: A product surface groups related content
 
-- **WHEN** content is grouped for layout without its own interactive state
-- **THEN** it remains on the continuous document canvas and uses spacing, typography, alignment, or a meaningful crisp divider instead of a card island
+- **WHEN** content is grouped without its own interactive state
+- **THEN** it uses a flat surface band, typography, alignment, spacing, or a meaningful one-pixel rule instead of a detached card island
 
 ### Requirement: Compact icon preference controls
 
@@ -213,9 +211,9 @@ Courier SHALL provide shared control-frame tokens and a semantic icon-link compo
 
 ### Requirement: Shared workbench primitive
 
-Courier SHALL use repository-owned shadcn layout and control primitives for structured product state without a separate terminal or workbench component. Card SHALL remain a semantic structural wrapper with no default surface chrome; command readouts, route displays, and tab lists SHALL likewise avoid a containing panel. The system SHALL use normal sans-serif content without viewport-sized framing, shell prompts, fake execution, or arbitrary command input.
+Courier SHALL compose product state from flat terminal panels, horizontal row rules, semantic controls, and truthful product data. Decorative card islands, fake shell execution, fictional monitoring data, soft shadows, blur, and rounded framing SHALL NOT be introduced.
 
 #### Scenario: A product surface presents state
 
-- **WHEN** landing, delivery, or administration renders structured content
-- **THEN** shared shadcn composition presents it directly on the document canvas with readable hierarchy and no ordinary card islands
+- **WHEN** landing, delivery, or administration groups related information
+- **THEN** hierarchy comes from typography, spacing, flat surface bands, and meaningful one-pixel rules while all displayed values originate from the CLI contract or runtime API

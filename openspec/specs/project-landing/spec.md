@@ -49,32 +49,32 @@ Courier SHALL automatically publish the deterministic landing artifact after eve
 
 ### Requirement: Brand-led product narrative
 
-The landing SHALL use React and shared shadcn components in exactly three naturally scrolling, content-height sections ordered as a combined hero and route instrument, installation, and combined shipped command/option reference. No section SHALL use viewport-relative minimum height or behave as a mandatory screen. The first section SHALL present `From here to anywhere.` in English and `Отсюда — куда угодно.` in Russian and contain the contract-backed Source-to-Destination interaction without a separate routing introduction, visible endpoint explanation, installation command, or execution simulation.
+The landing SHALL retain exactly three naturally scrolling sections: route console, installation console, and command data-grid. The route console SHALL combine the localized promise, Relay route-v3, interactive endpoints, immutable command, and a contract-derived strip containing endpoint, route, and command counts. It SHALL NOT invent telemetry or monitoring values.
 
 #### Scenario: A visitor reads the complete landing
 
-- **WHEN** the visitor scrolls from route selection through installation and the CLI reference
-- **THEN** each section occupies only its content-driven height, retains smooth anchor navigation, and exposes no snap behavior, artificial viewport filler, clipping, or horizontal overflow
+- **WHEN** the visitor scrolls through the page
+- **THEN** the three content-height terminal sections retain all route, installation, and command-builder behavior without viewport filler or horizontal overflow
 
 #### Scenario: A new visitor opens Courier
 
 - **WHEN** the landing loads at a supported viewport
-- **THEN** the visitor sees the localized promise, Relay identity, Source and Destination controls, selected route, immutable command, Copy action, and applicable options in the first content-height section
+- **THEN** the visitor sees the localized promise, route-v3, truthful contract metrics, endpoint controls, generated route command, Copy, and applicable options
 
 #### Scenario: A new visitor moves through the landing
 
-- **WHEN** the visitor scrolls through the landing
-- **THEN** route, installation, and CLI content follow natural document flow without any section being expanded to a viewport target
+- **WHEN** the visitor scrolls from route through installation and the command builder
+- **THEN** all three sections follow normal document flow and the static header scrolls away
 
 #### Scenario: A new visitor arrives
 
-- **WHEN** the landing loads at a supported viewport
-- **THEN** the visitor can identify Courier, explore valid routes, inspect installation channels, inspect commands and options, and reach source or releases without encountering unshipped claims
+- **WHEN** the first route console is visible
+- **THEN** product promise, route identity, and primary route controls remain readable without unsupported monitoring content
 
 #### Scenario: The first viewport is constrained
 
-- **WHEN** the first section cannot fit within the initial viewport
-- **THEN** it expands in normal document flow without clipping controls, commands, artwork, or horizontal overflow
+- **WHEN** the landing is 320×568 or 390×844
+- **THEN** the route console reflows without clipping, overflow, or inaccessible controls
 
 ### Requirement: Illustrated operational landing
 
@@ -205,22 +205,27 @@ The landing SHALL use one continuous document canvas with compact content-driven
 
 ### Requirement: Viewport-aware installation chooser
 
-Courier SHALL present every supported installation channel through compact controls and one exact command readout. Official third-party marks SHALL be transparent local PNG images in official geometry and color without pixel rendering; GitHub SHALL provide light and dark variants. npx and wget SHALL render as text because they have no independent official mark.
+Installation SHALL use keyboard-operable horizontally scrollable channel tabs and a ruled command panel. Official local PNG marks remain unmodified and non-pixelated; npx and wget remain text-only.
+
+#### Scenario: Installation is narrow
+
+- **WHEN** installation renders at 320 or 390 pixels
+- **THEN** every channel remains reachable through the tab row and the exact selected command remains readable and copyable without document overflow
 
 #### Scenario: Third-party branding is inspected
 
-- **WHEN** GitHub, operating system, distribution, and package-manager identities render
-- **THEN** every available official mark is a local `img` PNG with no external request, SVG DOM, crisp-edge hint, or pixelated rendering, while npx and wget contain no invented icon
+- **WHEN** installation and GitHub marks render
+- **THEN** each supported brand is a local official-color PNG without pixelated image rendering while npx and wget remain text-only
 
 #### Scenario: A user inspects an installation channel
 
-- **WHEN** the user clicks or keyboard-activates a channel control
-- **THEN** the section exposes that channel's complete command without document overflow, hover-dependent state, layout movement, or a remote asset request
+- **WHEN** a channel tab receives pointer or keyboard activation
+- **THEN** its exact reviewed command and matching channel identity replace the prior selection
 
 #### Scenario: A user copies an installation command
 
-- **WHEN** the visitor activates the copy action and clipboard access succeeds or fails
-- **THEN** Courier attempts to copy the exact visible command and announces a localized result without moving or resizing the installation surface
+- **WHEN** Copy is activated for the selected channel
+- **THEN** the exact immutable installation command is written to the clipboard and localized status is announced
 
 ### Requirement: Minimal masthead composition
 
@@ -253,17 +258,22 @@ Courier SHALL render the compact Relay mark beside the literal wordmark `COURIER
 
 ### Requirement: Full-width compatible CLI reference
 
-Courier SHALL present generated commands and options in a full-width, invariant two-column reference. Commands SHALL be selectable without displaying repeated product/system badges. A checked-by-default custom checkbox SHALL filter options by the selected command's generated flag registry; no command selection SHALL display every option, and commands without flags SHALL display a localized empty state.
+The command builder SHALL render as a flat responsive data-grid with horizontal row rules, no outer table frame, and no vertical divider between command and parameter columns. All structured argument, option, dependency, conflict, validation, shell quoting, reset, and exact Copy behavior SHALL remain unchanged.
+
+#### Scenario: A command is configured
+
+- **WHEN** the visitor supplies valid arguments and parameters
+- **THEN** the ruled grid produces and copies the same exact POSIX or PowerShell command from the canonical contract
 
 #### Scenario: A visitor filters options by command
 
-- **WHEN** the visitor selects a command while compatibility filtering is checked
-- **THEN** only flags registered for that command are shown without changing reference bounds
+- **WHEN** a command is selected and compatible filtering is active
+- **THEN** only its contract-declared arguments and parameters remain enabled without adding an inter-column divider
 
 #### Scenario: No command is selected
 
-- **WHEN** the reference first opens or the selected command is activated again
-- **THEN** all options are shown and the checked compatibility control is disabled until another command is selected
+- **WHEN** the builder has no active command
+- **THEN** it explains the empty state, disables Copy, and preserves access to the contract command list
 
 ### Requirement: Transparent masthead integration
 
@@ -290,12 +300,17 @@ Courier SHALL present the selected route and installation commands as immutable 
 
 ### Requirement: Pixel landing composition
 
-The landing SHALL retain exactly three natural-height borderless sections on one continuous canvas while applying the shared modern 8-bit grammar to first-party identity and controls. The static transparent masthead SHALL use the Relay pixel mark, display wordmark, official local GitHub PNG, theme action, and active local locale flag. The route hero SHALL use only the transparent route-v2 sprite, code-native pixel waypoints, a grid-snapped measured connector, a centered four-pixel signal with linear path motion and a reduced-motion midpoint, contract-backed endpoint controls, immutable command, Copy action, and applicable options. Installation SHALL use only declared local official brand PNGs, and CLI SHALL remain free of decorative raster art.
+The landing SHALL use terminal palette tokens, Overpass Mono UI type, Pixelify Sans wordmark/H1/H2, route-v3 and mark-v3 assets, a teal measured path, and an exactly four-by-four yellow signal whose center follows the path or rests at its midpoint under reduced motion.
+
+#### Scenario: The route console renders
+
+- **WHEN** the route endpoints are measured
+- **THEN** Relay v3, the teal connector, the centered yellow signal, and contract-derived counts render without clipping in light or dark mode
 
 #### Scenario: A visitor scans and operates the page
 
-- **WHEN** the visitor scrolls, changes route, installation channel, command, theme, or locale, or copies a command
-- **THEN** the three compact sections retain their geometry and behavior without card islands, smooth decorative gradients, legacy artwork, emoji flags, external requests, or browser execution
+- **WHEN** the visitor selects endpoints, channels, commands, arguments, options, shell syntax, theme, or locale
+- **THEN** every state uses the terminal palette and retains the existing semantic behavior without fictional data
 
 ### Requirement: Pixel masthead composition
 

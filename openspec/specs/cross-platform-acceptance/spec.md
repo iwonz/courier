@@ -127,14 +127,19 @@ Courier SHALL include first-party `.ts` and `.tsx` sources in exact statement, b
 
 ### Requirement: Pixel browser acceptance
 
-Courier SHALL test landing, delivery, and administration in Chromium for the complete shared modern 8-bit identity in English and Russian, system/light/dark themes, reduced motion, touch and fine-pointer input, keyboard operation, supported responsive viewports, static transparent landing masthead, protected-metadata isolation, API behavior, exact role sprites, local font and official PNG brand loading, contrast-safe selected controls, grid-snapped route geometry, centered linear signal motion, no horizontal overflow, no ordinary card islands, and no external runtime requests.
+Courier SHALL verify landing, delivery, and administration in English/Russian and system/light/dark at 320×568, 390×844, 1024-wide, and 1440×900. Acceptance SHALL assert exact terminal tokens, local Overpass Mono and Pixelify Sans scope, five local Relay v3 assets and correct per-surface resolution, unmodified local brand PNGs, square controls, one-pixel rules, two-pixel focus, absence of shadows/chamfers/card islands/external requests/overflow, centered route signal and reduced-motion midpoint, truthful contract/API data, and all existing Copy, builder, auth, upload/download, administration mutation, and preference flows. Landing JavaScript SHALL remain at most 150 KiB gzip and CSS at most 9 KiB gzip.
+
+#### Scenario: Browser acceptance runs
+
+- **WHEN** the production surfaces are exercised at every required locale, theme, motion setting, and viewport
+- **THEN** visual structure, asset resolution, fonts, colors, overflow, interaction, API behavior, and bundle limits satisfy the terminal identity contract
 
 #### Scenario: Browser surfaces render the pixel identity
 
-- **WHEN** landing, delivery, and administration render at supported desktop and mobile sizes
-- **THEN** each uses the expected mark, role sprite, pixel font scope, icon registry, local flag, palette, control geometry, and reduced-motion behavior without loading legacy artwork, emoji flags, Lucide icons, generated backgrounds, remote assets, or hidden protected data
+- **WHEN** each production surface renders in a supported theme and viewport
+- **THEN** the expected v3 assets, fonts, tokens, rules, square controls, truthful values, and no external requests or overflow are observed
 
 #### Scenario: Product workflows are exercised
 
-- **WHEN** acceptance selects routes, copies commands, authenticates, transfers data, receives SSE snapshots, changes policy, or stops a target
-- **THEN** the visual redesign preserves all existing contract-backed and guarded behavior without layout instability or external effects
+- **WHEN** Playwright performs route, Copy, builder, auth, upload/download, administration, and preference scenarios
+- **THEN** the redesign preserves the exact established functional outcomes in English and Russian

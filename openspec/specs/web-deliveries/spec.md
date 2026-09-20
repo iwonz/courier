@@ -120,9 +120,14 @@ Courier SHALL bind foreground browser deliveries to their initiating control lea
 
 ### Requirement: Pixel delivery identity
 
-Courier SHALL serve the embedded React delivery application through the shared borderless modern 8-bit UI system. The header SHALL use the pixel mark and controls; optional decorative artwork SHALL use only the transparent delivery Relay sprite. Authentication, authorized route state, breadcrumbs, manifests, uploads, and downloads SHALL preserve existing protected-metadata isolation, CSRF behavior, and guarded versioned APIs while using local pixel icons, crisp semantic frames, and transparent structural wrappers.
+The embedded delivery React application SHALL render as a terminal transfer console using mark-v3 and delivery-v3. It SHALL separate title, real route/status, authorization, and manifest regions with flat surfaces and one-pixel rules. Manifest entries SHALL be ruled rows. Authorization, upload, download, navigation, protected metadata isolation, and API-only behavior SHALL remain unchanged, and no fictional transfer data SHALL be rendered.
+
+#### Scenario: An authorized manifest renders
+
+- **WHEN** the runtime API returns delivery metadata
+- **THEN** the console shows the actual route state and ruled manifest while preserving the same upload, download, and directory navigation actions
 
 #### Scenario: A visitor opens a delivery
 
-- **WHEN** authentication is required or authorized metadata is returned
-- **THEN** the pixel delivery workspace preserves existing security and transfer behavior without legacy artwork, card islands, remote resources, or protected information in decorative assets
+- **WHEN** the visitor opens a protected or authorized delivery route
+- **THEN** mark-v3 and delivery-v3 orient the transfer console while authentication and protected metadata behavior remain authoritative

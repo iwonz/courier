@@ -100,9 +100,14 @@ Courier SHALL embed a deterministic React operations application built from the 
 
 ### Requirement: Pixel administration identity
 
-Courier SHALL embed the existing guarded React administration application through the shared borderless modern 8-bit UI system. The header SHALL use the pixel mark and controls; optional decorative artwork SHALL use only the transparent administration Relay sprite. Counters, navigator, route inspector, policy fields, refresh, save, and stop actions SHALL use local pixel icons and semantic pixel frames while preserving authoritative SSE state, UUID selection, optimistic policy versions, secret isolation, keyboard behavior, and existing API contracts.
+The administration React application SHALL render as a terminal operations console using mark-v3 and admin-v3. Its title region, API-derived metric strip, server navigator, selected delivery facts, and policy editor SHALL use flat surfaces and structural one-pixel rules rather than card islands. Every counter and identifier SHALL come from the authoritative runtime snapshot; no synthetic uptime, status chart, or telemetry SHALL appear.
+
+#### Scenario: Live administration data renders
+
+- **WHEN** a secret-free server snapshot is available
+- **THEN** the operations console shows only its real server, delivery, confirmed-byte, route, and policy values while stop, refresh, selection, and save actions preserve existing semantics
 
 #### Scenario: An operator manages live state
 
-- **WHEN** snapshots arrive or the operator activates refresh, save, selection, or stop
-- **THEN** the pixel operations workspace updates existing authoritative state without legacy artwork, card islands, remote resources, credential disclosure, or API changes
+- **WHEN** the operator selects a delivery, changes policy, refreshes, or stops a target
+- **THEN** the terminal console performs the existing guarded API operation and reconciles the authoritative snapshot without exposing secrets

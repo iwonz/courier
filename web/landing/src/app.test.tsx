@@ -77,7 +77,7 @@ describe("React landing", () => {
     document.body.append(root);
     mountLanding(root);
     await waitFor(() => expect(root.querySelector("h1")?.textContent).toBe("From here to anywhere."));
-    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v2");
+    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v3");
   });
 
   it("renders three natural sections, a compact square mascot, and secure external links", () => {
@@ -85,7 +85,7 @@ describe("React landing", () => {
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("From here to anywhere.");
     expect(document.querySelectorAll("main > section")).toHaveLength(3);
     const mascot = document.querySelector<HTMLImageElement>('img[width="512"][height="512"]')!;
-    expect(mascot.src).toContain("courier-relay-pixel-route-v2");
+    expect(mascot.src).toContain("courier-relay-pixel-route-v3");
     expect(mascot.className).toContain("courier-pixel-image");
     expect(document.body.textContent).not.toContain("Run demo");
     expect(document.body.textContent).not.toContain("One binary plans the route");
@@ -148,14 +148,14 @@ describe("React landing", () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
     render(<LandingApp />);
-    fireEvent.click(screen.getByRole("button", { name: /Homebrew/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /Homebrew/ }));
     const command = screen.getByText(/brew tap iwonz\/courier/).textContent!;
     expect(command).not.toContain("--cask");
     const install = document.querySelector("#install")!;
     fireEvent.click(Array.from(install.querySelectorAll("button")).find((button) => button.textContent?.includes("Copy command"))!);
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(command));
     expect(screen.getByText("Copied")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "wget" }));
+    fireEvent.click(screen.getByRole("tab", { name: "wget" }));
     expect(document.querySelector('#install img[data-brand-name="GNU Wget"]')).toBeNull();
   });
 
@@ -250,12 +250,13 @@ describe("React landing", () => {
     render(<LandingApp />);
     expect(document.querySelector("[data-courier-route-composition]")).toBeTruthy();
     expect(document.querySelector("[data-courier-cli-registry]")).toBeTruthy();
-    expect(document.querySelector("[data-courier-route-composition]")?.className).not.toMatch(/rounded|bg-\[/);
+    expect(document.querySelector("[data-courier-route-composition]")?.className).toContain("bg-card");
+    expect(document.querySelector("[data-courier-route-composition]")?.className).not.toMatch(/rounded|shadow|backdrop/);
     expect(document.querySelector("[data-courier-cli-registry]")?.className).not.toMatch(/rounded|bg-card/);
     expect(document.querySelector("header")?.className).not.toContain("fixed");
-    expect(document.querySelector("header")?.className).toContain("bg-transparent");
+    expect(document.querySelector("header")?.className).toContain("bg-background");
     const activeLocal = document.querySelector<HTMLButtonElement>('[data-courier-route-composition] button[aria-label="Local"][aria-pressed="true"]');
-    expect(activeLocal?.className).toContain("bg-primary");
+    expect(activeLocal?.className).toContain("bg-[var(--terminal-fill-action)]");
     expect(activeLocal?.className).not.toContain("bg-background");
     expect(screen.getByText("COURIER CLI")).toBeTruthy();
     const localeButton = screen.getByRole("button", { name: /Language:/ });

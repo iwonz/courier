@@ -1,6 +1,6 @@
 schema_version: 2
 contract_version: 0.15.0
-target_release: 0.2.0
+target_release: 0.3.0
 language: en
 
 endpoint_kinds:

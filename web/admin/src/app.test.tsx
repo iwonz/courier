@@ -69,17 +69,19 @@ describe("administration React application", () => {
     document.body.append(root);
     mountAdmin(root);
     await waitFor(() => expect(root.textContent).toContain("No live Courier servers"));
-    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v2");
+    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v3");
   });
 
   it("loads, selects, preserves SSE selection, falls back, localizes, and unsubscribes", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => response(snapshot)));
     const view = render(<AdminApp />);
-    expect(document.querySelector<HTMLImageElement>('img[src*="courier-relay-pixel-admin-v2"]')?.className).toContain("courier-pixel-image");
+    expect(document.querySelector<HTMLImageElement>('img[src*="courier-relay-pixel-admin-v3"]')?.className).toContain("courier-pixel-image");
     await screen.findByText("server-a");
     expect(document.querySelector("[data-courier-metrics]")).toBeTruthy();
-    expect(document.querySelector("[data-courier-metrics]")?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
-    expect(document.querySelector("[data-courier-admin-workspace]")?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
+    expect(document.querySelector("[data-courier-metrics]")?.className).toContain("bg-card");
+    expect(document.querySelector("[data-courier-admin-workspace]")?.className).toContain("bg-card");
+    expect(document.querySelector("[data-courier-metrics]")?.className).not.toMatch(/rounded|shadow|backdrop/);
+    expect(document.querySelector("[data-courier-admin-workspace]")?.className).not.toMatch(/rounded|shadow|backdrop/);
     expect(screen.getByText("Unreachable")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Refresh registry" }));
     await screen.findByText("server-b");

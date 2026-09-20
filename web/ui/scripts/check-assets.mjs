@@ -9,7 +9,7 @@ const manifest = JSON.parse(await readFile(resolve(assetRoot, "provenance.json")
 const brandAssetRoot = resolve(packageRoot, "assets", "brands");
 const brandManifest = JSON.parse(await readFile(resolve(brandAssetRoot, "provenance.json"), "utf8"));
 
-if (manifest.schemaVersion !== 4 || !Array.isArray(manifest.assets) || manifest.assets.length === 0) {
+if (manifest.schemaVersion !== 5 || !Array.isArray(manifest.assets) || manifest.assets.length === 0) {
   throw new Error("asset provenance manifest is invalid");
 }
 if (brandManifest.schemaVersion !== 2 || !Array.isArray(brandManifest.assets) || brandManifest.assets.length === 0) {
@@ -64,27 +64,28 @@ if (actual.size !== expected.size || [...actual].some((name) => !expected.has(na
 }
 
 const relayBudgets = new Map([
-  ["courier-relay-pixel-mark-v2.webp", 24 * 1024],
-  ["courier-relay-pixel-neutral-v1.webp", 64 * 1024],
-  ["courier-relay-pixel-route-v2.webp", 64 * 1024],
-  ["courier-relay-pixel-delivery-v2.webp", 48 * 1024],
-  ["courier-relay-pixel-admin-v2.webp", 48 * 1024],
+  ["courier-relay-pixel-mark-v3.webp", 24 * 1024],
+  ["courier-relay-pixel-neutral-v3.webp", 64 * 1024],
+  ["courier-relay-pixel-route-v3.webp", 64 * 1024],
+  ["courier-relay-pixel-delivery-v3.webp", 48 * 1024],
+  ["courier-relay-pixel-admin-v3.webp", 48 * 1024],
 ]);
 const relayAssets = manifest.assets.filter((asset) => relayBudgets.has(asset.path));
 const canonical = manifest.identityFamily?.canonicalAsset;
 const expectedInvariants = [
-  "one compact near-square pigeon body",
-  "one large orange-ringed pigeon eye and short ivory beak",
-  "blue-gray head, pale folded wings, compact dark tail and coral feet",
-  "one small left-side earpiece and one cobalt courier satchel",
+  "one compact square-bodied pigeon with a flat stepped crown and angular pixel silhouette",
+  "one large ringed pigeon eye and short neutral beak",
+  "cool-neutral head and folded wings, compact dark tail and yellow feet",
+  "one small left-side earpiece and one teal courier satchel",
+  "the established role pose and working object",
 ];
-const expectedVariations = ["pose", "role equipment", "carried or attached object"];
-const expectedForbidden = ["body proportions", "physiology", "base plumage", "eye geometry", "armor", "helmet", "visor", "police or military styling"];
+const expectedVariations = ["terminal palette", "controlled square silhouette geometry"];
+const expectedForbidden = ["fundamental body proportions", "physiology", "pose", "role equipment", "carried object", "eye geometry", "armor", "helmet", "visor", "police or military styling"];
 if (relayAssets.length !== relayBudgets.size
-  || canonical !== "courier-relay-pixel-neutral-v1.webp"
-  || manifest.identityFamily?.revision !== "relay-pixel-v2"
-  || manifest.identityFamily?.qaContactSheet !== "docs/assets/courier-relay-pixel-v2-contact-sheet.png"
-  || !/identity-preserving .*derivative/.test(manifest.identityFamily?.generationRule ?? "")
+  || canonical !== "courier-relay-pixel-neutral-v3.webp"
+  || manifest.identityFamily?.revision !== "relay-pixel-v3"
+  || manifest.identityFamily?.qaContactSheet !== "docs/assets/courier-relay-pixel-v3-contact-sheet.png"
+  || !/identity-preserving palette and silhouette edit/.test(manifest.identityFamily?.generationRule ?? "")
   || manifest.identityFamily?.invariants?.join("\n") !== expectedInvariants.join("\n")
   || manifest.identityFamily?.allowedVariations?.join("\n") !== expectedVariations.join("\n")
   || manifest.identityFamily?.forbiddenVariations?.join("\n") !== expectedForbidden.join("\n")
@@ -96,14 +97,15 @@ if (relayAssets.length !== relayBudgets.size
     || !asset.lineage
     || !Array.isArray(asset.consumers)
     || asset.consumers.length === 0
-    || (asset.path === canonical ? asset.identityRevision !== "relay-pixel-v1" || asset.identityReference !== "self" : asset.identityRevision !== manifest.identityFamily.revision || asset.identityReference !== canonical))
+    || asset.identityRevision !== manifest.identityFamily.revision
+    || (asset.path === canonical ? asset.identityReference !== "self" : asset.identityReference !== canonical))
   || relayAssets.reduce((total, asset) => total + asset.bytes, 0) > 248 * 1024) {
   throw new Error("the consistent transparent Relay pixel family is missing or exceeds its budgets");
 }
 const contactSheet = await readFile(resolve(packageRoot, "..", "..", manifest.identityFamily.qaContactSheet));
 const contactSheetDimensions = rasterDimensions(contactSheet, "image/png");
 if (contactSheetDimensions.width !== 1320 || contactSheetDimensions.height !== 850) {
-  throw new Error("the Relay v2 QA contact sheet is missing or has unexpected dimensions");
+  throw new Error("the Relay v3 QA contact sheet is missing or has unexpected dimensions");
 }
 
 const font = manifest.assets.find((asset) => asset.path === "pixelify-sans-v1.woff2");
@@ -117,6 +119,25 @@ if (!font || !fontLicense
   || fontLicense.revision !== font.revision
   || !(await readFile(resolve(assetRoot, fontLicense.path), "utf8")).includes("SIL OPEN FONT LICENSE Version 1.1")) {
   throw new Error("the pinned local Pixelify Sans font or OFL notice is invalid");
+}
+
+const overpassNames = [
+  "overpass-mono-latin-400-normal.woff2",
+  "overpass-mono-cyrillic-400-normal.woff2",
+  "overpass-mono-latin-600-normal.woff2",
+  "overpass-mono-cyrillic-600-normal.woff2",
+];
+const overpassFonts = overpassNames.map((name) => manifest.assets.find((asset) => asset.path === name));
+const overpassLicense = manifest.assets.find((asset) => asset.path === "overpass-mono-ofl-1.1.txt");
+if (overpassFonts.some((asset) => !asset
+    || asset.mediaType !== "font/woff2"
+    || asset.repository !== "https://github.com/RedHatOfficial/Overpass"
+    || asset.revision !== "@fontsource/overpass-mono@5.3.0; upstream c580d28bfab7f39013568e684a65eeb23eff588d"
+    || asset.license !== "OFL-1.1")
+  || overpassFonts.reduce((total, asset) => total + asset.bytes, 0) > 48 * 1024
+  || !overpassLicense
+  || !(await readFile(resolve(assetRoot, overpassLicense.path), "utf8")).includes("SIL OPEN FONT LICENSE Version 1.1")) {
+  throw new Error("the pinned local Overpass Mono subsets or OFL notice are invalid");
 }
 
 const expectedBrandAssets = new Set(["provenance.json"]);
@@ -188,7 +209,8 @@ if (browserSource.includes("lucide-react")
   || browserSource.includes("🇬🇧")
   || browserSource.includes("🇷🇺")
   || browserSource.includes("courier-relay-tech")
-  || browserSource.includes("courier-relay-mark-v2")) {
+  || browserSource.includes("courier-relay-mark-v2")
+  || /courier-relay-pixel-(?:neutral-v1|(?:mark|route|delivery|admin)-v2)/.test(browserSource)) {
   throw new Error("legacy icons, emoji flags, or Relay assets remain in browser source");
 }
 
@@ -197,4 +219,4 @@ if (!brandComponent.includes("<img") || brandComponent.includes("<svg") || brand
   throw new Error("third-party brands must render only as normal local raster images");
 }
 
-console.log(`verified ${relayAssets.length} consistent Relay sprites, the pinned display font, and ${brandManifest.assets.length} local raster brand assets`);
+console.log(`verified ${relayAssets.length} Relay v3 sprites, two pinned font families, and ${brandManifest.assets.length} local raster brand assets`);

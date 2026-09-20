@@ -1,7 +1,7 @@
 # Courier CLI
 
 <p align="center">
-  <img src="web/ui/assets/courier-relay-pixel-neutral-v1.webp" width="420" alt="Relay, Courier's compact 8-bit pigeon courier mascot">
+  <img src="web/ui/assets/courier-relay-pixel-neutral-v3.webp" width="420" alt="Relay, Courier's compact 8-bit pigeon courier mascot">
 </p>
 
 Courier is an extensible, cross-platform CLI for safely transferring files and directories across local, SSH, browser, and webhook endpoints.
@@ -126,6 +126,7 @@ make test        # formatting, vet, race detector, exact Go coverage, and compil
 make verify      # full browser/package/platform-ready release-candidate dry run
 make pages-build # verify and build the current static landing
 make pages-publish # rebuild and publish synchronized main through GitHub Actions
+make ship VERSION=1.2.3 CHANGE=my-change MESSAGE="feat: finish my change" # OpenSpec → verify → commit → release → packages → Pages
 ```
 
 Development is spec-first: every task owns a path under `openspec/changes`, a conventional branch name, and one conventional commit. See the [implementation plan](docs/implementation-plan.md) and [release runbook](docs/releasing.md).

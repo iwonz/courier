@@ -32,7 +32,7 @@ describe("delivery React application", () => {
     document.body.append(root);
     mountData(root);
     await waitFor(() => expect(root.textContent).toContain("root"));
-    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v2");
+    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v3");
   });
 
   it("loads a directory, navigates into a folder and back, and localizes", async () => {
@@ -45,7 +45,7 @@ describe("delivery React application", () => {
       .mockResolvedValueOnce(response(directory()));
     vi.stubGlobal("fetch", fetchMock);
     render(<DataApp />);
-    expect(document.querySelector<HTMLImageElement>('img[src*="courier-relay-pixel-delivery-v2"]')?.className).toContain("courier-pixel-image");
+    expect(document.querySelector<HTMLImageElement>('img[src*="courier-relay-pixel-delivery-v3"]')?.className).toContain("courier-pixel-image");
     await screen.findByText("file.txt");
     expect(screen.getByRole("link", { name: /Download file/ }).getAttribute("href")).toContain("file.txt");
     fireEvent.click(screen.getByRole("button", { name: "folder" }));
@@ -67,13 +67,15 @@ describe("delivery React application", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<DataApp />);
     await screen.findByText("The route is unavailable or authorization is required. No delivery metadata was revealed.");
-    expect(document.querySelector("[data-courier-auth-region]")?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
+    expect(document.querySelector("[data-courier-auth-region]")?.className).toContain("bg-card");
+    expect(document.querySelector("[data-courier-auth-region]")?.className).not.toMatch(/rounded|shadow|backdrop/);
     expect(document.body.textContent).not.toContain("folder");
     const password = screen.getByLabelText("Delivery password") as HTMLInputElement;
     fireEvent.change(password, { target: { value: "secret" } });
     fireEvent.submit(screen.getByRole("button", { name: "Verify access" }).closest("form")!);
     await screen.findByText("folder");
-    expect(document.querySelector("[data-courier-manifest]")?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
+    expect(document.querySelector("[data-courier-manifest]")?.className).toContain("bg-card");
+    expect(document.querySelector("[data-courier-manifest]")?.className).not.toMatch(/rounded|shadow|backdrop/);
     expect(password.value).toBe("");
     fireEvent.click(screen.getByRole("button", { name: "folder" }));
     await screen.findByRole("button", { name: "Retry connection" });

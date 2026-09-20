@@ -47,7 +47,17 @@ The artifact matrix includes the six primary macOS/Linux/Windows targets plus ex
 
 The pinned GoReleaser binary is downloaded into `.cache/tools` only when absent and is verified against the upstream release checksum. No global GoReleaser installation is required.
 
-## Publish one release
+## Complete and publish one change
+
+The preferred end-to-end command owns the complete handoff from a finished worktree to public distribution:
+
+```sh
+make ship VERSION=1.2.3 CHANGE=my-openspec-change MESSAGE="feat: describe the finished change"
+```
+
+`make ship` requires `main`, a configured GitHub/npm publication environment, completed OpenSpec tasks, strict validation, and no other active OpenSpec changes. It archives the named change when necessary, updates `target_release`, regenerates contract artifacts, runs `make verify`, stages the complete reviewed worktree, creates the conventional commit, pushes `main`, creates and pushes the annotated release tag, waits for GitHub Release/Scoop/Homebrew/npm verification, fast-forwards to the workflow's verified Formula commit, and dispatches and waits for the final GitHub Pages deployment. Any failed gate stops the sequence. Use `COURIER_SHIP_YES=1` only for deliberate non-interactive execution.
+
+## Publish one already committed release
 
 Start from a clean, synchronized `main` branch and run either form:
 
@@ -62,9 +72,9 @@ Omit the version to be prompted:
 ./scripts/release.sh
 ```
 
-The command checks GitHub authentication, the Courier repository, GitHub secret names, origin, branch, clean state, tag uniqueness, and synchronization with `origin/main`. It then runs the full dry run, asks for final confirmation, creates one annotated `vMAJOR.MINOR.PATCH` tag, and pushes only that tag.
+The command checks GitHub authentication, the Courier repository, GitHub secret names, origin, branch, clean state, tag uniqueness, and synchronization with `origin/main`. It then runs the full dry run, asks for final confirmation, creates one annotated `vMAJOR.MINOR.PATCH` tag, pushes only that tag, waits for the complete release workflow, fast-forwards local `main` to the verified Formula commit, and publishes the final landing through GitHub Pages.
 
-For deliberate non-interactive automation, set `COURIER_RELEASE_YES=1` and provide the version. This does not bypass any quality or repository preflight.
+For deliberate non-interactive automation, set `COURIER_RELEASE_YES=1` and provide the version. This does not bypass any quality or repository preflight. `COURIER_RELEASE_VERIFIED_COMMIT` is reserved for `make ship`; it skips the duplicate local gate only when it exactly equals the commit just verified by the ship command.
 
 GoReleaser generates release notes from conventional commits between tags, publishes `courier_<version>_source.tar.gz`, and updates `bucket/courier.json`. A separate macOS job reads the published source checksum, renders `Formula/courier.rb`, runs `brew audit`, installs with `--build-from-source`, runs `courier version`, and commits only that verified Formula to `main` with the workflow's short-lived `GITHUB_TOKEN`. No personal GitHub token or additional repository is involved. Never move or recreate a published tag. If npm publication fails before that version is published, repair the secret and rerun the failed workflow for the existing tag. npm versions are immutable, so confirm publication status before rerunning a failed npm job.
 
