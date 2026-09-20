@@ -97,7 +97,6 @@ const routePairs = expandRoutePairs(contractData.routes);
 const initialRoute = routePairs.find((pair) => pair.source === "local" && pair.destination === "ssh")!;
 const sourceEndpoints = [...new Set(routePairs.map((pair) => pair.source))];
 const destinationEndpoints = [...new Set(routePairs.map((pair) => pair.destination))];
-const endpointCount = new Set([...sourceEndpoints, ...destinationEndpoints]).size;
 
 function useRouteConnector(source: string, destination: string): {
   readonly containerRef: React.RefObject<HTMLDivElement | null>;
@@ -227,7 +226,7 @@ function LandingContent(): React.JSX.Element {
   };
 
   return <div className="min-h-screen overflow-x-clip">
-    <header className="border-b border-border bg-background">
+    <header className="bg-background">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
         <a href="#route" className="courier-pixel-focus shrink-0 outline-none"><Brand /></a>
         <div className="ml-auto flex items-center gap-2">
@@ -240,13 +239,10 @@ function LandingContent(): React.JSX.Element {
 
     <main>
       <section id="route" className="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        <div data-courier-route-composition className="relative isolate mx-auto grid w-full max-w-7xl gap-0 border-y border-border bg-card">
-          <div className="grid border-b border-border lg:grid-cols-[minmax(0,.92fr)_minmax(22rem,1.08fr)]">
+        <div data-courier-route-composition className="relative isolate mx-auto grid w-full max-w-7xl gap-0 bg-card">
+          <div className="grid lg:grid-cols-[minmax(0,.92fr)_minmax(22rem,1.08fr)]">
             <div className="relative z-10 grid content-between gap-10 p-5 sm:p-8 lg:min-h-[28rem]">
               <div className="grid gap-4"><span className="font-mono text-xs font-semibold uppercase tracking-[.12em] text-primary">{t("routeConsole")}</span><h1 className="text-balance text-[clamp(3rem,7vw,6.8rem)] font-bold leading-[.88] tracking-[-.04em] text-foreground">{t("title")}</h1></div>
-              <div data-courier-contract-metrics className="grid grid-cols-3 border-y border-border">
-                {[[t("endpointsMetric"), endpointCount], [t("routesMetric"), contractData.routes.length], [t("commandsMetric"), contractData.commands.length]].map(([label, value]) => <div key={label} className="grid gap-1 py-3 pr-3 sm:py-4"><span className="text-[.65rem] uppercase tracking-[.08em] text-muted-foreground">{label}</span><strong className="font-mono text-xl text-warning sm:text-2xl">{value}</strong></div>)}
-              </div>
             </div>
             <div className="relative grid min-h-72 place-items-center overflow-hidden bg-[var(--card)] p-4 lg:min-h-[28rem]">
               <RelaySprite role="route" className="relative z-10 w-[min(28rem,92%)]" />
@@ -274,15 +270,14 @@ function LandingContent(): React.JSX.Element {
       <section id="install" className="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <div className="mx-auto grid w-full max-w-7xl gap-6">
           <h2 className="break-words text-3xl font-black leading-none tracking-[-.04em] sm:text-6xl">{t("install")}</h2>
-          <div className="flex overflow-x-auto border-y border-border" role="tablist">{installs.map((channel) => <Button key={channel.name} type="button" role="tab" variant={channel.name === install.name ? "secondary" : "ghost"} className="h-12 shrink-0 border-0 px-4" size="sm" aria-selected={channel.name === install.name} aria-pressed={channel.name === install.name} onClick={() => setActiveInstall(channel.name)}>{channel.icon ? <BrandIcon name={channel.icon} /> : null}{channel.name}</Button>)}</div>
-          <CommandReadout className="courier-terminal-panel px-4 sm:px-6"
+          <div className="flex overflow-x-auto" role="tablist">{installs.map((channel) => <Button key={channel.name} type="button" role="tab" variant="ghost" className="courier-install-tab h-12 shrink-0 border-0 px-4" size="sm" aria-selected={channel.name === install.name} aria-pressed={channel.name === install.name} onClick={() => setActiveInstall(channel.name)}>{channel.icon ? <BrandIcon name={channel.icon} /> : null}{channel.name}</Button>)}</div>
+          <CommandReadout className="px-4 sm:px-6"
             heading={t("commandLabel")}
             command={install.command}
             sessionKey={`${locale}:${install.name}`}
             copyLabel={t("copyCommand")}
             copiedLabel={t("copiedCommand")}
             copyFailedLabel={t("copyFailed")}
-            details={<div className="flex items-center gap-2 text-sm font-semibold text-primary">{install.icon ? <BrandIcon name={install.icon} /> : null}{install.name}</div>}
             footerActions={<>
               <Button asChild variant="ghost" size="sm"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><PixelIcon name="package" />{t("packages")}</a></Button>
               <Button asChild variant="ghost" size="sm"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><PixelIcon name="download" />{t("direct")}</a></Button>
@@ -296,24 +291,24 @@ function LandingContent(): React.JSX.Element {
           <h2 className="break-words text-3xl font-black leading-none tracking-[-.04em] sm:text-6xl">{t("cliTitle")}</h2>
           <div data-courier-cli-registry>
             <div data-courier-cli-columns className="grid gap-8 lg:grid-cols-[minmax(18rem,.72fr)_minmax(0,1.28fr)]">
-              <section className="min-w-0"><div className="border-y border-border px-3 py-4 text-sm font-semibold uppercase tracking-[.08em]">{t("commandLabel")}</div><ScrollArea className="h-[31rem]"><div>{contractData.commands.map((command) => <Button key={command.name} type="button" variant={command.name === selectedCommand ? "secondary" : "ghost"} aria-pressed={command.name === selectedCommand} onClick={() => chooseCommand(command.name)} className="h-auto min-w-0 w-full justify-start whitespace-normal border-b border-border px-3 py-3 text-left"><code className="min-w-0 break-words font-mono text-xs leading-relaxed">{command.usage}</code></Button>)}</div></ScrollArea></section>
+              <section className="min-w-0"><div data-courier-cli-command-header className="px-3 py-4 text-sm font-semibold uppercase tracking-[.08em]">{t("commandLabel")}</div><ScrollArea className="h-[31rem]"><div>{contractData.commands.map((command) => <Button key={command.name} type="button" variant={command.name === selectedCommand ? "secondary" : "ghost"} aria-pressed={command.name === selectedCommand} onClick={() => chooseCommand(command.name)} data-courier-cli-command className="h-auto min-w-0 w-full justify-start whitespace-normal border-0 px-3 py-3 text-left"><code className="min-w-0 break-words font-mono text-xs leading-relaxed">{command.usage}</code></Button>)}</div></ScrollArea></section>
               <section className="min-w-0">
-                <div className="flex min-h-14 min-w-0 flex-wrap items-center justify-between gap-3 border-y border-border px-3 py-3"><span className="text-sm font-semibold uppercase tracking-[.08em]">{t("optionsLabel")}</span><label className="flex min-w-0 items-center gap-2 text-xs font-medium text-muted-foreground"><Checkbox checked={compatibleOnly} disabled={!selectedCommand} onCheckedChange={(checked) => setCompatibleOnly(checked === true)} /><span className="min-w-0 break-words">{t("compatibleOnly")}</span></label></div>
+                <div data-courier-cli-options-header className="flex min-h-14 min-w-0 flex-wrap items-center justify-between gap-3 px-3 py-3"><span className="text-sm font-semibold uppercase tracking-[.08em]">{t("optionsLabel")}</span><label className="flex min-w-0 items-center gap-2 text-xs font-medium text-muted-foreground"><Checkbox checked={compatibleOnly} disabled={!selectedCommand} onCheckedChange={(checked) => setCompatibleOnly(checked === true)} /><span className="min-w-0 break-words">{t("compatibleOnly")}</span></label></div>
                 <ScrollArea className="h-[31rem]"><div>
                   {selectedCommandData?.arguments.map((argument) => {
                     const omitted = Boolean(argument.omitWhenFlag && flagEnabled(flagValues, argument.omitWhenFlag));
                     const valid = argumentValid(argument, argumentValues[argument.name] ?? "", flagValues);
-                    return <article key={argument.name} data-builder-argument={argument.name} className="grid gap-3 border-b border-border px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.9fr)] sm:items-center">
+                    return <article key={argument.name} data-builder-argument={argument.name} className="grid gap-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.9fr)] sm:items-center">
                       <div className="grid gap-1"><code className="font-mono text-sm font-bold text-primary">{`<${argument.name}>`}</code><span className="text-xs text-muted-foreground">{argument.required ? t("requiredValue") : t("optionalValue")}{argument.prefix ? ` · ${argument.prefix}` : ""}</span></div>
                       {argument.kind === "command-path" ? <Select value={argumentValues[argument.name] ?? ""} onValueChange={(value) => setArgumentValue(argument.name, value, argument.omitWhenFlag)}><SelectTrigger aria-label={argument.name}><SelectValue placeholder={t("chooseCommandPath")} /></SelectTrigger><SelectContent>{contractData.commands.filter((candidate) => candidate.name !== selectedCommandData.name).map((candidate) => <SelectItem key={candidate.name} value={candidate.path}>{candidate.path}</SelectItem>)}</SelectContent></Select> : <Input aria-label={argument.name} value={argumentValues[argument.name] ?? ""} disabled={omitted} aria-invalid={!valid} placeholder={omitted ? `--${argument.omitWhenFlag}` : argument.name} onChange={(event) => setArgumentValue(argument.name, event.currentTarget.value, argument.omitWhenFlag)} />}
                     </article>;
                   })}
-                  {visibleFlags.length ? visibleFlags.map((flag) => <article key={flag.name} data-builder-flag={flag.name} className="grid gap-3 border-b border-border px-3 py-3 hover:bg-muted sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.9fr)] sm:items-center"><div className="grid gap-1"><div className="flex flex-wrap items-baseline justify-between gap-2"><code className="font-mono text-sm font-bold text-primary">{flag.syntax}</code><span className="text-xs text-muted-foreground">{t("optionDefault")}: {flag.default}</span></div><p className="text-xs leading-relaxed text-muted-foreground">{t("repeatable")}: {flag.repeatable ? t("yes") : t("no")} · {t("applies")}: {flag.appliesTo.join(", ")}{(flag.requires ?? []).length ? ` · ${t("requires")}: ${(flag.requires as string[]).map((name) => `--${name}`).join(", ")}` : ""}</p></div>{flagControl(flag)}</article>) : <p className="border-b border-border p-5 text-sm text-muted-foreground">{t("noCompatibleOptions")}</p>}
+                  {visibleFlags.length ? visibleFlags.map((flag) => <article key={flag.name} data-builder-flag={flag.name} className="grid gap-3 px-3 py-3 hover:bg-muted sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.9fr)] sm:items-center"><div className="grid gap-1"><div className="flex flex-wrap items-baseline justify-between gap-2"><code className="font-mono text-sm font-bold text-primary">{flag.syntax}</code><span className="text-xs text-muted-foreground">{t("optionDefault")}: {flag.default}</span></div><p className="text-xs leading-relaxed text-muted-foreground">{t("repeatable")}: {flag.repeatable ? t("yes") : t("no")} · {t("applies")}: {flag.appliesTo.join(", ")}{(flag.requires ?? []).length ? ` · ${t("requires")}: ${(flag.requires as string[]).map((name) => `--${name}`).join(", ")}` : ""}</p></div>{flagControl(flag)}</article>) : <p data-courier-cli-empty className="p-5 text-sm text-muted-foreground">{t("noCompatibleOptions")}</p>}
                 </div></ScrollArea>
               </section>
             </div>
             <div className="flex justify-end gap-2 py-2" aria-label={t("shellLabel")}><Button type="button" size="sm" variant={shellMode === "posix" ? "default" : "ghost"} aria-pressed={shellMode === "posix"} onClick={() => setShellMode("posix")}>POSIX</Button><Button type="button" size="sm" variant={shellMode === "powershell" ? "default" : "ghost"} aria-pressed={shellMode === "powershell"} onClick={() => setShellMode("powershell")}>PowerShell</Button></div>
-            <CommandReadout className="mt-3 border-y border-border px-3" data-courier-cli-readout heading={t("commandLabel")} command={builtCommand.command} copyDisabled={!builtCommand.valid} description={!selectedCommandData ? t("selectCommand") : !builtCommand.valid ? t("completeCommand") : ""} sessionKey={`${locale}:${selectedCommand}:${shellMode}:${builtCommand.command}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
+            <CommandReadout className="mt-3 px-3" data-courier-cli-readout heading={t("commandLabel")} command={builtCommand.command} copyDisabled={!builtCommand.valid} description={!selectedCommandData ? t("selectCommand") : !builtCommand.valid ? t("completeCommand") : ""} sessionKey={`${locale}:${selectedCommand}:${shellMode}:${builtCommand.command}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
           </div>
         </div>
       </section>

@@ -84,13 +84,16 @@ describe("React landing", () => {
     render(<LandingApp />);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("From here to anywhere.");
     expect(document.querySelectorAll("main > section")).toHaveLength(3);
+    expect(document.querySelector("[data-courier-contract-metrics]")).toBeNull();
     const mascot = document.querySelector<HTMLImageElement>('img[width="512"][height="512"]')!;
     expect(mascot.src).toContain("courier-relay-pixel-route-v3");
     expect(mascot.className).toContain("courier-pixel-image");
     expect(document.body.textContent).not.toContain("Run demo");
     expect(document.body.textContent).not.toContain("One binary plans the route");
     expect(document.querySelector("header nav")).toBeNull();
+    expect(document.querySelector("header")?.className).not.toContain("border");
     expect(document.querySelector("main")?.className).not.toContain("pt-");
+    expect(document.querySelector("[data-courier-route-composition]")?.className).not.toContain("border");
     expect(document.querySelectorAll('header img[src*="github-"]')).toHaveLength(2);
     expect([...document.querySelectorAll<HTMLAnchorElement>('a[href^="https://"]')].every((link) => link.target === "_blank" && link.rel === "noopener noreferrer")).toBe(true);
   });
@@ -148,7 +151,11 @@ describe("React landing", () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
     render(<LandingApp />);
-    fireEvent.click(screen.getByRole("tab", { name: /Homebrew/ }));
+    const homebrew = screen.getByRole("tab", { name: /Homebrew/ });
+    expect(homebrew.className).toContain("courier-install-tab");
+    fireEvent.click(homebrew);
+    expect(homebrew.getAttribute("aria-selected")).toBe("true");
+    expect(screen.getAllByText("Homebrew", { exact: true })).toHaveLength(1);
     const command = screen.getByText(/brew tap iwonz\/courier/).textContent!;
     expect(command).not.toContain("--cask");
     const install = document.querySelector("#install")!;
@@ -157,6 +164,7 @@ describe("React landing", () => {
     expect(screen.getByText("Copied")).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: "wget" }));
     expect(document.querySelector('#install img[data-brand-name="GNU Wget"]')).toBeNull();
+    expect(screen.getAllByText("wget", { exact: true })).toHaveLength(1);
   });
 
   it("filters options by selected command, exposes empty states, and clears selection", () => {
@@ -174,6 +182,7 @@ describe("React landing", () => {
     expect(checkbox.hasAttribute("disabled")).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "courier servers" }));
     expect(screen.getByText("This command has no options.")).toBeTruthy();
+    expect(document.querySelector("[data-courier-cli-empty]")?.className).not.toContain("border");
     fireEvent.click(screen.getByRole("button", { name: "courier servers stop <uuid>|--all" }));
     expect(screen.getByText("--all")).toBeTruthy();
   });
@@ -251,8 +260,11 @@ describe("React landing", () => {
     expect(document.querySelector("[data-courier-route-composition]")).toBeTruthy();
     expect(document.querySelector("[data-courier-cli-registry]")).toBeTruthy();
     expect(document.querySelector("[data-courier-route-composition]")?.className).toContain("bg-card");
-    expect(document.querySelector("[data-courier-route-composition]")?.className).not.toMatch(/rounded|shadow|backdrop/);
+    expect(document.querySelector("[data-courier-route-composition]")?.className).not.toMatch(/rounded|shadow|backdrop|border/);
     expect(document.querySelector("[data-courier-cli-registry]")?.className).not.toMatch(/rounded|bg-card/);
+    for (const selector of ["[data-courier-cli-command-header]", "[data-courier-cli-options-header]", "[data-courier-cli-command]", "[data-builder-flag]", "[data-courier-cli-readout]"]) {
+      expect(Array.from(document.querySelectorAll<HTMLElement>(selector)).every((node) => !/border-(?:b|y|border)/.test(node.className))).toBe(true);
+    }
     expect(document.querySelector("header")?.className).not.toContain("fixed");
     expect(document.querySelector("header")?.className).toContain("bg-background");
     const activeLocal = document.querySelector<HTMLButtonElement>('[data-courier-route-composition] button[aria-label="Local"][aria-pressed="true"]');

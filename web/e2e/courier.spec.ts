@@ -47,6 +47,7 @@ test("landing keeps the static header, official brands, route signal, and comman
   await expect(page.locator('img[src*="courier-relay-pixel-route-v3"]')).toHaveCount(1);
   await expect(page.locator('img[src*="courier-relay-pixel-delivery-v3"], img[src*="courier-relay-pixel-admin-v3"], img[src*="courier-relay-pixel-neutral-v3"]')).toHaveCount(0);
   await expect(page.locator("[data-courier-route-composition]")).toHaveCount(1);
+  await expect(page.locator("[data-courier-contract-metrics]")).toHaveCount(0);
   await expect(page.locator("[data-courier-cli-registry]")).toHaveCount(1);
   for (const selector of ["[data-courier-route-composition]", "[data-courier-cli-registry]"]) {
     expect(await page.locator(selector).evaluate((node) => {
@@ -58,7 +59,7 @@ test("landing keeps the static header, official brands, route signal, and comman
   expect(await page.locator("header").evaluate((node) => {
     const style = getComputedStyle(node);
     return [style.position, style.backgroundColor, style.backgroundImage, style.backdropFilter, style.borderBottomWidth];
-  })).toEqual(["static", "rgb(255, 255, 255)", "none", "none", "1px"]);
+  })).toEqual(["static", "rgb(255, 255, 255)", "none", "none", "0px"]);
   const headerCenters = await page.locator("header").evaluate((header) => {
     const brand = header.querySelector(":scope > div > a")!.getBoundingClientRect();
     const controls = Array.from(header.querySelectorAll(":scope > div > div > a, :scope > div > div > button"));
@@ -73,6 +74,10 @@ test("landing keeps the static header, official brands, route signal, and comman
   await page.evaluate(() => scrollTo(0, 0));
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
   expect(await page.locator("#install").evaluate((node) => [getComputedStyle(node).borderTopWidth, getComputedStyle(node).borderBottomWidth])).toEqual(["0px", "0px"]);
+  expect(await page.locator("[data-courier-route-composition]").evaluate((node) => {
+    const style = getComputedStyle(node);
+    return [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth];
+  })).toEqual(["0px", "0px", "0px", "0px"]);
   const activeSource = page.locator('#route button[aria-label="Local"][aria-pressed="true"]');
   expect(await activeSource.evaluate((node) => {
     const style = getComputedStyle(node);
@@ -132,6 +137,15 @@ test("landing keeps the static header, official brands, route signal, and comman
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("courier from web:// to");
   const install = page.locator("#install");
   await install.getByRole("tab", { name: "npm", exact: true }).click();
+  await expect(install.getByText("npm", { exact: true })).toHaveCount(1);
+  const activeInstall = install.getByRole("tab", { name: "npm", exact: true });
+  const activeFill = await activeInstall.evaluate((node) => getComputedStyle(node).backgroundColor);
+  await activeInstall.hover();
+  expect(await activeInstall.evaluate((node) => [getComputedStyle(node).backgroundColor, getComputedStyle(node).transitionProperty, getComputedStyle(node).animationName])).toEqual([activeFill, "none", "none"]);
+  const hoverInstall = install.getByRole("tab", { name: "Homebrew" });
+  const restingFill = await hoverInstall.evaluate((node) => getComputedStyle(node).backgroundColor);
+  await hoverInstall.hover();
+  expect(await hoverInstall.evaluate((node) => getComputedStyle(node).backgroundColor)).not.toBe(restingFill);
   await expect(install.locator("code")).toHaveText("npm install --global @iwonz/courier");
   await install.getByRole("button", { name: "Copy command" }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("npm install --global @iwonz/courier");
@@ -145,10 +159,12 @@ test("landing keeps the static header, official brands, route signal, and comman
       return style.borderTopWidth === "0px" && style.borderRightWidth === "0px" && style.borderBottomWidth === "0px" && style.borderLeftWidth === "0px";
     }))).toBe(true);
   }
-  expect(await cli.locator("[data-courier-cli-readout]").evaluate((node) => {
-    const style = getComputedStyle(node);
-    return [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth];
-  })).toEqual(["1px", "0px", "1px", "0px"]);
+  for (const selector of ["[data-courier-cli-command-header]", "[data-courier-cli-options-header]", "[data-courier-cli-command]", "[data-builder-flag]", "[data-courier-cli-readout]"]) {
+    expect(await cli.locator(selector).evaluateAll((nodes) => nodes.every((node) => {
+      const style = getComputedStyle(node);
+      return style.borderTopWidth === "0px" && style.borderRightWidth === "0px" && style.borderBottomWidth === "0px" && style.borderLeftWidth === "0px";
+    }))).toBe(true);
+  }
   await cli.getByRole("button", { name: "courier from <source> to <destination> [options]" }).click();
   await expect(compatibility).toBeEnabled();
   await cli.getByRole("textbox", { name: "source" }).fill("folder one");

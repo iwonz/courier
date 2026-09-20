@@ -20,7 +20,7 @@ Product copy and source documentation remain English. `Source` and `Destination`
 
 ## Surface composition
 
-The landing is a route console followed by a ruled installation chooser and flat command data-grid. Delivery is a transfer console around a real protected password form and authorized ruled manifest. Administration is an operations console with API-derived counters, a keyboard-operable delivery navigator, and a selected policy inspector whose UUID selection survives SSE snapshots while valid.
+The landing is a route console followed by a calm installation chooser and an unruled command builder. Its sections have no boundary rules or decorative counters, installation tabs do not animate or repeat the selected channel below the command, and editable controls retain their own boundaries and focus treatment. Delivery is a transfer console around a real protected password form and authorized ruled manifest. Administration is an operations console with API-derived counters, a keyboard-operable delivery navigator, and a selected policy inspector whose UUID selection survives SSE snapshots while valid.
 
 All applications use the same terminal token system: black/white canvas, `#0D1015`/`#191C20` dark surfaces, opacity-derived light surfaces and rules, teal action/success, yellow selection/warning, and red destructive state. Square controls use one-pixel rules, two-pixel focus, and instant step states without chamfer, offset shadow, blur, or soft shadow. Flat bands and row rules provide hierarchy. Pixelify Sans is limited to the wordmark and H1/H2; locally bundled Overpass Mono 400/600 serves all interface copy and operational values. Layouts expand on narrow screens, preserve semantic actions, and avoid horizontal overflow.
 

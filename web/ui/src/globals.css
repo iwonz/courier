@@ -191,6 +191,26 @@
   offset-distance: 0%;
 }
 
+.courier-install-tab,
+.courier-install-tab:hover,
+.courier-install-tab:active {
+  background-color: transparent;
+  color: var(--foreground);
+  transition: none;
+}
+
+.courier-install-tab:hover,
+.courier-install-tab:active {
+  background-color: var(--muted);
+}
+
+.courier-install-tab[aria-selected="true"],
+.courier-install-tab[aria-selected="true"]:hover,
+.courier-install-tab[aria-selected="true"]:active {
+  background-color: var(--terminal-fill-selection);
+  color: var(--terminal-black);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }

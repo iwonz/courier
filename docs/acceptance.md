@@ -19,8 +19,8 @@ Playwright runs landing, delivery, and administration in English/Russian and sys
 - 320×568, 390×844, 1024-wide, short desktop, and 1440×900 layouts in light and dark themes without clipping or horizontal overflow;
 - one compact transparent pixel mark plus the exact route, delivery, or administration role sprite required by the current surface, stable identity anatomy across every pose, no generated background or unrelated role request, and no external runtime requests;
 - the exact terminal light/dark tokens, local Pixelify Sans display scope, local Overpass Mono 400/600 interface scope, pixelated Relay v3 sprites, normal local PNG third-party marks, square controls, and a four-pixel centered linear route signal with a reduced-motion midpoint;
-- route console, ruled channel chooser, command data-grid, transfer console, manifest rows, operations metrics, registry, and policy composition with no chamfers, outer radii, offset or soft shadows, blur, fictional data, or decorative card islands;
-- compact landing section spacing, a static ruled masthead that scrolls away without reserved content offset, aligned header centers, and visible selected Source/Destination contrast;
+- route console, calm channel chooser, unruled command builder, transfer console, manifest rows, operations metrics, registry, and policy composition with no chamfers, outer radii, offset or soft shadows, blur, fictional data, or decorative card islands;
+- compact landing section spacing, a static transparent masthead that scrolls away without reserved content offset, aligned header centers, no top-level boundary rules or contract counters, and visible selected Source/Destination contrast;
 - absence of terminal/refraction code, editable commands, Run/Replay, transcripts, emoji flags, Lucide imports, remote fonts, scripts, images, or analytics;
 - protected delivery metadata isolation, authentication, upload/download behavior, admin policy updates, stop actions, selection persistence, and SSE fallback.
 
