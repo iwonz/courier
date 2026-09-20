@@ -2,7 +2,6 @@ class Courier < Formula
   desc "Safely transfer files and directories between local and SSH endpoints"
   homepage "https://github.com/iwonz/courier"
   url "https://github.com/iwonz/courier/archive/refs/tags/v0.1.1.tar.gz"
-  version "0.1.1"
   sha256 "c554ea03caabb40a818b38cec6bb2a82a8f3512e13740ffd49a2fa3db1d9e56b"
   license "MIT"
 

@@ -9,6 +9,10 @@ grep -Fq 'depends_on "go" => :build' "$formula"
 grep -Fq 'ENV["CGO_ENABLED"] = "0"' "$formula"
 grep -Fq '"./cmd/courier"' "$formula"
 grep -Fq 'courier version' "$formula"
+if grep -Eq '^[[:space:]]+version "' "$formula"; then
+  printf '%s\n' "Formula version must be inferred from the source archive URL" >&2
+  exit 1
+fi
 
 version=$(sed -n 's/.*"version":"\([^"]*\)".*/\1/p' dist/metadata.json)
 commit=$(sed -n 's/.*"commit":"\([^"]*\)".*/\1/p' dist/metadata.json)
