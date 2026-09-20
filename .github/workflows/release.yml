@@ -259,5 +259,5 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           homebrew=$(gh api "repos/iwonz/courier/contents/Formula/courier.rb?ref=main" --jq .content | base64 --decode)
           scoop=$(gh api "repos/iwonz/courier/contents/bucket/courier.json?ref=main" --jq .content | base64 --decode)
-          grep -Fq "version \"$version\"" <<<"$homebrew" || { echo "Homebrew manifest is not at $version" >&2; exit 1; }
+          grep -Fq "releases/download/v${version}/courier_${version}_source.tar.gz" <<<"$homebrew" || { echo "Homebrew manifest is not at $version" >&2; exit 1; }
           grep -Fq "\"version\": \"$version\"" <<<"$scoop" || { echo "Scoop manifest is not at $version" >&2; exit 1; }
