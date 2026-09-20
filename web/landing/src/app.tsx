@@ -8,12 +8,17 @@ import {
   CommandReadout,
   Github,
   Icon,
+  Input,
   LocaleSelector,
   PixelIcon,
   PreferenceProvider,
   RelaySprite,
   ScrollArea,
-  Separator,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   ThemeSelector,
   pixelBezierPath,
   type BrandIconName,
@@ -22,20 +27,21 @@ import {
 } from "@courier/ui";
 import { landingText, type LandingMessage } from "./catalog";
 import { contractData, type LandingCommand, type LandingFlag, type LandingRoute } from "./contract";
+import { argumentValid, buildCommand, flagEnabled, updateFlagValues, type FlagValues, type ShellMode } from "./command-builder";
 
-interface InstallChannel { readonly name: string; readonly command: string; readonly icon: BrandIconName; }
+interface InstallChannel { readonly name: string; readonly command: string; readonly icon?: BrandIconName; }
 export interface RoutePair { readonly source: string; readonly destination: string; readonly routeName: string; readonly allowedFlags: readonly string[]; }
 export interface EndpointPresentation { readonly label: LandingMessage; readonly description: LandingMessage; readonly icon: IconName; }
 
 export const installs: readonly InstallChannel[] = [
   { name: "curl", command: "curl -fsSL https://raw.githubusercontent.com/iwonz/courier/main/install.sh | sh", icon: "curl" },
-  { name: "wget", command: "wget -qO- https://raw.githubusercontent.com/iwonz/courier/main/install.sh | sh", icon: "wget" },
+  { name: "wget", command: "wget -qO- https://raw.githubusercontent.com/iwonz/courier/main/install.sh | sh" },
   { name: "PowerShell", command: "irm https://raw.githubusercontent.com/iwonz/courier/main/install.ps1 | iex", icon: "powershell" },
   { name: "npm", command: "npm install --global @iwonz/courier", icon: "npm" },
-  { name: "npx", command: "npx @iwonz/courier --help", icon: "npx" },
+  { name: "npx", command: "npx @iwonz/courier --help" },
   { name: "Yarn", command: "yarn dlx @iwonz/courier --help", icon: "yarn" },
   { name: "pnpm", command: "pnpm dlx @iwonz/courier --help", icon: "pnpm" },
-  { name: "Homebrew", command: "brew tap iwonz/courier https://github.com/iwonz/courier && brew install --cask iwonz/courier/courier", icon: "homebrew" },
+  { name: "Homebrew", command: "brew tap iwonz/courier https://github.com/iwonz/courier && brew install iwonz/courier/courier", icon: "homebrew" },
   { name: "Scoop", command: "scoop bucket add courier https://github.com/iwonz/courier && scoop install courier/courier", icon: "scoop" },
 ];
 
@@ -136,12 +142,16 @@ function LandingContent(): React.JSX.Element {
   const [activeInstall, setActiveInstall] = React.useState(installs[0]!.name);
   const [selectedCommand, setSelectedCommand] = React.useState("");
   const [compatibleOnly, setCompatibleOnly] = React.useState(true);
+  const [argumentValues, setArgumentValues] = React.useState<Record<string, string>>({});
+  const [flagValues, setFlagValues] = React.useState<FlagValues>({});
+  const [shellMode, setShellMode] = React.useState<ShellMode>("posix");
   const t = React.useCallback((message: LandingMessage) => landingText(locale, message), [locale]);
   const selected = routePairs.find((pair) => pair.source === selectedSource && pair.destination === selectedDestination)!;
   const routeFlags = applicableFlags(selected, contractData.flags);
   const install = installs.find((channel) => channel.name === activeInstall)!;
   const visibleFlags = commandFlags(selectedCommand, compatibleOnly, contractData.commands, contractData.flags);
   const selectedCommandData = contractData.commands.find((command) => command.name === selectedCommand);
+  const builtCommand = buildCommand(selectedCommandData, argumentValues, flagValues, contractData.flags, shellMode);
   const routeCommand = `courier ${t("from")} ${endpointExample(selected.source, "source")} ${t("to")} ${endpointExample(selected.destination, "destination")}`;
   const connector = useRouteConnector(selectedSource, selectedDestination);
 
@@ -151,12 +161,50 @@ function LandingContent(): React.JSX.Element {
     setSelectedDestination(next.destination);
   };
   const chooseCommand = (command: string): void => {
+    setArgumentValues({});
+    setFlagValues({});
+    setCompatibleOnly(true);
     if (selectedCommand === command) {
       setSelectedCommand("");
-      setCompatibleOnly(true);
       return;
     }
     setSelectedCommand(command);
+  };
+  const setArgumentValue = (name: string, value: string, omitWhenFlag?: string): void => {
+    setArgumentValues((current) => ({ ...current, [name]: value }));
+    if (omitWhenFlag && value.trim()) setFlagValues((current) => ({ ...current, [omitWhenFlag]: [] }));
+  };
+  const setFlagValue = (flag: LandingFlag, values: readonly string[]): void => {
+    setFlagValues((current) => updateFlagValues(current, flag, values, contractData.flags));
+    if (flag.name === "all" && values.some((value) => value === "true")) setArgumentValues((current) => ({ ...current, uuid: "" }));
+  };
+  const flagControl = (flag: LandingFlag): React.JSX.Element => {
+    const compatible = Boolean(selectedCommandData?.flags?.includes(flag.name));
+    const dependenciesMet = (flag.requires ?? []).every((name) => flagEnabled(flagValues, name));
+    const disabled = !compatible || !dependenciesMet;
+    const values = flagValues[flag.name] ?? [];
+    if (flag.valueKind === "boolean") return <label className="flex min-h-10 items-center justify-end gap-2 text-xs font-medium text-muted-foreground">
+      <Checkbox aria-label={flag.syntax} checked={flagEnabled(flagValues, flag.name)} disabled={disabled} onCheckedChange={(checked) => setFlagValue(flag, checked === true ? ["true"] : [])} />
+      {t("enabled")}
+    </label>;
+    if (flag.valueKind === "enum") return <Select value={values[0] ?? ""} disabled={disabled} onValueChange={(value) => setFlagValue(flag, [value])}>
+      <SelectTrigger aria-label={flag.syntax}><SelectValue placeholder={`${flag.placeholder} · ${t("optionDefault")}: ${flag.default}`} /></SelectTrigger>
+      <SelectContent>{(flag.choices as string[]).map((choice) => <SelectItem key={choice} value={choice}>{choice}</SelectItem>)}</SelectContent>
+    </Select>;
+    if (flag.repeatable) {
+      const rows = values.length ? values : [""];
+      return <div className="grid gap-2">{rows.map((value, index) => <div key={`${flag.name}:${index}`} className="flex gap-2">
+        <Input aria-label={`${flag.syntax} ${index + 1}`} value={value} disabled={disabled} placeholder={`${flag.placeholder} · ${t("optionDefault")}: ${flag.default}`} onChange={(event) => {
+          const next = [...rows];
+          next[index] = event.currentTarget.value;
+          setFlagValue(flag, next);
+        }} />
+        <Button type="button" variant="ghost" size="icon" disabled={disabled} aria-label={index === rows.length - 1 ? t("addValue") : t("removeValue")} onClick={() => index === rows.length - 1 ? setFlagValue(flag, [...rows, ""]) : setFlagValue(flag, rows.filter((_, row) => row !== index))}>
+          <span aria-hidden="true" className="text-base font-bold">{index === rows.length - 1 ? "+" : "−"}</span>
+        </Button>
+      </div>)}</div>;
+    }
+    return <Input aria-label={flag.syntax} value={values[0] ?? ""} disabled={disabled} inputMode={flag.valueKind === "unsigned" ? "numeric" : undefined} placeholder={`${flag.placeholder} · ${t("optionDefault")}: ${flag.default}`} onChange={(event) => setFlagValue(flag, [event.currentTarget.value])} />;
   };
   const endpointButton = (name: string, side: "source" | "destination"): React.JSX.Element => {
     const valid = side === "source" || routePairs.some((pair) => pair.source === selectedSource && pair.destination === name);
@@ -178,13 +226,9 @@ function LandingContent(): React.JSX.Element {
   };
 
   return <div className="min-h-screen overflow-x-clip">
-    <header className="fixed inset-x-0 top-0 z-50 bg-transparent">
-      <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
+    <header className="bg-transparent">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
         <a href="#route" className="courier-pixel-focus shrink-0 outline-none"><Brand /></a>
-        <nav aria-label="Courier" className="hidden items-center gap-1 sm:flex">
-          <Button asChild variant="ghost" size="sm"><a href="#install">{t("installShort")}</a></Button>
-          <Button asChild variant="ghost" size="sm"><a href="#cli">{t("cliShort")}</a></Button>
-        </nav>
         <div className="ml-auto flex items-center gap-2">
           <Button asChild variant="ghost" size="icon"><a href="https://github.com/iwonz/courier" target="_blank" rel="noopener noreferrer" aria-label={t("githubLabel")}><Github /></a></Button>
           <ThemeSelector />
@@ -193,8 +237,8 @@ function LandingContent(): React.JSX.Element {
       </div>
     </header>
 
-    <main className="pt-20">
-      <section id="route" className="scroll-mt-20 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <main>
+      <section id="route" className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div data-courier-route-composition className="relative isolate mx-auto grid w-full max-w-7xl gap-12">
           <div className="grid min-h-[27rem] lg:grid-cols-[minmax(0,.9fr)_minmax(24rem,1.1fr)] lg:items-center">
             <div className="relative z-10 max-w-3xl self-start lg:self-center"><h1 className="text-balance text-[clamp(3.4rem,8vw,7.8rem)] font-bold leading-[.84] tracking-[-.04em] text-foreground">{t("title")}</h1></div>
@@ -204,7 +248,7 @@ function LandingContent(): React.JSX.Element {
           </div>
           <div className="grid gap-5">
               <div ref={connector.containerRef} className="relative grid grid-cols-2 gap-5 sm:gap-16">
-                {connector.path ? <svg className="pointer-events-none absolute inset-0 z-0 size-full overflow-visible" viewBox={connector.viewBox} preserveAspectRatio="none" aria-hidden="true"><path d={connector.path} fill="none" stroke="currentColor" strokeWidth="2" className="text-primary/60" vectorEffect="non-scaling-stroke" shapeRendering="crispEdges" /><rect width="8" height="8" fill="currentColor" className="text-warning" style={{ offsetPath: `path('${connector.path}')`, animation: "courier-pixel-route 2.8s steps(16,end) infinite" }} /></svg> : null}
+                {connector.path ? <><svg className="pointer-events-none absolute inset-0 z-0 size-full overflow-visible" viewBox={connector.viewBox} preserveAspectRatio="none" aria-hidden="true"><path data-courier-route-path d={connector.path} fill="none" stroke="currentColor" strokeWidth="2" className="text-primary/60" vectorEffect="non-scaling-stroke" shapeRendering="crispEdges" /></svg><span data-courier-route-signal aria-hidden="true" className="courier-route-signal pointer-events-none absolute left-0 top-0 z-[1] size-1 bg-warning" style={{ offsetPath: `path('${connector.path}')`, offsetAnchor: "center", offsetRotate: "0deg" }} /></> : null}
                 <div className="grid content-start gap-2"><span className="px-1 text-xs font-semibold text-muted-foreground">{t("sourceLabel")}</span>{sourceEndpoints.map((name) => endpointButton(name, "source"))}</div>
                 <div className="grid content-start gap-2"><span className="px-1 text-xs font-semibold text-muted-foreground">{t("destinationLabel")}</span>{destinationEndpoints.map((name) => endpointButton(name, "destination"))}</div>
               </div>
@@ -221,10 +265,10 @@ function LandingContent(): React.JSX.Element {
         </div>
       </section>
 
-      <section id="install" className="scroll-mt-20 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <section id="install" className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="mx-auto grid w-full max-w-7xl gap-6">
           <h2 className="text-4xl font-black tracking-[-.055em] sm:text-6xl">{t("install")}</h2>
-          <div className="flex flex-wrap gap-2">{installs.map((channel) => <Button key={channel.name} type="button" variant={channel.name === install.name ? "default" : "ghost"} className={channel.name === install.name ? undefined : "bg-muted/38"} size="sm" aria-pressed={channel.name === install.name} onClick={() => setActiveInstall(channel.name)}><BrandIcon name={channel.icon} />{channel.name}</Button>)}</div>
+          <div className="flex flex-wrap gap-2">{installs.map((channel) => <Button key={channel.name} type="button" variant={channel.name === install.name ? "default" : "ghost"} className={channel.name === install.name ? undefined : "bg-muted/38"} size="sm" aria-pressed={channel.name === install.name} onClick={() => setActiveInstall(channel.name)}>{channel.icon ? <BrandIcon name={channel.icon} /> : null}{channel.name}</Button>)}</div>
           <CommandReadout
             heading={t("commandLabel")}
             command={install.command}
@@ -232,7 +276,7 @@ function LandingContent(): React.JSX.Element {
             copyLabel={t("copyCommand")}
             copiedLabel={t("copiedCommand")}
             copyFailedLabel={t("copyFailed")}
-            details={<div className="flex items-center gap-2 text-sm font-semibold text-primary"><BrandIcon name={install.icon} />{install.name}</div>}
+            details={<div className="flex items-center gap-2 text-sm font-semibold text-primary">{install.icon ? <BrandIcon name={install.icon} /> : null}{install.name}</div>}
             footerActions={<>
               <Button asChild variant="ghost" size="sm"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><PixelIcon name="package" />{t("packages")}</a></Button>
               <Button asChild variant="ghost" size="sm"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><PixelIcon name="download" />{t("direct")}</a></Button>
@@ -241,15 +285,29 @@ function LandingContent(): React.JSX.Element {
         </div>
       </section>
 
-      <section id="cli" className="scroll-mt-20 px-4 pb-14 pt-6 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8">
+      <section id="cli" className="px-4 pb-14 pt-6 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8">
         <div className="mx-auto grid w-full max-w-7xl gap-6">
           <h2 className="text-4xl font-black tracking-[-.055em] sm:text-6xl">{t("cliTitle")}</h2>
           <div data-courier-cli-registry>
-            <div className="grid divide-y divide-border/35 lg:grid-cols-[minmax(18rem,.72fr)_minmax(0,1.28fr)] lg:divide-x lg:divide-y-0">
+            <div data-courier-cli-columns className="grid gap-4 lg:grid-cols-[minmax(18rem,.72fr)_minmax(0,1.28fr)] lg:gap-8">
               <section><div className="px-5 pt-5 text-sm font-semibold">{t("commandLabel")}</div><ScrollArea className="h-[31rem]"><div className="grid gap-1 p-2">{contractData.commands.map((command) => <Button key={command.name} type="button" variant={command.name === selectedCommand ? "secondary" : "ghost"} aria-pressed={command.name === selectedCommand} onClick={() => chooseCommand(command.name)} className="h-auto justify-start whitespace-normal px-3 py-3 text-left"><code className="font-mono text-xs leading-relaxed">{command.usage}</code></Button>)}</div></ScrollArea></section>
-              <section><div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-5 pt-3"><span className="text-sm font-semibold">{t("optionsLabel")}</span><label className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Checkbox checked={compatibleOnly} disabled={!selectedCommand} onCheckedChange={(checked) => setCompatibleOnly(checked === true)} />{t("compatibleOnly")}</label></div><ScrollArea className="h-[31rem]"><div className="grid gap-1 p-2">{visibleFlags.length ? visibleFlags.map((flag) => <article key={flag.name} className="grid gap-2 px-3 py-3 hover:bg-muted"><div className="flex flex-wrap items-baseline justify-between gap-2"><code className="font-mono text-sm font-bold text-primary">{flag.syntax}</code><span className="text-xs text-muted-foreground">{t("optionDefault")}: {flag.default}</span></div><p className="text-xs leading-relaxed text-muted-foreground">{t("repeatable")}: {flag.repeatable ? t("yes") : t("no")} · {t("applies")}: {flag.appliesTo.join(", ")}</p></article>) : <p className="p-5 text-sm text-muted-foreground">{t("noCompatibleOptions")}</p>}</div></ScrollArea></section>
+              <section>
+                <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-3 pt-3"><span className="text-sm font-semibold">{t("optionsLabel")}</span><label className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Checkbox checked={compatibleOnly} disabled={!selectedCommand} onCheckedChange={(checked) => setCompatibleOnly(checked === true)} />{t("compatibleOnly")}</label></div>
+                <ScrollArea className="h-[31rem]"><div className="grid gap-1 p-2">
+                  {selectedCommandData?.arguments.map((argument) => {
+                    const omitted = Boolean(argument.omitWhenFlag && flagEnabled(flagValues, argument.omitWhenFlag));
+                    const valid = argumentValid(argument, argumentValues[argument.name] ?? "", flagValues);
+                    return <article key={argument.name} data-builder-argument={argument.name} className="grid gap-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.9fr)] sm:items-center">
+                      <div className="grid gap-1"><code className="font-mono text-sm font-bold text-primary">{`<${argument.name}>`}</code><span className="text-xs text-muted-foreground">{argument.required ? t("requiredValue") : t("optionalValue")}{argument.prefix ? ` · ${argument.prefix}` : ""}</span></div>
+                      {argument.kind === "command-path" ? <Select value={argumentValues[argument.name] ?? ""} onValueChange={(value) => setArgumentValue(argument.name, value, argument.omitWhenFlag)}><SelectTrigger aria-label={argument.name}><SelectValue placeholder={t("chooseCommandPath")} /></SelectTrigger><SelectContent>{contractData.commands.filter((candidate) => candidate.name !== selectedCommandData.name).map((candidate) => <SelectItem key={candidate.name} value={candidate.path}>{candidate.path}</SelectItem>)}</SelectContent></Select> : <Input aria-label={argument.name} value={argumentValues[argument.name] ?? ""} disabled={omitted} aria-invalid={!valid} placeholder={omitted ? `--${argument.omitWhenFlag}` : argument.name} onChange={(event) => setArgumentValue(argument.name, event.currentTarget.value, argument.omitWhenFlag)} />}
+                    </article>;
+                  })}
+                  {visibleFlags.length ? visibleFlags.map((flag) => <article key={flag.name} data-builder-flag={flag.name} className="grid gap-3 px-3 py-3 hover:bg-muted sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.9fr)] sm:items-center"><div className="grid gap-1"><div className="flex flex-wrap items-baseline justify-between gap-2"><code className="font-mono text-sm font-bold text-primary">{flag.syntax}</code><span className="text-xs text-muted-foreground">{t("optionDefault")}: {flag.default}</span></div><p className="text-xs leading-relaxed text-muted-foreground">{t("repeatable")}: {flag.repeatable ? t("yes") : t("no")} · {t("applies")}: {flag.appliesTo.join(", ")}{(flag.requires ?? []).length ? ` · ${t("requires")}: ${(flag.requires as string[]).map((name) => `--${name}`).join(", ")}` : ""}</p></div>{flagControl(flag)}</article>) : <p className="p-5 text-sm text-muted-foreground">{t("noCompatibleOptions")}</p>}
+                </div></ScrollArea>
+              </section>
             </div>
-            <CommandReadout className="border-t border-border/35 pt-4" heading={t("commandLabel")} command={selectedCommandData?.usage ?? ""} description={selectedCommandData ? "" : t("selectCommand")} sessionKey={`${locale}:${selectedCommand}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
+            <div className="flex justify-end gap-2 py-2" aria-label={t("shellLabel")}><Button type="button" size="sm" variant={shellMode === "posix" ? "default" : "ghost"} aria-pressed={shellMode === "posix"} onClick={() => setShellMode("posix")}>POSIX</Button><Button type="button" size="sm" variant={shellMode === "powershell" ? "default" : "ghost"} aria-pressed={shellMode === "powershell"} onClick={() => setShellMode("powershell")}>PowerShell</Button></div>
+            <CommandReadout data-courier-cli-readout heading={t("commandLabel")} command={builtCommand.command} copyDisabled={!builtCommand.valid} description={!selectedCommandData ? t("selectCommand") : !builtCommand.valid ? t("completeCommand") : ""} sessionKey={`${locale}:${selectedCommand}:${shellMode}:${builtCommand.command}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
           </div>
         </div>
       </section>

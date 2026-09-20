@@ -44,15 +44,13 @@ yarn dlx @iwonz/courier --help       # modern Yarn
 pnpm add --global @iwonz/courier
 pnpm dlx @iwonz/courier --help
 
-brew trust --cask iwonz/courier/courier
-brew tap iwonz/courier https://github.com/iwonz/courier
-brew install --cask iwonz/courier/courier
+brew tap iwonz/courier https://github.com/iwonz/courier && brew install iwonz/courier/courier
 
 scoop bucket add courier https://github.com/iwonz/courier
 scoop install courier/courier
 ```
 
-GoReleaser also publishes raw binaries, tar.gz archives, Windows zip archives, checksums, and deb/rpm/apk/Arch Linux packages on [GitHub Releases](https://github.com/iwonz/courier/releases). See [Installation](docs/installation.md) for the complete OS, architecture, distribution, direct-download, and verification matrix.
+Homebrew builds the Formula from Courier's checksummed source archive, so it does not depend on an unsigned quarantined cask. Existing cask users should run `brew uninstall --cask courier` once before the Formula command above. GoReleaser also publishes raw binaries, source and platform tar.gz archives, Windows zip archives, checksums, and deb/rpm/apk/Arch Linux packages on [GitHub Releases](https://github.com/iwonz/courier/releases). Direct macOS binaries remain unsigned. See [Installation](docs/installation.md) for the complete OS, architecture, distribution, direct-download, and verification matrix.
 
 ## Use
 

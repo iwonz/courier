@@ -1,5 +1,5 @@
 {
-  "contractVersion": "0.14.0",
+  "contractVersion": "0.15.0",
   "targetRelease": "0.2.0",
   "endpoints": [
     {
@@ -26,8 +26,22 @@
   "commands": [
     {
       "name": "from",
+      "path": "from",
       "usage": "courier from \u003csource\u003e to \u003cdestination\u003e [options]",
       "system": false,
+      "arguments": [
+        {
+          "name": "source",
+          "kind": "endpoint",
+          "required": true
+        },
+        {
+          "name": "destination",
+          "kind": "endpoint",
+          "required": true,
+          "prefix": "to"
+        }
+      ],
       "flags": [
         "archive",
         "extract",
@@ -50,22 +64,35 @@
     },
     {
       "name": "servers",
+      "path": "servers",
       "usage": "courier servers",
       "system": false,
+      "arguments": [],
       "flags": null
     },
     {
       "name": "servers-stop",
+      "path": "servers stop",
       "usage": "courier servers stop \u003cuuid\u003e|--all",
       "system": false,
+      "arguments": [
+        {
+          "name": "uuid",
+          "kind": "uuid",
+          "required": true,
+          "omitWhenFlag": "all"
+        }
+      ],
       "flags": [
         "all"
       ]
     },
     {
       "name": "ui-start",
+      "path": "ui start",
       "usage": "courier ui start [options]",
       "system": false,
+      "arguments": [],
       "flags": [
         "listen",
         "background"
@@ -73,26 +100,40 @@
     },
     {
       "name": "ui-stop",
+      "path": "ui stop",
       "usage": "courier ui stop",
       "system": false,
+      "arguments": [],
       "flags": null
     },
     {
       "name": "help",
+      "path": "help",
       "usage": "courier help [command]",
       "system": true,
+      "arguments": [
+        {
+          "name": "command",
+          "kind": "command-path",
+          "required": false
+        }
+      ],
       "flags": null
     },
     {
       "name": "version",
+      "path": "version",
       "usage": "courier version",
       "system": true,
+      "arguments": [],
       "flags": null
     },
     {
       "name": "update",
+      "path": "update",
       "usage": "courier update",
       "system": true,
+      "arguments": [],
       "flags": null
     }
   ],
@@ -100,6 +141,9 @@
     {
       "name": "archive",
       "syntax": "--archive",
+      "valueKind": "boolean",
+      "choices": null,
+      "placeholder": "",
       "repeatable": false,
       "default": "false",
       "appliesTo": [
@@ -109,11 +153,15 @@
       ],
       "conflicts": [
         "extract"
-      ]
+      ],
+      "requires": null
     },
     {
       "name": "extract",
       "syntax": "--extract",
+      "valueKind": "boolean",
+      "choices": null,
+      "placeholder": "",
       "repeatable": false,
       "default": "false",
       "appliesTo": [
@@ -123,11 +171,15 @@
       ],
       "conflicts": [
         "archive"
-      ]
+      ],
+      "requires": null
     },
     {
       "name": "listen",
       "syntax": "--listen \u003chost:port\u003e",
+      "valueKind": "host-port",
+      "choices": null,
+      "placeholder": "host:port",
       "repeatable": false,
       "default": "127.0.0.1:8080",
       "appliesTo": [
@@ -136,11 +188,15 @@
         "webhook-to-path",
         "ui-start"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "background",
       "syntax": "--background",
+      "valueKind": "boolean",
+      "choices": null,
+      "placeholder": "",
       "repeatable": false,
       "default": "false",
       "appliesTo": [
@@ -149,11 +205,19 @@
         "webhook-to-path",
         "ui-start"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "auth",
       "syntax": "--auth \u003cnone|basic|password\u003e",
+      "valueKind": "enum",
+      "choices": [
+        "none",
+        "basic",
+        "password"
+      ],
+      "placeholder": "none|basic|password",
       "repeatable": false,
       "default": "none",
       "appliesTo": [
@@ -162,11 +226,15 @@
         "webhook-to-path",
         "path-to-http"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "auth-attempts",
       "syntax": "--auth-attempts \u003cN\u003e",
+      "valueKind": "unsigned",
+      "choices": null,
+      "placeholder": "N",
       "repeatable": false,
       "default": "5",
       "appliesTo": [
@@ -174,11 +242,18 @@
         "path-to-web",
         "webhook-to-path"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "auth-fail-action",
       "syntax": "--auth-fail-action \u003cban|stop\u003e",
+      "valueKind": "enum",
+      "choices": [
+        "ban",
+        "stop"
+      ],
+      "placeholder": "ban|stop",
       "repeatable": false,
       "default": "ban",
       "appliesTo": [
@@ -186,11 +261,15 @@
         "path-to-web",
         "webhook-to-path"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "limit",
       "syntax": "--limit \u003cN\u003e",
+      "valueKind": "text",
+      "choices": null,
+      "placeholder": "N|unlimited",
       "repeatable": false,
       "default": "unlimited",
       "appliesTo": [
@@ -198,21 +277,29 @@
         "path-to-web",
         "webhook-to-path"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "no-ui",
       "syntax": "--no-ui",
+      "valueKind": "boolean",
+      "choices": null,
+      "placeholder": "",
       "repeatable": false,
       "default": "false",
       "appliesTo": [
         "path-to-web"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "allow-ip",
       "syntax": "--allow-ip \u003cIP/CIDR\u003e",
+      "valueKind": "ip-cidr",
+      "choices": null,
+      "placeholder": "IP/CIDR",
       "repeatable": true,
       "default": "none",
       "appliesTo": [
@@ -220,11 +307,15 @@
         "path-to-web",
         "webhook-to-path"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "exclude",
       "syntax": "--exclude \u003cpattern\u003e",
+      "valueKind": "text",
+      "choices": null,
+      "placeholder": "pattern",
       "repeatable": true,
       "default": "none",
       "appliesTo": [
@@ -234,11 +325,15 @@
         "webhook-to-path",
         "path-to-http"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "exclude-regex",
       "syntax": "--exclude-regex \u003cregex\u003e",
+      "valueKind": "regex",
+      "choices": null,
+      "placeholder": "regex",
       "repeatable": true,
       "default": "none",
       "appliesTo": [
@@ -248,11 +343,15 @@
         "webhook-to-path",
         "path-to-http"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "exclude-from",
       "syntax": "--exclude-from \u003cfile\u003e",
+      "valueKind": "path",
+      "choices": null,
+      "placeholder": "file",
       "repeatable": true,
       "default": "none",
       "appliesTo": [
@@ -262,22 +361,30 @@
         "webhook-to-path",
         "path-to-http"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "max-file-size",
       "syntax": "--max-file-size \u003csize|unlimited\u003e",
+      "valueKind": "quantity",
+      "choices": null,
+      "placeholder": "size|unlimited",
       "repeatable": false,
       "default": "10GiB",
       "appliesTo": [
         "web-to-path",
         "webhook-to-path"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "max-extracted-size",
       "syntax": "--max-extracted-size \u003csize|unlimited\u003e",
+      "valueKind": "quantity",
+      "choices": null,
+      "placeholder": "size|unlimited",
       "repeatable": false,
       "default": "100GiB",
       "appliesTo": [
@@ -285,11 +392,17 @@
         "web-to-path",
         "webhook-to-path"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": [
+        "extract"
+      ]
     },
     {
       "name": "upload-rate",
       "syntax": "--upload-rate \u003crate|unlimited\u003e",
+      "valueKind": "rate",
+      "choices": null,
+      "placeholder": "rate|unlimited",
       "repeatable": false,
       "default": "unlimited",
       "appliesTo": [
@@ -299,11 +412,15 @@
         "webhook-to-path",
         "path-to-http"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "download-rate",
       "syntax": "--download-rate \u003crate|unlimited\u003e",
+      "valueKind": "rate",
+      "choices": null,
+      "placeholder": "rate|unlimited",
       "repeatable": false,
       "default": "unlimited",
       "appliesTo": [
@@ -311,17 +428,22 @@
         "ssh-to-ssh",
         "path-to-web"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     },
     {
       "name": "all",
       "syntax": "--all",
+      "valueKind": "boolean",
+      "choices": null,
+      "placeholder": "",
       "repeatable": false,
       "default": "false",
       "appliesTo": [
         "servers-stop"
       ],
-      "conflicts": null
+      "conflicts": null,
+      "requires": null
     }
   ],
   "routes": [

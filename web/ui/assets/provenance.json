@@ -1,38 +1,40 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "source": {
     "path": "docs/brand.md#generated-asset-record",
     "disposition": "generated for Courier, reviewed, quantized to 32 colors, and retained locally"
   },
   "identityFamily": {
     "name": "Relay pixel courier",
-    "revision": "relay-pixel-v1",
+    "revision": "relay-pixel-v2",
     "canonicalAsset": "courier-relay-pixel-neutral-v1.webp",
-    "generationRule": "Every role variant is an identity-preserving derivative of the canonical neutral asset; independent mascot redraws are not accepted.",
+    "generationRule": "Every v2 role variant is an identity-preserving ImageGen derivative of the canonical neutral-v1 asset; independent mascot redraws are not accepted.",
+    "qaContactSheet": "docs/assets/courier-relay-pixel-v2-contact-sheet.png",
     "invariants": [
       "one compact near-square pigeon body",
       "one large orange-ringed pigeon eye and short ivory beak",
       "blue-gray head, pale folded wings, compact dark tail and coral feet",
       "one small left-side earpiece and one cobalt courier satchel"
     ],
-    "allowedVariations": ["pose", "role equipment", "clothing", "carried or attached object"],
+    "allowedVariations": ["pose", "role equipment", "carried or attached object"],
     "forbiddenVariations": ["body proportions", "physiology", "base plumage", "eye geometry", "armor", "helmet", "visor", "police or military styling"]
   },
   "assets": [
     {
-      "path": "courier-relay-pixel-mark-v1.webp",
+      "path": "courier-relay-pixel-mark-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 5484,
-      "sha256": "7a33e329dd68ba0d793a346546e64fe91807e67ef9f2f28803f383b187127d80",
+      "bytes": 6066,
+      "sha256": "fb1d813e9189b4e480dbcfb5fcf6b2be486f605826009f5943aeb7779ed3b6ff",
       "width": 256,
       "height": 256,
       "transparent": true,
       "role": "mark",
-      "identityRevision": "relay-pixel-v1",
+      "identityRevision": "relay-pixel-v2",
       "identityReference": "courier-relay-pixel-neutral-v1.webp",
       "use": "Compact header, product chrome, and favicon mark",
-      "prompt": "Use case: stylized-concept. Asset type: compact square logo sprite. Input image: canonical neutral Relay as the identity reference. Preserve Relay's exact head, eye, beak, earpiece, folded-wing proportions, plumage, satchel and parcel; tighten only the crop and pose for recognition at icon size. Hard-edged 8-bit pixel art on a genuinely transparent background. No gradients, smooth 3D shading, armor, helmet, visor, scenery, text, logo or watermark.",
-      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-93e232b8-ad5a-4fb7-8f43-0526c8e8f36c"
+      "consumers": ["web/ui/src/components/brand-react.tsx", "web/landing/src/main.tsx"],
+      "prompt": "Use case: precise-object-edit. Asset type: compact transparent 8-bit product mark, identity-preserving Relay v2 derivative. Image 1 is the canonical neutral Relay and is the absolute identity authority. Image 2 is only the prior compact-crop/pose reference. Re-render a clean square mark with the exact same pigeon individual as Image 1: identical head silhouette and proportions, one large orange-ringed eye with the same geometry and highlight, short ivory beak, blue-gray head and teal throat pixels, pale folded wing bands, compact dark tail, coral feet, small left-side black/cyan earpiece, cobalt strap and courier satchel containing the same parcel. Change only to a tighter icon-scale seated pose and crop. Preserve the exact limited palette and hard-edged pixel clusters; no antialiasing, gradients, smooth 3D shading, extra accessories, altered physiology, armor, helmet, visor, scenery, floor, shadow, glow, text, logo, watermark, or detached pixels. Background must be genuine alpha transparency. Center the complete subject with safe transparent padding and no clipped pixels.",
+      "lineage": "imagegen:01a0ba95-413f-7a60-be47-592ef819ea38/exec-81a23159-d2ca-440c-8598-ec30780f8986"
     },
     {
       "path": "courier-relay-pixel-neutral-v1.webp",
@@ -46,53 +48,57 @@
       "identityRevision": "relay-pixel-v1",
       "identityReference": "self",
       "use": "Canonical identity reference and README mascot",
+      "consumers": ["README.md", "docs/brand.md", "web/ui/assets/provenance.json"],
       "prompt": "Use case: stylized-concept. Asset type: canonical transparent mascot sprite. Create one compact, near-square 8-bit pigeon courier with one obvious orange-ringed pigeon eye, short ivory beak, blue-gray head, pale folded wings, compact dark tail, coral feet, a cobalt satchel containing a parcel, and one small earpiece. Mature product mascot, not a cute bird; hard-edged pixel clusters with no gradients or smooth pseudo-3D shading. No armor, helmet, visor, glowing face panel, exoskeleton, metallic chest plate, police or military styling, scenery, text, logo or watermark.",
       "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-2c7af194-7458-4e60-ae68-04da54a7525d"
     },
     {
-      "path": "courier-relay-pixel-route-v1.webp",
+      "path": "courier-relay-pixel-route-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 11320,
-      "sha256": "7ed4494e4f25902984902c20e1e7abc527a213038ea8ad4efb6fdba15fe4760a",
+      "bytes": 10964,
+      "sha256": "ed0b8dc7ce34d5715587ec397ba91356e85a57f112987825c9bc09d53f83a6e8",
       "width": 512,
       "height": 512,
       "transparent": true,
       "role": "route",
-      "identityRevision": "relay-pixel-v1",
+      "identityRevision": "relay-pixel-v2",
       "identityReference": "courier-relay-pixel-neutral-v1.webp",
       "use": "Landing route-selection pose",
-      "prompt": "Use case: precise-object-edit. Asset type: final transparent 8-bit Courier route mascot sprite cleanup. Image 1 is the edit target route sprite and Image 2 is the canonical neutral Relay identity reference. Remove every detached opaque or semi-transparent speck. Retain only the cyan Source waypoint, canonical Relay with satchel and parcel, and orange Destination waypoint. Preserve exact compact physiology, body-to-head proportions, blue-gray head, large orange-ringed eye, short ivory beak, pale folded wing, compact dark tail, coral feet, left-side earpiece, cobalt satchel, parcel, walking pose, scale and waypoint positions. Hard-edged pixel art with alpha zero outside the three intended groups. No redraw, crop, rescale, reposition, gradients, smooth shading, background, shadow, glow, particles, text, logo or watermark.",
-      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-87c645af-b3f0-4fc5-898c-fd8966d67257; identity-reference:courier-relay-pixel-neutral-v1.webp; cleanup-parent:imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-f4fb4300-11dd-4a2c-b5b1-f3da8f4b5a6c; original-role-source:imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-14fd3461-fe62-4557-8e53-51642f92e33e"
+      "consumers": ["web/landing/src/app.tsx"],
+      "prompt": "Use case: precise-object-edit. Asset type: transparent 8-bit landing route mascot, identity-preserving Relay v2 derivative. Image 1 is the canonical neutral Relay and is the absolute identity authority. Image 2 is only a reference for the walking pose and the two small route waypoints. Re-render the exact same pigeon individual from Image 1: identical compact near-square body and head proportions, one large orange-ringed eye with the same geometry/highlight, short ivory beak, blue-gray head, teal throat pixels, pale folded wing bands, compact dark tail, coral feet, left black/cyan earpiece, cobalt strap and satchel with the same parcel. Change only to a clear walking pose, with one small cyan Source waypoint behind and one small orange Destination waypoint ahead. Preserve the same limited palette and hard-edged pixel clusters. Do not add or remove identity features. No antialiasing, gradients, smooth 3D shading, extra accessories, altered anatomy, armor, helmet, visor, scenery, floor, shadow, glow, text, logo, watermark, green screen, or detached particles. Background must be genuine alpha transparency. Center all three intended groups with safe transparent padding and no clipping.",
+      "lineage": "imagegen:01a0ba95-413f-7a60-be47-592ef819ea38/exec-b999e3d0-43a3-439d-94c3-abc45072de61"
     },
     {
-      "path": "courier-relay-pixel-delivery-v1.webp",
+      "path": "courier-relay-pixel-delivery-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 9248,
-      "sha256": "a63aa1a637c642d5798fcf7631fe44ec8fcd5019c87d8c4e3458b4295b743fc5",
+      "bytes": 12294,
+      "sha256": "0972ecbd29a2f2aacd04874cec35f5354aca7b109d1d88321f4b50749a2d1641",
       "width": 384,
       "height": 384,
       "transparent": true,
       "role": "delivery",
-      "identityRevision": "relay-pixel-v1",
+      "identityRevision": "relay-pixel-v2",
       "identityReference": "courier-relay-pixel-neutral-v1.webp",
       "use": "Authenticated delivery workspace pose",
-      "prompt": "Use case: stylized-concept. Asset type: transparent delivery sprite. Input image: canonical neutral Relay as the identity reference. Keep the exact same body size, physiology, plumage, eye, beak, wings, tail, feet, earpiece and satchel. Change only the working pose so Relay holds the same small parcel securely in both wings, with one restrained success spark. Hard-edged 8-bit pixels; no gradient, smooth 3D shading, scenery, text, logo or watermark.",
-      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-feeeed5e-5545-43bd-98ed-1e5fbe671c29"
+      "consumers": ["web/data/src/app.tsx"],
+      "prompt": "Use case: precise-object-edit. Asset type: transparent 8-bit delivery workspace mascot, identity-preserving Relay v2 derivative. Image 1 is the canonical neutral Relay and the absolute identity authority. Image 2 is only a reference for the delivery pose and parcel interaction. Re-render the exact same pigeon individual from Image 1: identical compact near-square body and head proportions, one large orange-ringed eye with the same geometry/highlight, short ivory beak, blue-gray head, teal throat pixels, pale folded wing bands, compact dark tail, coral feet, small left black/cyan earpiece, cobalt strap and courier satchel in the same palette. Change only the working pose: Relay securely presents one small ivory parcel with an orange ribbon in both wings; include at most one tiny restrained success sparkle. Keep the satchel visible. Preserve hard-edged pixel clusters and the exact limited palette. No antialiasing, gradients, smooth 3D shading, extra accessories, altered anatomy, armor, helmet, visor, scenery, floor, shadow, glow, readable text, logo, watermark, or detached particles. Background must be genuine alpha transparency. Center the complete subject with safe transparent padding and no clipping.",
+      "lineage": "imagegen:01a0ba95-413f-7a60-be47-592ef819ea38/exec-f487ec3e-fb03-4e97-98cd-14f2a85e6d6e"
     },
     {
-      "path": "courier-relay-pixel-admin-v1.webp",
+      "path": "courier-relay-pixel-admin-v2.webp",
       "mediaType": "image/webp",
-      "bytes": 11100,
-      "sha256": "875e6139f4ad52d0b629a527a58d2e723c20595d7bcb19441bcf0a3f60bf4dbb",
+      "bytes": 12686,
+      "sha256": "23b2d52f12542ae278474d952c6f10632438b3792be4a5849c4959c9cb9aa68d",
       "width": 384,
       "height": 384,
       "transparent": true,
       "role": "admin",
-      "identityRevision": "relay-pixel-v1",
+      "identityRevision": "relay-pixel-v2",
       "identityReference": "courier-relay-pixel-neutral-v1.webp",
       "use": "Administration operations pose",
-      "prompt": "Use case: stylized-concept. Asset type: transparent administration sprite. Input image: canonical neutral Relay as the identity reference. Keep the exact same body size, physiology, plumage, eye, beak, wings, tail, feet, earpiece and satchel. Change only the working pose and add a small clipboard with an abstract node route. Hard-edged 8-bit pixels; no gradient, smooth 3D shading, scenery, readable text, logo or watermark.",
-      "lineage": "imagegen:01a0996f-a5dd-71a2-8d28-9e4a9c101c94/exec-6c7fb2bf-1fe0-4e23-abe4-18b6539a0d09"
+      "consumers": ["web/admin/src/app.tsx"],
+      "prompt": "Use case: precise-object-edit. Asset type: transparent 8-bit administration workspace mascot, identity-preserving Relay v2 derivative. Image 1 is the canonical neutral Relay and the absolute identity authority. Image 2 is only a reference for the administration pose and clipboard. Re-render the exact same pigeon individual from Image 1: identical compact near-square body and head proportions, one large orange-ringed eye with the same geometry/highlight, short ivory beak, blue-gray head, teal throat pixels, pale folded wing bands, compact dark tail, coral feet, small left black/cyan earpiece, cobalt strap and courier satchel in the same palette. Change only the working pose: Relay holds one small clipboard containing a simple abstract three-node route with no letters or numbers. Keep the satchel visible. Preserve hard-edged pixel clusters and the exact limited palette. No antialiasing, gradients, smooth 3D shading, extra accessories, altered anatomy, armor, helmet, visor, scenery, floor, shadow, glow, readable text, logo, watermark, or detached particles. Background must be genuine alpha transparency. Center the complete subject with safe transparent padding and no clipping.",
+      "lineage": "imagegen:01a0ba95-413f-7a60-be47-592ef819ea38/exec-ef0bdbfe-3e82-444a-be0a-318f35c8a429"
     },
     {
       "path": "pixelify-sans-v1.woff2",

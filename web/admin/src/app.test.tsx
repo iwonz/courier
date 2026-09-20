@@ -69,13 +69,13 @@ describe("administration React application", () => {
     document.body.append(root);
     mountAdmin(root);
     await waitFor(() => expect(root.textContent).toContain("No live Courier servers"));
-    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v1");
+    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v2");
   });
 
   it("loads, selects, preserves SSE selection, falls back, localizes, and unsubscribes", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => response(snapshot)));
     const view = render(<AdminApp />);
-    expect(document.querySelector<HTMLImageElement>('img[src*="courier-relay-pixel-admin-v1"]')?.className).toContain("courier-pixel-image");
+    expect(document.querySelector<HTMLImageElement>('img[src*="courier-relay-pixel-admin-v2"]')?.className).toContain("courier-pixel-image");
     await screen.findByText("server-a");
     expect(document.querySelector("[data-courier-metrics]")).toBeTruthy();
     expect(document.querySelector("[data-courier-metrics]")?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);

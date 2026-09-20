@@ -110,6 +110,12 @@ archives:
       - binary
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
+source:
+  enabled: true
+  name_template: "{{ .ProjectName }}_{{ .Version }}_source"
+  format: tar.gz
+  prefix_template: "{{ .ProjectName }}-{{ .Version }}/"
+
 nfpms:
   - id: courier-linux-packages
     ids:
@@ -153,23 +159,6 @@ release:
   name_template: "Courier {{ .Tag }}"
   draft: false
   prerelease: auto
-
-homebrew_casks:
-  - name: courier
-    ids:
-      - courier-tar
-    repository:
-      owner: iwonz
-      name: courier
-      branch: main
-      token: "{{ .Env.GITHUB_TOKEN }}"
-    directory: Casks
-    binaries:
-      - courier
-    homepage: https://github.com/iwonz/courier
-    description: Safely transfer files and directories between local and SSH endpoints.
-    license: MIT
-    commit_msg_template: "chore: update courier to {{ .Tag }}"
 
 scoops:
   - name: courier

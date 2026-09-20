@@ -25,12 +25,17 @@ Courier SHALL publish `@iwonz/courier` so npm, npx, yarn, and pnpm install and i
 
 ### Requirement: Native package catalogs
 
-Courier SHALL publish Homebrew and Scoop metadata inside `iwonz/courier` and SHALL NOT require an additional project-owned repository or upstream catalog pull request for any advertised installation channel.
+Courier SHALL publish a source-built Homebrew Formula and Scoop metadata inside `iwonz/courier` and SHALL NOT require an additional project-owned repository, Apple Developer ID, Gatekeeper bypass, or upstream catalog pull request for an advertised installation channel.
 
 #### Scenario: Homebrew installation
 
 - **WHEN** a user registers `iwonz/courier` as a custom tap with its explicit GitHub URL and installs `courier`
-- **THEN** Homebrew installs a checksummed GitHub Release binary from the in-repository cask
+- **THEN** Homebrew verifies the deterministic source archive, installs Go as a build dependency, builds Courier with CGO disabled and release metadata, and installs the resulting executable
+
+#### Scenario: Existing cask installation is migrated
+
+- **WHEN** a user already installed the retired Courier cask
+- **THEN** the installation guide removes that cask before installing the Formula and never instructs the user to disable quarantine or Gatekeeper
 
 #### Scenario: Scoop installation
 
@@ -45,12 +50,3 @@ Courier SHALL document direct archive and checksum downloads for every supported
 
 - **WHEN** a user has no supported package manager
 - **THEN** the installation guide provides a verified script or direct binary procedure
-
-### Requirement: Homebrew cask trust
-
-Courier SHALL document an item-scoped Homebrew trust step before registering its non-official custom tap and SHALL NOT require users to disable Homebrew's tap trust policy.
-
-#### Scenario: Fresh Homebrew 6 installation
-
-- **WHEN** a user has no Courier tap or trust entry and follows the documented Homebrew sequence
-- **THEN** Homebrew trusts only `iwonz/courier/courier`, registers `iwonz/courier` from its explicit URL, and installs the checksummed cask

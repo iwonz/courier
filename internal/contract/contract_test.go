@@ -13,10 +13,10 @@ import (
 
 func validContract() Contract {
 	return Contract{
-		SchemaVersion: 1, ContractVersion: "0.8.0", TargetRelease: "0.2.0", Language: "en",
+		SchemaVersion: 2, ContractVersion: "0.8.0", TargetRelease: "0.2.0", Language: "en",
 		EndpointKinds: []Endpoint{{Name: "local", Status: "shipped", Syntax: "path"}},
-		Commands:      []Command{{Name: "from", Path: "from", Usage: "courier from", Status: "shipped", Flags: []string{"archive"}}},
-		Flags:         []Flag{{Name: "archive", Syntax: "--archive", Status: "shipped", Default: "false", AppliesTo: []string{"path-to-path"}}},
+		Commands:      []Command{{Name: "from", Path: "from", Usage: "courier from", Status: "shipped", Arguments: []Argument{{Name: "source", Kind: "endpoint", Required: true}}, Flags: []string{"archive"}}},
+		Flags:         []Flag{{Name: "archive", Syntax: "--archive", Status: "shipped", ValueKind: "boolean", Default: "false", AppliesTo: []string{"path-to-path"}}},
 		Routes:        []Route{{Name: "path-to-path", Status: "shipped", Source: []string{"local"}, Destination: []string{"local"}, AllowedFlags: []string{"archive"}}},
 		Unsupported:   []string{"--mirror"}, Examples: []string{"courier from a to b"},
 	}
@@ -25,7 +25,7 @@ func validContract() Contract {
 func TestLoadAndReference(t *testing.T) {
 	directory := t.TempDir()
 	name := filepath.Join(directory, "contract.yaml")
-	data := "schema_version: 1\ncontract_version: 0.8.0\ntarget_release: 0.2.0\nlanguage: en\nendpoint_kinds:\n  - {name: local, status: shipped, syntax: path}\ncommands:\n  - {name: from, path: from, usage: courier-from, status: shipped, system: false, flags: [archive]}\nflags:\n  - {name: archive, syntax: --archive, status: shipped, repeatable: false, default: 'false', applies_to: [path-to-path], conflicts: []}\nroutes:\n  - {name: path-to-path, status: shipped, source: [local], destination: [local], allowed_flags: [archive]}\nunsupported: [--mirror]\nexamples: [courier-from]\n"
+	data := "schema_version: 2\ncontract_version: 0.8.0\ntarget_release: 0.2.0\nlanguage: en\nendpoint_kinds:\n  - {name: local, status: shipped, syntax: path}\ncommands:\n  - {name: from, path: from, usage: courier-from, status: shipped, system: false, arguments: [{name: source, kind: endpoint, required: true, prefix: '', omit_when_flag: ''}], flags: [archive]}\nflags:\n  - {name: archive, syntax: --archive, status: shipped, value_kind: boolean, choices: [], placeholder: '', repeatable: false, default: 'false', applies_to: [path-to-path], conflicts: [], requires: []}\nroutes:\n  - {name: path-to-path, status: shipped, source: [local], destination: [local], allowed_flags: [archive]}\nunsupported: [--mirror]\nexamples: [courier-from]\n"
 	if err := os.WriteFile(name, []byte(data), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -78,9 +78,48 @@ func TestValidateFailures(t *testing.T) {
 		{"system status", func(c *Contract) { c.Commands[0].System = true }},
 		{"unknown command flag", func(c *Contract) { c.Commands[0].Flags = []string{"missing"} }},
 		{"duplicate command flag", func(c *Contract) { c.Commands[0].Flags = []string{"archive", "archive"} }},
+		{"argument name", func(c *Contract) { c.Commands[0].Arguments[0].Name = "Source" }},
+		{"argument kind", func(c *Contract) { c.Commands[0].Arguments[0].Kind = "file" }},
+		{"duplicate argument", func(c *Contract) {
+			c.Commands[0].Arguments = append(c.Commands[0].Arguments, c.Commands[0].Arguments[0])
+		}},
+		{"argument prefix whitespace", func(c *Contract) { c.Commands[0].Arguments[0].Prefix = "to value" }},
+		{"argument prefix option", func(c *Contract) { c.Commands[0].Arguments[0].Prefix = "--to" }},
+		{"argument suppressor", func(c *Contract) { c.Commands[0].Arguments[0].OmitWhenFlag = "missing" }},
 		{"flag behavior", func(c *Contract) { c.Flags[0].AppliesTo = nil }},
+		{"flag value kind", func(c *Contract) { c.Flags[0].ValueKind = "unknown" }},
+		{"boolean placeholder", func(c *Contract) { c.Flags[0].Placeholder = "value" }},
+		{"boolean choices", func(c *Contract) { c.Flags[0].Choices = []string{"yes"} }},
+		{"boolean repeatable", func(c *Contract) { c.Flags[0].Repeatable = true }},
+		{"boolean default", func(c *Contract) { c.Flags[0].Default = "true" }},
+		{"value placeholder", func(c *Contract) { c.Flags[0].ValueKind = "text" }},
+		{"enum choices", func(c *Contract) { c.Flags[0].ValueKind = "enum"; c.Flags[0].Placeholder = "mode" }},
+		{"enum default", func(c *Contract) {
+			c.Flags[0].ValueKind = "enum"
+			c.Flags[0].Placeholder = "mode"
+			c.Flags[0].Choices = []string{"on"}
+		}},
+		{"duplicate enum choice", func(c *Contract) {
+			c.Flags[0].ValueKind = "enum"
+			c.Flags[0].Placeholder = "mode"
+			c.Flags[0].Choices = []string{"false", "false"}
+		}},
+		{"empty enum choice", func(c *Contract) {
+			c.Flags[0].ValueKind = "enum"
+			c.Flags[0].Placeholder = "mode"
+			c.Flags[0].Choices = []string{"false", ""}
+		}},
+		{"non-enum choices", func(c *Contract) {
+			c.Flags[0].ValueKind = "text"
+			c.Flags[0].Placeholder = "value"
+			c.Flags[0].Choices = []string{"false"}
+		}},
 		{"unknown conflict", func(c *Contract) { c.Flags[0].Conflicts = []string{"missing"} }},
 		{"duplicate conflict", func(c *Contract) { c.Flags[0].Conflicts = []string{"archive", "archive"} }},
+		{"self conflict", func(c *Contract) { c.Flags[0].Conflicts = []string{"archive"} }},
+		{"unknown requirement", func(c *Contract) { c.Flags[0].Requires = []string{"missing"} }},
+		{"duplicate requirement", func(c *Contract) { c.Flags[0].Requires = []string{"archive", "archive"} }},
+		{"self requirement", func(c *Contract) { c.Flags[0].Requires = []string{"archive"} }},
 		{"unknown applicability", func(c *Contract) { c.Flags[0].AppliesTo = []string{"missing"} }},
 		{"duplicate applicability", func(c *Contract) { c.Flags[0].AppliesTo = []string{"path-to-path", "path-to-path"} }},
 		{"source endpoint", func(c *Contract) { c.Routes[0].Source = []string{"missing"} }},
@@ -168,7 +207,7 @@ func TestLandingProjection(t *testing.T) {
 		Command{Name: "help", Path: "help", Usage: "courier help", Status: "system", System: true},
 		Command{Name: "future", Path: "future", Usage: "courier future", Status: "planned"},
 	)
-	value.Flags = append(value.Flags, Flag{Name: "future", Syntax: "--future", Status: "planned", Default: "false", AppliesTo: []string{"path-to-path"}})
+	value.Flags = append(value.Flags, Flag{Name: "future", Syntax: "--future", Status: "planned", ValueKind: "boolean", Default: "false", AppliesTo: []string{"path-to-path"}})
 	value.Routes = append(value.Routes, Route{Name: "future", Status: "planned", Source: []string{"local"}, Destination: []string{"local"}})
 	landing := value.Landing()
 	if len(landing.Endpoints) != 1 || len(landing.Commands) != 2 || len(landing.Flags) != 1 || len(landing.Routes) != 1 || !landing.Commands[1].System {
@@ -179,10 +218,34 @@ func TestLandingProjection(t *testing.T) {
 		t.Fatalf("landing JSON=%s", encoded)
 	}
 	landing.Commands[0].Flags[0] = "changed"
+	landing.Commands[0].Arguments[0].Name = "changed"
 	landing.Routes[0].Source[0] = "changed"
 	landing.Flags[0].AppliesTo[0] = "changed"
-	if value.Commands[0].Flags[0] != "archive" || value.Routes[0].Source[0] != "local" || value.Flags[0].AppliesTo[0] != "path-to-path" {
+	if value.Commands[0].Flags[0] != "archive" || value.Commands[0].Arguments[0].Name != "source" || value.Routes[0].Source[0] != "local" || value.Flags[0].AppliesTo[0] != "path-to-path" {
 		t.Fatal("landing projection aliases contract slices")
+	}
+}
+
+func TestValueKindsAndArgumentKinds(t *testing.T) {
+	for _, kind := range []string{"endpoint", "uuid", "command-path"} {
+		if !validArgumentKind(kind) {
+			t.Fatalf("argument kind %q rejected", kind)
+		}
+	}
+	for _, kind := range []string{"boolean", "text", "unsigned", "enum", "host-port", "ip-cidr", "path", "regex", "quantity", "rate"} {
+		if !validValueKind(kind) {
+			t.Fatalf("value kind %q rejected", kind)
+		}
+	}
+	if validArgumentKind("missing") || validValueKind("missing") {
+		t.Fatal("unknown kind accepted")
+	}
+	value := validContract()
+	value.Flags[0].ValueKind = "enum"
+	value.Flags[0].Placeholder = "mode"
+	value.Flags[0].Choices = []string{"false", "true"}
+	if err := value.Validate(); err != nil {
+		t.Fatal(err)
 	}
 }
 

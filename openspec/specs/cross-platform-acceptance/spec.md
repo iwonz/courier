@@ -49,7 +49,17 @@ Courier SHALL run compiled runtime suites on Linux, macOS, and Windows, cross-bu
 
 ### Requirement: Real-browser acceptance
 
-Courier SHALL test the React/shadcn landing, delivery, and administration surfaces in Chromium for English/Russian catalogs, active-locale icons, cyclic system/light/dark preferences, reduced motion, touch and fine-pointer input, keyboard operation, responsive layouts, protected-metadata isolation, exactly three natural-height landing sections, local Relay rasters, external-request isolation, layout stability, and the absence of ordinary card islands. Acceptance SHALL verify that page-scale and workflow-scale wrappers add no rounded panel background, border, shadow, or blur while semantic controls, inputs, alerts, focus, status, and meaningful internal dividers remain visible. Landing acceptance SHALL also verify compact adjacent section spacing, a backgroundless masthead fixed inside the viewport, reserved document offset, and selected endpoint contrast. Existing asset and bundle budgets SHALL remain enforced.
+Courier SHALL test landing, delivery, and administration in Chromium for the existing product behaviors plus a static normal-flow masthead, local official PNG third-party marks, aligned four-pixel route signaling, divider-free CLI construction, exact POSIX and PowerShell clipboard output, and visual layouts at 320, 390, 1024, and 1440 pixels in light and dark themes.
+
+#### Scenario: Landing polish is inspected
+
+- **WHEN** browser acceptance measures the masthead, brand media, route signal, and CLI builder
+- **THEN** the header scrolls away, control centers align within one pixel, no third-party mark is pixelated or remotely loaded, the signal center follows the path, no CLI separator exists, and both shell commands copy exactly
+
+#### Scenario: Reduced motion is requested
+
+- **WHEN** the route signal renders under reduced motion
+- **THEN** its four-pixel center remains at the measured connector midpoint without animation
 
 #### Scenario: The landing first renders
 
@@ -83,13 +93,13 @@ Courier SHALL test the React/shadcn landing, delivery, and administration surfac
 
 #### Scenario: A visitor uses landing command surfaces
 
-- **WHEN** route, installation, or CLI Copy is activated in English or Russian
-- **THEN** the exact immutable command is offered to the clipboard and localized status is announced without simulation, API mutation, or layout shift
+- **WHEN** route, installation, or generated CLI Copy is activated in English or Russian
+- **THEN** the exact immutable or shell-quoted command is offered to the clipboard and localized status is announced without simulation, API mutation, or layout shift
 
 #### Scenario: A visitor uses natural navigation
 
-- **WHEN** the visitor scrolls or activates installation or CLI navigation
-- **THEN** the page does not snap, active navigation follows the current content block, and reduced motion removes smooth scrolling
+- **WHEN** the visitor scrolls between installation and CLI content
+- **THEN** the page does not snap, the static masthead follows document flow, and reduced motion removes smooth scrolling
 
 #### Scenario: A visitor crosses a panorama boundary
 
@@ -104,7 +114,7 @@ Courier SHALL test the React/shadcn landing, delivery, and administration surfac
 #### Scenario: Landing chrome and spacing are inspected
 
 - **WHEN** the landing is measured before and after scrolling at supported desktop and mobile sizes
-- **THEN** its masthead remains fixed and transparent, content remains below it, adjacent content blocks have compact spacing, and the selected Source and Destination remain visibly contrasted
+- **THEN** its masthead is static and transparent, content requires no header offset, adjacent content blocks have compact spacing, and the selected Source and Destination remain visibly contrasted
 
 ### Requirement: Exact browser coverage
 
@@ -117,7 +127,7 @@ Courier SHALL include first-party `.ts` and `.tsx` sources in exact statement, b
 
 ### Requirement: Pixel browser acceptance
 
-Courier SHALL test landing, delivery, and administration in Chromium for the complete shared modern 8-bit identity in English and Russian, system/light/dark themes, reduced motion, touch and fine-pointer input, keyboard operation, supported responsive viewports, fixed transparent landing masthead, protected-metadata isolation, API behavior, exact role sprites, local font and icon loading, contrast-safe selected controls, grid-snapped route geometry, stepped motion, no horizontal overflow, no ordinary card islands, and no external runtime requests.
+Courier SHALL test landing, delivery, and administration in Chromium for the complete shared modern 8-bit identity in English and Russian, system/light/dark themes, reduced motion, touch and fine-pointer input, keyboard operation, supported responsive viewports, static transparent landing masthead, protected-metadata isolation, API behavior, exact role sprites, local font and official PNG brand loading, contrast-safe selected controls, grid-snapped route geometry, centered linear signal motion, no horizontal overflow, no ordinary card islands, and no external runtime requests.
 
 #### Scenario: Browser surfaces render the pixel identity
 

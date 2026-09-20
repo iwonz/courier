@@ -127,7 +127,12 @@ The route hero SHALL compose the canonical transparent technological Relay pigeo
 
 ### Requirement: Contract-backed interactive route illustration
 
-Courier SHALL project the shipped route matrix into compact Source and Destination endpoint controls integrated with the first-section Relay composition, a measured cubic Bezier connector, a reduced-motion-safe route signal, an immutable generated command, and applicable options. Endpoint descriptions SHALL remain available to assistive technology but SHALL not render as visible explanatory copy. Route endpoints, installation channels, command rows, compatible-option filtering, copy actions, and external links SHALL use shared shadcn controls while remaining generated from the CLI contract and installation registry.
+Courier SHALL project the shipped route matrix into Source and Destination controls, a measured cubic Bezier connector, a four-pixel centered signal that moves linearly on the connector, a reduced-motion midpoint state, an immutable generated command, and applicable options. Endpoint descriptions SHALL remain available to assistive technology but SHALL not render as visible explanatory copy.
+
+#### Scenario: Route signaling is inspected
+
+- **WHEN** the selected route connector is rendered with or without reduced motion
+- **THEN** the signal is exactly four by four pixels and its center remains on the connector, moving linearly in normal motion and resting at the midpoint for reduced motion
 
 #### Scenario: A route is selected
 
@@ -147,7 +152,7 @@ Courier SHALL project the shipped route matrix into compact Source and Destinati
 #### Scenario: A visitor activates a source or destination
 
 - **WHEN** the visitor clicks or keyboard-activates a valid endpoint
-- **THEN** the selected pair, Bezier connector, example syntax, and applicable options update from the generated contract while bounds remain unchanged
+- **THEN** the selected pair, connector, example syntax, and applicable options update from the generated contract while bounds remain unchanged
 
 #### Scenario: A visitor explores a source endpoint
 
@@ -171,7 +176,17 @@ Courier SHALL project the shipped route matrix into compact Source and Destinati
 
 ### Requirement: Compact landing composition
 
-The landing SHALL use one continuous document canvas with compact content-driven spacing and no full-page panorama. Adjacent sections SHALL NOT accumulate large top and bottom padding. The route headline, Relay illustration, endpoint controls, command, and options SHALL form one composition without a rounded or tinted outer container. Installation SHALL flow directly on the same canvas, and the CLI registry SHALL use transparent responsive columns with only a meaningful internal divider rather than an outer surface. The fixed masthead SHALL link the Courier identity to the first section and expose Installation and CLI navigation plus GitHub, theme, and locale actions.
+The landing SHALL use one continuous document canvas with compact content-driven spacing. Its masthead SHALL be a static normal-flow block with one `h-16` horizontal row containing the brand on the left and GitHub, theme, and locale actions on the right. It SHALL expose no internal navigation, reserve no fixed-header document offset, and SHALL leave the viewport when the document scrolls. The CLI registry SHALL use responsive columns without outer or internal divider lines.
+
+#### Scenario: Landing chrome is inspected
+
+- **WHEN** the landing is measured before and after scrolling at a supported viewport
+- **THEN** the masthead has static positioning, no navigation, aligned control centers within one pixel, no compensating main padding, and scrolls out of view
+
+#### Scenario: CLI registry is inspected
+
+- **WHEN** commands, parameters, and the generated command render in one or two columns
+- **THEN** no vertical, horizontal, or readout separator line is visible
 
 #### Scenario: A visitor scans the page
 
@@ -190,11 +205,16 @@ The landing SHALL use one continuous document canvas with compact content-driven
 
 ### Requirement: Viewport-aware installation chooser
 
-Courier SHALL present every supported installation channel through compact, icon-led tag controls with one exact, width-safe command readout, an accessible copy action with bounded status feedback, and compact repository-owned package/download actions. Selection SHALL change only through activation, official third-party mark geometry SHALL be bundled locally and rendered in Courier monochrome, and every channel SHALL occupy invariant panel geometry.
+Courier SHALL present every supported installation channel through compact controls and one exact command readout. Official third-party marks SHALL be transparent local PNG images in official geometry and color without pixel rendering; GitHub SHALL provide light and dark variants. npx and wget SHALL render as text because they have no independent official mark.
+
+#### Scenario: Third-party branding is inspected
+
+- **WHEN** GitHub, operating system, distribution, and package-manager identities render
+- **THEN** every available official mark is a local `img` PNG with no external request, SVG DOM, crisp-edge hint, or pixelated rendering, while npx and wget contain no invented icon
 
 #### Scenario: A user inspects an installation channel
 
-- **WHEN** the user clicks or keyboard-activates a channel tag
+- **WHEN** the user clicks or keyboard-activates a channel control
 - **THEN** the section exposes that channel's complete command without document overflow, hover-dependent state, layout movement, or a remote asset request
 
 #### Scenario: A user copies an installation command
@@ -204,22 +224,22 @@ Courier SHALL present every supported installation channel through compact, icon
 
 ### Requirement: Minimal masthead composition
 
-Courier SHALL render the compact Relay mark beside the literal wordmark `COURIER CLI`, place Installation and CLI navigation directly after that brand cluster, and align GitHub, theme, and locale actions at the opposite edge. The masthead SHALL remain fixed to the visual viewport without a background fill, backdrop blur, lower rule, or separator, while document padding SHALL prevent it from covering content. GitHub and preference actions SHALL share the same quiet control treatment while preserving link and button semantics. Every link whose destination leaves the landing page SHALL open a new browsing context without retaining opener access; in-page navigation SHALL remain in the current context and SHALL scroll smoothly unless reduced motion is requested.
+Courier SHALL render the compact Relay mark beside the literal wordmark `COURIER CLI` on the left and GitHub, theme, and locale actions on the right of one transparent `h-16` row. It SHALL contain no internal navigation, use static normal-flow positioning, reserve no document offset, and leave the viewport when the page scrolls. External links SHALL still open a new browsing context without retaining opener access.
 
 #### Scenario: The masthead is rendered
 
-- **WHEN** the landing loads at desktop width
-- **THEN** the brand and in-page navigation form one left-aligned cluster while GitHub and preference controls form the right-aligned cluster on a transparent fixed masthead without a full-width divider
+- **WHEN** the landing loads at a supported width
+- **THEN** the brand and right-side controls have visual centers aligned within one pixel on a transparent static masthead with no navigation or divider
 
 #### Scenario: A visitor scrolls through natural sections
 
-- **WHEN** a landing section crosses the reading band below the masthead
-- **THEN** the complete masthead remains inside the visual viewport and the corresponding in-page link exposes `aria-current`
+- **WHEN** a landing section crosses the reading band
+- **THEN** the masthead scrolls away with the document and does not cover content
 
 #### Scenario: A visitor scrolls through snapped sections
 
 - **WHEN** the visitor scrolls through the landing after mandatory snapping has been removed
-- **THEN** the complete masthead remains inside the visual viewport and navigation follows natural document position rather than a snap target
+- **THEN** the page follows natural document position without a snap target, sticky header, or active navigation state
 
 #### Scenario: A visitor follows an off-landing link
 
@@ -228,8 +248,8 @@ Courier SHALL render the compact Relay mark beside the literal wordmark `COURIER
 
 #### Scenario: A visitor follows section navigation
 
-- **WHEN** an in-page link is activated
-- **THEN** its target remains offset below the fixed masthead and scrolling is smooth unless the visitor requests reduced motion
+- **WHEN** the in-page brand link is activated
+- **THEN** its route target remains in the current context without a fixed-header offset
 
 ### Requirement: Full-width compatible CLI reference
 
@@ -247,12 +267,12 @@ Courier SHALL present generated commands and options in a full-width, invariant 
 
 ### Requirement: Transparent masthead integration
 
-Courier SHALL keep the safe-area-aware measured masthead permanently visible using a compact translucent canvas surface, backdrop blur, shared control chrome, and no lower rule. Its measured height SHALL drive exact section anchor offsets.
+Courier SHALL keep the transparent masthead in normal document flow as one compact `h-16` row with shared control chrome and no fill, blur, lower rule, measured overlay, or section-anchor offset.
 
 #### Scenario: A visitor scrolls across contrasting scenes
 
-- **WHEN** any natural-height section reaches the masthead
-- **THEN** navigation and actions remain legible while the masthead remains fully within the visual viewport and does not expose a strip of the preceding section at the target anchor
+- **WHEN** any natural-height section scrolls toward the top of the viewport
+- **THEN** the masthead leaves the viewport with the preceding document content and never overlays the section
 
 ### Requirement: Read-only landing command surfaces
 
@@ -270,7 +290,7 @@ Courier SHALL present the selected route and installation commands as immutable 
 
 ### Requirement: Pixel landing composition
 
-The landing SHALL retain exactly three natural-height borderless sections on one continuous canvas while applying the shared modern 8-bit grammar. The fixed transparent masthead SHALL use the pixel mark, display wordmark, pixel GitHub action, pixel theme action, and active local pixel locale flag. The route hero SHALL use only the transparent route sprite, code-native pixel waypoints, a grid-snapped measured connector, a reduced-motion-safe step packet, contract-backed endpoint controls, immutable command, Copy action, and applicable options. Installation and CLI SHALL remain image-free.
+The landing SHALL retain exactly three natural-height borderless sections on one continuous canvas while applying the shared modern 8-bit grammar to first-party identity and controls. The static transparent masthead SHALL use the Relay pixel mark, display wordmark, official local GitHub PNG, theme action, and active local locale flag. The route hero SHALL use only the transparent route-v2 sprite, code-native pixel waypoints, a grid-snapped measured connector, a centered four-pixel signal with linear path motion and a reduced-motion midpoint, contract-backed endpoint controls, immutable command, Copy action, and applicable options. Installation SHALL use only declared local official brand PNGs, and CLI SHALL remain free of decorative raster art.
 
 #### Scenario: A visitor scans and operates the page
 
@@ -279,9 +299,28 @@ The landing SHALL retain exactly three natural-height borderless sections on one
 
 ### Requirement: Pixel masthead composition
 
-Courier SHALL keep the masthead fixed and transparent while rendering the generated square pixel Relay mark beside a local Pixelify Sans `COURIER CLI` wordmark. Navigation and actions SHALL remain inside the viewport, keyboard-operable, and protected according to existing external-link rules.
+Courier SHALL keep the masthead static and transparent while rendering the generated square pixel Relay mark beside a local Pixelify Sans `COURIER CLI` wordmark. It SHALL contain no section navigation. GitHub, theme, and locale actions SHALL remain aligned in the same row, keyboard-operable, and protected according to existing external-link rules.
 
 #### Scenario: A visitor scrolls the landing
 
-- **WHEN** any section passes behind the masthead at a supported viewport
-- **THEN** the pixel identity and controls remain visible, the masthead does not scroll away or gain a background, and reserved document offset prevents initial content coverage
+- **WHEN** the document scrolls at a supported viewport
+- **THEN** the pixel identity and controls leave the viewport with the masthead, no background appears, and no reserved document offset is present
+
+### Requirement: Structured landing command builder
+
+Courier SHALL build copy-ready CLI commands from ordered generated contract fields rather than usage-string replacement. It SHALL support command arguments, boolean toggles, enum selects, scalar typed fields, ordered repeatable values, explicit conflicts and dependencies, and POSIX or PowerShell quoting without executing a command.
+
+#### Scenario: A visitor constructs a command
+
+- **WHEN** required arguments and explicitly selected parameter values are valid
+- **THEN** the readout contains command path, ordered arguments, and ordered parameters with exact shell-safe quoting and Copy offers that exact value
+
+#### Scenario: Builder input is incomplete
+
+- **WHEN** a required argument, UUID, number, enum, or dependency is invalid
+- **THEN** validation is exposed and Copy remains disabled
+
+#### Scenario: A visitor changes commands
+
+- **WHEN** another command is selected
+- **THEN** argument values, parameter values, and prior copy status are cleared while the shell preference remains selected

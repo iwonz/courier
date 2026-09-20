@@ -6,7 +6,7 @@ SHELLCHECK_VERSION := v0.11.0
 SHELLCHECK ?= .cache/tools/shellcheck
 OPENSPEC ?= openspec
 
-.PHONY: all fmt-check vet contract-check workflow-check openspec-check test npm-test ui-test browser-test pages-build pages-publish goreleaser-check snapshot package-test verify precommit hooks release clean
+.PHONY: all fmt-check vet contract-check workflow-check openspec-check test npm-test ui-test browser-test pages-build pages-publish goreleaser-check formula-test snapshot package-test verify precommit hooks release clean
 
 all: verify
 
@@ -59,11 +59,15 @@ goreleaser-check:
 
 snapshot: goreleaser-check
 	$(GORELEASER) release --snapshot --clean
+	./scripts/render-snapshot-formula.sh
 	./scripts/verify-dist.sh
 	./scripts/test-release-installer.sh
 	node ./scripts/test-npm-dist.js
 
-package-test: snapshot
+formula-test: snapshot
+	./scripts/test-homebrew-formula.sh
+
+package-test: formula-test
 	./scripts/test-linux-packages.sh
 
 verify: test npm-test browser-test workflow-check openspec-check package-test

@@ -32,7 +32,7 @@ describe("delivery React application", () => {
     document.body.append(root);
     mountData(root);
     await waitFor(() => expect(root.textContent).toContain("root"));
-    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v1");
+    expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v2");
   });
 
   it("loads a directory, navigates into a folder and back, and localizes", async () => {
@@ -45,7 +45,7 @@ describe("delivery React application", () => {
       .mockResolvedValueOnce(response(directory()));
     vi.stubGlobal("fetch", fetchMock);
     render(<DataApp />);
-    expect(document.querySelector<HTMLImageElement>('img[src*="courier-relay-pixel-delivery-v1"]')?.className).toContain("courier-pixel-image");
+    expect(document.querySelector<HTMLImageElement>('img[src*="courier-relay-pixel-delivery-v2"]')?.className).toContain("courier-pixel-image");
     await screen.findByText("file.txt");
     expect(screen.getByRole("link", { name: /Download file/ }).getAttribute("href")).toContain("file.txt");
     fireEvent.click(screen.getByRole("button", { name: "folder" }));

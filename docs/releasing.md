@@ -1,6 +1,6 @@
 # Release runbook
 
-Courier uses GoReleaser Community v2.18.1. A semantic Git tag is the only publication trigger. GitHub Actions repeats all quality gates before creating a GitHub Release, updating the in-repository Homebrew and Scoop manifests, and publishing npm.
+Courier uses GoReleaser Community v2.18.1. A semantic Git tag is the only publication trigger. GitHub Actions repeats all quality gates before creating a GitHub Release and Scoop manifest, source-building and committing the in-repository Homebrew Formula, and publishing npm.
 
 ## One-time external setup
 
@@ -38,9 +38,10 @@ The gate runs:
 2. all Go tests with the race detector on Linux plus exact 100% first-party statement coverage and compiled runtime checks on Linux, macOS, and Windows;
 3. exact TypeScript coverage, deterministic UI builds, embedded-asset freshness, and real Chromium acceptance for all three browser surfaces;
 4. npm wrapper and POSIX/PowerShell installer acceptance;
-5. GoReleaser configuration validation and `goreleaser release --snapshot --clean`;
-6. checksum and complete primary/BSD artifact-matrix verification;
-7. labeled native-package installation in Ubuntu, Debian, Arch, Manjaro, Fedora, Red Hat UBI, and Alpine containers, followed by ownership-scoped cleanup assertions.
+5. GoReleaser configuration validation and `goreleaser release --snapshot --clean` with the deterministic source archive;
+6. one Formula renderer, Ruby syntax/contract checks, and a Homebrew source build when Homebrew is available;
+7. checksum and complete primary/BSD/source artifact-matrix verification;
+8. labeled native-package installation in Ubuntu, Debian, Arch, Manjaro, Fedora, Red Hat UBI, and Alpine containers, followed by ownership-scoped cleanup assertions.
 
 The artifact matrix includes the six primary macOS/Linux/Windows targets plus exact-platform BSD helper archives. Helper archives use the same `courier_<version>_<os>_<arch>.tar.gz` convention and are verified by the snapshot gate and post-publication workflow.
 
@@ -65,7 +66,7 @@ The command checks GitHub authentication, the Courier repository, GitHub secret 
 
 For deliberate non-interactive automation, set `COURIER_RELEASE_YES=1` and provide the version. This does not bypass any quality or repository preflight.
 
-GoReleaser generates release notes from conventional commits between tags. It commits `Casks/courier.rb` and `bucket/courier.json` to `main` with the workflow's short-lived `GITHUB_TOKEN`; no personal GitHub token or additional repository is involved. Never move or recreate a published tag. If npm publication fails before that version is published, repair the secret and rerun the failed workflow for the existing tag. npm versions are immutable, so confirm publication status before rerunning a failed npm job.
+GoReleaser generates release notes from conventional commits between tags, publishes `courier_<version>_source.tar.gz`, and updates `bucket/courier.json`. A separate macOS job reads the published source checksum, renders `Formula/courier.rb`, runs `brew audit`, installs with `--build-from-source`, runs `courier version`, and commits only that verified Formula to `main` with the workflow's short-lived `GITHUB_TOKEN`. No personal GitHub token or additional repository is involved. Never move or recreate a published tag. If npm publication fails before that version is published, repair the secret and rerun the failed workflow for the existing tag. npm versions are immutable, so confirm publication status before rerunning a failed npm job.
 
 ## Publication order
 
@@ -75,13 +76,17 @@ The release workflow enforces this sequence:
 credentials + Linux acceptance + macOS/Windows runtime acceptance
                               |
                               v
-GitHub Release + in-repository Homebrew/Scoop manifests
+        GitHub Release + Scoop manifest
                     |
+          +---------+---------+
+          |                   |
+          v                   v
+Homebrew Formula audit,   npmjs publication
+source build, and commit       |
+          |                   |
+          +---------+---------+
                     v
-             npmjs publication
-                    |
-                    v
-       GitHub/npm/manifest verification
+       GitHub/npm/Formula/Scoop verification
 ```
 
 See [Acceptance and release-candidate verification](acceptance.md) for prerequisites, focused commands, resource ownership, and the browser/package boundaries.

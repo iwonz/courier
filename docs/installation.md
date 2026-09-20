@@ -7,7 +7,7 @@ Courier release binaries are self-contained. Package managers and installers onl
 | Operating system | Architectures | Primary channels |
 |---|---|---|
 | macOS | amd64, arm64 | Homebrew, npm ecosystem, POSIX installer, direct download |
-| Linux | amd64, arm64 | deb, rpm, apk, Arch package, npm ecosystem, Homebrew where casks are supported, POSIX installer, direct download |
+| Linux | amd64, arm64 | deb, rpm, apk, Arch package, npm ecosystem, Homebrew Formula, POSIX installer, direct download |
 | Windows | amd64, arm64 | Scoop, npm ecosystem, PowerShell installer, direct download |
 
 Release archives are also built for FreeBSD, OpenBSD, and NetBSD on amd64/arm64 and DragonFly BSD on amd64. Courier uses these exact-platform archives for the temporary helper fallback when a BSD SSH endpoint lacks SFTP. They are published and checksummed with every release but are not currently distributed through the package-manager channels above.
@@ -66,12 +66,20 @@ The dependency-free postinstall script selects the host tar.gz archive, verifies
 ## Homebrew
 
 ```sh
-brew trust --cask iwonz/courier/courier
-brew tap iwonz/courier https://github.com/iwonz/courier
-brew install --cask iwonz/courier/courier
+brew tap iwonz/courier https://github.com/iwonz/courier && brew install iwonz/courier/courier
 ```
 
-Homebrew 6 requires explicit trust before it evaluates any non-official cask. Courier trusts only the fully qualified cask, not every item the repository may contain. The explicit tap URL then lets the nonstandard `iwonz/courier` repository act as its own tap. GoReleaser updates `Casks/courier.rb` on `main` after each release. The generated cask contains checksummed macOS amd64/arm64 assets and Linux assets for Homebrew environments that support binary casks.
+The explicit URL lets the main Courier repository act as its own tap. `Formula/courier.rb` verifies the deterministic `courier_<version>_source.tar.gz`, installs Go as a build-only dependency, sets `CGO_ENABLED=0`, and builds `./cmd/courier` with the release version, commit, and date. This takes longer than installing a prebuilt binary but avoids cask quarantine without an Apple Developer ID and without disabling Gatekeeper.
+
+If Courier was previously installed through the retired cask, migrate once before installing the Formula:
+
+```sh
+brew uninstall --cask courier
+brew tap iwonz/courier https://github.com/iwonz/courier
+brew install iwonz/courier/courier
+```
+
+Do not use `xattr` or another quarantine bypass. Direct macOS binaries and non-Homebrew installer channels remain unsigned and are not Apple-notarized.
 
 ## Scoop
 
@@ -99,6 +107,7 @@ courier_<version>_<os>_<arch>
 courier_<version>_<os>_<arch>.tar.gz
 courier_<version>_windows_<arch>.exe
 courier_<version>_windows_<arch>.zip
+courier_<version>_source.tar.gz
 checksums.txt
 ```
 

@@ -4,7 +4,7 @@ Courier's static React/Vite landing lives in `web/landing`, uses repository-owne
 
 ## Contract-backed content
 
-`docs/cli-contract.yaml` is the command source of truth. `go run ./cmd/contractdoc --write` generates both `docs/cli-reference.md` and `web/landing/src/contract.generated.json`. Route pairs, applicable options, command compatibility, and usage are projections of shipped contract entries. Installation commands and GitHub links are reviewed static content.
+`docs/cli-contract.yaml` is the command source of truth. `go run ./cmd/contractdoc --write` generates both `docs/cli-reference.md` and `web/landing/src/contract.generated.json`. Route pairs, command paths, ordered arguments, typed parameter values, choices, dependencies, conflicts, and applicability are projections of shipped contract entries. Installation commands and GitHub links are reviewed static content.
 
 ## Three-section flow
 
@@ -14,11 +14,11 @@ The page contains exactly three naturally scrolling sections:
 2. installation channels and one immutable command readout;
 3. the generated commands and options reference.
 
-Every section uses natural content height and compact adjacent spacing: there are no viewport-height targets, full-screen slides, snap points, stacked section padding, rounded section boards, or tinted card islands. The route hero and controls form one transparent composition, installation continues on the same canvas, and the CLI registry uses responsive columns with only a meaningful internal divider. The backgroundless header stays fixed to the viewport; document padding keeps content below it. It places the square Relay mark and `COURIER CLI` beside Install/CLI navigation, with GitHub and preference controls on the opposite edge. GitHub and all other external links open in a new tab with `noopener noreferrer`.
+Every section uses natural content height and compact adjacent spacing: there are no viewport-height targets, full-screen slides, snap points, stacked section padding, rounded section boards, or tinted card islands. The route hero and controls form one transparent composition, installation continues on the same canvas, and the divider-free CLI registry uses responsive columns. The backgroundless `h-16` header is a static normal-flow row that scrolls away. It places the square Relay mark and `COURIER CLI` on the left and GitHub plus preference controls on the right, with no internal navigation or compensating main padding. GitHub and all other external links open in a new tab with `noopener noreferrer`.
 
-Source and Destination controls expose Local, Remote, Web, and Web Hook using direction-specific pixel icons and assistive descriptions. Descriptions are not visible labels. Selection changes only on click or keyboard activation; invalid destinations use real disabled semantics. The measured cubic Bézier is sampled and snapped to the four-pixel grid; a small packet uses stepped timing. Reduced motion keeps the route static.
+Source and Destination controls expose Local, Remote, Web, and Web Hook using direction-specific pixel icons and assistive descriptions. Descriptions are not visible labels. Selection changes only on click or keyboard activation; invalid destinations use real disabled semantics. A four-by-four-pixel signal uses a centered offset anchor and moves linearly on the measured connector path. Reduced motion places it statically at the midpoint.
 
-Installation uses locally bundled official monochrome marks and compact channel controls. Commands/options use two independently scrollable transparent regions, selectable generated commands, compatible-option filtering, and Copy. Immutable command readouts sit directly in the document flow. There are no simulations, Run/Replay controls, transcripts, editable commands, shell execution, or browser transfer execution.
+Installation uses locally bundled transparent PNG marks in official geometry and color; GitHub has light/dark variants, while npx and wget remain text-only. Commands/options use two independently scrollable transparent regions, selectable generated commands, compatible-option filtering, typed value controls, and Copy. The builder emits path, arguments, and explicitly supplied parameters in contract order, preserves repeatable order, resolves dependencies/conflicts, validates required values, and supports exact POSIX or PowerShell quoting. Defaults are hints and are never materialized. There is no Run action or browser command execution.
 
 ## Pixel Relay hero
 
@@ -26,4 +26,4 @@ The 512×512 transparent route sprite appears inside the first section beside th
 
 The route sprite is at most 64 KiB and the 256×256 mark is at most 24 KiB. The mark is also the favicon; later sections allocate no decorative raster or request any other role sprite. Both use pixelated sampling and lossless transparent WebP.
 
-The React/shadcn production bundle is capped at 145 KiB gzip JavaScript and 9 KiB gzip CSS. Build locally with `make pages-build`. `main` deploys automatically through `.github/workflows/pages.yml`; an authenticated maintainer can rebuild and dispatch the synchronized revision with `make pages-publish`.
+The React/shadcn production bundle is capped at 150 KiB gzip JavaScript and 9 KiB gzip CSS. Build locally with `make pages-build`. `main` deploys automatically through `.github/workflows/pages.yml`; an authenticated maintainer can rebuild and dispatch the synchronized revision with `make pages-publish`.

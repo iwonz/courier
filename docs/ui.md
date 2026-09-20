@@ -8,7 +8,7 @@ Courier's landing, delivery, and administration applications are independent Rea
 - shadcn `Button`, `Card`, `Badge`, `Checkbox`, `Input`, `Select`, `Tabs`, `Tooltip`, `Progress`, `Separator`, `ScrollArea`, and `Alert` provide one accessible control grammar. `Card` is a transparent structural wrapper, not a visual panel.
 - `CommandReadout` presents immutable command text, Copy, reserved localized feedback, details, and footer actions directly on the document canvas.
 - `ThemeSelector` and `LocaleSelector` are single cyclic icon buttons backed by one shared React preference provider and browser controller; locale visibly identifies its active language.
-- `RouteDisplay`, `PixelIcon`, and `PixelBrandIcon` retain native semantics and render reviewed grid data with `currentColor` and crisp edges. Compatibility exports keep existing consumers source-compatible.
+- `RouteDisplay` and `PixelIcon` render first-party functional grid data with `currentColor` and crisp edges. `BrandIcon` renders official local transparent PNG geometry and color as a normal image; compatibility exports keep existing consumers source-compatible.
 
 There is no browser shell, free command input, fake terminal prompt, pointer refraction layer, or arbitrary command execution.
 
@@ -26,7 +26,7 @@ All applications use the same fixed twelve-color light/dark mapping, eight-pixel
 
 ## Assets and loading
 
-`assets.ts` exports the 256×256 mark, the typed `RelayRole`, and one resolver for the 512×512 neutral/route and 384×384 delivery/admin sprites. The neutral sprite is the immutable identity reference: every role is derived from it, keeps its anatomy, proportions, plumage, eye, beak, earpiece, and satchel, and varies only pose, equipment or clothing, and carried or attached objects. Independent mascot redraws are rejected by the family provenance gate. The local Pixelify Sans WOFF2 and OFL notice are part of the audited asset set. No responsive scene family, generated background, panorama, pointer duplicate, emoji flag, Lucide import, or runtime asset request is shipped.
+`assets.ts` exports the 256×256 mark-v2, the typed `RelayRole`, and one resolver for neutral-v1/route-v2 at 512×512 and delivery/admin-v2 at 384×384. Neutral-v1 is the immutable identity reference: every v2 role keeps its anatomy, proportions, plumage, eye, beak, earpiece, satchel, and palette and varies only pose, equipment, and a carried or attached object. The local Pixelify Sans WOFF2, OFL notice, local official brand PNGs, brand provenance, and Relay contact sheet are audited. No responsive scene family, generated background, panorama, pointer duplicate, emoji flag, Lucide import, or remote runtime asset is shipped.
 
 ## Verification
 

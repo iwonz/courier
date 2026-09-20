@@ -1,7 +1,8 @@
 import * as React from "react";
+import { GithubBrandIcon } from "./brand-icons-react";
 
 export const pixelIconNames = [
-  "activity", "apple", "archive", "arrow-up", "browser-share", "browser-upload", "check", "chevron-down", "chevron-up", "copy", "database", "download", "file", "folder", "folder-in", "folder-out", "github", "moon", "package", "parcel", "policy", "refresh", "retry", "route", "save", "server", "server-in", "server-out", "shield", "stop", "sun", "system", "terminal", "upload", "webhook-in", "webhook-out", "windows", "workflow",
+  "activity", "archive", "arrow-up", "browser-share", "browser-upload", "check", "chevron-down", "chevron-up", "copy", "database", "download", "file", "folder", "folder-in", "folder-out", "moon", "package", "parcel", "policy", "refresh", "retry", "route", "save", "server", "server-in", "server-out", "shield", "stop", "sun", "system", "terminal", "upload", "webhook-in", "webhook-out", "workflow",
 ] as const;
 
 export type PixelIconName = typeof pixelIconNames[number];
@@ -17,7 +18,6 @@ const webhook = "M6 1h4v2H8v2h2v2H6V5H4V3h2zm4 6h4v2h-2v2h-2v2H8V9h2zM2 8h4v2H4v
 
 const glyphs: Record<PixelIconName, PixelGlyph> = {
   activity: { path: "M1 8h3l2-5h2l2 9 2-4h3v2h-2l-2 5H9L7 7l-1 3H1z" },
-  apple: { path: "M8 1h3v2H9v1h4v2h2v6h-2v2H4v-2H2V6h2V4h4zm3 2h2V1h-2z" },
   archive: { path: "M2 1h12v4h-1v10H3V5H2zm2 2v1h8V3zm1 3v7h6V6zm2 1h2v2H7z" },
   "arrow-up": { path: arrowUp },
   "browser-share": { path: "M1 2h14v12H1zm2 3v7h10V5zm4 1h2v2h2v2H9v1H7v-1H5V8h2z" },
@@ -32,7 +32,6 @@ const glyphs: Record<PixelIconName, PixelGlyph> = {
   folder: { path: folder },
   "folder-in": { path: `${folder}M7 6h2v3h2v2H9v2H7v-2H5V9h2z` },
   "folder-out": { path: `${folder}M7 12h2V9h2V7H9V5H7v2H5v2h2z` },
-  github: { path: "M5 2h6v1h2v2h1v6h-2v2h-2v2H8v-4H6v2H4v-1H2v-2h2v1h2V9H4V8H3V5h1V3h1zm2 5v2h2V7z" },
   moon: { path: "M5 1h5v2H8v2H6v4h2v2h2v2H5v-2H3V9H1V5h2V3h2z" },
   package: { path: "M2 4h12v10H2zm2 2v6h8V6zM5 1h6v2H5z" },
   parcel: { path: "M1 4l7-3 7 3v9l-7 3-7-3zm3 1l4 2 4-2-4-2zm-1 2v5l4 2V9zm10 0L9 9v5l4-2z" },
@@ -52,7 +51,6 @@ const glyphs: Record<PixelIconName, PixelGlyph> = {
   upload: { path: arrowUp },
   "webhook-in": { path: `${webhook}M6 6h2v2h2v2H8v1H6v-1H4V8h2z` },
   "webhook-out": { path: `${webhook}M8 6h2v2h2v2h-2v1H8v-1H6v-2h2z` },
-  windows: { path: "M1 2l6-1v6H1zm8-1l6-1v7H9zM1 9h6v6l-6-1zm8 0h6v7l-6-1z" },
   workflow: { path: "M1 1h5v5H1zm9 0h5v5h-5zM5 3h6v2H5zm2 2h2v6H7zm-2 6h6v4H5z" },
 };
 
@@ -71,7 +69,7 @@ export const iconNames = pixelIconNames;
 export const resolveIcon = resolvePixelIcon;
 export const Icon = PixelIcon;
 
-export function Github(props: Omit<PixelIconProps, "name">): React.JSX.Element { return <PixelIcon name="github" {...props} />; }
+export function Github(props: React.HTMLAttributes<HTMLSpanElement>): React.JSX.Element { return <GithubBrandIcon {...props} />; }
 export function Copy(props: Omit<PixelIconProps, "name">): React.JSX.Element { return <PixelIcon name="copy" {...props} />; }
 export function Check(props: Omit<PixelIconProps, "name">): React.JSX.Element { return <PixelIcon name="check" {...props} />; }
 export function Route(props: Omit<PixelIconProps, "name">): React.JSX.Element { return <PixelIcon name="route" {...props} />; }

@@ -96,7 +96,7 @@ describe("brand, icon, and geometry helpers", () => {
   it("renders compact and full brands plus the consistent role sprites", () => {
     const { container } = render(<><Brand /><Brand compact className="compact" />{(["neutral", "route", "delivery", "admin"] as const).map((role) => <RelaySprite key={role} role={role} alt={role} className="mascot" />)}</>);
     expect(screen.getAllByText("COURIER CLI")).toHaveLength(1);
-    expect(container.querySelector('img[src*="courier-relay-pixel-mark-v1"]')?.getAttribute("width")).toBe("256");
+    expect(container.querySelector('img[src*="courier-relay-pixel-mark-v2"]')?.getAttribute("width")).toBe("256");
     expect(screen.getByAltText("neutral").getAttribute("width")).toBe("512");
     expect(screen.getByAltText("route").getAttribute("height")).toBe("512");
     expect(screen.getByAltText("delivery").getAttribute("width")).toBe("384");
@@ -108,18 +108,18 @@ describe("brand, icon, and geometry helpers", () => {
     expect(resolveIcon("unknown")).toBe("parcel");
     expect(resolvePixelIcon("unknown")).toBe("parcel");
     const { container } = render(<>{iconNames.map((name) => <Icon key={name} name={name} label={name} />)}<PixelIcon name="unknown" /><Github /><Copy /><Check /><Route /><ServerCog /></>);
-    expect(container.querySelectorAll("svg")).toHaveLength(iconNames.length + 6);
-    expect(screen.getByLabelText("github")).toBeTruthy();
+    expect(container.querySelectorAll("svg")).toHaveLength(iconNames.length + 5);
+    expect(container.querySelectorAll('img[src*="github-"]')).toHaveLength(2);
     expect(container.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
   });
 
-  it("resolves and renders every local pixel-grid brand derivative", () => {
+  it("resolves and renders every local raster brand", () => {
     expect(resolveBrandIcon("missing")).toBe("linux");
-    const { container } = render(<>{brandIconNames.map((name) => <BrandIcon key={name} name={name} label={name === "wget" ? "GNU Wget" : name} />)}<BrandIcon name="missing" label="Fallback" className="custom" /><BrandIcon name="npm" /></>);
-    expect(screen.getByLabelText("GNU Wget").tagName).toBe("svg");
+    const { container } = render(<>{brandIconNames.map((name) => <BrandIcon key={name} name={name} label={name === "curl" ? "curl" : name} />)}<BrandIcon name="missing" label="Fallback" className="custom" /><BrandIcon name="npm" /></>);
+    expect(screen.getByLabelText("curl").tagName).toBe("IMG");
     expect(screen.getByLabelText("Fallback").getAttribute("class")).toContain("custom");
     expect(container.querySelectorAll('[role="img"]')).toHaveLength(brandIconNames.length + 1);
-    expect(container.querySelector('svg[aria-hidden="true"]')?.getAttribute("data-brand-name")).toBe("npm");
+    expect(container.querySelector('img[aria-hidden="true"]')?.getAttribute("data-brand-name")).toBe("npm");
   });
 
   it("merges utility classes and builds smooth and grid-snapped finite bezier paths", () => {
@@ -150,6 +150,8 @@ describe("command readout", () => {
     await waitFor(() => expect(screen.getByText("Failed")).toBeTruthy());
     rerender(<CommandReadout heading="Command" command="" copyLabel="Copy" copiedLabel="Copied" copyFailedLabel="Failed" sessionKey="two" copy={copy} />);
     await act(async () => undefined);
+    expect(screen.getByRole("button", { name: "Copy" }).hasAttribute("disabled")).toBe(true);
+    rerender(<CommandReadout heading="Command" command="courier help" copyLabel="Copy" copiedLabel="Copied" copyFailedLabel="Failed" sessionKey="three" copyDisabled copy={copy} />);
     expect(screen.getByRole("button", { name: "Copy" }).hasAttribute("disabled")).toBe(true);
     expect(screen.queryByText("Description")).toBeNull();
     expect(screen.queryByText("Release")).toBeNull();

@@ -6,13 +6,13 @@ import { fileURLToPath } from "node:url";
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const assetRoot = resolve(packageRoot, "assets");
 const manifest = JSON.parse(await readFile(resolve(assetRoot, "provenance.json"), "utf8"));
-const brandAssetRoot = resolve(packageRoot, "src", "brand-assets");
+const brandAssetRoot = resolve(packageRoot, "assets", "brands");
 const brandManifest = JSON.parse(await readFile(resolve(brandAssetRoot, "provenance.json"), "utf8"));
 
-if (manifest.schemaVersion !== 3 || !Array.isArray(manifest.assets) || manifest.assets.length === 0) {
+if (manifest.schemaVersion !== 4 || !Array.isArray(manifest.assets) || manifest.assets.length === 0) {
   throw new Error("asset provenance manifest is invalid");
 }
-if (brandManifest.schemaVersion !== 1 || !Array.isArray(brandManifest.assets) || brandManifest.assets.length === 0) {
+if (brandManifest.schemaVersion !== 2 || !Array.isArray(brandManifest.assets) || brandManifest.assets.length === 0) {
   throw new Error("brand asset provenance manifest is invalid");
 }
 
@@ -36,7 +36,7 @@ function rasterDimensions(data, mediaType) {
   throw new Error(`unsupported WebP chunk: ${chunk}`);
 }
 
-const expected = new Set(["provenance.json"]);
+const expected = new Set(["provenance.json", "brands"]);
 for (const asset of manifest.assets) {
   if (!/^[a-z0-9][a-z0-9.-]*$/.test(asset.path) || expected.has(asset.path)) {
     throw new Error(`invalid or duplicate asset path: ${asset.path}`);
@@ -64,11 +64,11 @@ if (actual.size !== expected.size || [...actual].some((name) => !expected.has(na
 }
 
 const relayBudgets = new Map([
-  ["courier-relay-pixel-mark-v1.webp", 24 * 1024],
+  ["courier-relay-pixel-mark-v2.webp", 24 * 1024],
   ["courier-relay-pixel-neutral-v1.webp", 64 * 1024],
-  ["courier-relay-pixel-route-v1.webp", 64 * 1024],
-  ["courier-relay-pixel-delivery-v1.webp", 48 * 1024],
-  ["courier-relay-pixel-admin-v1.webp", 48 * 1024],
+  ["courier-relay-pixel-route-v2.webp", 64 * 1024],
+  ["courier-relay-pixel-delivery-v2.webp", 48 * 1024],
+  ["courier-relay-pixel-admin-v2.webp", 48 * 1024],
 ]);
 const relayAssets = manifest.assets.filter((asset) => relayBudgets.has(asset.path));
 const canonical = manifest.identityFamily?.canonicalAsset;
@@ -78,12 +78,13 @@ const expectedInvariants = [
   "blue-gray head, pale folded wings, compact dark tail and coral feet",
   "one small left-side earpiece and one cobalt courier satchel",
 ];
-const expectedVariations = ["pose", "role equipment", "clothing", "carried or attached object"];
+const expectedVariations = ["pose", "role equipment", "carried or attached object"];
 const expectedForbidden = ["body proportions", "physiology", "base plumage", "eye geometry", "armor", "helmet", "visor", "police or military styling"];
 if (relayAssets.length !== relayBudgets.size
   || canonical !== "courier-relay-pixel-neutral-v1.webp"
-  || manifest.identityFamily?.revision !== "relay-pixel-v1"
-  || !manifest.identityFamily?.generationRule?.includes("identity-preserving derivative")
+  || manifest.identityFamily?.revision !== "relay-pixel-v2"
+  || manifest.identityFamily?.qaContactSheet !== "docs/assets/courier-relay-pixel-v2-contact-sheet.png"
+  || !/identity-preserving .*derivative/.test(manifest.identityFamily?.generationRule ?? "")
   || manifest.identityFamily?.invariants?.join("\n") !== expectedInvariants.join("\n")
   || manifest.identityFamily?.allowedVariations?.join("\n") !== expectedVariations.join("\n")
   || manifest.identityFamily?.forbiddenVariations?.join("\n") !== expectedForbidden.join("\n")
@@ -93,10 +94,16 @@ if (relayAssets.length !== relayBudgets.size
     || asset.bytes > relayBudgets.get(asset.path)
     || !asset.prompt
     || !asset.lineage
-    || asset.identityRevision !== manifest.identityFamily.revision
-    || (asset.path !== canonical && asset.identityReference !== canonical))
+    || !Array.isArray(asset.consumers)
+    || asset.consumers.length === 0
+    || (asset.path === canonical ? asset.identityRevision !== "relay-pixel-v1" || asset.identityReference !== "self" : asset.identityRevision !== manifest.identityFamily.revision || asset.identityReference !== canonical))
   || relayAssets.reduce((total, asset) => total + asset.bytes, 0) > 248 * 1024) {
   throw new Error("the consistent transparent Relay pixel family is missing or exceeds its budgets");
+}
+const contactSheet = await readFile(resolve(packageRoot, "..", "..", manifest.identityFamily.qaContactSheet));
+const contactSheetDimensions = rasterDimensions(contactSheet, "image/png");
+if (contactSheetDimensions.width !== 1320 || contactSheetDimensions.height !== 850) {
+  throw new Error("the Relay v2 QA contact sheet is missing or has unexpected dimensions");
 }
 
 const font = manifest.assets.find((asset) => asset.path === "pixelify-sans-v1.woff2");
@@ -114,22 +121,36 @@ if (!font || !fontLicense
 
 const expectedBrandAssets = new Set(["provenance.json"]);
 for (const asset of brandManifest.assets) {
-  if (!/^[a-z0-9][a-z0-9.-]*\.svg$/.test(asset.path) || expectedBrandAssets.has(asset.path)) {
+  if (!/^[a-z0-9][a-z0-9.-]*\.png$/.test(asset.path) || expectedBrandAssets.has(asset.path)) {
     throw new Error(`invalid or duplicate brand asset path: ${asset.path}`);
   }
-  if (!/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(asset.repository)
-    || !/^[0-9a-f]{40}$/.test(asset.revision)
-    || !asset.sourcePath
-    || asset.license !== "MIT"
-    || !asset.copyright) {
+  if (!/^https:\/\//.test(asset.source)
+    || !asset.revision
+    || !asset.color
+    || !asset.license
+    || asset.mediaType !== "image/png"
+    || asset.width !== 128
+    || asset.height !== 128
+    || !asset.transparent) {
     throw new Error(`brand asset provenance is incomplete: ${asset.path}`);
   }
   expectedBrandAssets.add(asset.path);
   const data = await readFile(resolve(brandAssetRoot, asset.path));
   const digest = createHash("sha256").update(data).digest("hex");
-  if (data.length !== asset.bytes || digest !== asset.sha256 || data.toString("utf8").includes("<script")) {
+  const dimensions = rasterDimensions(data, asset.mediaType);
+  if (data.length !== asset.bytes || digest !== asset.sha256 || dimensions.width !== 128 || dimensions.height !== 128 || !dimensions.alpha) {
     throw new Error(`brand asset integrity mismatch: ${asset.path}`);
   }
+}
+
+const brandNames = new Set(brandManifest.assets.map((asset) => asset.path));
+if (brandNames.has("npx.png")
+  || brandNames.has("wget.png")
+  || !brandNames.has("github-light.png")
+  || !brandNames.has("github-dark.png")
+  || brandManifest.assets.find((asset) => asset.path === "github-light.png")?.color !== "#181717"
+  || brandManifest.assets.find((asset) => asset.path === "github-dark.png")?.color !== "#FFFFFF") {
+  throw new Error("text-only channels or GitHub theme variants violate the brand policy");
 }
 
 const actualBrandAssets = new Set(await readdir(brandAssetRoot));
@@ -171,4 +192,9 @@ if (browserSource.includes("lucide-react")
   throw new Error("legacy icons, emoji flags, or Relay assets remain in browser source");
 }
 
-console.log(`verified ${relayAssets.length} consistent Relay sprites, the pinned display font, and ${brandManifest.assets.length} pinned brand sources`);
+const brandComponent = await readFile(resolve(packageRoot, "src", "brand-icons-react.tsx"), "utf8");
+if (!brandComponent.includes("<img") || brandComponent.includes("<svg") || brandComponent.includes("courier-pixel-image") || brandComponent.includes("pixelated")) {
+  throw new Error("third-party brands must render only as normal local raster images");
+}
+
+console.log(`verified ${relayAssets.length} consistent Relay sprites, the pinned display font, and ${brandManifest.assets.length} local raster brand assets`);

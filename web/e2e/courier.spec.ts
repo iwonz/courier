@@ -29,7 +29,7 @@ async function selectRussian(page: Page): Promise<void> {
   await expect.poll(() => page.evaluate(() => localStorage.getItem("courier.locale"))).toBe("ru");
 }
 
-test("landing uses a compact square Relay and three natural shadcn sections", async ({ page, context }) => {
+test("landing keeps the static header, official brands, route signal, and command builder exact", async ({ page, context }) => {
   const externalRequests: string[] = [];
   page.on("request", (request) => {
     const url = request.url();
@@ -43,9 +43,9 @@ test("landing uses a compact square Relay and three natural shadcn sections", as
   await expect(page.locator("main > section")).toHaveCount(3);
   expect(await page.locator("main > section").evaluateAll((sections) => sections.map((section) => section.id))).toEqual(["route", "install", "cli"]);
   await expect(page.getByRole("button", { name: /Run|Replay/ })).toHaveCount(0);
-  await expect(page.locator('img[src*="courier-relay-pixel-mark-v1"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-route-v1"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-delivery-v1"], img[src*="courier-relay-pixel-admin-v1"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
+  await expect(page.locator('img[src*="courier-relay-pixel-mark-v2"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-route-v2"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-delivery-v2"], img[src*="courier-relay-pixel-admin-v2"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
   await expect(page.locator("[data-courier-route-composition]")).toHaveCount(1);
   await expect(page.locator("[data-courier-cli-registry]")).toHaveCount(1);
   for (const selector of ["[data-courier-route-composition]", "[data-courier-cli-registry]"]) {
@@ -54,10 +54,24 @@ test("landing uses a compact square Relay and three natural shadcn sections", as
       return [style.backgroundImage, style.borderRadius, style.boxShadow, style.backdropFilter];
     })).toEqual(["none", "0px", "none", "none"]);
   }
+  await expect(page.locator("header nav")).toHaveCount(0);
   expect(await page.locator("header").evaluate((node) => {
     const style = getComputedStyle(node);
     return [style.position, style.backgroundColor, style.backgroundImage, style.backdropFilter, style.borderBottomWidth];
-  })).toEqual(["fixed", "rgba(0, 0, 0, 0)", "none", "none", "0px"]);
+  })).toEqual(["static", "rgba(0, 0, 0, 0)", "none", "none", "0px"]);
+  const headerCenters = await page.locator("header").evaluate((header) => {
+    const brand = header.querySelector(":scope > div > a")!.getBoundingClientRect();
+    const controls = Array.from(header.querySelectorAll(":scope > div > div > a, :scope > div > div > button"));
+    return [brand.top + brand.height / 2, ...controls.map((control) => {
+      const bounds = control.getBoundingClientRect();
+      return bounds.top + bounds.height / 2;
+    })];
+  });
+  expect(Math.max(...headerCenters) - Math.min(...headerCenters)).toBeLessThanOrEqual(1);
+  await page.evaluate(() => scrollTo(0, 600));
+  await expect.poll(() => page.locator("header").evaluate((node) => node.getBoundingClientRect().bottom)).toBeLessThan(0);
+  await page.evaluate(() => scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
   expect(await page.locator("#install").evaluate((node) => [getComputedStyle(node).borderTopWidth, getComputedStyle(node).borderBottomWidth])).toEqual(["0px", "0px"]);
   const activeSource = page.locator('#route button[aria-label="Local"][aria-pressed="true"]');
   expect(await activeSource.evaluate((node) => {
@@ -74,6 +88,29 @@ test("landing uses a compact square Relay and three natural shadcn sections", as
   await expect(heroMascot).toBeVisible();
   expect(await heroMascot.evaluate((image) => Math.abs(image.getBoundingClientRect().width - image.getBoundingClientRect().height))).toBeLessThanOrEqual(1);
   await expect(page.locator('path[vector-effect="non-scaling-stroke"]')).toHaveAttribute("d", / H .* V /);
+
+  const brandImages = page.locator('img[src*="/brands/"]');
+  expect(await brandImages.count()).toBeGreaterThan(0);
+  expect(await brandImages.evaluateAll((images) => images.every((image) => image.getAttribute("src")?.endsWith(".png") && !["pixelated", "crisp-edges"].includes(getComputedStyle(image).imageRendering)))).toBe(true);
+  await expect(page.locator("#install button", { hasText: "npx" }).locator("img")).toHaveCount(0);
+  await expect(page.locator("#install button", { hasText: "wget" }).locator("img")).toHaveCount(0);
+
+  const signal = page.locator("[data-courier-route-signal]");
+  expect(await signal.evaluate((node) => [node.getBoundingClientRect().width, node.getBoundingClientRect().height])).toEqual([4, 4]);
+  expect(await signal.evaluate((node) => getComputedStyle(node).animationTimingFunction)).toBe("linear");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const signalAlignment = await page.locator("[data-courier-route-path]").evaluate((pathNode) => {
+    const path = pathNode as SVGPathElement;
+    const signalNode = path.ownerSVGElement!.parentElement!.querySelector("[data-courier-route-signal]")!;
+    const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM()!);
+    const bounds = signalNode.getBoundingClientRect();
+    return { dx: Math.abs(bounds.left + bounds.width / 2 - point.x), dy: Math.abs(bounds.top + bounds.height / 2 - point.y), width: bounds.width, height: bounds.height, animation: getComputedStyle(signalNode).animationName };
+  });
+  expect(signalAlignment.width).toBeCloseTo(4, 0);
+  expect(signalAlignment.height).toBeCloseTo(4, 0);
+  expect(signalAlignment.dx).toBeLessThanOrEqual(1);
+  expect(signalAlignment.dy).toBeLessThanOrEqual(1);
+  expect(signalAlignment.animation).toBe("none");
 
   const github = page.getByRole("link", { name: "Courier on GitHub" });
   await expect(github).toHaveAttribute("target", "_blank");
@@ -100,13 +137,32 @@ test("landing uses a compact square Relay and three natural shadcn sections", as
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("npm install --global @iwonz/courier");
 
   const cli = page.locator("#cli");
-  const compatibility = cli.getByRole("checkbox");
+  const compatibility = cli.getByRole("checkbox", { name: "Compatible with selected command" });
   await expect(compatibility).toBeDisabled();
-  await cli.getByRole("button", { name: "courier ui start [options]" }).click();
+  for (const selector of ["[data-courier-cli-columns]", "[data-courier-cli-columns] > section", "[data-courier-cli-readout]"]) {
+    expect(await cli.locator(selector).evaluateAll((nodes) => nodes.every((node) => {
+      const style = getComputedStyle(node);
+      return style.borderTopWidth === "0px" && style.borderRightWidth === "0px" && style.borderBottomWidth === "0px" && style.borderLeftWidth === "0px";
+    }))).toBe(true);
+  }
+  await cli.getByRole("button", { name: "courier from <source> to <destination> [options]" }).click();
   await expect(compatibility).toBeEnabled();
-  await expect(cli.getByText("--listen <host:port>")).toBeVisible();
-  await cli.getByRole("button", { name: "Copy command" }).click();
-  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("courier ui start [options]");
+  await cli.getByRole("textbox", { name: "source" }).fill("folder one");
+  await cli.getByRole("textbox", { name: "destination" }).fill("host:/srv/it's");
+  await cli.locator('[data-builder-flag="extract"]').getByRole("checkbox").check();
+  const exclude = cli.locator('[data-builder-flag="exclude"]');
+  await exclude.getByRole("textbox", { name: "--exclude <pattern> 1" }).fill("*.tmp");
+  await exclude.getByRole("button", { name: "Add value" }).click();
+  await exclude.getByRole("textbox", { name: "--exclude <pattern> 2" }).fill("old files/*");
+  const posix = "courier from 'folder one' to 'host:/srv/it'\"'\"'s' --extract --exclude '*.tmp' --exclude 'old files/*'";
+  await expect(cli.locator("[data-courier-cli-readout] code")).toHaveText(posix);
+  await cli.locator("[data-courier-cli-readout]").getByRole("button", { name: "Copy command" }).click();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(posix);
+  await cli.getByRole("button", { name: "PowerShell", exact: true }).click();
+  const powershell = "courier from 'folder one' to 'host:/srv/it''s' --extract --exclude '*.tmp' --exclude 'old files/*'";
+  await expect(cli.locator("[data-courier-cli-readout] code")).toHaveText(powershell);
+  await cli.locator("[data-courier-cli-readout]").getByRole("button", { name: "Copy command" }).click();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(powershell);
 
   await exerciseThemes(page);
   await selectRussian(page);
@@ -114,10 +170,15 @@ test("landing uses a compact square Relay and three natural shadcn sections", as
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Отсюда — куда угодно.");
 
-  for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }]) {
-    await page.setViewportSize(viewport);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    expect(await page.locator("main > section").evaluateAll((sections) => sections.every((section) => getComputedStyle(section).minHeight === "0px"))).toBe(true);
+  for (const theme of ["light", "dark"] as const) {
+    await page.evaluate((preference) => localStorage.setItem("courier.theme", preference), theme);
+    for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }]) {
+      await page.setViewportSize(viewport);
+      await page.reload();
+      await expect(page.locator("html")).toHaveAttribute("data-courier-theme", theme);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      expect(await page.locator("main > section").evaluateAll((sections) => sections.every((section) => getComputedStyle(section).minHeight === "0px"))).toBe(true);
+    }
   }
   expect(externalRequests).toEqual([]);
 });
@@ -138,9 +199,9 @@ test("protected delivery reveals no metadata before authentication", async ({ pa
   await page.route("**/api/v1/meta*", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ name: secretMarker, path: secretMarker, type: "file" }) }));
   await page.goto(dataURL);
   await expect(page.locator('input[type="password"]')).toBeVisible();
-  await expect(page.locator('img[src*="courier-relay-pixel-mark-v1"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-delivery-v1"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-route-v1"], img[src*="courier-relay-pixel-admin-v1"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
+  await expect(page.locator('img[src*="courier-relay-pixel-mark-v2"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-delivery-v2"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-route-v2"], img[src*="courier-relay-pixel-admin-v2"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
   expect(await page.locator("[data-courier-auth-region]").evaluate((node) => {
     const style = getComputedStyle(node);
     return [style.backgroundImage, style.borderRadius, style.boxShadow, style.backdropFilter];
@@ -169,9 +230,9 @@ test("admin keeps secrets out of the shadcn control plane and mutates through AP
   await page.route("**/policy", (route) => { mutations.push(route.request().url()); return route.fulfill({ status: 204 }); });
   await page.goto(adminURL);
   await expect(page.locator("body")).toContainText("127.0.0.1:8080");
-  await expect(page.locator('img[src*="courier-relay-pixel-mark-v1"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-admin-v1"]')).toHaveCount(1);
-  await expect(page.locator('img[src*="courier-relay-pixel-route-v1"], img[src*="courier-relay-pixel-delivery-v1"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
+  await expect(page.locator('img[src*="courier-relay-pixel-mark-v2"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-admin-v2"]')).toHaveCount(1);
+  await expect(page.locator('img[src*="courier-relay-pixel-route-v2"], img[src*="courier-relay-pixel-delivery-v2"], img[src*="courier-relay-pixel-neutral-v1"]')).toHaveCount(0);
   await expect(page.locator("[data-courier-metrics]")).toHaveCount(1);
   for (const selector of ["[data-courier-metrics]", "[data-courier-admin-workspace]"]) {
     expect(await page.locator(selector).evaluate((node) => {

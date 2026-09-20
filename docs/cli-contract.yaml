@@ -1,5 +1,5 @@
-schema_version: 1
-contract_version: 0.14.0
+schema_version: 2
+contract_version: 0.15.0
 target_release: 0.2.0
 language: en
 
@@ -26,177 +26,261 @@ commands:
     usage: courier from <source> to <destination> [options]
     status: shipped
     system: false
+    arguments:
+      - {name: source, kind: endpoint, required: true, prefix: "", omit_when_flag: ""}
+      - {name: destination, kind: endpoint, required: true, prefix: to, omit_when_flag: ""}
     flags: [archive, extract, listen, background, auth, auth-attempts, auth-fail-action, limit, no-ui, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate, download-rate]
   - name: servers
     path: servers
     usage: courier servers
     status: shipped
     system: false
+    arguments: []
     flags: []
   - name: servers-stop
     path: servers stop
     usage: courier servers stop <uuid>|--all
     status: shipped
     system: false
+    arguments:
+      - {name: uuid, kind: uuid, required: true, prefix: "", omit_when_flag: all}
     flags: [all]
   - name: ui-start
     path: ui start
     usage: courier ui start [options]
     status: shipped
     system: false
+    arguments: []
     flags: [listen, background]
   - name: ui-stop
     path: ui stop
     usage: courier ui stop
     status: shipped
     system: false
+    arguments: []
     flags: []
   - name: help
     path: help
     usage: courier help [command]
     status: system
     system: true
+    arguments:
+      - {name: command, kind: command-path, required: false, prefix: "", omit_when_flag: ""}
     flags: []
   - name: version
     path: version
     usage: courier version
     status: system
     system: true
+    arguments: []
     flags: []
   - name: update
     path: update
     usage: courier update
     status: system
     system: true
+    arguments: []
     flags: []
 
 flags:
   - name: archive
     syntax: --archive
     status: shipped
+    value_kind: boolean
+    choices: []
+    placeholder: ""
     repeatable: false
     default: "false"
     applies_to: [path-to-path, path-to-web, path-to-http]
     conflicts: [extract]
+    requires: []
   - name: extract
     syntax: --extract
     status: shipped
+    value_kind: boolean
+    choices: []
+    placeholder: ""
     repeatable: false
     default: "false"
     applies_to: [path-to-path, web-to-path, webhook-to-path]
     conflicts: [archive]
+    requires: []
   - name: listen
     syntax: --listen <host:port>
     status: shipped
+    value_kind: host-port
+    choices: []
+    placeholder: host:port
     repeatable: false
     default: "127.0.0.1:8080"
     applies_to: [web-to-path, path-to-web, webhook-to-path, ui-start]
     conflicts: []
+    requires: []
   - name: background
     syntax: --background
     status: shipped
+    value_kind: boolean
+    choices: []
+    placeholder: ""
     repeatable: false
     default: "false"
     applies_to: [web-to-path, path-to-web, webhook-to-path, ui-start]
     conflicts: []
+    requires: []
   - name: auth
     syntax: --auth <none|basic|password>
     status: shipped
+    value_kind: enum
+    choices: [none, basic, password]
+    placeholder: none|basic|password
     repeatable: false
     default: none
     applies_to: [web-to-path, path-to-web, webhook-to-path, path-to-http]
     conflicts: []
+    requires: []
   - name: auth-attempts
     syntax: --auth-attempts <N>
     status: shipped
+    value_kind: unsigned
+    choices: []
+    placeholder: N
     repeatable: false
     default: "5"
     applies_to: [web-to-path, path-to-web, webhook-to-path]
     conflicts: []
+    requires: []
   - name: auth-fail-action
     syntax: --auth-fail-action <ban|stop>
     status: shipped
+    value_kind: enum
+    choices: [ban, stop]
+    placeholder: ban|stop
     repeatable: false
     default: ban
     applies_to: [web-to-path, path-to-web, webhook-to-path]
     conflicts: []
+    requires: []
   - name: limit
     syntax: --limit <N>
     status: shipped
+    value_kind: text
+    choices: []
+    placeholder: N|unlimited
     repeatable: false
     default: unlimited
     applies_to: [web-to-path, path-to-web, webhook-to-path]
     conflicts: []
+    requires: []
   - name: no-ui
     syntax: --no-ui
     status: shipped
+    value_kind: boolean
+    choices: []
+    placeholder: ""
     repeatable: false
     default: "false"
     applies_to: [path-to-web]
     conflicts: []
+    requires: []
   - name: allow-ip
     syntax: --allow-ip <IP/CIDR>
     status: shipped
+    value_kind: ip-cidr
+    choices: []
+    placeholder: IP/CIDR
     repeatable: true
     default: none
     applies_to: [web-to-path, path-to-web, webhook-to-path]
     conflicts: []
+    requires: []
   - name: exclude
     syntax: --exclude <pattern>
     status: shipped
+    value_kind: text
+    choices: []
+    placeholder: pattern
     repeatable: true
     default: none
     applies_to: [path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http]
     conflicts: []
+    requires: []
   - name: exclude-regex
     syntax: --exclude-regex <regex>
     status: shipped
+    value_kind: regex
+    choices: []
+    placeholder: regex
     repeatable: true
     default: none
     applies_to: [path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http]
     conflicts: []
+    requires: []
   - name: exclude-from
     syntax: --exclude-from <file>
     status: shipped
+    value_kind: path
+    choices: []
+    placeholder: file
     repeatable: true
     default: none
     applies_to: [path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http]
     conflicts: []
+    requires: []
   - name: max-file-size
     syntax: --max-file-size <size|unlimited>
     status: shipped
+    value_kind: quantity
+    choices: []
+    placeholder: size|unlimited
     repeatable: false
     default: 10GiB
     applies_to: [web-to-path, webhook-to-path]
     conflicts: []
+    requires: []
   - name: max-extracted-size
     syntax: --max-extracted-size <size|unlimited>
     status: shipped
+    value_kind: quantity
+    choices: []
+    placeholder: size|unlimited
     repeatable: false
     default: 100GiB
     applies_to: [path-to-path, web-to-path, webhook-to-path]
     conflicts: []
+    requires: [extract]
   - name: upload-rate
     syntax: --upload-rate <rate|unlimited>
     status: shipped
+    value_kind: rate
+    choices: []
+    placeholder: rate|unlimited
     repeatable: false
     default: unlimited
     applies_to: [local-to-ssh, ssh-to-ssh, web-to-path, webhook-to-path, path-to-http]
     conflicts: []
+    requires: []
   - name: download-rate
     syntax: --download-rate <rate|unlimited>
     status: shipped
+    value_kind: rate
+    choices: []
+    placeholder: rate|unlimited
     repeatable: false
     default: unlimited
     applies_to: [ssh-to-local, ssh-to-ssh, path-to-web]
     conflicts: []
+    requires: []
   - name: all
     syntax: --all
     status: shipped
+    value_kind: boolean
+    choices: []
+    placeholder: ""
     repeatable: false
     default: "false"
     applies_to: [servers-stop]
     conflicts: []
+    requires: []
 
 routes:
   - name: path-to-path

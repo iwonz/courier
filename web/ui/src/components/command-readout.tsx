@@ -23,10 +23,11 @@ export interface CommandReadoutProps extends React.HTMLAttributes<HTMLDivElement
   details?: React.ReactNode;
   footerActions?: React.ReactNode;
   sessionKey?: string;
+  copyDisabled?: boolean;
   copy?: typeof copyText;
 }
 
-export function CommandReadout({ heading, command, copyLabel, copiedLabel, copyFailedLabel, description, details, footerActions, sessionKey, copy = copyText, className, ...props }: CommandReadoutProps): React.JSX.Element {
+export function CommandReadout({ heading, command, copyLabel, copiedLabel, copyFailedLabel, description, details, footerActions, sessionKey, copyDisabled = false, copy = copyText, className, ...props }: CommandReadoutProps): React.JSX.Element {
   const [status, setStatus] = React.useState<"idle" | "copied" | "failed">("idle");
   React.useEffect(() => setStatus("idle"), [sessionKey]);
   const copyCommand = async (): Promise<void> => setStatus(await copy(command) ? "copied" : "failed");
@@ -34,7 +35,7 @@ export function CommandReadout({ heading, command, copyLabel, copiedLabel, copyF
   return <div className={cn("grid gap-3 py-2", className)} {...props}>
     <div className="flex min-h-12 items-center justify-between gap-3">
       <span className="text-xs font-semibold text-muted-foreground">{heading}</span>
-      <Button type="button" variant="ghost" size="sm" onClick={copyCommand} disabled={!command}>
+      <Button type="button" variant="ghost" size="sm" onClick={copyCommand} disabled={!command || copyDisabled}>
         <PixelIcon name={status === "copied" ? "check" : "copy"} />{copyLabel}
       </Button>
     </div>

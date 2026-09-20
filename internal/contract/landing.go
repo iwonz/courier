@@ -20,19 +20,33 @@ type LandingEndpoint struct {
 }
 
 type LandingCommand struct {
-	Name   string   `json:"name"`
-	Usage  string   `json:"usage"`
-	System bool     `json:"system"`
-	Flags  []string `json:"flags"`
+	Name      string            `json:"name"`
+	Path      string            `json:"path"`
+	Usage     string            `json:"usage"`
+	System    bool              `json:"system"`
+	Arguments []LandingArgument `json:"arguments"`
+	Flags     []string          `json:"flags"`
+}
+
+type LandingArgument struct {
+	Name         string `json:"name"`
+	Kind         string `json:"kind"`
+	Required     bool   `json:"required"`
+	Prefix       string `json:"prefix,omitempty"`
+	OmitWhenFlag string `json:"omitWhenFlag,omitempty"`
 }
 
 type LandingFlag struct {
-	Name       string   `json:"name"`
-	Syntax     string   `json:"syntax"`
-	Repeatable bool     `json:"repeatable"`
-	Default    string   `json:"default"`
-	AppliesTo  []string `json:"appliesTo"`
-	Conflicts  []string `json:"conflicts"`
+	Name        string   `json:"name"`
+	Syntax      string   `json:"syntax"`
+	ValueKind   string   `json:"valueKind"`
+	Choices     []string `json:"choices"`
+	Placeholder string   `json:"placeholder"`
+	Repeatable  bool     `json:"repeatable"`
+	Default     string   `json:"default"`
+	AppliesTo   []string `json:"appliesTo"`
+	Conflicts   []string `json:"conflicts"`
+	Requires    []string `json:"requires"`
 }
 
 type LandingRoute struct {
@@ -53,14 +67,19 @@ func (c Contract) Landing() LandingData {
 	}
 	for _, command := range c.Commands {
 		if command.Status == "shipped" || command.Status == "system" {
-			result.Commands = append(result.Commands, LandingCommand{Name: command.Name, Usage: command.Usage, System: command.System, Flags: append([]string(nil), command.Flags...)})
+			arguments := make([]LandingArgument, 0, len(command.Arguments))
+			for _, argument := range command.Arguments {
+				arguments = append(arguments, LandingArgument{Name: argument.Name, Kind: argument.Kind, Required: argument.Required, Prefix: argument.Prefix, OmitWhenFlag: argument.OmitWhenFlag})
+			}
+			result.Commands = append(result.Commands, LandingCommand{Name: command.Name, Path: command.Path, Usage: command.Usage, System: command.System, Arguments: arguments, Flags: append([]string(nil), command.Flags...)})
 		}
 	}
 	for _, flag := range c.Flags {
 		if flag.Status == "shipped" {
 			result.Flags = append(result.Flags, LandingFlag{
-				Name: flag.Name, Syntax: flag.Syntax, Repeatable: flag.Repeatable, Default: flag.Default,
-				AppliesTo: append([]string(nil), flag.AppliesTo...), Conflicts: append([]string(nil), flag.Conflicts...),
+				Name: flag.Name, Syntax: flag.Syntax, ValueKind: flag.ValueKind, Choices: append([]string(nil), flag.Choices...), Placeholder: flag.Placeholder,
+				Repeatable: flag.Repeatable, Default: flag.Default, AppliesTo: append([]string(nil), flag.AppliesTo...),
+				Conflicts: append([]string(nil), flag.Conflicts...), Requires: append([]string(nil), flag.Requires...),
 			})
 		}
 	}

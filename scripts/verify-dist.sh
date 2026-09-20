@@ -53,6 +53,7 @@ for helper_os in freebsd openbsd netbsd; do
   done
 done
 require_file "dist/courier_${version}_dragonfly_amd64.tar.gz"
+require_file "dist/courier_${version}_source.tar.gz"
 
 for target_arch in amd64 arm64; do
   require_file "dist/courier_${version}_linux_${target_arch}.deb"
@@ -61,7 +62,7 @@ for target_arch in amd64 arm64; do
   require_file "dist/courier_${version}_linux_${target_arch}.pkg.tar.zst"
 done
 
-[ -f dist/homebrew/Casks/courier.rb ]
+[ -f dist/homebrew/Formula/courier.rb ]
 [ -f dist/scoop/bucket/courier.json ]
 
 printf '%s\n' "Verified Courier release artifact matrix for $version"
