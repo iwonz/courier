@@ -57,9 +57,15 @@ func TestUpdaterSuccessAndCurrent(t *testing.T) {
 	manifest := []byte(hex.EncodeToString(hash[:]) + "  " + assetName + "\n")
 	releaseJSON := []byte(`{"tag_name":"v1.2.0","body":"release notes","assets":[{"name":"` + assetName + `","browser_download_url":"https://download/asset"},{"name":"checksums.txt","browser_download_url":"https://download/checksums"}]}`)
 	client := &fakeHTTPClient{responses: map[string]fakeResponse{
-		"https://api.github.com/repos/iwonz/courier/releases/latest": {body: releaseJSON},
-		"https://download/asset":     {body: archive},
-		"https://download/checksums": {body: manifest},
+		"https://api.github.com/repos/iwonz/courier/releases/latest": {
+			body: releaseJSON,
+		},
+		"https://download/asset": {
+			body: archive,
+		},
+		"https://download/checksums": {
+			body: manifest,
+		},
 	}}
 	root := t.TempDir()
 	executable := filepath.Join(root, "courier")
@@ -329,9 +335,15 @@ func TestUpdaterDefaultRuntimeWindowsAndRunFailures(t *testing.T) {
 		hash := sha256.Sum256(archive)
 		releaseJSON := []byte(`{"tag_name":"v1.0.0","assets":[{"name":"` + assetName + `","browser_download_url":"https://download/asset"},{"name":"checksums.txt","browser_download_url":"https://download/checksums"}]}`)
 		client := &fakeHTTPClient{responses: map[string]fakeResponse{
-			"https://api.github.com/repos/iwonz/courier/releases/latest": {body: releaseJSON},
-			"https://download/asset":     {body: archive},
-			"https://download/checksums": {body: []byte(hex.EncodeToString(hash[:]) + "  " + assetName)},
+			"https://api.github.com/repos/iwonz/courier/releases/latest": {
+				body: releaseJSON,
+			},
+			"https://download/asset": {
+				body: archive,
+			},
+			"https://download/checksums": {
+				body: []byte(hex.EncodeToString(hash[:]) + "  " + assetName),
+			},
 		}}
 		originalDefault := http.DefaultClient
 		http.DefaultClient = &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) { return client.Do(request) })}
