@@ -40,8 +40,11 @@ test("landing keeps the static header, official brands, route signal, and comman
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("From here to anywhere.");
   await expect(page.getByText("COURIER CLI")).toBeVisible();
-  await expect(page.locator("main > section")).toHaveCount(3);
-  expect(await page.locator("main > section").evaluateAll((sections) => sections.map((section) => section.id))).toEqual(["route", "install", "cli"]);
+  await expect(page.locator("main > section")).toHaveCount(2);
+  expect(await page.locator("main > section").evaluateAll((sections) => sections.map((section) => section.id))).toEqual(["route", "install"]);
+  await expect(page.locator("#route #cli")).toHaveCount(1);
+  await expect(page.locator("#route [data-courier-cli-readout]")).toHaveCount(1);
+  await expect(page.getByText("Route console")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Run|Replay/ })).toHaveCount(0);
   await expect(page.locator('img[src*="courier-relay-pixel-mark-v3"]')).toHaveCount(1);
   await expect(page.locator('img[src*="courier-relay-pixel-route-v3"]')).toHaveCount(1);
@@ -84,11 +87,10 @@ test("landing keeps the static header, official brands, route signal, and comman
     return style.backgroundColor !== "rgba(0, 0, 0, 0)" && style.color !== style.backgroundColor;
   })).toBe(true);
   const routeBottom = await page.locator("[data-courier-route-composition]").evaluate((node) => node.getBoundingClientRect().bottom + scrollY);
-  const installTop = await page.locator("#install h2").evaluate((node) => node.getBoundingClientRect().top + scrollY);
-  const installBottom = await page.locator("#install > div").evaluate((node) => node.getBoundingClientRect().bottom + scrollY);
   const cliTop = await page.locator("#cli h2").evaluate((node) => node.getBoundingClientRect().top + scrollY);
+  const installTop = await page.locator("#install h2").evaluate((node) => node.getBoundingClientRect().top + scrollY);
+  expect(cliTop).toBeLessThan(routeBottom);
   expect(installTop - routeBottom).toBeLessThanOrEqual(80);
-  expect(cliTop - installBottom).toBeLessThanOrEqual(80);
   const heroMascot = page.locator('#route img[width="512"][height="512"]');
   await expect(heroMascot).toBeVisible();
   expect(await heroMascot.evaluate((image) => Math.abs(image.getBoundingClientRect().width - image.getBoundingClientRect().height))).toBeLessThanOrEqual(1);
@@ -123,6 +125,9 @@ test("landing keeps the static header, official brands, route signal, and comman
   expect(await page.locator('a[href^="https://"]').evaluateAll((links) => links.every((link) => link.getAttribute("target") === "_blank" && link.getAttribute("rel") === "noopener noreferrer"))).toBe(true);
 
   const route = page.locator("#route");
+  await expect(route.locator("[data-courier-cli-readout] code")).toHaveText("courier from ./project to courier@host:/srv/destination/");
+  await expect(route.getByRole("textbox", { name: "source" })).toHaveValue("./project");
+  await expect(route.getByRole("textbox", { name: "destination" })).toHaveValue("courier@host:/srv/destination/");
   const routeCommand = route.locator("code").last();
   const webSource = route.getByRole("button", { name: "Web" }).first();
   const initial = await routeCommand.textContent();
@@ -130,12 +135,21 @@ test("landing keeps the static header, official brands, route signal, and comman
   await expect(routeCommand).toHaveText(initial!);
   await webSource.press("Enter");
   await expect(routeCommand).toContainText("web://");
+  await expect(route.getByRole("textbox", { name: "source" })).toHaveValue("web://");
   await expect(route.getByRole("button", { name: "Web" }).last()).toBeDisabled();
 
   await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: landingOrigin });
   await route.getByRole("button", { name: "Copy command" }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("courier from web:// to");
   const install = page.locator("#install");
+  const binaries = install.getByRole("link", { name: "Direct binaries" });
+  await expect(binaries).toHaveAttribute("href", "https://github.com/iwonz/courier/releases/latest");
+  await expect(install.getByRole("link", { name: "Linux packages" })).toHaveCount(0);
+  expect(await install.locator("[data-courier-install-channel-row]").evaluate((row) => {
+    const tabs = row.querySelector("[data-courier-install-tabs]")!.getBoundingClientRect();
+    const link = row.querySelector("a")!.getBoundingClientRect();
+    return link.left >= tabs.right - 1;
+  })).toBe(true);
   await install.getByRole("tab", { name: "npm", exact: true }).click();
   await expect(install.getByText("npm", { exact: true })).toHaveCount(1);
   const activeInstall = install.getByRole("tab", { name: "npm", exact: true });
@@ -152,7 +166,7 @@ test("landing keeps the static header, official brands, route signal, and comman
 
   const cli = page.locator("#cli");
   const compatibility = cli.getByRole("checkbox", { name: "Compatible with selected command" });
-  await expect(compatibility).toBeDisabled();
+  await expect(compatibility).toBeEnabled();
   for (const selector of ["[data-courier-cli-columns]", "[data-courier-cli-columns] > section"]) {
     expect(await cli.locator(selector).evaluateAll((nodes) => nodes.every((node) => {
       const style = getComputedStyle(node);
@@ -183,6 +197,11 @@ test("landing keeps the static header, official brands, route signal, and comman
   await expect(cli.locator("[data-courier-cli-readout] code")).toHaveText(powershell);
   await cli.locator("[data-courier-cli-readout]").getByRole("button", { name: "Copy command" }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(powershell);
+  await cli.getByRole("button", { name: "courier servers stop <uuid>|--all" }).click();
+  await expect(cli.locator("[data-courier-route-templates]")).toHaveCount(0);
+  await cli.getByRole("button", { name: "courier from <source> to <destination> [options]" }).click();
+  await expect(cli.locator("[data-courier-route-templates]")).toHaveCount(1);
+  await expect(cli.getByRole("textbox", { name: "source" })).toHaveValue("web://");
 
   await exerciseThemes(page);
   await selectRussian(page);
@@ -212,6 +231,19 @@ test("landing keeps the static header, official brands, route signal, and comman
         };
       })).toEqual(theme === "dark" ? expect.objectContaining({ background: "#000000", surface: "#0D1015", primary: "#71FFF6", actionFill: "#71FFF6", selectionFill: "#FAD14F", destructive: "#C94A55", bodyFont: expect.stringContaining("Overpass Mono"), headingFont: expect.stringContaining("Pixelify Sans") }) : expect.objectContaining({ background: "#FFFFFF", surface: "rgba(0, 0, 0, .04)", primary: "#006B67", actionFill: "#71FFF6", selectionFill: "#FAD14F", destructive: "#C94A55", bodyFont: expect.stringContaining("Overpass Mono"), headingFont: expect.stringContaining("Pixelify Sans") }));
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      expect(await page.locator("[data-courier-cli-command-list]").evaluate((list, width) => {
+        const style = getComputedStyle(list);
+        return width < 1024 ? style.display === "flex" && style.overflowX === "auto" && list.scrollWidth > list.clientWidth : style.display === "block" && style.overflowY === "auto";
+      }, viewport.width)).toBe(true);
+      expect(await page.locator("[data-courier-install-channel-row]").evaluate((row) => {
+        const tabs = row.querySelector("[data-courier-install-tabs]")!;
+        const link = row.querySelector("a")!;
+        const tabBounds = tabs.getBoundingClientRect();
+        const linkBounds = link.getBoundingClientRect();
+        const before = linkBounds.left;
+        tabs.scrollLeft = tabs.scrollWidth;
+        return linkBounds.left >= tabBounds.right - 1 && linkBounds.right <= innerWidth && link.getBoundingClientRect().left === before;
+      })).toBe(true);
       expect(await page.locator("main > section").evaluateAll((sections) => sections.every((section) => getComputedStyle(section).minHeight === "0px"))).toBe(true);
     }
   }

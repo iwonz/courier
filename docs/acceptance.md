@@ -12,9 +12,9 @@ Local prerequisites are Go 1.25+, Node.js 24+, Docker, OpenSpec 1.11.0, and the 
 
 Playwright runs landing, delivery, and administration in English/Russian and system/light/dark themes. It covers:
 
-- exactly three landing sections and the combined headline/route composition;
+- exactly two landing sections with a unified headline/route/command workspace and installation below;
 - pointer and keyboard selection for every valid route pair;
-- Copy for routes, every installation channel, and exact contract-built POSIX and PowerShell CLI commands;
+- one exact contract-built POSIX/PowerShell Copy action in the route/command workspace and Copy for every installation channel;
 - single-button theme/locale cycles, active-locale flag icons, browser defaults, persistence, and reduced motion;
 - 320×568, 390×844, 1024-wide, short desktop, and 1440×900 layouts in light and dark themes without clipping or horizontal overflow;
 - one compact transparent pixel mark plus the exact route, delivery, or administration role sprite required by the current surface, stable identity anatomy across every pose, no generated background or unrelated role request, and no external runtime requests;

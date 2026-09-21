@@ -80,10 +80,15 @@ describe("React landing", () => {
     expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v3");
   });
 
-  it("renders three natural sections, a compact square mascot, and secure external links", () => {
+  it("renders two natural sections, one unified command, a square mascot, and secure links", () => {
     render(<LandingApp />);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("From here to anywhere.");
-    expect(document.querySelectorAll("main > section")).toHaveLength(3);
+    expect([...document.querySelectorAll("main > section")].map((section) => section.id)).toEqual(["route", "install"]);
+    expect(document.querySelector("#route #cli")).toBeTruthy();
+    expect(document.querySelectorAll("#route [data-courier-cli-readout]")).toHaveLength(1);
+    expect(document.querySelectorAll("#route [data-courier-cli-readout] button")).toHaveLength(1);
+    expect(document.body.textContent).not.toContain("Route console");
+    expect(document.body.textContent).not.toContain("Linux packages");
     expect(document.querySelector("[data-courier-contract-metrics]")).toBeNull();
     const mascot = document.querySelector<HTMLImageElement>('img[width="512"][height="512"]')!;
     expect(mascot.src).toContain("courier-relay-pixel-route-v3");
@@ -100,6 +105,9 @@ describe("React landing", () => {
 
   it("selects only valid routes and keeps the generated command contract-backed", () => {
     render(<LandingApp />);
+    expect(screen.getByRole<HTMLInputElement>("textbox", { name: "source" }).value).toBe("./project");
+    expect(screen.getByRole<HTMLInputElement>("textbox", { name: "destination" }).value).toBe("courier@host:/srv/destination/");
+    expect(document.querySelector("[data-courier-cli-readout] code")?.textContent).toBe("courier from ./project to courier@host:/srv/destination/");
     fireEvent.click(screen.getAllByRole("button", { name: "Web Hook" })[0]!);
     expect(screen.getByText(/courier from webhook:\/\//).textContent).toContain("courier@host:/srv/destination/");
     fireEvent.click(screen.getAllByRole("button", { name: "Local" })[0]!);
@@ -117,6 +125,33 @@ describe("React landing", () => {
     expect(screen.getByText(/courier from \.\/project/).textContent).toContain("web://");
     fireEvent.click(screen.getAllByRole("button", { name: "Web" })[0]!);
     expect(screen.getByText(/courier from web:\/\//).textContent).toContain("./backup/");
+  });
+
+  it("uses route controls as editable templates and resets the single command on route or command changes", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    render(<LandingApp />);
+    const cli = document.querySelector("#cli")!;
+    const readout = cli.querySelector("[data-courier-cli-readout]")!;
+    const copy = Array.from(readout.querySelectorAll("button"))[0]!;
+    fireEvent.click(screen.getByRole("checkbox", { name: "--extract" }));
+    fireEvent.click(copy);
+    await waitFor(() => expect(readout.textContent).toContain("Copied"));
+    fireEvent.click(screen.getAllByRole("button", { name: "Local" })[1]!);
+    expect(screen.getByRole<HTMLInputElement>("textbox", { name: "destination" }).value).toBe("./backup/");
+    expect(screen.getByRole("checkbox", { name: "--extract" }).getAttribute("aria-checked")).toBe("false");
+    expect(readout.textContent).not.toContain("Copied");
+    fireEvent.click(screen.getAllByRole("button", { name: "Web" })[0]!);
+    expect(screen.getByRole<HTMLInputElement>("textbox", { name: "source" }).value).toBe("web://");
+    fireEvent.change(screen.getByRole("textbox", { name: "source" }), { target: { value: "custom folder" } });
+    expect(screen.getAllByRole("button", { name: "Web" })[0]!.getAttribute("aria-pressed")).toBe("true");
+    expect(readout.textContent).toContain("courier from 'custom folder' to ./backup/");
+    fireEvent.click(screen.getByRole("button", { name: "courier servers stop <uuid>|--all" }));
+    expect(document.querySelector("[data-courier-route-templates]")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "courier from <source> to <destination> [options]" }));
+    expect(screen.getByRole<HTMLInputElement>("textbox", { name: "source" }).value).toBe("web://");
+    expect(screen.getByRole<HTMLInputElement>("textbox", { name: "destination" }).value).toBe("./backup/");
+    expect(document.querySelectorAll("#route [data-courier-cli-readout]")).toHaveLength(1);
   });
 
   it("measures a grid-snapped bezier connector, responds to resize, and cleans its observer", () => {
@@ -151,6 +186,11 @@ describe("React landing", () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
     render(<LandingApp />);
+    const releaseLink = screen.getByRole("link", { name: "Direct binaries" });
+    expect(releaseLink.getAttribute("href")).toBe("https://github.com/iwonz/courier/releases/latest");
+    expect(releaseLink.parentElement?.getAttribute("data-courier-install-channel-row")).toBe("true");
+    expect(releaseLink.closest("[data-courier-install-tabs]")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Linux packages" })).toBeNull();
     const homebrew = screen.getByRole("tab", { name: /Homebrew/ });
     expect(homebrew.className).toContain("courier-install-tab");
     fireEvent.click(homebrew);
@@ -167,19 +207,22 @@ describe("React landing", () => {
     expect(screen.getAllByText("wget", { exact: true })).toHaveLength(1);
   });
 
-  it("filters options by selected command, exposes empty states, and clears selection", () => {
+  it("filters options by the active command and keeps one command selected", () => {
     render(<LandingApp />);
     const checkbox = screen.getByRole("checkbox", { name: "Compatible with selected command" });
-    expect(checkbox.hasAttribute("disabled")).toBe(true);
+    expect(checkbox.hasAttribute("disabled")).toBe(false);
+    expect(document.querySelector("[data-courier-route-templates]")).toBeTruthy();
     const uiStart = screen.getByRole("button", { name: "courier ui start [options]" });
     fireEvent.click(uiStart);
+    expect(document.querySelector("[data-courier-route-templates]")).toBeNull();
     expect(checkbox.hasAttribute("disabled")).toBe(false);
     expect(screen.getByText("--listen <host:port>")).toBeTruthy();
     expect(screen.getByText("--background")).toBeTruthy();
     fireEvent.click(checkbox);
     expect(screen.getAllByText("--archive").length).toBeGreaterThan(0);
     fireEvent.click(uiStart);
-    expect(checkbox.hasAttribute("disabled")).toBe(true);
+    expect(uiStart.getAttribute("aria-pressed")).toBe("true");
+    expect(checkbox.hasAttribute("disabled")).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "courier servers" }));
     expect(screen.getByText("This command has no options.")).toBeTruthy();
     expect(document.querySelector("[data-courier-cli-empty]")?.className).not.toContain("border");
@@ -191,9 +234,10 @@ describe("React landing", () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
     render(<LandingApp />);
-    fireEvent.click(screen.getByRole("button", { name: "courier from <source> to <destination> [options]" }));
     const cli = document.querySelector("#cli")!;
     const copy = Array.from(cli.querySelectorAll("button")).find((button) => button.textContent?.includes("Copy command"))!;
+    expect(copy.hasAttribute("disabled")).toBe(false);
+    fireEvent.change(screen.getByRole("textbox", { name: "source" }), { target: { value: "" } });
     expect(copy.hasAttribute("disabled")).toBe(true);
     fireEvent.change(screen.getByRole("textbox", { name: "source" }), { target: { value: "folder one" } });
     fireEvent.change(screen.getByRole("textbox", { name: "destination" }), { target: { value: "host:/srv/it's" } });
@@ -252,7 +296,8 @@ describe("React landing", () => {
     fireEvent.click(screen.getByRole("option", { name: "servers stop" }));
     expect(document.querySelector("#cli")?.textContent).toContain("courier help servers stop");
     fireEvent.click(from);
-    expect(screen.getByRole<HTMLInputElement>("textbox", { name: "source" }).value).toBe("");
+    expect(screen.getByRole<HTMLInputElement>("textbox", { name: "source" }).value).toBe("./project");
+    expect(document.querySelector("[data-courier-route-templates]")).toBeTruthy();
   });
 
   it("cycles locale without introducing removed explanatory labels", () => {
