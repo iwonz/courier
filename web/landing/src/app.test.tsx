@@ -66,7 +66,7 @@ describe("landing contract projection", () => {
     expect(commandFlags("servers-stop", true, contractData.commands, contractData.flags).map((flag) => flag.name)).toEqual(["all"]);
     expect(commandFlags("servers", true, contractData.commands, contractData.flags)).toEqual([]);
     expect(commandFlags("unknown", true, contractData.commands, contractData.flags)).toEqual([]);
-    expect(installs.map((install) => install.icon)).toEqual(["curl", undefined, "powershell", "npm", undefined, "yarn", "pnpm", "homebrew", "scoop"]);
+    expect(installs.map((install) => install.icon)).toEqual(["curl", undefined, "powershell", "npm", "npm", "yarn", "pnpm", "homebrew", "scoop"]);
   });
 });
 
@@ -190,6 +190,11 @@ describe("React landing", () => {
     expect(releaseLink.getAttribute("href")).toBe("https://github.com/iwonz/courier/releases/latest");
     expect(releaseLink.parentElement?.getAttribute("data-courier-install-channel-row")).toBe("true");
     expect(releaseLink.closest("[data-courier-install-tabs]")).toBeNull();
+    expect(releaseLink.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "npx" }).querySelector('img[data-brand-name="npm"]')).toBeTruthy();
+    expect(document.querySelector("[data-courier-cli-command-header]")).toBeNull();
+    expect(document.querySelector("#cli [data-courier-cli-readout]")?.textContent).not.toContain("Command");
+    expect(document.querySelector("#install")?.textContent).not.toContain("Command");
     expect(screen.queryByRole("link", { name: "Linux packages" })).toBeNull();
     const homebrew = screen.getByRole("tab", { name: /Homebrew/ });
     expect(homebrew.className).toContain("courier-install-tab");
@@ -304,10 +309,11 @@ describe("React landing", () => {
     render(<LandingApp />);
     expect(document.querySelector("[data-courier-route-composition]")).toBeTruthy();
     expect(document.querySelector("[data-courier-cli-registry]")).toBeTruthy();
-    expect(document.querySelector("[data-courier-route-composition]")?.className).toContain("bg-card");
+    expect(document.querySelector("[data-courier-route-composition]")?.className).not.toContain("bg-card");
     expect(document.querySelector("[data-courier-route-composition]")?.className).not.toMatch(/rounded|shadow|backdrop|border/);
+    expect(document.querySelector('#route img[src*="courier-relay-pixel-route-v3"]')?.parentElement?.className).not.toContain("bg-");
     expect(document.querySelector("[data-courier-cli-registry]")?.className).not.toMatch(/rounded|bg-card/);
-    for (const selector of ["[data-courier-cli-command-header]", "[data-courier-cli-options-header]", "[data-courier-cli-command]", "[data-builder-flag]", "[data-courier-cli-readout]"]) {
+    for (const selector of ["[data-courier-cli-options-header]", "[data-courier-cli-command]", "[data-builder-flag]", "[data-courier-cli-readout]"]) {
       expect(Array.from(document.querySelectorAll<HTMLElement>(selector)).every((node) => !/border-(?:b|y|border)/.test(node.className))).toBe(true);
     }
     expect(document.querySelector("header")?.className).not.toContain("fixed");

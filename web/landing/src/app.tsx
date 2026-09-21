@@ -35,7 +35,7 @@ export const installs: readonly InstallChannel[] = [
   { name: "wget", command: "wget -qO- https://raw.githubusercontent.com/iwonz/courier/main/install.sh | sh" },
   { name: "PowerShell", command: "irm https://raw.githubusercontent.com/iwonz/courier/main/install.ps1 | iex", icon: "powershell" },
   { name: "npm", command: "npm install --global @iwonz/courier", icon: "npm" },
-  { name: "npx", command: "npx @iwonz/courier --help" },
+  { name: "npx", command: "npx @iwonz/courier --help", icon: "npm" },
   { name: "Yarn", command: "yarn dlx @iwonz/courier --help", icon: "yarn" },
   { name: "pnpm", command: "pnpm dlx @iwonz/courier --help", icon: "pnpm" },
   { name: "Homebrew", command: "brew tap iwonz/courier https://github.com/iwonz/courier && brew install iwonz/courier/courier", icon: "homebrew" },
@@ -238,12 +238,12 @@ function LandingContent(): React.JSX.Element {
 
     <main>
       <section id="route" className="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        <div data-courier-route-composition className="relative isolate mx-auto grid w-full max-w-7xl bg-card">
+        <div data-courier-route-composition className="relative isolate mx-auto grid w-full max-w-7xl">
           <div className="grid lg:grid-cols-[minmax(0,.92fr)_minmax(22rem,1.08fr)]">
             <div className="relative z-10 grid content-between p-5 sm:p-8 lg:min-h-[28rem]">
               <h1 className="text-balance text-[clamp(3rem,7vw,6.8rem)] font-bold leading-[.88] tracking-[-.04em] text-foreground">{t("title")}</h1>
             </div>
-            <div className="relative grid min-h-72 place-items-center overflow-hidden bg-[var(--card)] p-4 lg:min-h-[28rem]">
+            <div className="relative grid min-h-72 place-items-center overflow-hidden p-4 lg:min-h-[28rem]">
               <RelaySprite role="route" className="relative z-10 w-[min(28rem,92%)]" />
             </div>
           </div>
@@ -251,7 +251,6 @@ function LandingContent(): React.JSX.Element {
             <h2 className="break-words text-3xl font-black leading-none tracking-[-.04em] sm:text-6xl">{t("cliTitle")}</h2>
             <div data-courier-cli-columns className="grid min-w-0 gap-8 lg:grid-cols-[minmax(18rem,.72fr)_minmax(0,1.28fr)]">
               <section className="min-w-0">
-                <div data-courier-cli-command-header className="px-3 py-4 text-sm font-semibold uppercase tracking-[.08em]">{t("commandLabel")}</div>
                 <div data-courier-cli-command-list className="flex min-w-0 gap-2 overflow-x-auto pb-2 lg:block lg:max-h-[31rem] lg:overflow-y-auto lg:pb-0">
                   {contractData.commands.map((command) => <Button key={command.name} type="button" variant={command.name === selectedCommand ? "secondary" : "ghost"} aria-label={command.usage} aria-pressed={command.name === selectedCommand} onClick={() => chooseCommand(command.name)} data-courier-cli-command className="h-auto shrink-0 justify-start whitespace-nowrap border-0 px-3 py-3 text-left lg:w-full lg:min-w-0 lg:whitespace-normal"><code className="font-mono text-xs leading-relaxed lg:min-w-0 lg:break-words"><span className="lg:hidden">courier {command.path}</span><span className="hidden lg:inline">{command.usage}</span></code></Button>)}
                 </div>
@@ -277,7 +276,7 @@ function LandingContent(): React.JSX.Element {
               </section>
             </div>
             <div className="flex justify-end gap-2 py-2" aria-label={t("shellLabel")}><Button type="button" size="sm" variant={shellMode === "posix" ? "default" : "ghost"} aria-pressed={shellMode === "posix"} onClick={() => setShellMode("posix")}>POSIX</Button><Button type="button" size="sm" variant={shellMode === "powershell" ? "default" : "ghost"} aria-pressed={shellMode === "powershell"} onClick={() => setShellMode("powershell")}>PowerShell</Button></div>
-            <CommandReadout className="px-3" data-courier-cli-readout heading={t("commandLabel")} command={builtCommand.command} copyDisabled={!builtCommand.valid} description={!builtCommand.valid ? t("completeCommand") : ""} sessionKey={`${locale}:${selectedCommand}:${shellMode}:${builtCommand.command}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
+            <CommandReadout className="px-3" data-courier-cli-readout command={builtCommand.command} copyDisabled={!builtCommand.valid} description={!builtCommand.valid ? t("completeCommand") : ""} sessionKey={`${locale}:${selectedCommand}:${shellMode}:${builtCommand.command}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
           </div>
         </div>
       </section>
@@ -287,9 +286,9 @@ function LandingContent(): React.JSX.Element {
           <h2 className="break-words text-3xl font-black leading-none tracking-[-.04em] sm:text-6xl">{t("install")}</h2>
           <div data-courier-install-channel-row className="flex min-w-0 items-center gap-2">
             <div data-courier-install-tabs className="flex min-w-0 flex-1 overflow-x-auto" role="tablist">{installs.map((channel) => <Button key={channel.name} type="button" role="tab" variant="ghost" className="courier-install-tab h-12 shrink-0 border-0 px-4" size="sm" aria-selected={channel.name === install.name} aria-pressed={channel.name === install.name} onClick={() => setActiveInstall(channel.name)}>{channel.icon ? <BrandIcon name={channel.icon} /> : null}{channel.name}</Button>)}</div>
-            <Button asChild variant="ghost" size="sm" className="shrink-0 whitespace-nowrap px-2 text-xs"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer">{t("direct")}</a></Button>
+            <Button asChild variant="ghost" size="sm" className="shrink-0 whitespace-nowrap px-2 text-xs"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><Icon name="download" />{t("direct")}</a></Button>
           </div>
-          <CommandReadout className="px-4 sm:px-6" heading={t("commandLabel")} command={install.command} sessionKey={`${locale}:${install.name}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
+          <CommandReadout data-courier-install-readout className="px-4 sm:px-6" command={install.command} sessionKey={`${locale}:${install.name}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
         </div>
       </section>
     </main>

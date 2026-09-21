@@ -7,9 +7,9 @@ export interface BrandProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 export function Brand({ compact = false, className, ...props }: BrandProps): React.JSX.Element {
-  return <span className={cn("inline-flex items-center gap-2 font-display font-bold", className)} {...props}>
+  return <span className={cn("inline-flex h-9 items-center gap-2 font-display font-bold leading-none", className)} {...props}>
     <img src={relayMarkSource} alt="" width="256" height="256" className="courier-pixel-image size-9 object-contain" />
-    {compact ? null : <span className="text-sm tracking-[.04em]">COURIER CLI</span>}
+    {compact ? null : <span className="inline-flex h-9 items-center text-sm tracking-[.04em]">COURIER CLI</span>}
   </span>;
 }
 

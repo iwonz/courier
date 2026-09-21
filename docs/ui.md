@@ -4,9 +4,9 @@ Courier's landing, delivery, and administration applications are independent Rea
 
 ## Shared primitives
 
-- `Brand` renders the 256×256 pixel Relay mark with a Pixelify Sans `COURIER CLI` wordmark. `RelaySprite` accepts the typed `neutral`, `route`, `delivery`, or `admin` role and resolves only that role's local asset.
+- `Brand` vertically centers the 256×256 pixel Relay mark with a Pixelify Sans `COURIER CLI` wordmark. `RelaySprite` accepts the typed `neutral`, `route`, `delivery`, or `admin` role and resolves only that role's local asset.
 - shadcn `Button`, `Card`, `Badge`, `Checkbox`, `Input`, `Select`, `Tabs`, `Tooltip`, `Progress`, `Separator`, `ScrollArea`, and `Alert` provide one accessible control grammar. `Card` is a transparent structural wrapper, not a visual panel.
-- `CommandReadout` presents immutable command text, Copy, reserved localized feedback, details, and footer actions directly on the document canvas.
+- `CommandReadout` presents immutable command text, Copy, reserved localized feedback, details, and footer actions directly on the document canvas; its heading is optional, so landing readouts omit the redundant `Command` label.
 - `ThemeSelector` and `LocaleSelector` are single cyclic icon buttons backed by one shared React preference provider and browser controller; locale visibly identifies its active language.
 - `RouteDisplay` and `PixelIcon` render first-party functional grid data with `currentColor` and crisp edges. `BrandIcon` renders official local transparent PNG geometry and color as a normal image; compatibility exports keep existing consumers source-compatible.
 
@@ -20,7 +20,7 @@ Product copy and source documentation remain English. `Source` and `Destination`
 
 ## Surface composition
 
-The landing combines Relay, Source/Destination route templates, and an unruled command builder in one workspace, followed by a calm installation chooser. Its two sections have no boundary rules or decorative counters; one generated command and Copy action reflect the active CLI form. Installation tabs do not animate or repeat the selected channel below the command, and a single direct-binaries link sits to their right. Editable controls retain their own boundaries and focus treatment. Delivery is a transfer console around a real protected password form and authorized ruled manifest. Administration is an operations console with API-derived counters, a keyboard-operable delivery navigator, and a selected policy inspector whose UUID selection survives SSE snapshots while valid.
+The landing combines Relay, Source/Destination route templates, and an unruled command builder in one transparent workspace, followed by a calm installation chooser. Its two sections have no boundary rules or decorative counters; one generated command and Copy action reflect the active CLI form without a visible command-list or readout label. Installation tabs do not animate or repeat the selected channel below the command; npx shares the official npm mark, and a direct-binaries link with a download icon sits to their right. Editable controls retain their own boundaries and focus treatment. Delivery is a transfer console around a real protected password form and authorized ruled manifest. Administration is an operations console with API-derived counters, a keyboard-operable delivery navigator, and a selected policy inspector whose UUID selection survives SSE snapshots while valid.
 
 All applications use the same terminal token system: black/white canvas, `#0D1015`/`#191C20` dark surfaces, opacity-derived light surfaces and rules, teal action/success, yellow selection/warning, and red destructive state. Square controls use one-pixel rules, two-pixel focus, and instant step states without chamfer, offset shadow, blur, or soft shadow. Flat bands and row rules provide hierarchy. Pixelify Sans is limited to the wordmark and H1/H2; locally bundled Overpass Mono 400/600 serves all interface copy and operational values. Layouts expand on narrow screens, preserve semantic actions, and avoid horizontal overflow.
 

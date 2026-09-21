@@ -52,12 +52,15 @@ test("landing keeps the static header, official brands, route signal, and comman
   await expect(page.locator("[data-courier-route-composition]")).toHaveCount(1);
   await expect(page.locator("[data-courier-contract-metrics]")).toHaveCount(0);
   await expect(page.locator("[data-courier-cli-registry]")).toHaveCount(1);
+  await expect(page.locator("[data-courier-cli-command-header]")).toHaveCount(0);
+  await expect(page.getByText("Command", { exact: true })).toHaveCount(0);
   for (const selector of ["[data-courier-route-composition]", "[data-courier-cli-registry]"]) {
     expect(await page.locator(selector).evaluate((node) => {
       const style = getComputedStyle(node);
-      return [style.backgroundImage, style.borderRadius, style.boxShadow, style.backdropFilter];
-    })).toEqual(["none", "0px", "none", "none"]);
+      return [style.backgroundColor, style.backgroundImage, style.borderRadius, style.boxShadow, style.backdropFilter];
+    })).toEqual(["rgba(0, 0, 0, 0)", "none", "0px", "none", "none"]);
   }
+  expect(await page.locator('#route img[src*="courier-relay-pixel-route-v3"]').evaluate((image) => getComputedStyle(image.parentElement!).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
   await expect(page.locator("header nav")).toHaveCount(0);
   expect(await page.locator("header").evaluate((node) => {
     const style = getComputedStyle(node);
@@ -72,6 +75,12 @@ test("landing keeps the static header, official brands, route signal, and comman
     })];
   });
   expect(Math.max(...headerCenters) - Math.min(...headerCenters)).toBeLessThanOrEqual(1);
+  const wordmarkCenters = await page.locator("header").evaluate((header) => {
+    const mark = header.querySelector('img[src*="courier-relay-pixel-mark-v3"]')!.getBoundingClientRect();
+    const wordmark = header.querySelector("a > span > span")!.getBoundingClientRect();
+    return [mark.top + mark.height / 2, wordmark.top + wordmark.height / 2];
+  });
+  expect(Math.abs(wordmarkCenters[0]! - wordmarkCenters[1]!)).toBeLessThanOrEqual(1);
   await page.evaluate(() => scrollTo(0, 600));
   await expect.poll(() => page.locator("header").evaluate((node) => node.getBoundingClientRect().bottom)).toBeLessThan(0);
   await page.evaluate(() => scrollTo(0, 0));
@@ -99,7 +108,7 @@ test("landing keeps the static header, official brands, route signal, and comman
   const brandImages = page.locator('img[src*="/brands/"]');
   expect(await brandImages.count()).toBeGreaterThan(0);
   expect(await brandImages.evaluateAll((images) => images.every((image) => image.getAttribute("src")?.endsWith(".png") && !["pixelated", "crisp-edges"].includes(getComputedStyle(image).imageRendering)))).toBe(true);
-  await expect(page.locator("#install button", { hasText: "npx" }).locator("img")).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: "npx" }).locator('img[data-brand-name="npm"]')).toHaveCount(1);
   await expect(page.locator("#install button", { hasText: "wget" }).locator("img")).toHaveCount(0);
 
   const signal = page.locator("[data-courier-route-signal]");
@@ -144,6 +153,7 @@ test("landing keeps the static header, official brands, route signal, and comman
   const install = page.locator("#install");
   const binaries = install.getByRole("link", { name: "Direct binaries" });
   await expect(binaries).toHaveAttribute("href", "https://github.com/iwonz/courier/releases/latest");
+  await expect(binaries.locator('svg[aria-hidden="true"]')).toHaveCount(1);
   await expect(install.getByRole("link", { name: "Linux packages" })).toHaveCount(0);
   expect(await install.locator("[data-courier-install-channel-row]").evaluate((row) => {
     const tabs = row.querySelector("[data-courier-install-tabs]")!.getBoundingClientRect();
@@ -173,7 +183,7 @@ test("landing keeps the static header, official brands, route signal, and comman
       return style.borderTopWidth === "0px" && style.borderRightWidth === "0px" && style.borderBottomWidth === "0px" && style.borderLeftWidth === "0px";
     }))).toBe(true);
   }
-  for (const selector of ["[data-courier-cli-command-header]", "[data-courier-cli-options-header]", "[data-courier-cli-command]", "[data-builder-flag]", "[data-courier-cli-readout]"]) {
+  for (const selector of ["[data-courier-cli-options-header]", "[data-courier-cli-command]", "[data-builder-flag]", "[data-courier-cli-readout]"]) {
     expect(await cli.locator(selector).evaluateAll((nodes) => nodes.every((node) => {
       const style = getComputedStyle(node);
       return style.borderTopWidth === "0px" && style.borderRightWidth === "0px" && style.borderBottomWidth === "0px" && style.borderLeftWidth === "0px";

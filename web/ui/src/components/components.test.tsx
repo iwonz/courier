@@ -96,6 +96,8 @@ describe("brand, icon, and geometry helpers", () => {
   it("renders compact and full brands plus the consistent role sprites", () => {
     const { container } = render(<><Brand /><Brand compact className="compact" />{(["neutral", "route", "delivery", "admin"] as const).map((role) => <RelaySprite key={role} role={role} alt={role} className="mascot" />)}</>);
     expect(screen.getAllByText("COURIER CLI")).toHaveLength(1);
+    expect(screen.getByText("COURIER CLI").className).toContain("items-center");
+    expect(screen.getByText("COURIER CLI").className).toContain("h-9");
     expect(container.querySelector('img[src*="courier-relay-pixel-mark-v3"]')?.getAttribute("width")).toBe("256");
     expect(screen.getByAltText("neutral").getAttribute("width")).toBe("512");
     expect(screen.getByAltText("route").getAttribute("height")).toBe("512");
@@ -155,5 +157,8 @@ describe("command readout", () => {
     expect(screen.getByRole("button", { name: "Copy" }).hasAttribute("disabled")).toBe(true);
     expect(screen.queryByText("Description")).toBeNull();
     expect(screen.queryByText("Release")).toBeNull();
+    rerender(<CommandReadout command="courier version" copyLabel="Copy" copiedLabel="Copied" copyFailedLabel="Failed" sessionKey="four" copy={copy} />);
+    expect(screen.queryByText("Command")).toBeNull();
+    expect(screen.getByRole("button", { name: "Copy" }).parentElement?.className).toContain("justify-end");
   });
 });
