@@ -21,7 +21,7 @@ Installation uses locally bundled transparent PNG marks in official geometry and
 
 ## Pixel Relay hero
 
-The 512×512 transparent route-v3 sprite appears inside the first section beside the Pixelify Sans headline. It depicts the terminal-palette Relay between code-native Source and Destination signals; its anatomy and proportions match neutral-v3, delivery-v3, admin-v3, and mark-v3. Installation does not create decorative images, background scenes, masks, repeated horizons, or stitched artwork. Product information never depends on the illustration.
+The 512×512 transparent route-v3 sprite appears inside the first section as a softened responsive layer occupying roughly half of the wide hero and sitting partially behind the Pixelify Sans headline. Its radial edge fade and reduced opacity keep the localized promise readable in both themes while the narrow layout shifts the artwork toward the edge. It depicts the terminal-palette Relay between code-native Source and Destination signals; its anatomy and proportions match neutral-v3, delivery-v3, admin-v3, and mark-v3. Installation does not create decorative images, background scenes, masks, repeated horizons, or stitched artwork. Product information never depends on the illustration.
 
 The route sprite is at most 64 KiB and the 256×256 mark is at most 24 KiB. The mark is also the favicon; the installation section allocates no decorative raster or requests any other role sprite. Both use pixelated sampling and transparent WebP.
 

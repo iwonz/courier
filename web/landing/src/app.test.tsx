@@ -89,6 +89,9 @@ describe("React landing", () => {
     expect(document.querySelectorAll("#route [data-courier-cli-readout] button")).toHaveLength(1);
     expect(document.querySelector("[data-courier-command-surface]")?.className).toContain("bg-muted/60");
     expect(document.querySelector("[data-courier-install-readout]")?.className).toContain("bg-muted/60");
+    expect(document.querySelector("[data-courier-command-surface]")?.textContent).not.toContain("Shell syntax");
+    expect(document.querySelector("[data-courier-shell-selector]")?.getAttribute("aria-label")).toBe("Shell syntax");
+    expect(document.querySelector("[data-courier-hero-art]")?.className).toContain("lg:w-[64%]");
     expect(document.body.textContent).not.toContain("Route console");
     expect(document.body.textContent).not.toContain("Linux packages");
     expect(document.querySelector("[data-courier-contract-metrics]")).toBeNull();

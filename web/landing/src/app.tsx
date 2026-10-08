@@ -239,12 +239,12 @@ function LandingContent(): React.JSX.Element {
     <main>
       <section id="route" className="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <div data-courier-route-composition className="relative isolate mx-auto grid w-full max-w-7xl">
-          <div className="grid lg:grid-cols-[minmax(0,.92fr)_minmax(22rem,1.08fr)]">
-            <div className="relative z-10 grid content-between p-5 sm:p-8 lg:min-h-[28rem]">
-              <h1 className="text-balance text-[clamp(3rem,7vw,6.8rem)] font-bold leading-[.88] tracking-[-.04em] text-foreground">{t("title")}</h1>
+          <div className="relative grid min-h-[24rem] overflow-hidden sm:min-h-[30rem] lg:min-h-[32rem]">
+            <div className="relative z-10 flex items-center p-5 sm:p-8">
+              <h1 className="max-w-[9ch] text-balance text-[clamp(3rem,7vw,6.8rem)] font-bold leading-[.88] tracking-[-.04em] text-foreground">{t("title")}</h1>
             </div>
-            <div className="relative grid min-h-72 place-items-center overflow-hidden p-4 lg:min-h-[28rem]">
-              <RelaySprite role="route" className="relative z-10 w-[min(28rem,92%)]" />
+            <div data-courier-hero-art className="pointer-events-none absolute inset-y-0 -right-[38%] z-0 grid w-[110%] place-items-center sm:-right-[18%] sm:w-[82%] lg:right-[1%] lg:w-[64%]">
+              <RelaySprite role="route" className="courier-hero-art w-full max-w-none" />
             </div>
           </div>
           <div id="cli" data-courier-cli-registry className="grid gap-6 p-5 sm:p-8">
@@ -275,12 +275,9 @@ function LandingContent(): React.JSX.Element {
                 </div>
               </section>
             </div>
-            <div data-courier-command-surface className="grid gap-2 bg-muted/60 p-3 sm:p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[.08em] text-muted-foreground">{t("shellLabel")}</span>
-                <div className="flex gap-1" aria-label={t("shellLabel")}><Button type="button" size="sm" variant={shellMode === "posix" ? "default" : "ghost"} aria-pressed={shellMode === "posix"} onClick={() => setShellMode("posix")}>POSIX</Button><Button type="button" size="sm" variant={shellMode === "powershell" ? "default" : "ghost"} aria-pressed={shellMode === "powershell"} onClick={() => setShellMode("powershell")}>PowerShell</Button></div>
-              </div>
-              <CommandReadout className="bg-transparent p-0" data-courier-cli-readout command={builtCommand.command} copyDisabled={!builtCommand.valid} description={!builtCommand.valid ? t("completeCommand") : ""} sessionKey={`${locale}:${selectedCommand}:${shellMode}:${builtCommand.command}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
+            <div data-courier-command-surface className="grid gap-3 bg-muted/60 px-4 py-4 sm:px-5 sm:py-5">
+              <div data-courier-shell-selector className="flex w-fit gap-1" aria-label={t("shellLabel")}><Button type="button" size="sm" variant={shellMode === "posix" ? "default" : "ghost"} aria-pressed={shellMode === "posix"} onClick={() => setShellMode("posix")}>POSIX</Button><Button type="button" size="sm" variant={shellMode === "powershell" ? "default" : "ghost"} aria-pressed={shellMode === "powershell"} onClick={() => setShellMode("powershell")}>PowerShell</Button></div>
+              <CommandReadout className="bg-transparent !p-0" data-courier-cli-readout command={builtCommand.command} copyDisabled={!builtCommand.valid} description={!builtCommand.valid ? t("completeCommand") : ""} sessionKey={`${locale}:${selectedCommand}:${shellMode}:${builtCommand.command}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
             </div>
           </div>
         </div>

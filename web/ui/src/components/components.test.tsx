@@ -162,5 +162,8 @@ describe("command readout", () => {
     expect(screen.queryByText("Command")).toBeNull();
     expect(screen.getByText("courier version").nextElementSibling?.contains(screen.getByRole("button", { name: "Copy" }))).toBe(true);
     expect(screen.getByRole("button", { name: "Copy" }).parentElement?.className).not.toContain("justify-end");
+    expect(screen.getByRole("button", { name: "Copy" }).className).toContain("hover:bg-transparent");
+    expect(screen.getByRole("button", { name: "Copy" }).className).toContain("hover:underline");
+    expect(screen.getByRole("button", { name: "Copy" }).className).toContain("p-0");
   });
 });
