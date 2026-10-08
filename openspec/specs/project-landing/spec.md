@@ -98,7 +98,7 @@ The landing SHALL render two naturally scrolling top-level sections: a hero cont
 
 ### Requirement: Illustrated operational landing
 
-The route hero SHALL compose one local transparent amorphous pixel-art journey containing the recognizable Relay pigeon, a cyan route, and symbolic local-folder, remote-server, browser-portal, and parcel-delivery destinations. The illustration SHALL occupy approximately half of the available wide-screen hero, scale responsively, use softened opacity and edges, and MAY sit partially behind the localized headline without reducing its contrast or readability. The generated artwork SHALL remain decorative, inert, stable, and free of text, credentials, logos, fake interactive UI, an opaque rectangular background, or required information. Semantic shadcn controls and code-native Source-to-Destination geometry SHALL continue presenting every route and command function.
+The route hero SHALL compose one local transparent amorphous pixel-art journey containing the recognizable Relay pigeon, a cyan route, and symbolic local-folder, remote-server, browser-portal, and parcel-delivery destinations. The illustration SHALL preserve its intended terminal palette without a fading mask, occupy approximately half of the available wide-screen hero, scale responsively, and remain fully visible within the hero's vertical bounds. Narrow layouts SHALL place the complete square illustration below the localized headline, while wider layouts MAY place it near or partially behind the headline without reducing contrast or readability. The generated artwork SHALL remain decorative, inert, stable, and free of text, credentials, logos, fake interactive UI, an opaque rectangular background, or required information. Semantic shadcn controls and code-native Source-to-Destination geometry SHALL continue presenting every route and command function.
 
 #### Scenario: The landing loads
 
@@ -148,7 +148,7 @@ The route hero SHALL compose one local transparent amorphous pixel-art journey c
 #### Scenario: The hero reflows
 
 - **WHEN** the hero renders at a supported narrow or wide viewport in either theme
-- **THEN** the softened route illustration supports the headline as a partial background without clipping the headline or creating horizontal overflow
+- **THEN** the illustration retains its full palette and complete vertical silhouette without clipping the headline, overflowing horizontally, or losing its lower edge
 
 ### Requirement: Contract-backed interactive route illustration
 
@@ -411,7 +411,7 @@ The landing SHALL place the headline, Relay, and unified command workspace direc
 
 ### Requirement: Quiet command surfaces
 
-The landing SHALL group the generated CLI command with its shell selector and present installation commands in compact, flat, low-contrast surface bands. The shell selector SHALL retain a localized accessible name without rendering that name as a visible label. Shell selection, command text, and Copy SHALL share a consistent inline-start axis and even surface padding. Each Copy action SHALL appear immediately below its command as an icon-led text action whose pointer hover changes its link treatment without adding a background fill. The masthead SHALL share the continuous page canvas without an opaque background fill. These treatments SHALL retain square corners, visible focus, localized status feedback, command wrapping, and keyboard access.
+The landing SHALL group the generated CLI command with its shell selector and present installation commands in compact, flat, low-contrast surface bands. The shell selector SHALL retain a localized accessible name without rendering that name as a visible label. Shell selection, command text, and Copy SHALL share a consistent inline-start axis and even surface padding. Each Copy action SHALL appear immediately below its command as an icon-led text action whose pointer hover changes its link treatment without adding a background fill, and each enabled Copy action SHALL expose a pointer cursor. The masthead SHALL share the continuous page canvas without an opaque background fill. These treatments SHALL retain square corners, visible focus, localized status feedback, command wrapping, and keyboard access.
 
 #### Scenario: A visitor reads a generated command
 
@@ -425,8 +425,8 @@ The landing SHALL group the generated CLI command with its shell selector and pr
 
 #### Scenario: A pointer hovers Copy
 
-- **WHEN** a visitor hovers the Copy action
-- **THEN** its icon and text gain the link emphasis without a button-shaped background fill
+- **WHEN** a visitor hovers an enabled Copy action
+- **THEN** its icon and text gain the link emphasis, its cursor is a pointer, and no button-shaped background fill appears
 
 #### Scenario: A visitor chooses an installation channel
 

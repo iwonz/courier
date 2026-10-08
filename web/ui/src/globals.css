@@ -169,11 +169,7 @@
 
 @layer components {
   .courier-pixel-image { image-rendering: pixelated; }
-  .courier-hero-art {
-    opacity: .24;
-    -webkit-mask-image: radial-gradient(ellipse 72% 76% at 52% 50%, #000 38%, rgba(0, 0, 0, .82) 62%, transparent 92%);
-    mask-image: radial-gradient(ellipse 72% 76% at 52% 50%, #000 38%, rgba(0, 0, 0, .82) 62%, transparent 92%);
-  }
+  .courier-hero-art { opacity: 1; }
   .courier-pixel-control {
     border-radius: 0;
   }
@@ -186,21 +182,21 @@
 }
 
 @media (min-width: 640px) {
-  .courier-hero-art { opacity: .4; }
+  .courier-hero-art { opacity: .92; }
 }
 
 @media (min-width: 1024px) {
-  .courier-hero-art { opacity: .58; }
+  .courier-hero-art { opacity: 1; }
 }
 
-[data-courier-theme="dark"] .courier-hero-art { opacity: .2; }
+[data-courier-theme="dark"] .courier-hero-art { opacity: 1; }
 
 @media (min-width: 640px) {
-  [data-courier-theme="dark"] .courier-hero-art { opacity: .34; }
+  [data-courier-theme="dark"] .courier-hero-art { opacity: .94; }
 }
 
 @media (min-width: 1024px) {
-  [data-courier-theme="dark"] .courier-hero-art { opacity: .48; }
+  [data-courier-theme="dark"] .courier-hero-art { opacity: 1; }
 }
 
 @keyframes courier-pixel-route {

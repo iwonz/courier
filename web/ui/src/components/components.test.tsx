@@ -164,6 +164,7 @@ describe("command readout", () => {
     expect(screen.getByRole("button", { name: "Copy" }).parentElement?.className).not.toContain("justify-end");
     expect(screen.getByRole("button", { name: "Copy" }).className).toContain("hover:bg-transparent");
     expect(screen.getByRole("button", { name: "Copy" }).className).toContain("hover:underline");
+    expect(screen.getByRole("button", { name: "Copy" }).className).toContain("cursor-pointer");
     expect(screen.getByRole("button", { name: "Copy" }).className).toContain("p-0");
   });
 });

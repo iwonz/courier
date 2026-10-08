@@ -239,12 +239,12 @@ function LandingContent(): React.JSX.Element {
     <main>
       <section id="route" className="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <div data-courier-route-composition className="relative isolate mx-auto grid w-full max-w-7xl">
-          <div className="relative grid min-h-[24rem] overflow-hidden sm:min-h-[30rem] lg:min-h-[32rem]">
+          <div className="relative grid overflow-hidden sm:min-h-[32rem] lg:min-h-[38rem]">
             <div className="relative z-10 flex items-center p-5 sm:p-8">
               <h1 className="max-w-[9ch] text-balance text-[clamp(3rem,7vw,6.8rem)] font-bold leading-[.88] tracking-[-.04em] text-foreground">{t("title")}</h1>
             </div>
-            <div data-courier-hero-art className="pointer-events-none absolute inset-y-0 -right-[38%] z-0 grid w-[110%] place-items-center sm:-right-[18%] sm:w-[82%] lg:right-[1%] lg:w-[64%]">
-              <RelaySprite role="route" className="courier-hero-art w-full max-w-none" />
+            <div data-courier-hero-art className="pointer-events-none relative z-0 flex justify-center px-5 pb-6 sm:absolute sm:inset-y-6 sm:-right-[18%] sm:w-[82%] sm:items-center sm:justify-start sm:p-0 lg:inset-y-0 lg:right-[1%] lg:w-[64%]">
+              <RelaySprite role="route" className="courier-hero-art h-auto w-full max-w-[22rem] sm:h-full sm:w-auto sm:max-w-none" />
             </div>
           </div>
           <div id="cli" data-courier-cli-registry className="grid gap-6 p-5 sm:p-8">

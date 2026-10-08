@@ -103,6 +103,13 @@ test("landing keeps the static header, official brands, route signal, and comman
   const heroMascot = page.locator('#route img[width="512"][height="512"]');
   await expect(heroMascot).toBeVisible();
   expect(await heroMascot.evaluate((image) => Math.abs(image.getBoundingClientRect().width - image.getBoundingClientRect().height))).toBeLessThanOrEqual(1);
+  expect(await heroMascot.evaluate((image) => {
+    const imageBounds = image.getBoundingClientRect();
+    const heroBounds = image.closest("[data-courier-hero-art]")!.parentElement!.getBoundingClientRect();
+    return imageBounds.top >= heroBounds.top - 1 && imageBounds.bottom <= heroBounds.bottom + 1;
+  })).toBe(true);
+  expect(await heroMascot.evaluate((image) => getComputedStyle(image).opacity)).toBe("1");
+  expect(await page.locator("[data-courier-copy-action]").evaluateAll((actions) => actions.every((action) => getComputedStyle(action).cursor === "pointer"))).toBe(true);
   await expect(page.locator('path[vector-effect="non-scaling-stroke"]')).toHaveAttribute("d", / H .* V /);
 
   const brandImages = page.locator('img[src*="/brands/"]');

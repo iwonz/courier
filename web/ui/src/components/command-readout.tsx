@@ -36,7 +36,7 @@ export function CommandReadout({ heading, command, copyLabel, copiedLabel, copyF
     {heading ? <span className="text-xs font-semibold text-muted-foreground">{heading}</span> : null}
     {command ? <code className="overflow-x-auto whitespace-pre-wrap break-words font-mono text-sm font-semibold leading-relaxed text-foreground">{command}</code> : null}
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-      <Button data-courier-copy-action type="button" variant="ghost" size="sm" className="h-auto min-h-0 justify-start border-0 bg-transparent p-0 text-xs text-muted-foreground hover:bg-transparent hover:text-primary hover:underline hover:underline-offset-4 active:bg-transparent active:text-primary focus-visible:text-primary focus-visible:underline focus-visible:underline-offset-4" onClick={copyCommand} disabled={!command || copyDisabled}>
+      <Button data-courier-copy-action type="button" variant="ghost" size="sm" className="h-auto min-h-0 cursor-pointer justify-start border-0 bg-transparent p-0 text-xs text-muted-foreground hover:bg-transparent hover:text-primary hover:underline hover:underline-offset-4 active:bg-transparent active:text-primary focus-visible:text-primary focus-visible:underline focus-visible:underline-offset-4" onClick={copyCommand} disabled={!command || copyDisabled}>
         <PixelIcon name={status === "copied" ? "check" : "copy"} />{copyLabel}
       </Button>
       <span className={cn("text-xs font-medium text-primary", !live && "sr-only")} aria-live="polite">{live}</span>
