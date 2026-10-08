@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,8 +29,16 @@ func TestUnixTransport(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(directory) })
 	endpoint, err := ControlEndpoint(directory, requestID)
-	if err != nil || filepath.Dir(endpoint) != directory {
+	if err != nil || filepath.Dir(endpoint) != directory || filepath.Base(endpoint) != "00000000000040008000000000000101" {
 		t.Fatalf("endpoint=%q err=%v", endpoint, err)
+	}
+	other, err := ControlEndpoint(directory, delivery.ID("00000000-0000-4000-8000-000000000102"))
+	if err != nil || other == endpoint {
+		t.Fatalf("other endpoint=%q err=%v", other, err)
+	}
+	macOSDefault, err := ControlEndpoint("/Users/iwonz/Library/Application Support/courier/state", requestID)
+	if err != nil || len(macOSDefault) != 87 || len(macOSDefault) >= 104 {
+		t.Fatalf("macOS endpoint=%q length=%d err=%v", macOSDefault, len(macOSDefault), err)
 	}
 	if _, err := Listen(""); !errors.Is(err, ErrProtocol) {
 		t.Fatalf("empty listen=%v", err)
@@ -76,6 +85,61 @@ func TestUnixTransport(t *testing.T) {
 	}
 	if err := listener.Close(); err == nil {
 		t.Fatal("second close unexpectedly succeeded")
+	}
+}
+
+func TestDarwinUnixSocketPathBoundary(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("Darwin Unix sockets have a 104-byte sockaddr path buffer")
+	}
+	root, err := os.MkdirTemp("/private/tmp", "c-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(root) })
+	const endpointLength = 32
+	paddingLength := 103 - len(root) - endpointLength - 2
+	if paddingLength <= 0 {
+		t.Fatalf("temporary root is too long: %q", root)
+	}
+	directory := filepath.Join(root, strings.Repeat("d", paddingLength))
+	if err := os.Mkdir(directory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	endpoint, err := ControlEndpoint(directory, requestID)
+	if err != nil || len(endpoint) != 103 {
+		t.Fatalf("endpoint=%q length=%d err=%v", endpoint, len(endpoint), err)
+	}
+	listener, err := Listen(endpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = listener.Close() })
+	accepted := make(chan error, 1)
+	go func() {
+		connection, acceptErr := listener.Accept()
+		if acceptErr == nil {
+			acceptErr = connection.Close()
+		}
+		accepted <- acceptErr
+	}()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	connection, err := Dial(ctx, endpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := connection.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-accepted; err != nil {
+		t.Fatal(err)
+	}
+	if err := listener.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Lstat(endpoint); !os.IsNotExist(err) {
+		t.Fatalf("socket remains: %v", err)
 	}
 }
 

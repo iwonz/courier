@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/iwonz/courier/internal/delivery"
 )
@@ -27,7 +28,7 @@ func ControlEndpoint(stateDirectory string, serverID delivery.ID) (string, error
 	if stateDirectory == "" || !serverID.Valid() {
 		return "", fmt.Errorf("%w: state directory and server ID are required", ErrProtocol)
 	}
-	return filepath.Join(stateDirectory, "control-"+string(serverID)+".sock"), nil
+	return filepath.Join(stateDirectory, strings.ReplaceAll(string(serverID), "-", "")), nil
 }
 
 func Listen(endpoint string) (net.Listener, error) {

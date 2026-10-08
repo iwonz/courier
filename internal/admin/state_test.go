@@ -63,7 +63,7 @@ func validAdminState(directory string) State {
 	id := delivery.ID("00000000-0000-4000-8000-000000000701")
 	return State{
 		SchemaVersion: adminStateSchema, ID: id, Bind: "127.0.0.1:9090",
-		ControlEndpoint: filepath.Join(directory, "control-"+string(id)+".sock"), Compatibility: "admin-v1/test",
+		ControlEndpoint: filepath.Join(directory, "00000000000040008000000000000701"), Compatibility: "admin-v1/test",
 		ProcessID: 42, StartedAt: adminTestTime,
 	}
 }
@@ -73,6 +73,11 @@ func TestAdminStateAndBindValidation(t *testing.T) {
 	state := validAdminState(directory)
 	if err := state.Validate(); err != nil {
 		t.Fatal(err)
+	}
+	legacy := state
+	legacy.ControlEndpoint = filepath.Join(directory, "control-"+string(state.ID)+".sock")
+	if err := legacy.Validate(); err != nil {
+		t.Fatalf("legacy control endpoint=%v", err)
 	}
 	for _, mutate := range []func(*State){
 		func(value *State) { value.SchemaVersion = 2 },

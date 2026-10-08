@@ -18,7 +18,7 @@ Launch configuration is a short-lived private file containing only the state dir
 
 ## Control transport and protocol
 
-Unix-like systems use a `0600` Unix-domain socket inside Courier's private state directory. Windows uses a named pipe with a current-user-only security descriptor. This operating-system access control is the local authentication boundary; Courier does not expose remote administration through this transport.
+Unix-like systems use a `0600` Unix-domain socket inside Courier's private state directory. New socket filenames preserve all 128 UUID bits as 32 lowercase hexadecimal characters without separators, keeping the default macOS path within Darwin's Unix-socket limit. Stored legacy endpoint paths remain authoritative for already-running workers. Windows uses a named pipe with a current-user-only security descriptor. This operating-system access control is the local authentication boundary; Courier does not expose remote administration through this transport.
 
 Every message has a four-byte network-order length followed by strict JSON. Frames are limited to 1 MiB before payload allocation. Envelopes contain protocol version `1`, a canonical non-zero request UUID, an operation, and an optional typed payload. Unknown fields, unknown operations, unsupported versions, malformed UUIDs, trailing JSON, and oversized frames fail before dispatch.
 
