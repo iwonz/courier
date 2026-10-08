@@ -225,7 +225,7 @@ function LandingContent(): React.JSX.Element {
   };
 
   return <div className="min-h-screen overflow-x-clip">
-    <header className="bg-background">
+    <header>
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
         <a href="#route" className="courier-pixel-focus shrink-0 outline-none"><Brand /></a>
         <div className="ml-auto flex items-center gap-2">
@@ -275,8 +275,13 @@ function LandingContent(): React.JSX.Element {
                 </div>
               </section>
             </div>
-            <div className="flex justify-end gap-2 py-2" aria-label={t("shellLabel")}><Button type="button" size="sm" variant={shellMode === "posix" ? "default" : "ghost"} aria-pressed={shellMode === "posix"} onClick={() => setShellMode("posix")}>POSIX</Button><Button type="button" size="sm" variant={shellMode === "powershell" ? "default" : "ghost"} aria-pressed={shellMode === "powershell"} onClick={() => setShellMode("powershell")}>PowerShell</Button></div>
-            <CommandReadout className="px-3" data-courier-cli-readout command={builtCommand.command} copyDisabled={!builtCommand.valid} description={!builtCommand.valid ? t("completeCommand") : ""} sessionKey={`${locale}:${selectedCommand}:${shellMode}:${builtCommand.command}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
+            <div data-courier-command-surface className="grid gap-2 bg-muted/60 p-3 sm:p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[.08em] text-muted-foreground">{t("shellLabel")}</span>
+                <div className="flex gap-1" aria-label={t("shellLabel")}><Button type="button" size="sm" variant={shellMode === "posix" ? "default" : "ghost"} aria-pressed={shellMode === "posix"} onClick={() => setShellMode("posix")}>POSIX</Button><Button type="button" size="sm" variant={shellMode === "powershell" ? "default" : "ghost"} aria-pressed={shellMode === "powershell"} onClick={() => setShellMode("powershell")}>PowerShell</Button></div>
+              </div>
+              <CommandReadout className="bg-transparent p-0" data-courier-cli-readout command={builtCommand.command} copyDisabled={!builtCommand.valid} description={!builtCommand.valid ? t("completeCommand") : ""} sessionKey={`${locale}:${selectedCommand}:${shellMode}:${builtCommand.command}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
+            </div>
           </div>
         </div>
       </section>
@@ -288,7 +293,7 @@ function LandingContent(): React.JSX.Element {
             <div data-courier-install-tabs className="flex min-w-0 flex-1 overflow-x-auto" role="tablist">{installs.map((channel) => <Button key={channel.name} type="button" role="tab" variant="ghost" className="courier-install-tab h-12 shrink-0 border-0 px-4" size="sm" aria-selected={channel.name === install.name} aria-pressed={channel.name === install.name} onClick={() => setActiveInstall(channel.name)}>{channel.icon ? <BrandIcon name={channel.icon} /> : null}{channel.name}</Button>)}</div>
             <Button asChild variant="ghost" size="sm" className="shrink-0 whitespace-nowrap px-2 text-xs"><a href="https://github.com/iwonz/courier/releases/latest" target="_blank" rel="noopener noreferrer"><Icon name="download" />{t("direct")}</a></Button>
           </div>
-          <CommandReadout data-courier-install-readout className="px-4 sm:px-6" command={install.command} sessionKey={`${locale}:${install.name}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
+          <CommandReadout data-courier-install-readout command={install.command} sessionKey={`${locale}:${install.name}`} copyLabel={t("copyCommand")} copiedLabel={t("copiedCommand")} copyFailedLabel={t("copyFailed")} />
         </div>
       </section>
     </main>

@@ -65,7 +65,7 @@ test("landing keeps the static header, official brands, route signal, and comman
   expect(await page.locator("header").evaluate((node) => {
     const style = getComputedStyle(node);
     return [style.position, style.backgroundColor, style.backgroundImage, style.backdropFilter, style.borderBottomWidth];
-  })).toEqual(["static", "rgb(255, 255, 255)", "none", "none", "0px"]);
+  })).toEqual(["static", "rgba(0, 0, 0, 0)", "none", "none", "0px"]);
   const headerCenters = await page.locator("header").evaluate((header) => {
     const brand = header.querySelector(":scope > div > a")!.getBoundingClientRect();
     const controls = Array.from(header.querySelectorAll(":scope > div > div > a, :scope > div > div > button"));

@@ -80,13 +80,15 @@ describe("React landing", () => {
     expect(document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.href).toContain("courier-relay-pixel-mark-v3");
   });
 
-  it("renders two natural sections, one unified command, a square mascot, and secure links", () => {
+  it("renders two natural sections, one unified command, a thematic route illustration, and secure links", () => {
     render(<LandingApp />);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("From here to anywhere.");
     expect([...document.querySelectorAll("main > section")].map((section) => section.id)).toEqual(["route", "install"]);
     expect(document.querySelector("#route #cli")).toBeTruthy();
     expect(document.querySelectorAll("#route [data-courier-cli-readout]")).toHaveLength(1);
     expect(document.querySelectorAll("#route [data-courier-cli-readout] button")).toHaveLength(1);
+    expect(document.querySelector("[data-courier-command-surface]")?.className).toContain("bg-muted/60");
+    expect(document.querySelector("[data-courier-install-readout]")?.className).toContain("bg-muted/60");
     expect(document.body.textContent).not.toContain("Route console");
     expect(document.body.textContent).not.toContain("Linux packages");
     expect(document.querySelector("[data-courier-contract-metrics]")).toBeNull();
@@ -317,7 +319,7 @@ describe("React landing", () => {
       expect(Array.from(document.querySelectorAll<HTMLElement>(selector)).every((node) => !/border-(?:b|y|border)/.test(node.className))).toBe(true);
     }
     expect(document.querySelector("header")?.className).not.toContain("fixed");
-    expect(document.querySelector("header")?.className).toContain("bg-background");
+    expect(document.querySelector("header")?.className).not.toContain("bg-background");
     const activeLocal = document.querySelector<HTMLButtonElement>('[data-courier-route-composition] button[aria-label="Local"][aria-pressed="true"]');
     expect(activeLocal?.className).toContain("bg-[var(--terminal-fill-action)]");
     expect(activeLocal?.className).not.toContain("bg-background");

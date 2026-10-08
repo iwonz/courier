@@ -30,19 +30,19 @@
     {
       "path": "courier-relay-pixel-mark-v3.webp",
       "mediaType": "image/webp",
-      "bytes": 13006,
-      "sha256": "903a04c6b82326f68b52603e0f71bd862808dd9d2fd266a890179d1f11f79806",
+      "bytes": 12550,
+      "sha256": "f734d2675393b793b0922a1dc125324fe688d397de1db86d6c1ace4d0f2179cc",
       "width": 256,
       "height": 256,
       "transparent": true,
       "role": "mark",
       "identityRevision": "relay-pixel-v3",
       "identityReference": "courier-relay-pixel-neutral-v3.webp",
-      "editSource": "courier-relay-pixel-mark-v2.webp",
+      "editSource": "courier-relay-pixel-mark-v3.webp@903a04c6b82326f68b52603e0f71bd862808dd9d2fd266a890179d1f11f79806",
       "use": "Compact header, product chrome, and favicon mark",
       "consumers": ["web/ui/src/components/brand-react.tsx", "web/landing/src/main.tsx", "web/data/src/main.tsx", "web/admin/src/main.tsx"],
-      "prompt": "Precise-object-edit of mark-v3: replace rounded head, body, wing, tail, and satchel contours with flat stepped planes and square right-angle pixel clusters while preserving the exact compact pose, identity, objects, terminal palette, crop, and alpha; no antialiasing, effects, text, or new objects.",
-      "lineage": "imagegen:01a0ba95-413f-7a60-be47-592ef819ea38/exec-58a013d0-a9ce-47e9-8010-207880d84f6b"
+      "prompt": "Create a precise identity-preserving edit for Courier's small product mark. Preserve Relay's pigeon, eye, beak, earpiece, satchel, parcel, feet, and terminal palette, but recompose them into a compact near-square upright silhouette with even transparent breathing room and strict hard-edged pixel geometry. No scene, text, border, effects, or extra objects.",
+      "lineage": "imagegen:01a11a38-6e43-7b01-9605-e92df6209704/exec-133cca89-b09f-4b58-b22f-ed84d81d9ad9"
     },
     {
       "path": "courier-relay-pixel-neutral-v3.webp",
@@ -64,19 +64,19 @@
     {
       "path": "courier-relay-pixel-route-v3.webp",
       "mediaType": "image/webp",
-      "bytes": 25488,
-      "sha256": "075523b8ac353d840f72b8d44f6309195a44327da2fc4419702bbdcf62de3c54",
+      "bytes": 45256,
+      "sha256": "9a22fa2827280210c89feec30b1cee9f0bbf1a7e428aab17a81a7aedc6745f1a",
       "width": 512,
       "height": 512,
       "transparent": true,
       "role": "route",
       "identityRevision": "relay-pixel-v3",
       "identityReference": "courier-relay-pixel-neutral-v3.webp",
-      "editSource": "courier-relay-pixel-route-v2.webp",
-      "use": "Landing route-console pose",
+      "editSource": "courier-relay-pixel-route-v3.webp@075523b8ac353d840f72b8d44f6309195a44327da2fc4419702bbdcf62de3c54",
+      "use": "Landing thematic route journey",
       "consumers": ["web/landing/src/app.tsx"],
-      "prompt": "Precise-object-edit of route-v3: replace rounded head, body, wing, tail, and satchel contours with flat stepped planes and square right-angle pixel clusters while preserving the walking pose, parcel, two waypoints, terminal palette, crop, and alpha; add nothing.",
-      "lineage": "imagegen:01a0ba95-413f-7a60-be47-592ef819ea38/exec-029171dc-a2f9-4a8e-bbc3-9127385eaea9"
+      "prompt": "Transform the route mascot into a complete thematic Courier CLI hero scene. Preserve Relay's identity and terminal pixel-art language while integrating the pigeon into an irregular amorphous routing world linking a local folder, remote server, browser portal, and parcel drop with cyan data paths and yellow signals. Keep a transparent exterior, asymmetrical composition, limited palette, hard pixel edges, and no text or frame.",
+      "lineage": "imagegen:01a11a38-6e43-7b01-9605-e92df6209704/exec-40e5daaf-05fb-41e9-a975-55af38581be1"
     },
     {
       "path": "courier-relay-pixel-delivery-v3.webp",

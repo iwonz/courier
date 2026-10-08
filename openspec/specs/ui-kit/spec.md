@@ -77,17 +77,22 @@ Courier SHALL enforce 100% statements, branches, functions, and lines for first-
 
 ### Requirement: Coherent brand identity system
 
-Courier SHALL use one repository-local terminal 8-bit Relay v3 family across landing, delivery, administration, README, favicon, and product chrome. Every v3 role SHALL use the same compact square-bodied silhouette, flat stepped crown, angular feather planes, and right-angle pixel clusters while preserving the established anatomy, fundamental proportions, eye, beak, earpiece, satchel, pose, and working object. The family SHALL use teal in place of cobalt, yellow in place of orange/coral, and a cool black/white neutral plumage ramp. Assets SHALL retain true alpha and hard pixel clusters.
+Courier SHALL use one repository-local terminal 8-bit Relay v3 family across landing, delivery, administration, README, favicon, and product chrome. Every v3 role SHALL use the same compact square-bodied Relay identity, flat stepped crown, angular feather planes, right-angle pixel clusters, eye, beak, earpiece, satchel, and terminal palette. Mark-v3 SHALL use a near-square upright composition legible at icon size. Route-v3 MAY place the same Relay identity inside a declared transparent thematic routing environment while delivery-v3 and admin-v3 retain their role poses and working objects. Assets SHALL retain true alpha and hard pixel clusters.
 
 #### Scenario: A browser surface presents Courier
 
 - **WHEN** landing, delivery, or administration renders
-- **THEN** its header uses mark-v3 beside `COURIER CLI`, its optional v3 role sprite matches the surface, and product meaning remains complete without the image
+- **THEN** its header uses the compact mark-v3 beside `COURIER CLI`, its optional v3 role artwork matches the surface, and product meaning remains complete without the image
 
 #### Scenario: Relay changes roles
 
 - **WHEN** all five v3 assets are compared on light, dark, and checkerboard backgrounds
-- **THEN** the same recognizable square-bodied Relay identity, angular silhouette grammar, role poses, object count, dimensions, transparent background, and terminal palette remain visible
+- **THEN** the same recognizable square-bodied Relay identity, angular silhouette grammar, declared role composition, dimensions, transparent background, and terminal palette remain visible
+
+#### Scenario: Route artwork is inspected
+
+- **WHEN** route-v3 is compared with the neutral identity authority
+- **THEN** Relay remains recognizable inside one transparent amorphous journey whose folder, server, browser, route, and delivery symbols provide decorative context only
 
 ### Requirement: Non-essential mascot guidance
 

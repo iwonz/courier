@@ -145,7 +145,8 @@ describe("command readout", () => {
     expect(await copyText("value", { writeText: vi.fn().mockResolvedValue(undefined) })).toBe(true);
     const copy = vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false);
     const { rerender } = render(<CommandReadout heading="Command" command="courier version" copyLabel="Copy" copiedLabel="Copied" copyFailedLabel="Failed" description="Description" details={<span>Details</span>} footerActions={<a href="#release">Release</a>} sessionKey="one" copy={copy} />);
-    expect(screen.getByText("Command").parentElement?.parentElement?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
+    expect(screen.getByText("Command").parentElement?.className).toContain("bg-muted/60");
+    expect(screen.getByText("Command").parentElement?.className).not.toMatch(/rounded|bg-card|shadow|backdrop/);
     fireEvent.click(screen.getByRole("button", { name: "Copy" }));
     await waitFor(() => expect(screen.getByText("Copied")).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: "Copy" }));
@@ -159,6 +160,7 @@ describe("command readout", () => {
     expect(screen.queryByText("Release")).toBeNull();
     rerender(<CommandReadout command="courier version" copyLabel="Copy" copiedLabel="Copied" copyFailedLabel="Failed" sessionKey="four" copy={copy} />);
     expect(screen.queryByText("Command")).toBeNull();
-    expect(screen.getByRole("button", { name: "Copy" }).parentElement?.className).toContain("justify-end");
+    expect(screen.getByText("courier version").nextElementSibling?.contains(screen.getByRole("button", { name: "Copy" }))).toBe(true);
+    expect(screen.getByRole("button", { name: "Copy" }).parentElement?.className).not.toContain("justify-end");
   });
 });
