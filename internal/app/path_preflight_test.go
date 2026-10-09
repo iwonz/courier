@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -49,7 +50,10 @@ func TestPathPreflightAuthorizationAndCreation(t *testing.T) {
 	}
 	for _, path := range []string{sourcePath, destinationPath} {
 		info, statErr := os.Stat(path)
-		if statErr != nil || !info.IsDir() || info.Mode().Perm() != 0o700 {
+		if statErr != nil || !info.IsDir() {
+			t.Fatalf("path=%q info=%v err=%v", path, info, statErr)
+		}
+		if runtime.GOOS != "windows" && info.Mode().Perm() != 0o700 {
 			t.Fatalf("path=%q info=%v err=%v", path, info, statErr)
 		}
 	}
