@@ -12,6 +12,7 @@ import (
 	"github.com/iwonz/courier/internal/app"
 	"github.com/iwonz/courier/internal/helper"
 	"github.com/iwonz/courier/internal/report"
+	"github.com/iwonz/courier/internal/terminalui"
 	"github.com/iwonz/courier/internal/update"
 	"github.com/iwonz/courier/internal/worker"
 )
@@ -58,7 +59,12 @@ func run(ctx context.Context, args []string, input *os.File, stdout, stderr io.W
 }
 
 func internalFailure(stderr io.Writer, code int, stage string, err error) int {
-	report.FailureCounters(stderr, stage, err, 0, 0, 0)
+	mode := terminalui.Detect(stderr, os.Getenv)
+	if err == context.Canceled {
+		report.InterruptedWithMode(stderr, mode, stage, 0, 0, 0)
+	} else {
+		report.FailureCountersWithMode(stderr, mode, stage, err, 0, 0, 0)
+	}
 	if errors.Is(err, context.Canceled) {
 		return app.ExitInterrupted
 	}

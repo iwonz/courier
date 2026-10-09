@@ -20,6 +20,7 @@ import (
 	"github.com/iwonz/courier/internal/operation"
 	"github.com/iwonz/courier/internal/policy"
 	"github.com/iwonz/courier/internal/sshx"
+	"github.com/iwonz/courier/internal/terminalui"
 	"github.com/iwonz/courier/internal/webdelivery"
 	"github.com/iwonz/courier/internal/worker"
 	"github.com/pkg/sftp"
@@ -32,7 +33,11 @@ var (
 	webAddress            = webdelivery.URL
 	webhookAddress        = webdelivery.WebhookURL
 	webNow                = time.Now
-	newWebCoordinator     = func(store *delivery.Store, directory string) webCoordinator {
+	webStatusTicker       = func() (<-chan time.Time, func()) {
+		ticker := time.NewTicker(time.Second)
+		return ticker.C, ticker.Stop
+	}
+	newWebCoordinator = func(store *delivery.Store, directory string) webCoordinator {
 		return worker.DefaultCoordinator(store, directory)
 	}
 	runWebAcquire   = acquireWebDelivery
@@ -76,7 +81,8 @@ func deliveryCredentialPrompt(input *os.File, output io.Writer) func(context.Con
 		}
 		credentials := policy.Credentials{}
 		if mode == operation.AuthBasic {
-			if _, err := fmt.Fprint(output, "Basic username: "); err != nil {
+			label := terminalui.New(output, terminalMode(output)).Text(terminalui.ToneWarning, "Basic username: ")
+			if _, err := fmt.Fprint(output, label); err != nil {
 				return policy.Credentials{}, err
 			}
 			username, err := bufio.NewReader(input).ReadString('\n')
@@ -229,7 +235,7 @@ func webRunner(credentials func(context.Context, operation.AuthMode) (policy.Cre
 			}
 			return err
 		}
-		if _, err := fmt.Fprintf(output, "delivery: %s\nid: %s\n", address, acquired.DeliveryID); err != nil {
+		if err := renderHostedReady(output, plan, address, acquired.DeliveryID); err != nil {
 			if acquired.Lease != nil {
 				_ = releaseWebLease(acquired.Lease, context.Background())
 			}
@@ -241,10 +247,74 @@ func webRunner(credentials func(context.Context, operation.AuthMode) (policy.Cre
 		if acquired.Lease == nil {
 			return errors.New("foreground delivery did not return a lease")
 		}
-		<-ctx.Done()
+		waitErr := waitForHostedStop(ctx, output, plan.Route, webNow())
 		releaseContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		return errors.Join(ctx.Err(), releaseWebLease(acquired.Lease, releaseContext))
+		if err := releaseWebLease(acquired.Lease, releaseContext); err != nil {
+			return errors.Join(waitErr, err)
+		}
+		return waitErr
+	}
+}
+
+func renderHostedReady(output io.Writer, plan operation.Plan, address string, id delivery.ID) error {
+	mode := terminalMode(output)
+	if !mode.Interactive {
+		_, err := fmt.Fprintf(output, "delivery: %s\nid: %s\n", address, id)
+		return err
+	}
+	runMode, footer := "foreground", "Press Ctrl+C to stop"
+	if plan.Options.Background {
+		runMode = "background"
+		footer = "Stop with: courier servers stop " + string(id)
+	}
+	panel := terminalui.New(output, mode).Panel("Delivery ready", terminalui.ToneSuccess, []terminalui.Field{
+		{Label: "Route", Value: plan.Route.String()},
+		{Label: "URL", Value: address},
+		{Label: "ID", Value: string(id)},
+		{Label: "Source", Value: plan.Source.Raw},
+		{Label: "Destination", Value: plan.Destination.Raw},
+		{Label: "Mode", Value: runMode},
+	}, footer)
+	_, err := fmt.Fprint(output, panel)
+	return err
+}
+
+func waitForHostedStop(ctx context.Context, output io.Writer, route operation.Route, started time.Time) error {
+	mode := terminalMode(output)
+	if !mode.Interactive {
+		<-ctx.Done()
+		return ctx.Err()
+	}
+	status := "Serving browser downloads"
+	if route == operation.RouteWebToPath {
+		status = "Waiting for a browser upload"
+	} else if route == operation.RouteWebhookToPath {
+		status = "Listening for webhook uploads"
+	}
+	ticks, stop := webStatusTicker()
+	defer stop()
+	renderer := terminalui.New(output, mode)
+	write := func(at time.Time) error {
+		_, err := fmt.Fprintf(output, "\r\x1b[2K%s", renderer.Text(terminalui.ToneWarning, fmt.Sprintf("● %s · elapsed %s", status, at.Sub(started).Round(time.Second))))
+		return err
+	}
+	if err := write(started); err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			_, err := fmt.Fprint(output, "\r\x1b[2K")
+			if err != nil {
+				return errors.Join(ctx.Err(), err)
+			}
+			return ctx.Err()
+		case at := <-ticks:
+			if err := write(at); err != nil {
+				return err
+			}
+		}
 	}
 }
 

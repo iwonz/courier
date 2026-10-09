@@ -30,7 +30,7 @@ import (
 func TestCommandsAndExitCodes(t *testing.T) {
 	base := Dependencies{
 		Build: BuildIdentity{Version: "v1.2.3", Commit: "abc", Date: "today"},
-		Update: func(context.Context) (update.Result, error) {
+		Update: func(context.Context, update.Sink) (update.Result, error) {
 			return update.Result{Current: true, From: "v1.2.3"}, nil
 		},
 		Hosted: func(_ context.Context, _ operation.Plan, output io.Writer) error {
@@ -68,7 +68,7 @@ func TestCommandsAndExitCodes(t *testing.T) {
 
 	t.Run("updated with notes", func(t *testing.T) {
 		dependencies := base
-		dependencies.Update = func(context.Context) (update.Result, error) {
+		dependencies.Update = func(context.Context, update.Sink) (update.Result, error) {
 			return update.Result{From: "v1", To: "v2", Notes: "changes"}, nil
 		}
 		var output bytes.Buffer
@@ -79,10 +79,12 @@ func TestCommandsAndExitCodes(t *testing.T) {
 
 	for _, test := range []struct {
 		name string
-		run  func(context.Context) (update.Result, error)
+		run  func(context.Context, update.Sink) (update.Result, error)
 	}{
 		{name: "unavailable"},
-		{name: "failed", run: func(context.Context) (update.Result, error) { return update.Result{}, errors.New("network") }},
+		{name: "failed", run: func(context.Context, update.Sink) (update.Result, error) {
+			return update.Result{}, errors.New("network")
+		}},
 	} {
 		t.Run("update "+test.name, func(t *testing.T) {
 			dependencies := base
@@ -687,6 +689,11 @@ func TestDefaultDependenciesAndTerminalPrompt(t *testing.T) {
 	dependencies, err := DefaultDependencies(nil, io.Discard)
 	if err != nil {
 		t.Fatal(err)
+	}
+	var reporterOutput bytes.Buffer
+	for _, interactive := range []bool{false, true} {
+		reporter := dependencies.Reporter(&reporterOutput, interactive)
+		reporter.Finish()
 	}
 	selected, err := dependencies.Select([]operation.SelectionRule{{Kind: operation.SelectionRegex, Value: "secret"}})
 	if err != nil || selected.Include("secret.txt", false) {

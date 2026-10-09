@@ -470,6 +470,10 @@ func TestWebRunnerBranches(t *testing.T) {
 	if err := webRunner(provider, localProvider, nil)(canceled, foreground, io.Discard); !errors.Is(err, context.Canceled) || !errors.Is(err, releaseError) {
 		t.Fatalf("foreground result=%v", err)
 	}
+	releaseWebLease = func(*worker.Lease, context.Context) error { return nil }
+	if err := webRunner(provider, localProvider, nil)(canceled, foreground, io.Discard); !errors.Is(err, context.Canceled) {
+		t.Fatalf("foreground cancellation=%v", err)
+	}
 	webhookPlan, err := operation.Build(operation.Request{Source: "webhook://", Destination: t.TempDir(), Options: []operation.Option{{Name: operation.OptionBackground, Value: "true"}}})
 	if err != nil {
 		t.Fatal(err)

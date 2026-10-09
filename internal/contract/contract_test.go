@@ -248,8 +248,12 @@ func TestGeneratedHelpAndREADME(t *testing.T) {
 			t.Fatalf("help missing %q: %s", wanted, help)
 		}
 	}
+	reference := string(value.Reference())
+	if !strings.Contains(reference, "| Description | Default | Repeatable | Applies to | Requires | Conflicts |") {
+		t.Fatalf("reference columns=%q", reference)
+	}
 	section := string(value.READMESection())
-	for _, wanted := range []string{READMEStart, READMEEnd, "### Arguments", "### Options", "Required", "Optional", "English description."} {
+	for _, wanted := range []string{READMEStart, READMEEnd, "### Arguments", "### Options", "Required", "Optional", "English description.", "| Default | Repeatable | Applies to | Requires | Conflicts |"} {
 		if !strings.Contains(section, wanted) {
 			t.Fatalf("README section missing %q: %s", wanted, section)
 		}
@@ -271,6 +275,23 @@ func TestGeneratedHelpAndREADME(t *testing.T) {
 	}
 	if humanScopes([]string{"path-to-path", "unknown"}, "ru") != "Из пути в путь, unknown" || markdownCell("a|b") != `a\|b` || requirement(false) != "Optional" || requiredValue(nil) {
 		t.Fatal("generated documentation helpers are inconsistent")
+	}
+}
+
+func TestRequiredFirstOrdering(t *testing.T) {
+	required, optional := true, false
+	arguments := []Argument{{Name: "optional-one", Required: &optional}, {Name: "required-one", Required: &required}, {Name: "optional-two"}, {Name: "required-two", Required: &required}}
+	orderedArguments := requiredArgumentsFirst(arguments)
+	if got := strings.Join([]string{orderedArguments[0].Name, orderedArguments[1].Name, orderedArguments[2].Name, orderedArguments[3].Name}, ","); got != "required-one,required-two,optional-one,optional-two" {
+		t.Fatalf("arguments=%v", got)
+	}
+	flags := []Flag{{Name: "optional-one", Required: &optional}, {Name: "required-one", Required: &required}, {Name: "optional-two"}, {Name: "required-two", Required: &required}}
+	orderedFlags := requiredFlagsFirst(flags)
+	if got := strings.Join([]string{orderedFlags[0].Name, orderedFlags[1].Name, orderedFlags[2].Name, orderedFlags[3].Name}, ","); got != "required-one,required-two,optional-one,optional-two" {
+		t.Fatalf("flags=%v", got)
+	}
+	if arguments[0].Name != "optional-one" || flags[0].Name != "optional-one" {
+		t.Fatal("sorting mutated contract order")
 	}
 }
 

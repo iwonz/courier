@@ -72,13 +72,13 @@ func (c Contract) Landing() LandingData {
 	for _, command := range c.Commands {
 		if command.Status == "shipped" || command.Status == "system" {
 			arguments := make([]LandingArgument, 0, len(command.Arguments))
-			for _, argument := range command.Arguments {
+			for _, argument := range requiredArgumentsFirst(command.Arguments) {
 				arguments = append(arguments, LandingArgument{Name: argument.Name, Kind: argument.Kind, Required: requiredValue(argument.Required), Prefix: argument.Prefix, OmitWhenFlag: argument.OmitWhenFlag, Description: argument.Description})
 			}
 			result.Commands = append(result.Commands, LandingCommand{Name: command.Name, Path: command.Path, Usage: command.Usage, System: command.System, Arguments: arguments, Flags: append([]string(nil), command.Flags...)})
 		}
 	}
-	for _, flag := range c.Flags {
+	for _, flag := range requiredFlagsFirst(c.Flags) {
 		if flag.Status == "shipped" {
 			result.Flags = append(result.Flags, LandingFlag{
 				Name: flag.Name, Syntax: flag.Syntax, ValueKind: flag.ValueKind, Choices: append([]string(nil), flag.Choices...), Placeholder: flag.Placeholder,

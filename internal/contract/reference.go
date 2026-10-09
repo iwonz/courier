@@ -20,7 +20,7 @@ func (c Contract) Reference() []byte {
 	}
 	output.WriteString("\n## Arguments\n\n| Command | Argument | Requirement | Description |\n|---|---|---|---|\n")
 	for _, command := range c.Commands {
-		for _, argument := range command.Arguments {
+		for _, argument := range requiredArgumentsFirst(command.Arguments) {
 			fmt.Fprintf(&output, "| `%s` | `<%s>` | %s | %s |\n", command.Path, argument.Name, requirement(requiredValue(argument.Required)), markdownCell(argument.Description.EN))
 		}
 	}
@@ -40,8 +40,8 @@ func (c Contract) Reference() []byte {
 		}
 		fmt.Fprintf(&output, "| %s | `%s` | %s | %s | %s |\n", route.Status, route.Name, strings.Join(route.Source, ", "), strings.Join(route.Destination, ", "), flags)
 	}
-	output.WriteString("\n## Options\n\n| Status | Option | Requirement | Description | Applies to | Default | Repeatable | Requires | Conflicts |\n|---|---|---|---|---|---|---:|---|---|\n")
-	for _, flag := range c.Flags {
+	output.WriteString("\n## Options\n\n| Status | Option | Requirement | Description | Default | Repeatable | Applies to | Requires | Conflicts |\n|---|---|---|---|---|---:|---|---|---|\n")
+	for _, flag := range requiredFlagsFirst(c.Flags) {
 		conflicts := "none"
 		if len(flag.Conflicts) != 0 {
 			conflicts = strings.Join(flag.Conflicts, ", ")
@@ -50,7 +50,7 @@ func (c Contract) Reference() []byte {
 		if len(flag.Requires) != 0 {
 			requires = strings.Join(flag.Requires, ", ")
 		}
-		fmt.Fprintf(&output, "| %s | `%s` | %s | %s | %s | `%s` | %t | %s | %s |\n", flag.Status, markdownCell(flag.Syntax), requirement(requiredValue(flag.Required)), markdownCell(flag.Description.EN), markdownCell(humanScopes(flag.AppliesTo, "en")), markdownCell(flag.Default), flag.Repeatable, requires, conflicts)
+		fmt.Fprintf(&output, "| %s | `%s` | %s | %s | `%s` | %t | %s | %s | %s |\n", flag.Status, markdownCell(flag.Syntax), requirement(requiredValue(flag.Required)), markdownCell(flag.Description.EN), markdownCell(flag.Default), flag.Repeatable, markdownCell(humanScopes(flag.AppliesTo, "en")), requires, conflicts)
 	}
 	output.WriteString("\n## Explicitly unsupported\n\n")
 	for _, value := range c.Unsupported {

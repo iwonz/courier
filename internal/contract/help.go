@@ -22,7 +22,7 @@ func (c Contract) HelpGo() []byte {
 		fmt.Fprintf(&output, "%q: {Usage: %q", command.Path, command.Usage)
 		if len(command.Arguments) != 0 {
 			output.WriteString(", Arguments: []structuredArgumentHelp{")
-			for _, argument := range command.Arguments {
+			for _, argument := range requiredArgumentsFirst(command.Arguments) {
 				syntax := "<" + argument.Name + ">"
 				if argument.Prefix != "" {
 					syntax = argument.Prefix + " " + syntax
@@ -33,8 +33,11 @@ func (c Contract) HelpGo() []byte {
 		}
 		if len(command.Flags) != 0 {
 			output.WriteString(", Flags: []structuredFlagHelp{")
+			commandFlags := make([]Flag, 0, len(command.Flags))
 			for _, name := range command.Flags {
-				flag := flags[name]
+				commandFlags = append(commandFlags, flags[name])
+			}
+			for _, flag := range requiredFlagsFirst(commandFlags) {
 				fmt.Fprintf(&output, "{Name: %q, Syntax: %q, Required: %t, Description: %q, Default: %q, Repeatable: %t, AppliesTo: %q, Requires: %#v, Conflicts: %#v},", flag.Name, flag.Syntax, requiredValue(flag.Required), flag.Description.EN, flag.Default, flag.Repeatable, humanScopes(flag.AppliesTo, "en"), flag.Requires, flag.Conflicts)
 			}
 			output.WriteString("}")

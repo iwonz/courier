@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/iwonz/courier/internal/control"
 	"github.com/iwonz/courier/internal/delivery"
 	"github.com/iwonz/courier/internal/operation"
+	"github.com/iwonz/courier/internal/terminalui"
 	"github.com/spf13/cobra"
 )
 
@@ -52,7 +54,11 @@ func newServersCommand(list func(context.Context) ([]control.ServerView, error),
 			if err != nil {
 				return controlCommandError(err)
 			}
-			_, err = fmt.Fprint(command.OutOrStdout(), renderServers(views))
+			output := renderServers(views)
+			if mode := terminalMode(command.OutOrStdout()); mode.Interactive {
+				output = renderServersStyled(command.OutOrStdout(), mode, views)
+			}
+			_, err = fmt.Fprint(command.OutOrStdout(), output)
 			if err != nil {
 				return controlCommandError(err)
 			}
@@ -140,7 +146,86 @@ func renderServers(views []control.ServerView) string {
 	return output.String()
 }
 
+func renderServersStyled(output io.Writer, mode terminalui.Mode, views []control.ServerView) string {
+	renderer := terminalui.New(output, mode)
+	if len(views) == 0 {
+		return renderer.Panel("Data servers", terminalui.ToneInfo, []terminalui.Field{{Label: "Status", Value: "No Courier data servers found"}}, "Start a browser or webhook delivery to create one")
+	}
+	var rendered strings.Builder
+	if mode.Width >= 220 {
+		rows := make([][]string, 0, len(views))
+		for _, view := range views {
+			status := "unreachable"
+			if view.Live {
+				status = "live"
+			}
+			rows = append(rows, []string{status, string(view.Server.ID), view.Server.Bind, fmt.Sprintf("%d", view.Server.ProcessID), string(view.Server.State), "started " + formatControlTime(view.Server.StartedAt) + "\nupdated " + formatControlTime(view.Server.UpdatedAt)})
+		}
+		rendered.WriteString(renderer.Table("Data servers", []string{"Status", "UUID", "Bind", "PID", "State", "Started/Updated"}, rows))
+	} else {
+		for _, view := range views {
+			status := "unreachable"
+			if view.Live {
+				status = "live"
+			}
+			rendered.WriteString(renderer.Table("Server "+string(view.Server.ID), []string{"Field", "Value"}, [][]string{
+				{"Status", status}, {"Bind", view.Server.Bind}, {"PID", fmt.Sprintf("%d", view.Server.ProcessID)}, {"State", string(view.Server.State)},
+				{"Started", formatControlTime(view.Server.StartedAt)}, {"Updated", formatControlTime(view.Server.UpdatedAt)},
+			}))
+		}
+	}
+	for _, view := range views {
+		if len(view.Deliveries) == 0 {
+			continue
+		}
+		if mode.Width >= 220 {
+			rows := make([][]string, 0, len(view.Deliveries))
+			for _, item := range view.Deliveries {
+				rows = append(rows, []string{string(item.State), string(item.ID), string(item.Route), displayEndpoint(item.Source) + "\n→ " + displayEndpoint(item.Destination), formatCounters(item), formatPolicy(item), "created " + formatControlTime(item.CreatedAt) + "\nupdated " + formatControlTime(item.UpdatedAt)})
+			}
+			rendered.WriteString(renderer.Table("Deliveries · "+string(view.Server.ID), []string{"State", "UUID", "Route", "Source/Destination", "Read/Sent/Confirmed", "Policy", "Created/Updated"}, rows))
+			continue
+		}
+		for _, item := range view.Deliveries {
+			rendered.WriteString(renderer.Table("Delivery "+string(item.ID), []string{"Field", "Value"}, [][]string{
+				{"Server", string(view.Server.ID)}, {"State", string(item.State)}, {"Route", string(item.Route)}, {"Source", displayEndpoint(item.Source)},
+				{"Destination", displayEndpoint(item.Destination)}, {"Read/Sent/Confirmed", formatCounters(item)}, {"Policy", formatPolicy(item)},
+				{"Created", formatControlTime(item.CreatedAt)}, {"Updated", formatControlTime(item.UpdatedAt)},
+			}))
+		}
+	}
+	return rendered.String()
+}
+
+func formatCounters(item delivery.Delivery) string {
+	return fmt.Sprintf("read=%d\nsent=%d\nconfirmed=%d", item.Counters.Read, item.Counters.Sent, item.Counters.Confirmed)
+}
+
+func formatPolicy(item delivery.Delivery) string {
+	return fmt.Sprintf("auth=%s\nattempts=%d\nfail-action=%s\nlimit=%s\nmax-file-size=%s\nmax-extracted-size=%s\nupload-rate=%s\ndownload-rate=%s\nno-ui=%t\nallow-ip=%s",
+		item.Policy.Auth, item.Policy.AuthAttempts, item.Policy.AuthFailAction, formatLimit(item.Policy.DeliveryLimit), formatLimit(item.Policy.MaxFileSize),
+		formatLimit(item.Policy.MaxExtractedSize), formatLimit(item.Policy.UploadRate), formatLimit(item.Policy.DownloadRate), item.Policy.NoUI, formatAllowIP(item.Policy.AllowIP))
+}
+
 func renderStopResult(command *cobra.Command, request control.StopRequest, result control.StopResult) error {
+	if mode := terminalMode(command.OutOrStdout()); mode.Interactive {
+		fields := []terminalui.Field{}
+		message := "Data server stopped"
+		switch {
+		case request.All:
+			message = "Data servers stopped"
+			fields = append(fields, terminalui.Field{Label: "Stopped", Value: fmt.Sprintf("%d", result.StoppedServers)})
+		case result.AlreadyStopped:
+			message = "Already stopped"
+			fields = append(fields, terminalui.Field{Label: "Kind", Value: string(result.Kind)}, terminalui.Field{Label: "ID", Value: string(result.ID)})
+		case result.Kind != "":
+			fields = append(fields, terminalui.Field{Label: "Kind", Value: string(result.Kind)}, terminalui.Field{Label: "ID", Value: string(result.ID)})
+		default:
+			return nil
+		}
+		_, err := fmt.Fprint(command.OutOrStdout(), terminalui.New(command.OutOrStdout(), mode).Panel(message, terminalui.ToneSuccess, fields, "✓ Registry and worker state confirmed"))
+		return err
+	}
 	switch {
 	case request.All:
 		_, err := fmt.Fprintf(command.OutOrStdout(), "Stopped data servers: %d\n", result.StoppedServers)

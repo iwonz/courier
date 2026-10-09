@@ -44,6 +44,10 @@ func TestDependencyFailure(t *testing.T) {
 
 func TestInternalFailureRedactionAndInterruption(t *testing.T) {
 	var stderr bytes.Buffer
+	if code := internalFailure(&stderr, app.ExitControl, "control", context.Canceled); code != app.ExitInterrupted || !strings.Contains(stderr.String(), "context canceled") {
+		t.Fatalf("exact cancellation code=%d stderr=%q", code, stderr.String())
+	}
+	stderr.Reset()
 	if code := internalFailure(&stderr, app.ExitControl, "control", fmt.Errorf("token=unsafe: %w", context.Canceled)); code != app.ExitInterrupted {
 		t.Fatalf("code=%d", code)
 	}

@@ -103,27 +103,27 @@ Browser downloads, browser uploads, incoming webhooks, and `courier ui start` st
 
 ### Options
 
-| Option | Status | Description | Applies to | Default | Repeatable | Requires / conflicts |
-|---|---|---|---|---|---:|---|
-| `--archive` | Optional | Pack the source into a verified <source-name>.tar.gz before transfer. | Path to path, Path to browser download, Path to HTTP webhook | `false` | false | conflicts with extract |
-| `--extract` | Optional | Safely extract a tar.gz source into the destination root. | Path to path, Browser upload to path, Incoming webhook to path | `false` | false | conflicts with archive |
-| `--listen <host:port>` | Optional | Bind incoming browser, webhook, or administration traffic to this address. | Browser upload to path, Path to browser download, Incoming webhook to path, Administration UI start | `127.0.0.1:8080` | false | none |
-| `--background` | Optional | Detach browser downloads, browser uploads, incoming webhooks, or ui start after printing the URL and UUID; the process survives terminal closure until stopped by courier servers stop, courier ui stop, configured stop behavior, a fatal worker failure, or process termination. | Browser upload to path, Path to browser download, Incoming webhook to path, Administration UI start | `false` | false | none |
-| `--force-source-creation` | Optional | Create every missing directory endpoint recursively without asking; no other safety confirmation is bypassed. | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | `false` | false | none |
-| `--auth <none\|basic\|password>` | Optional | Choose no authentication, HTTP Basic authentication, or a browser password. | Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | `none` | false | none |
-| `--auth-attempts <N>` | Optional | Set how many failed authentication attempts are allowed before the configured action. | Browser upload to path, Path to browser download, Incoming webhook to path | `5` | false | none |
-| `--auth-fail-action <ban\|stop>` | Optional | Ban the peer or stop the delivery when the authentication-attempt limit is reached. | Browser upload to path, Path to browser download, Incoming webhook to path | `ban` | false | none |
-| `--limit <N>` | Optional | Limit concurrent transfers for a hosted delivery, or allow an unlimited count. | Browser upload to path, Path to browser download, Incoming webhook to path | `unlimited` | false | none |
-| `--no-ui` | Optional | Expose only the versioned browser-delivery data API, without the web interface. | Path to browser download | `false` | false | none |
-| `--allow-ip <IP/CIDR>` | Optional | Allow one peer IP address or CIDR; repeat the option to add more networks. | Browser upload to path, Path to browser download, Incoming webhook to path | `none` | true | none |
-| `--exclude <pattern>` | Optional | Exclude paths with an ordered gitignore-style pattern. | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | `none` | true | none |
-| `--exclude-regex <regex>` | Optional | Exclude paths matching a Go regular expression. | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | `none` | true | none |
-| `--exclude-from <file>` | Optional | Read ordered gitignore-style exclusion rules from a local file. | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | `none` | true | none |
-| `--max-file-size <size\|unlimited>` | Optional | Set the largest accepted incoming file size, or remove the configurable limit. | Browser upload to path, Incoming webhook to path | `10GiB` | false | none |
-| `--max-extracted-size <size\|unlimited>` | Optional | Set the maximum total expanded archive size; requires --extract. | Path to path, Browser upload to path, Incoming webhook to path | `100GiB` | false | requires extract |
-| `--upload-rate <rate\|unlimited>` | Optional | Limit the aggregate upload rate, or allow an unlimited rate. | Local path to SSH path, SSH path to SSH path, Browser upload to path, Incoming webhook to path, Path to HTTP webhook | `unlimited` | false | none |
-| `--download-rate <rate\|unlimited>` | Optional | Limit the aggregate download rate, or allow an unlimited rate. | SSH path to local path, SSH path to SSH path, Path to browser download | `unlimited` | false | none |
-| `--all` | Optional | Stop every discovered Courier delivery and server instead of one UUID. | Server stop | `false` | false | none |
+| Option | Status | Description | Default | Repeatable | Applies to | Requires | Conflicts |
+|---|---|---|---|---:|---|---|---|
+| `--archive` | Optional | Pack the source into a verified <source-name>.tar.gz before transfer. | `false` | false | Path to path, Path to browser download, Path to HTTP webhook | none | extract |
+| `--extract` | Optional | Safely extract a tar.gz source into the destination root. | `false` | false | Path to path, Browser upload to path, Incoming webhook to path | none | archive |
+| `--listen <host:port>` | Optional | Bind incoming browser, webhook, or administration traffic to this address. | `127.0.0.1:8080` | false | Browser upload to path, Path to browser download, Incoming webhook to path, Administration UI start | none | none |
+| `--background` | Optional | Detach browser downloads, browser uploads, incoming webhooks, or ui start after printing the URL and UUID; the process survives terminal closure until stopped by courier servers stop, courier ui stop, configured stop behavior, a fatal worker failure, or process termination. | `false` | false | Browser upload to path, Path to browser download, Incoming webhook to path, Administration UI start | none | none |
+| `--force-source-creation` | Optional | Create every missing directory endpoint recursively without asking; no other safety confirmation is bypassed. | `false` | false | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | none | none |
+| `--auth <none\|basic\|password>` | Optional | Choose no authentication, HTTP Basic authentication, or a browser password. | `none` | false | Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | none | none |
+| `--auth-attempts <N>` | Optional | Set how many failed authentication attempts are allowed before the configured action. | `5` | false | Browser upload to path, Path to browser download, Incoming webhook to path | none | none |
+| `--auth-fail-action <ban\|stop>` | Optional | Ban the peer or stop the delivery when the authentication-attempt limit is reached. | `ban` | false | Browser upload to path, Path to browser download, Incoming webhook to path | none | none |
+| `--limit <N>` | Optional | Limit concurrent transfers for a hosted delivery, or allow an unlimited count. | `unlimited` | false | Browser upload to path, Path to browser download, Incoming webhook to path | none | none |
+| `--no-ui` | Optional | Expose only the versioned browser-delivery data API, without the web interface. | `false` | false | Path to browser download | none | none |
+| `--allow-ip <IP/CIDR>` | Optional | Allow one peer IP address or CIDR; repeat the option to add more networks. | `none` | true | Browser upload to path, Path to browser download, Incoming webhook to path | none | none |
+| `--exclude <pattern>` | Optional | Exclude paths with an ordered gitignore-style pattern. | `none` | true | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | none | none |
+| `--exclude-regex <regex>` | Optional | Exclude paths matching a Go regular expression. | `none` | true | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | none | none |
+| `--exclude-from <file>` | Optional | Read ordered gitignore-style exclusion rules from a local file. | `none` | true | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | none | none |
+| `--max-file-size <size\|unlimited>` | Optional | Set the largest accepted incoming file size, or remove the configurable limit. | `10GiB` | false | Browser upload to path, Incoming webhook to path | none | none |
+| `--max-extracted-size <size\|unlimited>` | Optional | Set the maximum total expanded archive size; requires --extract. | `100GiB` | false | Path to path, Browser upload to path, Incoming webhook to path | extract | none |
+| `--upload-rate <rate\|unlimited>` | Optional | Limit the aggregate upload rate, or allow an unlimited rate. | `unlimited` | false | Local path to SSH path, SSH path to SSH path, Browser upload to path, Incoming webhook to path, Path to HTTP webhook | none | none |
+| `--download-rate <rate\|unlimited>` | Optional | Limit the aggregate download rate, or allow an unlimited rate. | `unlimited` | false | SSH path to local path, SSH path to SSH path, Path to browser download | none | none |
+| `--all` | Optional | Stop every discovered Courier delivery and server instead of one UUID. | `false` | false | Server stop | none | none |
 
 <!-- END GENERATED CLI PARAMETERS -->
 

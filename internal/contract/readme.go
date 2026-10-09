@@ -20,27 +20,24 @@ func (c Contract) READMESection() []byte {
 		if command.Status != "shipped" && command.Status != "system" {
 			continue
 		}
-		for _, argument := range command.Arguments {
+		for _, argument := range requiredArgumentsFirst(command.Arguments) {
 			fmt.Fprintf(&output, "| `%s` | `<%s>` | %s | %s |\n", command.Path, argument.Name, requirement(requiredValue(argument.Required)), markdownCell(argument.Description.EN))
 		}
 	}
-	output.WriteString("\n### Options\n\n| Option | Status | Description | Applies to | Default | Repeatable | Requires / conflicts |\n|---|---|---|---|---|---:|---|\n")
-	for _, flag := range c.Flags {
+	output.WriteString("\n### Options\n\n| Option | Status | Description | Default | Repeatable | Applies to | Requires | Conflicts |\n|---|---|---|---|---:|---|---|---|\n")
+	for _, flag := range requiredFlagsFirst(c.Flags) {
 		if flag.Status != "shipped" {
 			continue
 		}
-		relations := "none"
-		parts := make([]string, 0, 2)
+		requires := "none"
 		if len(flag.Requires) != 0 {
-			parts = append(parts, "requires "+strings.Join(flag.Requires, ", "))
+			requires = strings.Join(flag.Requires, ", ")
 		}
+		conflicts := "none"
 		if len(flag.Conflicts) != 0 {
-			parts = append(parts, "conflicts with "+strings.Join(flag.Conflicts, ", "))
+			conflicts = strings.Join(flag.Conflicts, ", ")
 		}
-		if len(parts) != 0 {
-			relations = strings.Join(parts, "; ")
-		}
-		fmt.Fprintf(&output, "| `%s` | %s | %s | %s | `%s` | %t | %s |\n", markdownCell(flag.Syntax), requirement(requiredValue(flag.Required)), markdownCell(flag.Description.EN), markdownCell(humanScopes(flag.AppliesTo, "en")), markdownCell(flag.Default), flag.Repeatable, relations)
+		fmt.Fprintf(&output, "| `%s` | %s | %s | `%s` | %t | %s | %s | %s |\n", markdownCell(flag.Syntax), requirement(requiredValue(flag.Required)), markdownCell(flag.Description.EN), markdownCell(flag.Default), flag.Repeatable, markdownCell(humanScopes(flag.AppliesTo, "en")), requires, conflicts)
 	}
 	output.WriteString("\n" + READMEEnd)
 	return output.Bytes()

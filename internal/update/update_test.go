@@ -73,9 +73,19 @@ func TestUpdaterSuccessAndCurrent(t *testing.T) {
 		t.Fatal(err)
 	}
 	updater := Updater{Version: "v1.0.0", Token: "token", Client: client, GOOS: "linux", GOARCH: "amd64", Executable: func() (string, error) { return executable, nil }}
-	result, err := updater.Run(context.Background())
-	if err != nil || result.Current || result.To != "v1.2.0" || result.Notes != "release notes" {
+	var events []Event
+	result, err := updater.RunWithProgress(context.Background(), func(event Event) { events = append(events, event) })
+	if err != nil || result.Current || result.To != "v1.2.0" || result.Notes != "release notes" || result.ReleaseURL != "https://github.com/iwonz/courier/releases/tag/v1.2.0" {
 		t.Fatalf("result=%+v err=%v", result, err)
+	}
+	for _, stage := range []Stage{StageCheck, StageDownloadArchive, StageDownloadChecksum, StageVerify, StageExtract, StageInstall, StageComplete} {
+		found := false
+		for _, event := range events {
+			found = found || event.Stage == stage
+		}
+		if !found {
+			t.Fatalf("stage %q missing from %+v", stage, events)
+		}
 	}
 	data, err := os.ReadFile(executable)
 	if err != nil || string(data) != "new" {
@@ -88,6 +98,35 @@ func TestUpdaterSuccessAndCurrent(t *testing.T) {
 	result, err = updater.Run(context.Background())
 	if err != nil || !result.Current {
 		t.Fatalf("current result=%+v err=%v", result, err)
+	}
+}
+
+func TestReleaseURLAndUnknownDownloadLength(t *testing.T) {
+	for _, test := range []struct {
+		repository string
+		version    string
+		want       string
+	}{
+		{"", "v1.2.3", "https://github.com/iwonz/courier/releases/tag/v1.2.3"},
+		{"custom/repo", "1.2.3", "https://github.com/custom/repo/releases/tag/v1.2.3"},
+		{"custom/repo", "dev", "https://github.com/custom/repo/releases"},
+		{"custom/repo", "v1.2.3-SNAPSHOT-deadbee", "https://github.com/custom/repo/releases"},
+		{"custom/repo", "v1.2.3+development", "https://github.com/custom/repo/releases"},
+	} {
+		if got := ReleaseURL(test.repository, test.version); got != test.want {
+			t.Fatalf("ReleaseURL(%q, %q)=%q", test.repository, test.version, got)
+		}
+	}
+
+	isolateUpdateHooks(t)
+	client := &fakeHTTPClient{responses: map[string]fakeResponse{"download": {body: []byte("payload"), length: -1}}}
+	var events []Event
+	destination := filepath.Join(t.TempDir(), "archive")
+	if err := (Updater{}).downloadWithProgress(context.Background(), client, "download", destination, StageDownloadArchive, func(event Event) { events = append(events, event) }); err != nil {
+		t.Fatal(err)
+	}
+	if len(events) < 3 || events[0].Total != -1 || events[len(events)-1].Current != 7 || !events[len(events)-1].Complete {
+		t.Fatalf("events=%+v", events)
 	}
 }
 

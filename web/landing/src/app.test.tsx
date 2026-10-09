@@ -14,6 +14,7 @@ import {
   localizedEndpointDescription,
   localizedEndpointLabel,
   localizedScope,
+  requiredFirst,
 } from "./app";
 import { contractData } from "./contract";
 import { type LandingMessage } from "./catalog";
@@ -69,6 +70,14 @@ describe("landing contract projection", () => {
     expect(commandFlags("servers", true, contractData.commands, contractData.flags)).toEqual([]);
     expect(commandFlags("unknown", true, contractData.commands, contractData.flags)).toEqual([]);
     expect(installs.map((install) => install.icon)).toEqual(["curl", undefined, "powershell", "npm", "npm", "yarn", "pnpm", "homebrew", "scoop"]);
+
+	const ordered = requiredFirst([
+		{ name: "optional-one", required: false },
+		{ name: "required-one", required: true },
+		{ name: "optional-two", required: false },
+		{ name: "required-two", required: true },
+	]);
+	expect(ordered.map((value) => value.name)).toEqual(["required-one", "required-two", "optional-one", "optional-two"]);
   });
 });
 
@@ -93,6 +102,18 @@ describe("React landing", () => {
     expect(document.querySelector("[data-courier-install-readout]")?.className).toContain("bg-muted/60");
     expect(document.querySelector("[data-courier-command-surface]")?.textContent).not.toContain("Shell syntax");
     expect(document.querySelector("[data-courier-shell-selector]")?.getAttribute("aria-label")).toBe("Shell syntax");
+	const shellSelector = document.querySelector("[data-courier-shell-selector]")!;
+	const posix = Array.from(shellSelector.querySelectorAll("button")).find((button) => button.textContent === "POSIX")!;
+	const powershell = Array.from(shellSelector.querySelectorAll("button")).find((button) => button.textContent === "PowerShell")!;
+	expect(posix.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
+	expect(powershell.querySelector('img[data-brand-name="PowerShell"][aria-hidden="true"]')).toBeTruthy();
+	expect(powershell.querySelector("img")?.className).not.toContain("courier-pixel-image");
+	expect(posix.getAttribute("aria-pressed")).toBe("true");
+	posix.focus();
+	expect(document.activeElement).toBe(posix);
+	fireEvent.keyDown(powershell, { key: "Enter" });
+	powershell.focus();
+	expect(document.activeElement).toBe(powershell);
     expect(document.querySelector("[data-courier-hero-art]")?.className).toContain("lg:w-[64%]");
     expect(document.querySelector<HTMLImageElement>("[data-courier-hero-art] img")?.className).toContain("h-full");
     expect(document.querySelector<HTMLImageElement>("[data-courier-hero-art] img")?.className).toContain("w-auto");
@@ -244,6 +265,21 @@ describe("React landing", () => {
     expect(screen.getByText("--all")).toBeTruthy();
   });
 
+  it("renders contract-required flags before optional flags", () => {
+    const archive = contractData.flags.find((flag) => flag.name === "archive")!;
+    const original = archive.required;
+    archive.required = true;
+    try {
+      render(<LandingApp />);
+      const firstFlag = document.querySelector<HTMLElement>("[data-builder-flag]")!;
+      expect(firstFlag.getAttribute("data-builder-flag")).toBe("archive");
+      expect(firstFlag.querySelector('span[aria-hidden="true"]')?.textContent).toBe("*");
+      expect(firstFlag.querySelector(".sr-only")?.textContent).toBe("Required");
+    } finally {
+      archive.required = original;
+    }
+  });
+
   it("constructs and copies exact POSIX and PowerShell commands", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
@@ -332,19 +368,39 @@ describe("React landing", () => {
     expect(activeLocal?.className).not.toContain("bg-background");
     expect(screen.getByText("COURIER CLI")).toBeTruthy();
     expect(screen.getByText("Pack the source into a verified <source-name>.tar.gz before transfer.")).toBeTruthy();
-    expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).toContain("Optional");
+	const sourceParameter = document.querySelector('[data-builder-argument="source"]')!;
+	const requiredMark = sourceParameter.querySelector('span[aria-hidden="true"]')!;
+	expect(requiredMark.textContent).toBe("*");
+	expect(requiredMark.className).toContain("text-destructive");
+	expect(sourceParameter.querySelector(".sr-only")?.textContent).toBe("Required");
+	expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).not.toContain("Optional");
     expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).toContain("Path to path");
     expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).toContain("Conflicts with: --extract");
     expect(document.querySelector('[data-builder-argument="source"]')?.textContent).toContain("File, directory, browser upload");
+	const archiveMetadata = document.querySelector('[data-builder-flag="archive"] [data-parameter-metadata]')!;
+	expect(Array.from(archiveMetadata.children).map((node) => node.textContent)).toEqual([
+		"Default: false",
+		"Repeatable: no",
+		"Applies to: Path to path, Path to browser download, Path to HTTP webhook",
+		"Conflicts with: --extract",
+	]);
+	expect(Array.from(archiveMetadata.children).every((node) => node.className.includes("bg-muted/60") && node.className.includes("w-fit"))).toBe(true);
     const localeButton = screen.getByRole("button", { name: /Language:/ });
     expect(localeButton.querySelector('[data-locale-icon="en"] svg')).toBeTruthy();
     fireEvent.click(localeButton);
     expect(localeButton.querySelectorAll('[data-locale-icon="ru"] i')).toHaveLength(3);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Отсюда — куда угодно.");
     expect(screen.getByText("Упаковать источник в проверенный <имя-источника>.tar.gz перед передачей.")).toBeTruthy();
-    expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).toContain("Необязательно");
+	expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).not.toContain("Необязательно");
     expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).toContain("Из пути в путь");
     expect(document.querySelector('[data-builder-argument="source"]')?.textContent).toContain("Файл, каталог, браузерная загрузка");
+	expect(document.querySelector('[data-builder-argument="source"] .sr-only')?.textContent).toBe("Обязательно");
+	expect(Array.from(document.querySelector('[data-builder-flag="archive"] [data-parameter-metadata]')!.children).map((node) => node.textContent)).toEqual([
+		"По умолчанию: false",
+		"Повторяемый: нет",
+		"Применяется к: Из пути в путь, Из пути в браузер, Из пути в HTTP webhook",
+		"Конфликтует с: --extract",
+	]);
     expect(document.body.textContent).not.toContain("Все связи взяты из опубликованного контракта CLI");
   });
 });

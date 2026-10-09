@@ -72,11 +72,36 @@ type Updater struct {
 
 // Result describes an update check or installation.
 type Result struct {
-	Current bool
-	From    string
-	To      string
-	Notes   string
+	Current    bool
+	From       string
+	To         string
+	Notes      string
+	ReleaseURL string
 }
+
+// Stage identifies one visible self-update phase.
+type Stage string
+
+const (
+	StageCheck            Stage = "check"
+	StageDownloadArchive  Stage = "download-archive"
+	StageDownloadChecksum Stage = "download-checksums"
+	StageVerify           Stage = "verify"
+	StageExtract          Stage = "extract"
+	StageInstall          Stage = "install"
+	StageComplete         Stage = "complete"
+)
+
+// Event is a point-in-time self-update progress snapshot.
+type Event struct {
+	Stage    Stage
+	Current  int64
+	Total    int64
+	Complete bool
+}
+
+// Sink consumes update progress events.
+type Sink func(Event)
 
 // BinaryArtifact is a verified Courier executable extracted from one exact
 // GitHub Release. Call Cleanup when the executable is no longer needed.
@@ -97,6 +122,11 @@ type githubRelease struct {
 
 // Run installs a newer stable release when one exists.
 func (u Updater) Run(ctx context.Context) (Result, error) {
+	return u.RunWithProgress(ctx, nil)
+}
+
+// RunWithProgress installs a newer release and reports safe progress stages.
+func (u Updater) RunWithProgress(ctx context.Context, progress Sink) (Result, error) {
 	repository := u.Repository
 	if repository == "" {
 		repository = "iwonz/courier"
@@ -106,6 +136,7 @@ func (u Updater) Run(ctx context.Context) (Result, error) {
 		client = http.DefaultClient
 	}
 	var release githubRelease
+	emit(progress, Event{Stage: StageCheck})
 	if err := u.getJSON(ctx, client, "https://api.github.com/repos/"+repository+"/releases/latest", &release); err != nil {
 		return Result{}, err
 	}
@@ -114,9 +145,11 @@ func (u Updater) Run(ctx context.Context) (Result, error) {
 	if latest == "" {
 		return Result{}, fmt.Errorf("GitHub returned invalid release tag %q", release.TagName)
 	}
-	result := Result{From: u.Version, To: release.TagName, Notes: release.Body}
+	result := Result{From: u.Version, To: release.TagName, Notes: release.Body, ReleaseURL: ReleaseURL(repository, release.TagName)}
+	emit(progress, Event{Stage: StageCheck, Current: 1, Total: 1, Complete: true})
 	if current != "" && semver.Compare(current, latest) >= 0 {
 		result.Current = true
+		emit(progress, Event{Stage: StageComplete, Current: 1, Total: 1, Complete: true})
 		return result, nil
 	}
 	goos, goarch := u.GOOS, u.GOARCH
@@ -146,24 +179,28 @@ func (u Updater) Run(ctx context.Context) (Result, error) {
 	}
 	defer removeUpdateDirectory(temporaryDirectory)
 	archivePath := filepath.Join(temporaryDirectory, assetName)
-	if err := u.download(ctx, client, assetURL, archivePath); err != nil {
+	if err := u.downloadWithProgress(ctx, client, assetURL, archivePath, StageDownloadArchive, progress); err != nil {
 		return Result{}, err
 	}
 	checksumPath := filepath.Join(temporaryDirectory, "checksums.txt")
-	if err := u.download(ctx, client, checksumURL, checksumPath); err != nil {
+	if err := u.downloadWithProgress(ctx, client, checksumURL, checksumPath, StageDownloadChecksum, progress); err != nil {
 		return Result{}, err
 	}
+	emit(progress, Event{Stage: StageVerify})
 	if err := verifyChecksum(archivePath, checksumPath, assetName); err != nil {
 		return Result{}, err
 	}
+	emit(progress, Event{Stage: StageVerify, Current: 1, Total: 1, Complete: true})
 	binaryName := "courier"
 	if goos == "windows" {
 		binaryName += ".exe"
 	}
 	extracted := filepath.Join(temporaryDirectory, binaryName)
+	emit(progress, Event{Stage: StageExtract})
 	if err := extractBinary(archivePath, extracted, binaryName); err != nil {
 		return Result{}, err
 	}
+	emit(progress, Event{Stage: StageExtract, Current: 1, Total: 1, Complete: true})
 	executable := u.Executable
 	if executable == nil {
 		executable = currentExecutable
@@ -186,6 +223,7 @@ func (u Updater) Run(ctx context.Context) (Result, error) {
 		return Result{}, err
 	}
 	partialPath := partial.Name()
+	emit(progress, Event{Stage: StageInstall})
 	committed := false
 	defer func() {
 		_ = partial.Close()
@@ -217,6 +255,8 @@ func (u Updater) Run(ctx context.Context) (Result, error) {
 			return Result{}, fmt.Errorf("start Windows update handoff: %w", err)
 		}
 		committed = true
+		emit(progress, Event{Stage: StageInstall, Current: 1, Total: 1, Complete: true})
+		emit(progress, Event{Stage: StageComplete, Current: 1, Total: 1, Complete: true})
 		return result, nil
 	}
 	rename := u.Rename
@@ -227,7 +267,22 @@ func (u Updater) Run(ctx context.Context) (Result, error) {
 		return Result{}, fmt.Errorf("replace executable: %w", err)
 	}
 	committed = true
+	emit(progress, Event{Stage: StageInstall, Current: 1, Total: 1, Complete: true})
+	emit(progress, Event{Stage: StageComplete, Current: 1, Total: 1, Complete: true})
 	return result, nil
+}
+
+// ReleaseURL returns an exact release URL for semver builds and the release
+// index for development builds.
+func ReleaseURL(repository, version string) string {
+	if repository == "" {
+		repository = "iwonz/courier"
+	}
+	base := "https://github.com/" + repository + "/releases"
+	if normalized := normalizeVersion(version); normalized != "" && semver.Prerelease(normalized) == "" && semver.Build(normalized) == "" {
+		return base + "/tag/" + normalized
+	}
+	return base
 }
 
 // AcquireVersion downloads and verifies the Courier executable for one exact
@@ -292,6 +347,10 @@ func (u Updater) getJSON(ctx context.Context, client HTTPClient, url string, des
 }
 
 func (u Updater) download(ctx context.Context, client HTTPClient, url, destination string) error {
+	return u.downloadWithProgress(ctx, client, url, destination, StageDownloadArchive, nil)
+}
+
+func (u Updater) downloadWithProgress(ctx context.Context, client HTTPClient, url, destination string, stage Stage, progress Sink) error {
 	response, err := u.request(ctx, client, url)
 	if err != nil {
 		return err
@@ -304,7 +363,9 @@ func (u Updater) download(ctx context.Context, client HTTPClient, url, destinati
 	if err != nil {
 		return err
 	}
-	written, copyErr := io.Copy(file, io.LimitReader(response.Body, maxDownload+1))
+	emit(progress, Event{Stage: stage, Total: response.ContentLength})
+	reader := &progressReader{reader: io.LimitReader(response.Body, maxDownload+1), stage: stage, total: response.ContentLength, progress: progress}
+	written, copyErr := io.Copy(file, reader)
 	closeErr := file.Close()
 	if copyErr != nil || closeErr != nil {
 		return errors.Join(copyErr, closeErr)
@@ -312,7 +373,31 @@ func (u Updater) download(ctx context.Context, client HTTPClient, url, destinati
 	if written > maxDownload {
 		return fmt.Errorf("download exceeds %d bytes", maxDownload)
 	}
+	emit(progress, Event{Stage: stage, Current: written, Total: response.ContentLength, Complete: true})
 	return nil
+}
+
+type progressReader struct {
+	reader   io.Reader
+	stage    Stage
+	total    int64
+	current  int64
+	progress Sink
+}
+
+func (r *progressReader) Read(data []byte) (int, error) {
+	read, err := r.reader.Read(data)
+	r.current += int64(read)
+	if read != 0 {
+		emit(r.progress, Event{Stage: r.stage, Current: r.current, Total: r.total})
+	}
+	return read, err
+}
+
+func emit(progress Sink, event Event) {
+	if progress != nil {
+		progress(event)
+	}
 }
 
 func (u Updater) request(ctx context.Context, client HTTPClient, url string) (*http.Response, error) {

@@ -102,6 +102,6 @@ func runOutgoingWebhook(ctx context.Context, dependencies Dependencies, plan ope
 	if _, err := fmt.Fprintf(stdout, "http-status: %d\n", result.StatusCode); err != nil {
 		return transferCommandError(progress.StageComplete, err, result.Bytes)
 	}
-	report.Success(stdout, plan.Source.Raw, plan.Destination.Raw, result.Bytes, result.Elapsed)
+	report.SuccessWithMode(stdout, terminalMode(stdout), plan.Source.Raw, plan.Destination.Raw, result.Bytes, result.Elapsed)
 	return nil
 }

@@ -27,6 +27,7 @@ import (
 	"github.com/iwonz/courier/internal/safety"
 	"github.com/iwonz/courier/internal/selection"
 	"github.com/iwonz/courier/internal/sshx"
+	"github.com/iwonz/courier/internal/terminalui"
 	"github.com/iwonz/courier/internal/transfer"
 	"github.com/iwonz/courier/internal/update"
 	"github.com/iwonz/courier/internal/webhook"
@@ -66,7 +67,7 @@ type Dependencies struct {
 	DeliveryEndpoint    func(context.Context, endpoint.Endpoint) (*HostedEndpoint, error)
 	ConfirmDirectory    DirectoryConfirm
 	Select              func([]operation.SelectionRule) (selection.Selector, error)
-	Update              func(context.Context) (update.Result, error)
+	Update              func(context.Context, update.Sink) (update.Result, error)
 	ListServers         func(context.Context) ([]control.ServerView, error)
 	StopServers         func(context.Context, control.StopRequest) (control.StopResult, error)
 	StartUI             func(context.Context, admin.StartRequest) (admin.StartResult, error)
@@ -115,6 +116,7 @@ var (
 	closeSSHConnection = (*sshx.Connection).Close
 	terminalAttached   = term.IsTerminal
 	readTerminalSecret = term.ReadPassword
+	terminalMode       = func(output io.Writer) terminalui.Mode { return terminalui.Detect(output, environmentValue) }
 )
 
 // DefaultDependencies wires native libraries and secure user configuration.
@@ -182,12 +184,19 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 		Select: func(rules []operation.SelectionRule) (selection.Selector, error) {
 			return selection.Compile(rules, selection.OpenFile)
 		},
-		Update:              updater.Run,
-		ListServers:         listServers,
-		StopServers:         stopServers,
-		StartUI:             startUI,
-		StopUI:              stopUI,
-		Reporter:            report.New,
+		Update:      updater.RunWithProgress,
+		ListServers: listServers,
+		StopServers: stopServers,
+		StartUI:     startUI,
+		StopUI:      stopUI,
+		Reporter: func(output io.Writer, interactive bool) *report.Reporter {
+			mode := terminalMode(output)
+			mode.Interactive = interactive
+			if !interactive {
+				mode.Color = false
+			}
+			return report.NewWithMode(output, mode)
+		},
 		Terminal:            writerIsTerminal,
 		Build:               BuildIdentity{Version: buildinfo.Version, Commit: buildinfo.Commit, Date: buildinfo.Date},
 		DeliveryCredentials: deliveryCredentialPrompt(input, promptOutput),
@@ -207,6 +216,7 @@ func terminalConfirmation(input *os.File, output io.Writer) helper.Confirm {
 		if err := ctx.Err(); err != nil {
 			return false, err
 		}
+		question = terminalui.New(output, terminalMode(output)).Text(terminalui.ToneWarning, question)
 		fmt.Fprintf(output, "%s [y/N] ", question)
 		answer, err := bufio.NewReader(input).ReadString('\n')
 		if err != nil && !errors.Is(err, io.EOF) {
@@ -225,6 +235,7 @@ func terminalDirectoryConfirmation(input *os.File, output io.Writer) DirectoryCo
 		if err := ctx.Err(); err != nil {
 			return false, err
 		}
+		question = terminalui.New(output, terminalMode(output)).Text(terminalui.ToneWarning, question)
 		if _, err := fmt.Fprintf(output, "%s [y/N] ", question); err != nil {
 			return false, err
 		}
@@ -242,7 +253,7 @@ func terminalPrompt(input *os.File, output io.Writer) sshx.SecretPrompt {
 		if input == nil || !terminalAttached(int(input.Fd())) {
 			return nil, errors.New("interactive terminal is required for password authentication")
 		}
-		fmt.Fprint(output, label)
+		fmt.Fprint(output, terminalui.New(output, terminalMode(output)).Text(terminalui.ToneWarning, label))
 		secret, err := readTerminalSecret(int(input.Fd()))
 		fmt.Fprintln(output)
 		return secret, err
@@ -288,13 +299,21 @@ func Execute(ctx context.Context, root *cobra.Command, args []string, stdout, st
 	}
 	var commandErr *commandError
 	if errors.As(err, &commandErr) {
-		report.FailureCounters(stderr, commandErr.stage, commandErr.cause, commandErr.read, commandErr.sent, commandErr.confirmed)
+		if commandErr.cause == context.Canceled {
+			report.InterruptedWithMode(stderr, terminalMode(stderr), commandErr.stage, commandErr.read, commandErr.sent, commandErr.confirmed)
+		} else {
+			report.FailureCountersWithMode(stderr, terminalMode(stderr), commandErr.stage, commandErr.cause, commandErr.read, commandErr.sent, commandErr.confirmed)
+		}
 		if errors.Is(err, context.Canceled) {
 			return ExitInterrupted
 		}
 		return commandErr.code
 	}
-	report.FailureCounters(stderr, string(progress.StagePreflight), err, 0, 0, 0)
+	if err == context.Canceled {
+		report.InterruptedWithMode(stderr, terminalMode(stderr), string(progress.StagePreflight), 0, 0, 0)
+	} else {
+		report.FailureCountersWithMode(stderr, terminalMode(stderr), string(progress.StagePreflight), err, 0, 0, 0)
+	}
 	if errors.Is(err, context.Canceled) {
 		return ExitInterrupted
 	}
@@ -311,7 +330,7 @@ func runTransfer(ctx context.Context, dependencies Dependencies, plan operation.
 	if err != nil {
 		return err
 	}
-	report.Success(stdout, plan.Source.Raw, outcome.destination, outcome.result.Bytes, outcome.result.Elapsed)
+	report.SuccessWithMode(stdout, terminalMode(stdout), plan.Source.Raw, outcome.destination, outcome.result.Bytes, outcome.result.Elapsed)
 	return nil
 }
 
