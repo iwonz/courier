@@ -93,6 +93,11 @@ type commandError struct {
 func (e *commandError) Error() string { return e.cause.Error() }
 func (e *commandError) Unwrap() error { return e.cause }
 
+type usageError struct{ cause error }
+
+func (e *usageError) Error() string { return e.cause.Error() }
+func (e *usageError) Unwrap() error { return e.cause }
+
 type resourceOpenError struct {
 	remote bool
 	role   string
@@ -299,6 +304,10 @@ func Execute(ctx context.Context, root *cobra.Command, args []string, stdout, st
 	}
 	var commandErr *commandError
 	if errors.As(err, &commandErr) {
+		if commandErr.code == ExitCLI {
+			renderUsageError(stderr, terminalMode(stderr), root, args, commandErr.cause)
+			return ExitCLI
+		}
 		if commandErr.cause == context.Canceled {
 			report.InterruptedWithMode(stderr, terminalMode(stderr), commandErr.stage, commandErr.read, commandErr.sent, commandErr.confirmed)
 		} else {
@@ -309,10 +318,15 @@ func Execute(ctx context.Context, root *cobra.Command, args []string, stdout, st
 		}
 		return commandErr.code
 	}
+	var usageErr *usageError
+	if errors.As(err, &usageErr) {
+		renderUsageError(stderr, terminalMode(stderr), root, args, usageErr.cause)
+		return ExitCLI
+	}
 	if err == context.Canceled {
 		report.InterruptedWithMode(stderr, terminalMode(stderr), string(progress.StagePreflight), 0, 0, 0)
 	} else {
-		report.FailureCountersWithMode(stderr, terminalMode(stderr), string(progress.StagePreflight), err, 0, 0, 0)
+		renderUsageError(stderr, terminalMode(stderr), root, args, err)
 	}
 	if errors.Is(err, context.Canceled) {
 		return ExitInterrupted

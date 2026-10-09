@@ -29,6 +29,7 @@ func NewRootWithProviders(providers ...CommandProvider) (*cobra.Command, error) 
 			return command.Help()
 		},
 	}
+	root.SuggestionsMinimumDistance = 3
 	root.CompletionOptions.DisableDefaultCmd = true
 	seen := map[string]struct{}{}
 	for _, provider := range providers {

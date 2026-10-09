@@ -2,9 +2,12 @@ package terminalui
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"strings"
 	"testing"
+
+	"rsc.io/qr"
 )
 
 func TestDetect(t *testing.T) {
@@ -42,7 +45,7 @@ func TestDetect(t *testing.T) {
 			return "DuMb"
 		}
 		return ""
-	}); mode.Color {
+	}); mode.Interactive || mode.Color || mode.Width != 144 {
 		t.Fatalf("dumb terminal mode=%+v", mode)
 	}
 	terminalSize = func(int) (int, int, error) { return 0, 0, os.ErrInvalid }
@@ -94,5 +97,68 @@ func TestSanitize(t *testing.T) {
 	got := Sanitize("ok\nnext\tvalue\r\x00\x1b[31mred\x1b[0m")
 	if got != "ok\nnext\tvaluered" {
 		t.Fatalf("sanitize=%q", got)
+	}
+}
+
+func TestQRRendering(t *testing.T) {
+	original := encodeQR
+	t.Cleanup(func() { encodeQR = original })
+	payload := "https://127.0.0.1:8080/d/token/"
+	var encoded string
+	encodeQR = func(value string, level qr.Level) (*qr.Code, error) {
+		encoded = value
+		if level != qr.M {
+			t.Fatalf("level=%v", level)
+		}
+		return &qr.Code{Bitmap: []byte{0xc0, 0xc0}, Size: 2, Stride: 1, Scale: 1}, nil
+	}
+	plain, err := New(ioDiscard{}, Mode{Interactive: true, Width: 10}).QR(payload)
+	if err != nil || encoded != payload || strings.Contains(plain, "\x1b[") || !strings.ContainsAny(plain, "▀▄█") {
+		t.Fatalf("plain=%q encoded=%q err=%v", plain, encoded, err)
+	}
+	color, err := New(ioDiscard{}, Mode{Interactive: true, Color: true, Width: 10}).QR(payload)
+	if err != nil || !strings.Contains(color, "\x1b[40m") || !strings.Contains(color, "\x1b[47m") || !strings.HasSuffix(color, "\x1b[0m\n") {
+		t.Fatalf("color=%q err=%v", color, err)
+	}
+	if narrow, err := New(ioDiscard{}, Mode{Interactive: true, Width: 9}).QR(payload); err != nil || narrow != "" {
+		t.Fatalf("narrow=%q err=%v", narrow, err)
+	}
+	if redirected, err := New(ioDiscard{}, Mode{Width: 80}).QR(payload); err != nil || redirected != "" {
+		t.Fatalf("redirected=%q err=%v", redirected, err)
+	}
+	if unsafe, err := New(ioDiscard{}, Mode{Interactive: true, Width: 80}).QR(payload + "\x1b[31m"); err == nil || unsafe != "" {
+		t.Fatalf("unsafe=%q err=%v", unsafe, err)
+	}
+	encodeQR = func(string, qr.Level) (*qr.Code, error) { return nil, errors.New("encode") }
+	if _, err := New(ioDiscard{}, Mode{Interactive: true, Width: 80}).QR(payload); err == nil {
+		t.Fatal("encoding error ignored")
+	}
+}
+
+type ioDiscard struct{}
+
+func (ioDiscard) Write(data []byte) (int, error) { return len(data), nil }
+
+func TestQRCells(t *testing.T) {
+	for _, test := range []struct {
+		top, bottom bool
+		plain       rune
+		color       string
+	}{
+		{false, false, ' ', "\x1b[47m "},
+		{true, false, '▀', "\x1b[30;47m▀"},
+		{false, true, '▄', "\x1b[30;47m▄"},
+		{true, true, '█', "\x1b[40m "},
+	} {
+		if got := plainQRCell(test.top, test.bottom); got != test.plain {
+			t.Fatalf("plain %v/%v=%q", test.top, test.bottom, got)
+		}
+		if got := colorQRCell(test.top, test.bottom); got != test.color {
+			t.Fatalf("color %v/%v=%q", test.top, test.bottom, got)
+		}
+	}
+	code := &qr.Code{Bitmap: []byte{0x80}, Size: 1, Stride: 1, Scale: 1}
+	if !qrBlack(code, 0, 0) || qrBlack(code, -1, 0) || qrBlack(code, 0, -1) || qrBlack(code, 1, 0) || qrBlack(code, 0, 1) {
+		t.Fatal("QR bounds are incorrect")
 	}
 }

@@ -164,15 +164,15 @@ Failure output includes the stage, sanitized reason, and separate read, sent, an
 Go 1.25 or newer and Node.js 24 or newer are required for source, npm-package, and shared UI checks. The full release-candidate gate also requires Docker, OpenSpec 1.11.0, and the pinned Playwright Chromium runtime. GoReleaser Community is bootstrapped locally at its pinned checksum-verified version.
 
 ```sh
-make hooks       # opt into the repository pre-commit quality gate
+make hooks       # activate the repository pre-commit and protected-push guards
+make change-start TYPE=feat CHANGE=my-change # clean main → feature branch + OpenSpec scaffold
 make test        # formatting, vet, race detector, exact Go coverage, and compiled runtime checks
 make verify      # full browser/package/platform-ready release-candidate dry run
 make pages-build # verify and build the current static landing
-make pages-publish # rebuild and publish synchronized main through GitHub Actions
-make ship VERSION=1.2.3 CHANGE=my-change MESSAGE="feat: finish my change" # OpenSpec → verify → commit → release → packages → Pages
+make ship CHANGE=my-change MESSAGE="feat: finish my change" # archive → verify → commit → merge → next patch → packages → Pages
 ```
 
-Development is spec-first: every task owns a path under `openspec/changes`, a conventional branch name, and one conventional commit. See the [implementation plan](docs/implementation-plan.md) and [release runbook](docs/releasing.md).
+Development is spec-first: every tracked-file change starts through `make change-start`, owns one OpenSpec change and conventional feature branch, and ends only after `make ship` has published the release and Pages and restored clean synchronized `main`. Read-only review, diagnosis, and planning are exempt. Low-level release and Pages targets are recovery-only. See [CONTRIBUTING](CONTRIBUTING.md), the [implementation plan](docs/implementation-plan.md), and the [release runbook](docs/releasing.md).
 
 The machine-readable [CLI contract](docs/cli-contract.yaml) is the source of truth for shipped and planned commands. Its generated [command reference](docs/cli-reference.md) is checked against the live Cobra tree during every verification run.
 

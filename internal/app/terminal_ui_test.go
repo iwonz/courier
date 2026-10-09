@@ -16,6 +16,7 @@ import (
 	"github.com/iwonz/courier/internal/operation"
 	"github.com/iwonz/courier/internal/terminalui"
 	"github.com/iwonz/courier/internal/update"
+	"github.com/iwonz/courier/internal/worker"
 	"github.com/spf13/cobra"
 )
 
@@ -112,7 +113,7 @@ func TestStyledUIAndVersionCommands(t *testing.T) {
 		want []string
 	}{
 		{[]string{"version"}, []string{"COURIER", "v1.2.3", "/releases/tag/v1.2.3", "abc", "today"}},
-		{[]string{"ui", "start"}, []string{"ADMINISTRATION UI READY", "foreground", "Press Ctrl+C"}},
+		{[]string{"ui", "start"}, []string{"ADMINISTRATION UI READY", "foreground", "Press Ctrl+C", "ADMINISTRATION UI STOPPED", "█"}},
 		{[]string{"ui", "start", "--background"}, []string{"ADMINISTRATION UI READY", "background", "courier ui stop"}},
 		{[]string{"ui", "stop"}, []string{"ADMINISTRATION UI ALREADY STOPPED"}},
 	} {
@@ -131,6 +132,12 @@ func TestStyledUIAndVersionCommands(t *testing.T) {
 	var output bytes.Buffer
 	if code := Execute(context.Background(), NewRoot(dependencies), []string{"ui", "stop"}, &output, io.Discard); code != ExitOK || !strings.Contains(output.String(), "ADMINISTRATION UI STOPPED") {
 		t.Fatalf("stop code=%d output=%q", code, output.String())
+	}
+	if code := Execute(context.Background(), NewRoot(dependencies), []string{"ui", "start", "--background"}, failingWriter{err: errors.New("write")}, io.Discard); code != ExitControl {
+		t.Fatalf("rich ready writer code=%d", code)
+	}
+	if code := Execute(context.Background(), NewRoot(dependencies), []string{"ui", "start"}, &failAfterWriter{remaining: 2}, io.Discard); code != ExitControl {
+		t.Fatalf("rich stopped writer code=%d", code)
 	}
 
 	development := newVersionCommand(BuildIdentity{Version: "dev", Commit: "none", Date: "unknown"})
@@ -217,6 +224,9 @@ func TestHostedTerminalLifecycle(t *testing.T) {
 			t.Fatalf("missing=%q output=%q", wanted, output.String())
 		}
 	}
+	if !strings.ContainsAny(output.String(), "▀▄█") {
+		t.Fatalf("hosted QR missing: %q", output.String())
+	}
 	plan.Options.Background = true
 	output.Reset()
 	if err := renderHostedReady(&output, plan, "http://127.0.0.1:8080/d/token/", id); err != nil || !strings.Contains(output.String(), "background") || !strings.Contains(output.String(), "courier servers stop "+string(id)) {
@@ -224,6 +234,10 @@ func TestHostedTerminalLifecycle(t *testing.T) {
 	}
 	if err := renderHostedReady(failingWriter{err: errors.New("write")}, plan, "address", id); err == nil {
 		t.Fatal("expected hosted ready write failure")
+	}
+	output.Reset()
+	if err := renderHostedReady(&output, plan, "http://127.0.0.1/\x1b[31m", id); err == nil {
+		t.Fatal("expected unsafe hosted QR failure")
 	}
 
 	originalTicker := webStatusTicker
@@ -241,7 +255,8 @@ func TestHostedTerminalLifecycle(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		output.Reset()
-		if err := waitForHostedStop(ctx, &output, route, time.Now()); !errors.Is(err, context.Canceled) {
+		_, err := waitForHostedStop(ctx, &output, route, time.Now(), id, blockingProgressWatcher{})
+		if !errors.Is(err, context.Canceled) {
 			t.Fatalf("route=%s err=%v", route, err)
 		}
 	}
@@ -252,24 +267,111 @@ func TestHostedTerminalLifecycle(t *testing.T) {
 	tick := make(chan time.Time, 1)
 	tick <- time.Now().Add(time.Second)
 	webStatusTicker = func() (<-chan time.Time, func()) { return tick, func() {} }
-	if err := waitForHostedStop(context.Background(), failingWriter{err: errors.New("write")}, operation.RoutePathToWeb, time.Now()); err == nil {
+	if _, err := waitForHostedStop(context.Background(), failingWriter{err: errors.New("write")}, operation.RoutePathToWeb, time.Now(), id, blockingProgressWatcher{}); err == nil {
 		t.Fatal("expected initial live status write failure")
 	}
-	if err := waitForHostedStop(context.Background(), &failAfterWriter{remaining: 1}, operation.RoutePathToWeb, time.Now()); err == nil {
+	if _, err := waitForHostedStop(context.Background(), &failAfterWriter{remaining: 1}, operation.RoutePathToWeb, time.Now(), id, blockingProgressWatcher{}); err == nil {
 		t.Fatal("expected live status write failure")
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := waitForHostedStop(ctx, &failAfterWriter{remaining: 1}, operation.RoutePathToWeb, time.Now()); !errors.Is(err, context.Canceled) || !strings.Contains(err.Error(), "write") {
+	if _, err := waitForHostedStop(ctx, &failAfterWriter{remaining: 1}, operation.RoutePathToWeb, time.Now(), id, blockingProgressWatcher{}); !errors.Is(err, context.Canceled) || !strings.Contains(err.Error(), "write") {
 		t.Fatalf("clear error=%v", err)
 	}
 
 	terminalMode = func(io.Writer) terminalui.Mode { return terminalui.Mode{} }
 	ctx, cancel = context.WithCancel(context.Background())
 	cancel()
-	if err := waitForHostedStop(ctx, io.Discard, operation.RoutePathToWeb, time.Now()); !errors.Is(err, context.Canceled) {
+	if _, err := waitForHostedStop(ctx, io.Discard, operation.RoutePathToWeb, time.Now(), id, blockingProgressWatcher{}); !errors.Is(err, context.Canceled) {
 		t.Fatalf("plain wait=%v", err)
+	}
+	terminalMode = func(io.Writer) terminalui.Mode { return terminalui.Mode{Interactive: true, Width: 80} }
+	external := &sequenceProgressWatcher{events: []worker.ProgressEvent{{Snapshot: delivery.Snapshot{Tombstones: []delivery.Tombstone{{TargetID: id, Kind: delivery.TargetDelivery, Reason: delivery.ReasonStopped}}}}}}
+	output.Reset()
+	if stopped, err := waitForHostedStop(context.Background(), &output, operation.RoutePathToWeb, time.Now(), id, external); err != nil || !stopped {
+		t.Fatalf("rich external stop=%v err=%v output=%q", stopped, err, output.String())
+	}
+}
+
+type blockingProgressWatcher struct{}
+
+func (blockingProgressWatcher) Next(ctx context.Context) (worker.ProgressEvent, error) {
+	<-ctx.Done()
+	return worker.ProgressEvent{}, ctx.Err()
+}
+
+func (blockingProgressWatcher) Close() error { return nil }
+
+type sequenceProgressWatcher struct {
+	events []worker.ProgressEvent
+	err    error
+	index  int
+}
+
+func (watcher *sequenceProgressWatcher) Next(context.Context) (worker.ProgressEvent, error) {
+	if watcher.index < len(watcher.events) {
+		event := watcher.events[watcher.index]
+		watcher.index++
+		return event, nil
+	}
+	return worker.ProgressEvent{}, watcher.err
+}
+
+func (*sequenceProgressWatcher) Close() error { return nil }
+
+func TestHostedWatcherClassifiesTermination(t *testing.T) {
+	id := commandDeliveryID
+	active := worker.ProgressEvent{Snapshot: delivery.Snapshot{Deliveries: []delivery.Delivery{{ID: id}}}}
+	for _, test := range []struct {
+		name    string
+		watcher *sequenceProgressWatcher
+		stopped bool
+		want    string
+	}{
+		{
+			name: "external stop", stopped: true,
+			watcher: &sequenceProgressWatcher{events: []worker.ProgressEvent{active, {Snapshot: delivery.Snapshot{Tombstones: []delivery.Tombstone{{TargetID: delivery.ID("00000000-0000-4000-8000-000000000099"), Kind: delivery.TargetDelivery, Reason: delivery.ReasonStopped}, {TargetID: id, Kind: delivery.TargetDelivery, Reason: delivery.ReasonStopped}}}}}},
+		},
+		{
+			name: "failed tombstone", want: "unexpectedly",
+			watcher: &sequenceProgressWatcher{events: []worker.ProgressEvent{{Snapshot: delivery.Snapshot{Tombstones: []delivery.Tombstone{{TargetID: id, Kind: delivery.TargetDelivery, Reason: delivery.ReasonFailed}}}}}},
+		},
+		{name: "missing tombstone", want: "terminal record", watcher: &sequenceProgressWatcher{events: []worker.ProgressEvent{{}}}},
+		{name: "subscription loss", want: "confirmed control state", watcher: &sequenceProgressWatcher{err: errors.New("secret detail")}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			stopped, err := watchHostedDelivery(context.Background(), id, test.watcher)
+			if stopped != test.stopped || test.want == "" && err != nil || test.want != "" && (err == nil || !strings.Contains(err.Error(), test.want)) {
+				t.Fatalf("stopped=%v err=%v", stopped, err)
+			}
+			if err != nil && strings.Contains(err.Error(), "secret detail") {
+				t.Fatalf("worker error leaked: %v", err)
+			}
+		})
+	}
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := watchHostedDelivery(canceled, id, &sequenceProgressWatcher{err: errors.New("closed")}); !errors.Is(err, context.Canceled) {
+		t.Fatalf("canceled=%v", err)
+	}
+}
+
+func TestHostedStoppedRendering(t *testing.T) {
+	original := terminalMode
+	t.Cleanup(func() { terminalMode = original })
+	var output bytes.Buffer
+	terminalMode = func(io.Writer) terminalui.Mode { return terminalui.Mode{} }
+	if err := renderHostedStopped(&output, commandDeliveryID); err != nil || output.String() != "stopped: "+string(commandDeliveryID)+"\n" {
+		t.Fatalf("plain=%q err=%v", output.String(), err)
+	}
+	terminalMode = func(io.Writer) terminalui.Mode { return terminalui.Mode{Interactive: true, Width: 80} }
+	output.Reset()
+	if err := renderHostedStopped(&output, commandDeliveryID); err != nil || !strings.Contains(output.String(), "DELIVERY STOPPED") || !strings.Contains(output.String(), "Stopped by Courier control") {
+		t.Fatalf("rich=%q err=%v", output.String(), err)
+	}
+	if err := renderHostedStopped(failingWriter{err: errors.New("write")}, commandDeliveryID); err == nil {
+		t.Fatal("render failure ignored")
 	}
 }
 

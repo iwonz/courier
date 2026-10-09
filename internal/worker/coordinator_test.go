@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"errors"
+	"io"
 	"io/fs"
 	"net"
 	"os"
@@ -155,6 +156,8 @@ func TestCoordinatorReuseAndFailures(t *testing.T) {
 	locker := &fakeBindLocker{}
 	launchCalls := 0
 	registered := delivery.Delivery{}
+	watcher := testProgressWatcher{}
+	subscribed := delivery.ID("")
 	coordinator := &Coordinator{
 		Store: store, StateDirectory: store.Directory(), Locks: locker,
 		Launch: func(context.Context, LaunchRequest) (Client, error) {
@@ -169,10 +172,23 @@ func TestCoordinatorReuseAndFailures(t *testing.T) {
 			}
 			return &Lease{}, nil
 		},
+		Subscribe: func(_ context.Context, _ Client, id delivery.ID) (ProgressWatcher, error) {
+			subscribed = id
+			return watcher, nil
+		},
 	}
 	result, err := coordinator.Acquire(context.Background(), request)
-	if err != nil || !result.Reused || result.ServerID != server.ID || result.DeliveryID != registered.ID || result.Lease == nil || launchCalls != 0 || !locker.released {
+	if err != nil || !result.Reused || result.ServerID != server.ID || result.DeliveryID != registered.ID || result.Lease == nil || result.Watcher == nil || subscribed != registered.ID || launchCalls != 0 || !locker.released {
 		t.Fatalf("result=%+v launch=%d release=%v err=%v", result, launchCalls, locker.released, err)
+	}
+	wantSubscribe := errors.New("subscribe")
+	connection := &rpcConn{readErr: io.EOF}
+	coordinator.Register = func(_ context.Context, _ Client, item delivery.Delivery, _ bool) (*Lease, error) {
+		return &Lease{connection: connection, deliveryID: item.ID, leaseID: workerLeaseID}, nil
+	}
+	coordinator.Subscribe = func(context.Context, Client, delivery.ID) (ProgressWatcher, error) { return nil, wantSubscribe }
+	if _, err := coordinator.Acquire(context.Background(), request); !errors.Is(err, wantSubscribe) || !connection.closed {
+		t.Fatalf("subscription rollback=%v closed=%v", err, connection.closed)
 	}
 
 	coordinator.Hello = func(context.Context, Client) error {
@@ -230,6 +246,11 @@ func TestCoordinatorReuseAndFailures(t *testing.T) {
 		t.Fatalf("release=%v", err)
 	}
 }
+
+type testProgressWatcher struct{}
+
+func (testProgressWatcher) Next(context.Context) (ProgressEvent, error) { return ProgressEvent{}, nil }
+func (testProgressWatcher) Close() error                                { return nil }
 
 func TestCoordinatorInvalidStoredBindAndControlEndpointFailure(t *testing.T) {
 	store, err := delivery.OpenStore(filepath.Join(t.TempDir(), "state"))
@@ -474,8 +495,11 @@ func TestCoordinatorDefaultsAndStaleClassification(t *testing.T) {
 	}
 	defer store.Close()
 	coordinator := DefaultCoordinator(store, store.Directory())
-	if coordinator.Store != store || coordinator.Launch == nil || coordinator.Locks == nil || coordinator.Cleanup == nil {
+	if coordinator.Store != store || coordinator.Launch == nil || coordinator.Locks == nil || coordinator.Cleanup == nil || coordinator.Subscribe == nil {
 		t.Fatalf("default=%+v", coordinator)
+	}
+	if _, err := coordinator.Subscribe(context.Background(), Client{}, workerDeliveryID); err == nil {
+		t.Fatal("default subscription accepted an invalid client")
 	}
 	if !staleProbeError(os.ErrNotExist) || !staleProbeError(syscall.ECONNREFUSED) || !staleProbeError(net.ErrClosed) || staleProbeError(context.DeadlineExceeded) {
 		t.Fatal("stale error classification")

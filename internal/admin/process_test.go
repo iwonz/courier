@@ -505,13 +505,14 @@ func TestRunProcessFailures(t *testing.T) {
 	originalAcquire, originalHello, originalRemoveStale := adminAcquire, adminHello, adminRemoveStale
 	originalRemoveState, originalControl, originalTCP := adminRemoveState, adminListenControl, adminListenTCP
 	originalStore, originalAPI, originalWrite := adminOpenStore, adminNewAPI, adminWriteState
-	originalHTTP, originalServeControl, originalShutdownHTTP := adminServeHTTP, adminServeControl, adminShutdownHTTP
+	originalHTTP, originalServeControl, originalCloseHTTP, originalShutdownHTTP := adminServeHTTP, adminServeControl, adminCloseHTTP, adminShutdownHTTP
 	t.Cleanup(func() {
 		adminAcquire, adminHello, adminRemoveStale = originalAcquire, originalHello, originalRemoveStale
 		adminRemoveState, adminListenControl, adminListenTCP = originalRemoveState, originalControl, originalTCP
 		adminOpenStore, adminNewAPI, adminWriteState = originalStore, originalAPI, originalWrite
-		adminServeHTTP, adminServeControl, adminShutdownHTTP = originalHTTP, originalServeControl, originalShutdownHTTP
+		adminServeHTTP, adminServeControl, adminCloseHTTP, adminShutdownHTTP = originalHTTP, originalServeControl, originalCloseHTTP, originalShutdownHTTP
 	})
+	adminCloseHTTP = func(*http.Server) error { return nil }
 
 	if err := runProcess(context.Background(), processConfig{}, nil); !errors.Is(err, delivery.ErrInvalid) {
 		t.Fatalf("invalid=%v", err)
@@ -613,6 +614,7 @@ func TestRunProcessFailures(t *testing.T) {
 		<-ctx.Done()
 		return nil
 	}
+	adminCloseHTTP = func(*http.Server) error { return want }
 	adminShutdownHTTP = func(*http.Server, context.Context) error { close(cancelBranchHTTP); return want }
 	if err := runProcess(ctx, config, nil); !errors.Is(err, want) {
 		t.Fatalf("HTTP shutdown=%v", err)

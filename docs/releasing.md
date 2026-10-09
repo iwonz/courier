@@ -47,34 +47,40 @@ The artifact matrix includes the six primary macOS/Linux/Windows targets plus ex
 
 The pinned GoReleaser binary is downloaded into `.cache/tools` only when absent and is verified against the upstream release checksum. No global GoReleaser installation is required.
 
-## Complete and publish one change
+## Start, complete, and publish one change
 
-The preferred end-to-end command owns the complete handoff from a finished worktree to public distribution:
-
-```sh
-make ship VERSION=1.2.3 CHANGE=my-openspec-change MESSAGE="feat: describe the finished change"
-```
-
-`make ship` requires `main`, a configured GitHub/npm publication environment, completed OpenSpec tasks, strict validation, and no other active OpenSpec changes. It archives the named change when necessary, updates `target_release`, regenerates contract artifacts, runs `make verify`, stages the complete reviewed worktree, creates the conventional commit, pushes `main`, creates and pushes the annotated release tag, waits for GitHub Release/Scoop/Homebrew/npm verification, fast-forwards to the workflow's verified Formula commit, and dispatches and waits for the final GitHub Pages deployment. Any failed gate stops the sequence. Use `COURIER_SHIP_YES=1` only for deliberate non-interactive execution.
-
-## Publish one already committed release
-
-Start from a clean, synchronized `main` branch and run either form:
+Every task that changes tracked files uses the same end-to-end path. Begin only from clean synchronized `main`:
 
 ```sh
-make release VERSION=1.2.3
-./scripts/release.sh 1.2.3
+make change-start TYPE=feat CHANGE=my-openspec-change
 ```
 
-Omit the version to be prompted:
+The command fetches `origin/main`, rejects dirty or stale state and any existing active OpenSpec change, creates `feat/my-openspec-change`, and scaffolds `openspec/changes/my-openspec-change`. Supported conventional types are `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`, `perf`, and `style`.
+
+Complete the OpenSpec artifacts and task list, implement the work, run focused tests, and run `make verify`. Then hand the entire finished worktree to the only normal publication command:
 
 ```sh
-./scripts/release.sh
+make ship CHANGE=my-openspec-change MESSAGE="feat: describe the finished change"
 ```
 
-The command checks GitHub authentication, the Courier repository, GitHub secret names, origin, branch, clean state, tag uniqueness, and synchronization with `origin/main`. It then runs the full dry run, asks for final confirmation, creates one annotated `vMAJOR.MINOR.PATCH` tag, pushes only that tag, waits for the complete release workflow, fast-forwards local `main` to the verified Formula commit, and publishes the final landing through GitHub Pages.
+`VERSION` is optional. By default, `ship` increments the patch component of the newest stable semantic tag; use `VERSION=1.2.3` only when an explicit release number is required. `ship` requires the matching feature branch to have started exactly at unchanged `origin/main`, exactly one completed and strictly valid OpenSpec change, no earlier feature commits, and a configured publication environment. It archives the change, updates `target_release`, regenerates contract and landing assets, runs `make verify`, creates the one conventional commit, rechecks that local and remote `main` did not move, and performs a local `--ff-only` merge. It then pushes `main` through the protected flow, creates the annotated tag, waits for GitHub Release, Scoop, Homebrew, npm, and their final verification, and only then dispatches and waits for Pages. Finally it deletes the local feature branch and proves the repository is on clean `main == origin/main`.
 
-For deliberate non-interactive automation, set `COURIER_RELEASE_YES=1` and provide the version. This does not bypass any quality or repository preflight. `COURIER_RELEASE_VERIFIED_COMMIT` is reserved for `make ship`; it skips the duplicate local gate only when it exactly equals the commit just verified by the ship command.
+Any failed gate stops immediately. Before the commit, the dirty feature worktree remains available for inspection; after the commit, the feature branch preserves that commit; after a tag is published, the immutable tag is never moved or recreated. Fix the failed prerequisite or publication job and follow the recovery boundary below. Use `COURIER_SHIP_YES=1` only for deliberate non-interactive execution; it bypasses the prompt, not a preflight or quality gate.
+
+The tracked pre-push hook rejects manual pushes to `main` and semantic release tags. Install it once with `make hooks`. GitHub Pages has no automatic `main` push trigger, so the landing cannot advertise a version before its release matrix succeeds.
+
+## Recovery after a partially completed ship
+
+`make release` and `make pages-publish` are deliberately disabled during normal development. They are low-level recovery commands for a ship that already produced the correct clean synchronized `main` or completed release matrix:
+
+```sh
+make release VERSION=1.2.3 RECOVERY=1
+make pages-publish RECOVERY=1
+```
+
+Use release recovery only when the release commit is already on `origin/main`, its `target_release` matches, no OpenSpec change is active, and the semantic tag does not yet exist. It repeats repository, authentication, verification, ancestry, tag-uniqueness, publication, Formula synchronization, and Pages gates. Use Pages recovery only after the complete release matrix is known to have succeeded. For a narrowly required manual push during incident recovery, set `COURIER_RECOVERY=1` for that one push and record why; this disables only the local hook, never GitHub protection or release validation.
+
+`COURIER_RELEASE_VERIFIED_COMMIT`, `COURIER_RELEASE_FLOW`, `COURIER_PUSH_FLOW`, and `COURIER_PAGES_FLOW` are internal handoff variables reserved for `make ship`. They are not user-facing bypasses.
 
 GoReleaser generates release notes from conventional commits between tags, publishes `courier_<version>_source.tar.gz`, and updates `bucket/courier.json`. A separate macOS job reads the published source checksum, renders `Formula/courier.rb`, runs `brew audit`, installs with `--build-from-source`, runs `courier version`, and commits only that verified Formula to `main` with the workflow's short-lived `GITHUB_TOKEN`. No personal GitHub token or additional repository is involved. Never move or recreate a published tag. If npm publication fails before that version is published, repair the secret and rerun the failed workflow for the existing tag. npm versions are immutable, so confirm publication status before rerunning a failed npm job. A successful npm publish can remain in asynchronous registry processing for several minutes; final verification revalidates online every ten seconds for up to six minutes and never republishes an accepted version.
 

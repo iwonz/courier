@@ -132,11 +132,18 @@ type LaunchFunc func(context.Context, LaunchRequest) (Client, error)
 
 type CleanupFunc func(context.Context, delivery.OwnedTemp) error
 
+// ProgressWatcher observes authoritative snapshots for one foreground delivery.
+type ProgressWatcher interface {
+	Next(context.Context) (ProgressEvent, error)
+	Close() error
+}
+
 type Acquired struct {
 	ServerID   delivery.ID
 	DeliveryID delivery.ID
 	Reused     bool
 	Lease      *Lease
+	Watcher    ProgressWatcher
 }
 
 type Coordinator struct {
@@ -148,6 +155,7 @@ type Coordinator struct {
 	Hello              func(context.Context, Client) error
 	Register           func(context.Context, Client, delivery.Delivery, bool) (*Lease, error)
 	RegisterDefinition func(context.Context, Client, delivery.Delivery, bool, json.RawMessage) (*Lease, error)
+	Subscribe          func(context.Context, Client, delivery.ID) (ProgressWatcher, error)
 	RemoveEndpoint     func(string) error
 	StaleProbe         func(error) bool
 }
@@ -254,7 +262,17 @@ func (coordinator *Coordinator) register(ctx context.Context, client Client, req
 	if err != nil {
 		return Acquired{}, err
 	}
-	return Acquired{ServerID: client.ServerID, DeliveryID: item.ID, Reused: reused, Lease: lease}, nil
+	var watcher ProgressWatcher
+	if request.Foreground && coordinator.Subscribe != nil {
+		watcher, err = coordinator.Subscribe(ctx, client, item.ID)
+		if err != nil {
+			if lease != nil {
+				err = errors.Join(err, lease.Release(context.Background()))
+			}
+			return Acquired{}, err
+		}
+	}
+	return Acquired{ServerID: client.ServerID, DeliveryID: item.ID, Reused: reused, Lease: lease, Watcher: watcher}, nil
 }
 
 func unsafeDisplayText(value string) bool {

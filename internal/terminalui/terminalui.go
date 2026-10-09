@@ -2,6 +2,7 @@
 package terminalui
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,13 +14,16 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/muesli/termenv"
 	"golang.org/x/term"
+	"rsc.io/qr"
 )
 
 const defaultWidth = 100
+const qrQuietZone = 4
 
 var (
 	isTerminal   = term.IsTerminal
 	terminalSize = term.GetSize
+	encodeQR     = qr.Encode
 )
 
 // Tone identifies a semantic terminal treatment.
@@ -56,7 +60,10 @@ func Detect(output io.Writer, getenv func(string) string) Mode {
 	if width, _, err := terminalSize(int(file.Fd())); err == nil && width > 0 {
 		mode.Width = width
 	}
-	mode.Color = getenv("NO_COLOR") == "" && !strings.EqualFold(getenv("TERM"), "dumb")
+	if strings.EqualFold(getenv("TERM"), "dumb") {
+		return Mode{Width: mode.Width}
+	}
+	mode.Color = getenv("NO_COLOR") == ""
 	return mode
 }
 
@@ -88,6 +95,43 @@ func (r *Renderer) Text(tone Tone, value string) string {
 		return value
 	}
 	return r.renderer.NewStyle().Foreground(r.accent(tone)).Render(value)
+}
+
+// QR renders an exact text payload as a terminal QR code when the output can
+// contain the complete code and its four-module quiet zone.
+func (r *Renderer) QR(value string) (string, error) {
+	if !r.mode.Interactive {
+		return "", nil
+	}
+	clean := Sanitize(value)
+	if clean == "" || clean != value {
+		return "", errors.New("QR payload contains unsafe terminal text")
+	}
+	code, err := encodeQR(clean, qr.M)
+	if err != nil {
+		return "", err
+	}
+	size := code.Size + 2*qrQuietZone
+	if size > r.mode.Width {
+		return "", nil
+	}
+	var rendered strings.Builder
+	for y := -qrQuietZone; y < code.Size+qrQuietZone; y += 2 {
+		for x := -qrQuietZone; x < code.Size+qrQuietZone; x++ {
+			top := qrBlack(code, x, y)
+			bottom := qrBlack(code, x, y+1)
+			if r.mode.Color {
+				rendered.WriteString(colorQRCell(top, bottom))
+			} else {
+				rendered.WriteRune(plainQRCell(top, bottom))
+			}
+		}
+		if r.mode.Color {
+			rendered.WriteString("\x1b[0m")
+		}
+		rendered.WriteByte('\n')
+	}
+	return rendered.String(), nil
 }
 
 // Sanitize removes terminal control sequences while retaining readable layout.
@@ -198,4 +242,34 @@ func cleanRow(values []string) []string {
 		clean[index] = Sanitize(value)
 	}
 	return clean
+}
+
+func qrBlack(code *qr.Code, x, y int) bool {
+	return x >= 0 && y >= 0 && x < code.Size && y < code.Size && code.Black(x, y)
+}
+
+func plainQRCell(top, bottom bool) rune {
+	switch {
+	case top && bottom:
+		return '█'
+	case top:
+		return '▀'
+	case bottom:
+		return '▄'
+	default:
+		return ' '
+	}
+}
+
+func colorQRCell(top, bottom bool) string {
+	switch {
+	case top && bottom:
+		return "\x1b[40m "
+	case top:
+		return "\x1b[30;47m▀"
+	case bottom:
+		return "\x1b[30;47m▄"
+	default:
+		return "\x1b[47m "
+	}
 }

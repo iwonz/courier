@@ -17,6 +17,8 @@ Courier prints an opaque URL shaped like:
 http://127.0.0.1:8080/d/<random-resource-token>/upload
 ```
 
+In a capable interactive terminal Courier also prints a QR containing that exact POST endpoint. The QR adds no browser form and does not change the listener: a loopback endpoint remains local to the Courier machine. Redirected output, `TERM=dumb`, and terminals too narrow for the complete code remain text-only.
+
 POST exactly one `multipart/form-data` file part named `file` to that URL. For example:
 
 ```sh
@@ -56,4 +58,4 @@ The native HTTP client performs normal TLS certificate verification for HTTPS an
 
 Courier validates incoming destinations before worker acquisition. Missing destination directories and extraction roots require interactive confirmation or `--force-source-creation`; non-interactive use without the flag fails at preflight with exit code `20`. An unarchived outgoing webhook source is file-only: if it is missing, Courier fails before opening an HTTP request and never creates a directory in its place. An archived outgoing source may be an existing or authorized empty directory.
 
-Incoming foreground ownership and `--background` follow the same worker and lease rules as browser deliveries. With `--background`, Courier prints the ready URL and UUID, returns, survives terminal closure, appears in `courier servers`, and stops through the delivery/server UUID, configured stop behavior, fatal worker failure, or process termination. Outgoing webhook delivery is a finite operation and does not create a server or durable delivery record.
+Incoming foreground ownership and `--background` follow the same worker and lease rules as browser deliveries. A confirmed external delivery/server stop makes the foreground command print a neutral result and exit `0`; Ctrl+C exits `130`, while unexplained worker loss exits `40`. With `--background`, Courier prints the ready URL and UUID, returns, survives terminal closure, appears in `courier servers`, and stops through the delivery/server UUID, configured stop behavior, fatal worker failure, or process termination. Outgoing webhook delivery is a finite operation and does not create a server or durable delivery record.

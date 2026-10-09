@@ -299,6 +299,9 @@ func DefaultCoordinator(store *delivery.Store, stateDirectory string) *Coordinat
 	return &Coordinator{
 		Store: store, StateDirectory: stateDirectory, Locks: FileBindLocker{Directory: stateDirectory},
 		Launch: launcher.Launch, Cleanup: cleanupOwnedTemp,
+		Subscribe: func(ctx context.Context, client Client, id delivery.ID) (ProgressWatcher, error) {
+			return client.Subscribe(ctx, id)
+		},
 	}
 }
 

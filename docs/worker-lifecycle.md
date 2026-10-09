@@ -37,7 +37,7 @@ Responses repeat the request UUID and contain either a typed payload or one stab
 
 A foreground delivery is associated with a random lease UUID and the control connection held by its initiating CLI. Explicit lease release or connection loss stops only that delivery. An independent background delivery has no foreground lease and survives the initiating process.
 
-Delivery stop is idempotent. Server stop commits terminal state for every delivery before tombstoning the server. A worker shuts down after its final delivery ends unless a registered keepalive owner remains; releasing the final keepalive completes shutdown. Listener closure, lease closure, registry updates, and subscription cancellation are race-tested.
+Delivery stop is idempotent. Server stop commits terminal state for every delivery before tombstoning the server. Foreground acquisition also holds a delivery-filtered progress subscription: every publication retains that filter, and stop publishes the final tombstone before closing subscribers. This lets the initiating CLI distinguish verified external stop (neutral exit `0`) from interruption (`130`) and unexplained worker loss (`40`) without racing lease release. A worker shuts down after its final delivery ends unless a registered keepalive owner remains; releasing the final keepalive completes shutdown. Listener closure, watcher closure, lease closure, registry updates, and subscription cancellation are race-tested.
 
 ## Stale recovery and cleanup
 

@@ -4,6 +4,12 @@ set -eu
 
 cd "$(dirname "$0")/.."
 
+if [ "${COURIER_RELEASE_FLOW:-}" != ship ] && [ "${COURIER_RECOVERY:-0}" != 1 ]; then
+  printf '%s\n' "Direct release is disabled. Use make ship." >&2
+  printf '%s\n' "For a documented recovery only: make release VERSION=x.y.z RECOVERY=1" >&2
+  exit 1
+fi
+
 ./scripts/check-release-config.sh
 
 branch=$(git branch --show-current)
@@ -11,7 +17,7 @@ branch=$(git branch --show-current)
 [ -z "$(git status --porcelain)" ] || { printf '%s\n' "The working tree must be clean before release" >&2; exit 1; }
 
 git fetch origin --tags --quiet
-git diff --quiet HEAD origin/main || { printf '%s\n' "Local main must exactly match origin/main" >&2; exit 1; }
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || { printf '%s\n' "Local main must exactly match origin/main" >&2; exit 1; }
 
 version=${1:-}
 if [ -z "$version" ]; then
@@ -26,6 +32,21 @@ case "$version" in
 esac
 printf '%s\n' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' || {
   printf '%s\n' "Version must use semantic vMAJOR.MINOR.PATCH syntax" >&2
+  exit 1
+}
+version_number=${tag#v}
+grep -Eq "^target_release: ${version_number}$" docs/cli-contract.yaml || {
+  printf '%s\n' "CLI contract target_release must equal $version_number" >&2
+  exit 1
+}
+for active in openspec/changes/*; do
+  [ -d "$active" ] || continue
+  [ "$(basename "$active")" = archive ] && continue
+  printf '%s\n' "Active OpenSpec change remains unarchived: $(basename "$active")" >&2
+  exit 1
+done
+git merge-base --is-ancestor HEAD origin/main || {
+  printf '%s\n' "The release commit must be reachable from origin/main" >&2
   exit 1
 }
 if git rev-parse --verify --quiet "refs/tags/$tag" >/dev/null; then
@@ -56,7 +77,7 @@ if [ "${COURIER_RELEASE_YES:-0}" != 1 ]; then
 fi
 
 git tag -a "$tag" -m "Courier $tag"
-if ! git push origin "$tag"; then
+if ! COURIER_PUSH_FLOW=ship git push origin "$tag"; then
   printf '%s\n' "Push failed. The local annotated tag remains at $tag; fix connectivity and run: git push origin $tag" >&2
   exit 1
 fi
@@ -79,7 +100,7 @@ gh run watch "$run_id" --repo iwonz/courier --exit-status --interval 10
 
 git fetch origin main --quiet
 git merge --ff-only origin/main
-./scripts/publish-pages.sh
+COURIER_PAGES_FLOW=ship ./scripts/publish-pages.sh
 
 release_url=$(gh release view "$tag" --repo iwonz/courier --json url --jq .url)
 pages_url=$(gh api repos/iwonz/courier/pages --jq .html_url)

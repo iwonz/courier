@@ -19,6 +19,11 @@ type leaseEntry struct {
 	connection net.Conn
 }
 
+type progressSubscriber struct {
+	filter  delivery.ID
+	channel chan ProgressEvent
+}
+
 type Runtime struct {
 	store         *delivery.Store
 	server        delivery.Server
@@ -30,7 +35,7 @@ type Runtime struct {
 	ownedTemps   map[delivery.ID][]delivery.ID
 	leases       map[delivery.ID]leaseEntry
 	keepalives   map[delivery.ID]bool
-	subscribers  map[delivery.ID]chan ProgressEvent
+	subscribers  map[delivery.ID]progressSubscriber
 	hadDelivery  bool
 	listener     net.Listener
 	shutdown     chan struct{}
@@ -46,7 +51,7 @@ func NewRuntime(ctx context.Context, store *delivery.Store, server delivery.Serv
 	runtime := &Runtime{
 		store: store, server: server, compatibility: compatibility, now: time.Now,
 		deliveries: map[delivery.ID]delivery.Delivery{}, ownedTemps: map[delivery.ID][]delivery.ID{}, leases: map[delivery.ID]leaseEntry{},
-		keepalives: map[delivery.ID]bool{}, subscribers: map[delivery.ID]chan ProgressEvent{}, shutdown: make(chan struct{}),
+		keepalives: map[delivery.ID]bool{}, subscribers: map[delivery.ID]progressSubscriber{}, shutdown: make(chan struct{}),
 	}
 	if _, err := updateStore(ctx, store, func(registry *delivery.Registry) error {
 		if err := registry.RegisterServer(server); err != nil {
@@ -324,9 +329,11 @@ func (runtime *Runtime) StopDelivery(ctx context.Context, id delivery.ID, reason
 	connections := runtime.removeDeliveryLocked(id)
 	if last {
 		runtime.server.State = delivery.StateStopped
-		runtime.requestShutdownLocked()
 	}
 	runtime.publishLocked()
+	if last {
+		runtime.requestShutdownLocked()
+	}
 	runtime.mutex.Unlock()
 	closeConnections(connections)
 	return true, cleanupErr
@@ -386,8 +393,8 @@ func (runtime *Runtime) StopServer(ctx context.Context, reason delivery.Tombston
 	runtime.leases = map[delivery.ID]leaseEntry{}
 	runtime.keepalives = map[delivery.ID]bool{}
 	runtime.server.State = delivery.StateStopped
-	runtime.requestShutdownLocked()
 	runtime.publishLocked()
+	runtime.requestShutdownLocked()
 	runtime.mutex.Unlock()
 	closeConnections(connections)
 	return cleanupErr
@@ -437,7 +444,7 @@ func (runtime *Runtime) Subscribe(id delivery.ID) (<-chan ProgressEvent, func(),
 	}
 	subscriptionID := delivery.NewID()
 	channel := make(chan ProgressEvent, 1)
-	runtime.subscribers[subscriptionID] = channel
+	runtime.subscribers[subscriptionID] = progressSubscriber{filter: id, channel: channel}
 	runtime.publishOneLocked(channel, id)
 	runtime.mutex.Unlock()
 	var once sync.Once
@@ -670,9 +677,9 @@ func (runtime *Runtime) requestShutdownLocked() {
 			_ = runtime.listener.Close()
 		}
 		for _, subscriber := range runtime.subscribers {
-			close(subscriber)
+			close(subscriber.channel)
 		}
-		runtime.subscribers = map[delivery.ID]chan ProgressEvent{}
+		runtime.subscribers = map[delivery.ID]progressSubscriber{}
 	})
 }
 
@@ -687,7 +694,7 @@ func (runtime *Runtime) isShuttingDown() bool {
 
 func (runtime *Runtime) publishLocked() {
 	for _, subscriber := range runtime.subscribers {
-		runtime.publishOneLocked(subscriber, "")
+		runtime.publishOneLocked(subscriber.channel, subscriber.filter)
 	}
 }
 
@@ -704,6 +711,13 @@ func (runtime *Runtime) publishOneLocked(channel chan ProgressEvent, filter deli
 			}
 		}
 		snapshot.Deliveries = filtered
+		filteredTombstones := snapshot.Tombstones[:0]
+		for _, tombstone := range snapshot.Tombstones {
+			if tombstone.TargetID == filter {
+				filteredTombstones = append(filteredTombstones, tombstone)
+			}
+		}
+		snapshot.Tombstones = filteredTombstones
 	}
 	event := ProgressEvent{Snapshot: snapshot}
 	select {

@@ -54,6 +54,7 @@ var (
 	adminNewAPI          = NewAPI
 	adminServeHTTP       = func(server *http.Server, listener net.Listener) error { return server.Serve(listener) }
 	adminServeControl    = serveControl
+	adminCloseHTTP       = func(server *http.Server) error { return server.Close() }
 	adminShutdownHTTP    = func(server *http.Server, ctx context.Context) error { return server.Shutdown(ctx) }
 )
 
@@ -422,6 +423,9 @@ func runProcess(ctx context.Context, config processConfig, ready func(State) err
 	go func() { controlResult <- serveAdminControl(runContext, controlListener, state, cancel) }()
 	select {
 	case <-runContext.Done():
+		if ctx.Err() != nil {
+			resultErr = ctx.Err()
+		}
 	case err := <-httpResult:
 		resultErr = normalizeServerError(err)
 		cancel()
@@ -431,7 +435,7 @@ func runProcess(ctx context.Context, config processConfig, ready func(State) err
 	}
 	shutdownContext, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
-	resultErr = errors.Join(resultErr, normalizeServerError(adminShutdownHTTP(server, shutdownContext)), closeListener(controlListener))
+	resultErr = errors.Join(resultErr, normalizeServerError(adminCloseHTTP(server)), normalizeServerError(adminShutdownHTTP(server, shutdownContext)), closeListener(controlListener))
 	return resultErr
 }
 

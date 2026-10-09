@@ -48,7 +48,7 @@ func TestCommandsAndExitCodes(t *testing.T) {
 		{name: "root", args: nil, code: ExitOK, wantOutput: "Safely transfer"},
 		{name: "help", args: []string{"--help"}, code: ExitOK, wantOutput: "Safely transfer"},
 		{name: "version", args: []string{"version"}, code: ExitOK, wantOutput: "courier v1.2.3 (commit abc, built today)"},
-		{name: "version args", args: []string{"version", "extra"}, code: ExitCLI, wantError: "stage: preflight"},
+		{name: "version args", args: []string{"version", "extra"}, code: ExitCLI, wantError: "help: courier version --help"},
 		{name: "unknown", args: []string{"unknown"}, code: ExitCLI, wantError: "unknown command"},
 		{name: "invalid transfer grammar", args: []string{"from", "a", "into", "b"}, code: ExitCLI, wantError: "expected: courier from"},
 		{name: "unsupported transfer route", args: []string{"from", "https://example.test/file", "to", "out"}, code: ExitCLI, wantError: "unsupported operation route"},
@@ -126,6 +126,19 @@ func TestUnknownRuntimeRoute(t *testing.T) {
 	var commandErr *commandError
 	if !errors.As(err, &commandErr) || commandErr.code != ExitCLI {
 		t.Fatalf("unknown route=%v", err)
+	}
+}
+
+func TestUsageErrorsOmitOperationalReport(t *testing.T) {
+	var stderr bytes.Buffer
+	code := Execute(context.Background(), NewRoot(Dependencies{}), []string{"services"}, io.Discard, &stderr)
+	if code != ExitCLI || !strings.Contains(stderr.String(), "did you mean: courier servers") || !strings.Contains(stderr.String(), "help: courier --help") {
+		t.Fatalf("code=%d stderr=%q", code, stderr.String())
+	}
+	for _, forbidden := range []string{"stage:", "read:", "sent:", "confirmed:", "result:"} {
+		if strings.Contains(stderr.String(), forbidden) {
+			t.Fatalf("usage output contains %q: %q", forbidden, stderr.String())
+		}
 	}
 }
 
@@ -474,7 +487,11 @@ func TestExtractCommand(t *testing.T) {
 			}
 			var stderr bytes.Buffer
 			code := Execute(context.Background(), NewRoot(configured), test.args, io.Discard, &stderr)
-			if code != test.wantCode || !strings.Contains(stderr.String(), "stage: "+test.wantStage) || !strings.Contains(stderr.String(), test.wantText) {
+			stageMatches := !strings.Contains(stderr.String(), "stage:")
+			if test.wantCode != ExitCLI {
+				stageMatches = strings.Contains(stderr.String(), "stage: "+test.wantStage)
+			}
+			if code != test.wantCode || !stageMatches || !strings.Contains(stderr.String(), test.wantText) {
 				t.Fatalf("code=%d stderr=%q", code, stderr.String())
 			}
 		})
@@ -564,7 +581,11 @@ func TestTransferFailurePathsAndCleanup(t *testing.T) {
 			}
 			var stderr bytes.Buffer
 			code := Execute(context.Background(), NewRoot(dependencies), test.args, io.Discard, &stderr)
-			if code != test.wantCode || !strings.Contains(stderr.String(), "stage: "+test.wantStage) || !strings.Contains(stderr.String(), test.wantText) {
+			stageMatches := !strings.Contains(stderr.String(), "stage:")
+			if test.wantCode != ExitCLI {
+				stageMatches = strings.Contains(stderr.String(), "stage: "+test.wantStage)
+			}
+			if code != test.wantCode || !stageMatches || !strings.Contains(stderr.String(), test.wantText) {
 				t.Fatalf("code=%d stderr=%q", code, stderr.String())
 			}
 		})

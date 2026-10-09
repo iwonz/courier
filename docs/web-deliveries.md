@@ -20,7 +20,7 @@ courier from web:// to server:/srv/incoming/ --max-file-size 2GiB
 courier from web:// to ./expanded/ --extract --max-extracted-size 20GiB
 ```
 
-The command prints the browser URL and the delivery UUID. The URL contains a random 256-bit resource token; it does not contain a file path, credential, or policy value. Treat an unauthenticated URL as a bearer capability and stop it when it is no longer needed.
+The command prints the browser URL and the delivery UUID. In a capable interactive terminal it also prints a QR containing that exact URL; redirected output, `TERM=dumb`, and terminals too narrow for the complete code retain text-only output. The URL contains a random 256-bit resource token; it does not contain a file path, credential, or policy value. Treat an unauthenticated URL as a bearer capability and stop it when it is no longer needed. The QR does not alter binding or exposure: a loopback URL is still reachable only from the machine running Courier.
 
 The default bind is `127.0.0.1:8080`. Use `--listen <host:port>` when other devices must connect. Network exposure does not disable peer admission or authentication.
 
@@ -52,7 +52,7 @@ With `--extract`, the uploaded object must be tar.gz. Courier inspects every ent
 
 ## Lifecycle and API-only mode
 
-Without `--background`, the initiating process owns a foreground lease. Interrupting it stops only that delivery and closes its endpoint resources. With `--background`, Courier prints the ready URL and delivery UUID, returns, and keeps the worker alive after terminal closure. The UUID appears in `courier servers`; stop it with `courier servers stop <uuid>` or stop its server with `courier servers stop <server-uuid>` or `--all`. Configured stop behavior, a fatal worker failure, and process termination also end the delivery.
+Without `--background`, the initiating process owns a foreground lease. Interrupting it stops only that delivery, closes its endpoint resources, and exits `130`. If another Courier process stops the delivery or containing server by UUID, the foreground command observes the confirmed tombstone, prints a neutral stopped result, and exits `0`. Losing the worker without confirmed stop evidence is a control failure with exit `40`. With `--background`, Courier prints the ready URL and delivery UUID, returns, and keeps the worker alive after terminal closure. The UUID appears in `courier servers`; stop it with `courier servers stop <uuid>` or stop its server with `courier servers stop <server-uuid>` or `--all`. Configured stop behavior, a fatal worker failure, and process termination also end the delivery.
 
 `--no-ui` disables the HTML entry point and returns a small versioned JSON description after authorization. Versioned metadata, session, upload, and download endpoints remain available under the opaque delivery URL. Static UI assets contain no delivery metadata or credentials.
 

@@ -25,6 +25,8 @@ A canonical UUID selects exactly one delivery, one data server, or a known tombs
 - stopping an already tombstoned target succeeds without contacting another process;
 - an unknown UUID fails without changing registry or process state.
 
+When the target belongs to a foreground browser or incoming-webhook command, a verified stop publishes the final delivery tombstone before the worker closes subscribers. The initiating process therefore exits `0` with a neutral stopped message. An unexplained worker disappearance remains a control failure instead of being mistaken for an operator stop.
+
 `courier servers stop --all` independently verifies every registered data server and continues after individual failures. It always reports the number successfully stopped and returns exit code `40` if any server could not be verified or stopped. It does not affect the separate administrative UI process.
 
 There are intentionally no public `servers list`, `servers clean`, worker, PID-based, or direct registry-mutation commands.

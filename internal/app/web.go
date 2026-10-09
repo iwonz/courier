@@ -42,6 +42,7 @@ var (
 	}
 	runWebAcquire   = acquireWebDelivery
 	releaseWebLease = (*worker.Lease).Release
+	closeWebLease   = (*worker.Lease).Close
 )
 
 type webCoordinator interface {
@@ -247,14 +248,33 @@ func webRunner(credentials func(context.Context, operation.AuthMode) (policy.Cre
 		if acquired.Lease == nil {
 			return errors.New("foreground delivery did not return a lease")
 		}
-		waitErr := waitForHostedStop(ctx, output, plan.Route, webNow())
+		if acquired.Watcher == nil {
+			_ = closeWebLease(acquired.Lease)
+			return errors.New("foreground delivery did not return a progress watcher")
+		}
+		externallyStopped, waitErr := waitForHostedStop(ctx, output, plan.Route, webNow(), acquired.DeliveryID, acquired.Watcher)
+		watchErr := acquired.Watcher.Close()
+		if externallyStopped {
+			return errors.Join(waitErr, watchErr, renderHostedStopped(output, acquired.DeliveryID), closeWebLease(acquired.Lease))
+		}
 		releaseContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := releaseWebLease(acquired.Lease, releaseContext); err != nil {
-			return errors.Join(waitErr, err)
+			return errors.Join(waitErr, watchErr, err)
 		}
-		return waitErr
+		return errors.Join(waitErr, watchErr)
 	}
+}
+
+func renderHostedStopped(output io.Writer, id delivery.ID) error {
+	mode := terminalMode(output)
+	if !mode.Interactive {
+		_, err := fmt.Fprintf(output, "stopped: %s\n", id)
+		return err
+	}
+	message := terminalui.New(output, mode).Panel("Delivery stopped", terminalui.ToneSuccess, []terminalui.Field{{Label: "ID", Value: string(id)}}, "Stopped by Courier control")
+	_, err := fmt.Fprint(output, message)
+	return err
 }
 
 func renderHostedReady(output io.Writer, plan operation.Plan, address string, id delivery.ID) error {
@@ -268,7 +288,8 @@ func renderHostedReady(output io.Writer, plan operation.Plan, address string, id
 		runMode = "background"
 		footer = "Stop with: courier servers stop " + string(id)
 	}
-	panel := terminalui.New(output, mode).Panel("Delivery ready", terminalui.ToneSuccess, []terminalui.Field{
+	renderer := terminalui.New(output, mode)
+	panel := renderer.Panel("Delivery ready", terminalui.ToneSuccess, []terminalui.Field{
 		{Label: "Route", Value: plan.Route.String()},
 		{Label: "URL", Value: address},
 		{Label: "ID", Value: string(id)},
@@ -276,15 +297,40 @@ func renderHostedReady(output io.Writer, plan operation.Plan, address string, id
 		{Label: "Destination", Value: plan.Destination.Raw},
 		{Label: "Mode", Value: runMode},
 	}, footer)
-	_, err := fmt.Fprint(output, panel)
+	if _, err := fmt.Fprint(output, panel); err != nil {
+		return err
+	}
+	code, err := renderer.QR(address)
+	if err != nil {
+		return err
+	}
+	if code != "" {
+		_, err = fmt.Fprint(output, code)
+	}
 	return err
 }
 
-func waitForHostedStop(ctx context.Context, output io.Writer, route operation.Route, started time.Time) error {
+type hostedWatchResult struct {
+	externallyStopped bool
+	err               error
+}
+
+func waitForHostedStop(ctx context.Context, output io.Writer, route operation.Route, started time.Time, id delivery.ID, watcher worker.ProgressWatcher) (bool, error) {
+	watchContext, cancelWatch := context.WithCancel(ctx)
+	defer cancelWatch()
+	watchResult := make(chan hostedWatchResult, 1)
+	go func() {
+		stopped, err := watchHostedDelivery(watchContext, id, watcher)
+		watchResult <- hostedWatchResult{externallyStopped: stopped, err: err}
+	}()
 	mode := terminalMode(output)
 	if !mode.Interactive {
-		<-ctx.Done()
-		return ctx.Err()
+		select {
+		case <-ctx.Done():
+			return false, ctx.Err()
+		case result := <-watchResult:
+			return result.externallyStopped, result.err
+		}
 	}
 	status := "Serving browser downloads"
 	if route == operation.RouteWebToPath {
@@ -300,21 +346,56 @@ func waitForHostedStop(ctx context.Context, output io.Writer, route operation.Ro
 		return err
 	}
 	if err := write(started); err != nil {
-		return err
+		return false, err
 	}
 	for {
 		select {
 		case <-ctx.Done():
 			_, err := fmt.Fprint(output, "\r\x1b[2K")
 			if err != nil {
-				return errors.Join(ctx.Err(), err)
+				return false, errors.Join(ctx.Err(), err)
 			}
-			return ctx.Err()
+			return false, ctx.Err()
+		case result := <-watchResult:
+			_, clearErr := fmt.Fprint(output, "\r\x1b[2K")
+			return result.externallyStopped, errors.Join(result.err, clearErr)
 		case at := <-ticks:
 			if err := write(at); err != nil {
-				return err
+				return false, err
 			}
 		}
+	}
+}
+
+func watchHostedDelivery(ctx context.Context, id delivery.ID, watcher worker.ProgressWatcher) (bool, error) {
+	for {
+		event, err := watcher.Next(ctx)
+		if err != nil {
+			if ctx.Err() != nil {
+				return false, ctx.Err()
+			}
+			return false, errors.New("hosted worker stopped without confirmed control state")
+		}
+		active := false
+		for _, item := range event.Snapshot.Deliveries {
+			if item.ID == id {
+				active = true
+				break
+			}
+		}
+		if active {
+			continue
+		}
+		for _, tombstone := range event.Snapshot.Tombstones {
+			if tombstone.TargetID != id || tombstone.Kind != delivery.TargetDelivery {
+				continue
+			}
+			if tombstone.Reason == delivery.ReasonStopped {
+				return true, nil
+			}
+			return false, errors.New("hosted worker stopped unexpectedly")
+		}
+		return false, errors.New("hosted delivery disappeared without a terminal record")
 	}
 }
 

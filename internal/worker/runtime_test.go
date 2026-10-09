@@ -632,10 +632,47 @@ func TestRuntimeIPCIntegration(t *testing.T) {
 	if err := claimed.Release(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+	firstStopped := false
+	for attempt := 0; attempt < 3 && !firstStopped; attempt++ {
+		wait, cancel := context.WithTimeout(context.Background(), time.Second)
+		event, nextErr := subscription.Next(wait)
+		cancel()
+		if nextErr != nil {
+			t.Fatal(nextErr)
+		}
+		if len(event.Snapshot.Deliveries) != 0 {
+			if len(event.Snapshot.Deliveries) != 1 || event.Snapshot.Deliveries[0].ID != first.ID {
+				t.Fatalf("filtered event=%+v", event)
+			}
+			continue
+		}
+		if len(event.Snapshot.Tombstones) == 1 && event.Snapshot.Tombstones[0].TargetID == first.ID && event.Snapshot.Tombstones[0].Reason == delivery.ReasonStopped {
+			firstStopped = true
+		}
+	}
+	if !firstStopped {
+		t.Fatal("filtered subscription did not publish the final tombstone")
+	}
 	if err := claimed.Release(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+	lastSubscription, err := client.Subscribe(context.Background(), second.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := lastSubscription.Next(context.Background()); err != nil {
+		t.Fatal(err)
+	}
 	if err := foreground.Close(); err != nil {
+		t.Fatal(err)
+	}
+	lastWait, lastCancel := context.WithTimeout(context.Background(), time.Second)
+	lastEvent, err := lastSubscription.Next(lastWait)
+	lastCancel()
+	if err != nil || len(lastEvent.Snapshot.Deliveries) != 0 || len(lastEvent.Snapshot.Tombstones) != 1 || lastEvent.Snapshot.Tombstones[0].TargetID != second.ID {
+		t.Fatalf("last event=%+v err=%v", lastEvent, err)
+	}
+	if err := lastSubscription.Close(); err != nil {
 		t.Fatal(err)
 	}
 	select {

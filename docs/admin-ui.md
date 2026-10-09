@@ -9,7 +9,9 @@ courier ui start --background --listen 127.0.0.1:9090
 courier ui stop
 ```
 
-The default address is `http://127.0.0.1:9090/`. Only literal loopback IPv4 and IPv6 addresses are accepted. A foreground start prints the URL after both listeners and private state are ready, then runs until interruption or `courier ui stop`. `--background` starts the same embedded server in a detached internal process, prints the ready URL and administration UUID, returns only after its UUID-bound IPC handshake succeeds, and survives terminal closure. It ends through `courier ui stop`, a fatal process failure, or process termination.
+The default address is `http://127.0.0.1:9090/`. Only literal loopback IPv4 and IPv6 addresses are accepted. A capable interactive terminal prints a QR for the exact displayed URL after the readiness panel; redirected output, `TERM=dumb`, and terminals too narrow for the complete code keep only the stable text URL. QR rendering does not change loopback reachability: a phone cannot open a `127.0.0.1` Courier UI running on another computer.
+
+A foreground start prints readiness after both listeners and private state are ready, then runs until interruption or `courier ui stop`. A verified `ui stop` from another Courier process prints a neutral stopped result and makes the initiating command exit `0`; Ctrl+C remains an interrupted exit `130`. `--background` starts the same embedded server in a detached internal process, prints the ready URL and administration UUID, returns only after its UUID-bound IPC handshake succeeds, and survives terminal closure. It ends through `courier ui stop`, a fatal process failure, or process termination.
 
 ## Singleton and process authority
 

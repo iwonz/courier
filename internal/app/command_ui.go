@@ -65,24 +65,42 @@ func newUIStartCommand(start func(context.Context, admin.StartRequest) (admin.St
 			backgroundValue, _ := background.Value()
 			request := admin.StartRequest{Bind: bind, Background: backgroundValue}
 			request.Ready = func(state admin.State) error {
+				address := admin.URL(state)
 				mode := terminalMode(command.OutOrStdout())
 				if !mode.Interactive {
-					_, err := fmt.Fprintf(command.OutOrStdout(), "Courier administration UI: %s\n", admin.URL(state))
+					_, err := fmt.Fprintf(command.OutOrStdout(), "Courier administration UI: %s\n", address)
 					return err
 				}
 				runMode, footer := "foreground", "Press Ctrl+C to stop"
 				if backgroundValue {
 					runMode, footer = "background", "Stop with: courier ui stop"
 				}
-				panel := terminalui.New(command.OutOrStdout(), mode).Panel("Administration UI ready", terminalui.ToneSuccess, []terminalui.Field{
-					{Label: "URL", Value: admin.URL(state)}, {Label: "ID", Value: string(state.ID)}, {Label: "Bind", Value: state.Bind},
+				renderer := terminalui.New(command.OutOrStdout(), mode)
+				panel := renderer.Panel("Administration UI ready", terminalui.ToneSuccess, []terminalui.Field{
+					{Label: "URL", Value: address}, {Label: "ID", Value: string(state.ID)}, {Label: "Bind", Value: state.Bind},
 					{Label: "PID", Value: fmt.Sprintf("%d", state.ProcessID)}, {Label: "Mode", Value: runMode},
 				}, footer)
-				_, err := fmt.Fprint(command.OutOrStdout(), panel)
+				if _, err := fmt.Fprint(command.OutOrStdout(), panel); err != nil {
+					return err
+				}
+				code, err := renderer.QR(address)
+				if err == nil && code != "" {
+					_, err = fmt.Fprint(command.OutOrStdout(), code)
+				}
 				return err
 			}
-			if _, err := start(command.Context(), request); err != nil {
+			result, err := start(command.Context(), request)
+			if err != nil {
 				return controlCommandError(err)
+			}
+			if !backgroundValue && !result.AlreadyRunning {
+				message := "Courier administration UI stopped.\n"
+				if mode := terminalMode(command.OutOrStdout()); mode.Interactive {
+					message = terminalui.New(command.OutOrStdout(), mode).Panel("Administration UI stopped", terminalui.ToneSuccess, nil, "Stopped by Courier control")
+				}
+				if _, err := fmt.Fprint(command.OutOrStdout(), message); err != nil {
+					return controlCommandError(err)
+				}
 			}
 			return nil
 		},

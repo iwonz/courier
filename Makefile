@@ -6,7 +6,7 @@ SHELLCHECK_VERSION := v0.11.0
 SHELLCHECK ?= .cache/tools/shellcheck
 OPENSPEC ?= openspec
 
-.PHONY: all fmt-check vet contract-check workflow-check openspec-check test npm-test ui-test browser-test pages-build pages-publish goreleaser-check formula-test snapshot package-test verify precommit hooks release ship clean
+.PHONY: all fmt-check vet contract-check workflow-check workflow-test openspec-check test npm-test ui-test browser-test pages-build pages-publish goreleaser-check formula-test snapshot package-test verify precommit hooks change-start release ship clean
 
 all: verify
 
@@ -29,6 +29,9 @@ workflow-check:
 	fi
 	$(ACTIONLINT) -shellcheck "$(SHELLCHECK)" -color
 
+workflow-test:
+	./scripts/test-change-workflow.sh
+
 openspec-check:
 	$(OPENSPEC) validate --all --strict --no-interactive
 
@@ -49,7 +52,7 @@ pages-build: contract-check
 	npm run build --prefix web --workspace @courier/landing --loglevel=error
 
 pages-publish:
-	./scripts/publish-pages.sh
+	COURIER_RECOVERY=$(RECOVERY) ./scripts/publish-pages.sh
 
 goreleaser-check:
 	@if [ ! -x "$(GORELEASER)" ] && ! command -v "$(GORELEASER)" >/dev/null 2>&1; then \
@@ -70,15 +73,18 @@ formula-test: snapshot
 package-test: formula-test
 	./scripts/test-linux-packages.sh
 
-verify: test npm-test browser-test workflow-check openspec-check package-test
+verify: test npm-test browser-test workflow-check workflow-test openspec-check package-test
 
 precommit: verify
 
 hooks:
 	git config core.hooksPath .githooks
 
+change-start:
+	./scripts/change-start.sh "$(TYPE)" "$(CHANGE)"
+
 release:
-	./scripts/release.sh $(VERSION)
+	COURIER_RECOVERY=$(RECOVERY) ./scripts/release.sh $(VERSION)
 
 ship:
 	./scripts/ship.sh "$(VERSION)" "$(CHANGE)" "$(MESSAGE)"

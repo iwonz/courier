@@ -4,6 +4,12 @@ set -eu
 
 cd "$(dirname "$0")/.."
 
+if [ "${COURIER_PAGES_FLOW:-}" != ship ] && [ "${COURIER_RECOVERY:-0}" != 1 ]; then
+  printf '%s\n' "Direct Pages publication is disabled. Use make ship." >&2
+  printf '%s\n' "For a documented recovery only: make pages-publish RECOVERY=1" >&2
+  exit 1
+fi
+
 repository=iwonz/courier
 workflow=pages.yml
 

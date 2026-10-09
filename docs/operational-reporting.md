@@ -26,3 +26,5 @@ Operational history files use the same private immutable write-and-sync protocol
 ## Exit codes
 
 Courier returns `0` for success, `2` for CLI errors, `10` for SSH connection/trust/authentication errors, `20` for transfer-stage errors, `30` for self-update errors, `40` for registry/IPC/control errors, and `130` when an operation or internal runtime is canceled or interrupted.
+
+Exit-code `2` usage failures—unknown commands, invalid arguments or flags, and unsupported routes—use a compact diagnostic containing the sanitized error, an available suggestion, and the relevant `--help` command. They intentionally omit operational stage and byte counters because no transfer ran. Preflight and runtime failures retain the full operational report.

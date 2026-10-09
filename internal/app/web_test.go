@@ -365,9 +365,10 @@ func TestHostedPreflightPrecedesAcquisition(t *testing.T) {
 }
 
 func TestWebRunnerBranches(t *testing.T) {
-	originalDefinition, originalAddress, originalWebhookAddress, originalAcquire, originalRelease := newWebDefinition, webAddress, webhookAddress, runWebAcquire, releaseWebLease
+	originalDefinition, originalAddress, originalWebhookAddress, originalAcquire, originalRelease, originalClose := newWebDefinition, webAddress, webhookAddress, runWebAcquire, releaseWebLease, closeWebLease
 	t.Cleanup(func() {
 		newWebDefinition, webAddress, webhookAddress, runWebAcquire, releaseWebLease = originalDefinition, originalAddress, originalWebhookAddress, originalAcquire, originalRelease
+		closeWebLease = originalClose
 	})
 	plan := browserPlan(t, true)
 	localProvider := func(_ context.Context, value endpoint.Endpoint) (*HostedEndpoint, error) {
@@ -435,8 +436,9 @@ func TestWebRunnerBranches(t *testing.T) {
 		t.Fatal("acquire error ignored")
 	}
 	lease := &worker.Lease{}
+	closeWebLease = func(*worker.Lease) error { return nil }
 	runWebAcquire = func(context.Context, operation.Plan, delivery.Policy, json.RawMessage) (worker.Acquired, error) {
-		return worker.Acquired{DeliveryID: appWebDeliveryID, Lease: lease}, nil
+		return worker.Acquired{DeliveryID: appWebDeliveryID, Lease: lease, Watcher: blockingProgressWatcher{}}, nil
 	}
 	releases := 0
 	releaseWebLease = func(*worker.Lease, context.Context) error { releases++; return nil }
@@ -460,8 +462,16 @@ func TestWebRunnerBranches(t *testing.T) {
 	if err := webRunner(provider, localProvider, nil)(context.Background(), foreground, io.Discard); err == nil {
 		t.Fatal("missing foreground lease accepted")
 	}
+	closed := 0
+	closeWebLease = func(*worker.Lease) error { closed++; return nil }
 	runWebAcquire = func(context.Context, operation.Plan, delivery.Policy, json.RawMessage) (worker.Acquired, error) {
 		return worker.Acquired{DeliveryID: appWebDeliveryID, Lease: lease}, nil
+	}
+	if err := webRunner(provider, localProvider, nil)(context.Background(), foreground, io.Discard); err == nil || closed != 1 {
+		t.Fatalf("missing foreground watcher=%v closed=%d", err, closed)
+	}
+	runWebAcquire = func(context.Context, operation.Plan, delivery.Policy, json.RawMessage) (worker.Acquired, error) {
+		return worker.Acquired{DeliveryID: appWebDeliveryID, Lease: lease, Watcher: blockingProgressWatcher{}}, nil
 	}
 	releaseError := errors.New("release")
 	releaseWebLease = func(*worker.Lease, context.Context) error { return releaseError }
@@ -473,6 +483,14 @@ func TestWebRunnerBranches(t *testing.T) {
 	releaseWebLease = func(*worker.Lease, context.Context) error { return nil }
 	if err := webRunner(provider, localProvider, nil)(canceled, foreground, io.Discard); !errors.Is(err, context.Canceled) {
 		t.Fatalf("foreground cancellation=%v", err)
+	}
+	external := &sequenceProgressWatcher{events: []worker.ProgressEvent{{Snapshot: delivery.Snapshot{Tombstones: []delivery.Tombstone{{TargetID: appWebDeliveryID, Kind: delivery.TargetDelivery, Reason: delivery.ReasonStopped}}}}}}
+	runWebAcquire = func(context.Context, operation.Plan, delivery.Policy, json.RawMessage) (worker.Acquired, error) {
+		return worker.Acquired{DeliveryID: appWebDeliveryID, Lease: lease, Watcher: external}, nil
+	}
+	output.Reset()
+	if err := webRunner(provider, localProvider, nil)(context.Background(), foreground, &output); err != nil || !strings.Contains(output.String(), "stopped: "+string(appWebDeliveryID)) {
+		t.Fatalf("external stop=%v output=%q", err, output.String())
 	}
 	webhookPlan, err := operation.Build(operation.Request{Source: "webhook://", Destination: t.TempDir(), Options: []operation.Option{{Name: operation.OptionBackground, Value: "true"}}})
 	if err != nil {
