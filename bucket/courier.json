@@ -1,19 +1,19 @@
 {
-    "version": "0.3.9",
+    "version": "0.3.10",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/iwonz/courier/releases/download/v0.3.9/courier_0.3.9_windows_amd64.zip",
+            "url": "https://github.com/iwonz/courier/releases/download/v0.3.10/courier_0.3.10_windows_amd64.zip",
             "bin": [
                 "courier.exe"
             ],
-            "hash": "2fefaca7f888be4ce06ddac920298b608a656322cb47e63937b12ccbe7264908"
+            "hash": "6b796cc92f56ea1908ee7efe46eadea0e5172eb99f47647cbabab43854e90ee3"
         },
         "arm64": {
-            "url": "https://github.com/iwonz/courier/releases/download/v0.3.9/courier_0.3.9_windows_arm64.zip",
+            "url": "https://github.com/iwonz/courier/releases/download/v0.3.10/courier_0.3.10_windows_arm64.zip",
             "bin": [
                 "courier.exe"
             ],
-            "hash": "8e7ffc7474daa94abee04c747430ffa62b62c4d3d65c5cddee2f34917ba73651"
+            "hash": "45b15ff4770eee4ff83fa722b3cee779e1a51a462d916bb59df936c18f563542"
         }
     },
     "homepage": "https://github.com/iwonz/courier",
