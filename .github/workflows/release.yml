@@ -143,13 +143,17 @@ jobs:
           tap="courier-ci/release-${GITHUB_RUN_ID}"
           installed=false
           tapped=false
+          trusted=false
           cleanup() {
             if [ "$installed" = true ]; then brew uninstall --force courier >/dev/null; fi
             if [ "$tapped" = true ]; then brew untap --force "$tap" >/dev/null; fi
+            if [ "$trusted" = true ]; then brew untrust --tap "$tap" >/dev/null; fi
           }
           trap cleanup EXIT
           HOMEBREW_NO_AUTO_UPDATE=1 brew tap-new --no-git "$tap" >/dev/null
           tapped=true
+          brew trust --tap "$tap" >/dev/null
+          trusted=true
           tap_root=$(brew --repository "$tap")
           cp Formula/courier.rb "$tap_root/Formula/courier.rb"
           brew audit --strict --formula "$tap/courier"
@@ -161,6 +165,8 @@ jobs:
           installed=false
           brew untap --force "$tap" >/dev/null
           tapped=false
+          brew untrust --tap "$tap" >/dev/null
+          trusted=false
       - name: Commit the verified Formula to main
         run: |
           git config user.name github-actions[bot]

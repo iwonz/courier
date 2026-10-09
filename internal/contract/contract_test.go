@@ -1,6 +1,7 @@
 package contract
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,11 +13,13 @@ import (
 )
 
 func validContract() Contract {
+	required, optional := true, false
+	description := LocalizedText{EN: "English description.", RU: "Описание на русском."}
 	return Contract{
-		SchemaVersion: 2, ContractVersion: "0.8.0", TargetRelease: "0.2.0", Language: "en",
+		SchemaVersion: 3, ContractVersion: "0.8.0", TargetRelease: "0.2.0", Language: "en",
 		EndpointKinds: []Endpoint{{Name: "local", Status: "shipped", Syntax: "path"}},
-		Commands:      []Command{{Name: "from", Path: "from", Usage: "courier from", Status: "shipped", Arguments: []Argument{{Name: "source", Kind: "endpoint", Required: true}}, Flags: []string{"archive"}}},
-		Flags:         []Flag{{Name: "archive", Syntax: "--archive", Status: "shipped", ValueKind: "boolean", Default: "false", AppliesTo: []string{"path-to-path"}}},
+		Commands:      []Command{{Name: "from", Path: "from", Usage: "courier from", Status: "shipped", Arguments: []Argument{{Name: "source", Kind: "endpoint", Required: &required, Description: description}}, Flags: []string{"archive"}}},
+		Flags:         []Flag{{Name: "archive", Syntax: "--archive", Status: "shipped", Required: &optional, Description: description, ValueKind: "boolean", Default: "false", AppliesTo: []string{"path-to-path"}}},
 		Routes:        []Route{{Name: "path-to-path", Status: "shipped", Source: []string{"local"}, Destination: []string{"local"}, AllowedFlags: []string{"archive"}}},
 		Unsupported:   []string{"--mirror"}, Examples: []string{"courier from a to b"},
 	}
@@ -25,7 +28,7 @@ func validContract() Contract {
 func TestLoadAndReference(t *testing.T) {
 	directory := t.TempDir()
 	name := filepath.Join(directory, "contract.yaml")
-	data := "schema_version: 2\ncontract_version: 0.8.0\ntarget_release: 0.2.0\nlanguage: en\nendpoint_kinds:\n  - {name: local, status: shipped, syntax: path}\ncommands:\n  - {name: from, path: from, usage: courier-from, status: shipped, system: false, arguments: [{name: source, kind: endpoint, required: true, prefix: '', omit_when_flag: ''}], flags: [archive]}\nflags:\n  - {name: archive, syntax: --archive, status: shipped, value_kind: boolean, choices: [], placeholder: '', repeatable: false, default: 'false', applies_to: [path-to-path], conflicts: [], requires: []}\nroutes:\n  - {name: path-to-path, status: shipped, source: [local], destination: [local], allowed_flags: [archive]}\nunsupported: [--mirror]\nexamples: [courier-from]\n"
+	data := "schema_version: 3\ncontract_version: 0.8.0\ntarget_release: 0.2.0\nlanguage: en\nendpoint_kinds:\n  - {name: local, status: shipped, syntax: path}\ncommands:\n  - {name: from, path: from, usage: courier-from, status: shipped, system: false, arguments: [{name: source, kind: endpoint, required: true, prefix: '', omit_when_flag: '', description: {en: Source value., ru: Значение источника.}}], flags: [archive]}\nflags:\n  - {name: archive, syntax: --archive, status: shipped, required: false, description: {en: Archive source., ru: Архивировать источник.}, value_kind: boolean, choices: [], placeholder: '', repeatable: false, default: 'false', applies_to: [path-to-path], conflicts: [], requires: []}\nroutes:\n  - {name: path-to-path, status: shipped, source: [local], destination: [local], allowed_flags: [archive]}\nunsupported: [--mirror]\nexamples: [courier-from]\n"
 	if err := os.WriteFile(name, []byte(data), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -80,6 +83,8 @@ func TestValidateFailures(t *testing.T) {
 		{"duplicate command flag", func(c *Contract) { c.Commands[0].Flags = []string{"archive", "archive"} }},
 		{"argument name", func(c *Contract) { c.Commands[0].Arguments[0].Name = "Source" }},
 		{"argument kind", func(c *Contract) { c.Commands[0].Arguments[0].Kind = "file" }},
+		{"argument required", func(c *Contract) { c.Commands[0].Arguments[0].Required = nil }},
+		{"argument description", func(c *Contract) { c.Commands[0].Arguments[0].Description.RU = "" }},
 		{"duplicate argument", func(c *Contract) {
 			c.Commands[0].Arguments = append(c.Commands[0].Arguments, c.Commands[0].Arguments[0])
 		}},
@@ -87,6 +92,9 @@ func TestValidateFailures(t *testing.T) {
 		{"argument prefix option", func(c *Contract) { c.Commands[0].Arguments[0].Prefix = "--to" }},
 		{"argument suppressor", func(c *Contract) { c.Commands[0].Arguments[0].OmitWhenFlag = "missing" }},
 		{"flag behavior", func(c *Contract) { c.Flags[0].AppliesTo = nil }},
+		{"flag required", func(c *Contract) { c.Flags[0].Required = nil }},
+		{"required flag", func(c *Contract) { required := true; c.Flags[0].Required = &required }},
+		{"flag description", func(c *Contract) { c.Flags[0].Description.EN = " padded " }},
 		{"flag value kind", func(c *Contract) { c.Flags[0].ValueKind = "unknown" }},
 		{"boolean placeholder", func(c *Contract) { c.Flags[0].Placeholder = "value" }},
 		{"boolean choices", func(c *Contract) { c.Flags[0].Choices = []string{"yes"} }},
@@ -194,6 +202,7 @@ func TestReferenceEmptyAndSystemValues(t *testing.T) {
 	value.Commands[0].Status = "system"
 	value.Routes[0].AllowedFlags = nil
 	value.Flags[0].Conflicts = []string{"archive"}
+	value.Flags[0].Requires = []string{"archive"}
 	reference := string(value.Reference())
 	if !strings.Contains(reference, "| system |") || !strings.Contains(reference, "| none |") || !strings.Contains(reference, "| archive |") {
 		t.Fatalf("reference=%s", reference)
@@ -210,7 +219,7 @@ func TestLandingProjection(t *testing.T) {
 	value.Flags = append(value.Flags, Flag{Name: "future", Syntax: "--future", Status: "planned", ValueKind: "boolean", Default: "false", AppliesTo: []string{"path-to-path"}})
 	value.Routes = append(value.Routes, Route{Name: "future", Status: "planned", Source: []string{"local"}, Destination: []string{"local"}})
 	landing := value.Landing()
-	if len(landing.Endpoints) != 1 || len(landing.Commands) != 2 || len(landing.Flags) != 1 || len(landing.Routes) != 1 || !landing.Commands[1].System {
+	if len(landing.Endpoints) != 1 || len(landing.Commands) != 2 || len(landing.Flags) != 1 || len(landing.Routes) != 1 || !landing.Commands[1].System || landing.Flags[0].Required || landing.Flags[0].Description.RU == "" || landing.Commands[0].Arguments[0].Description.EN == "" || landing.ScopeLabels["path-to-path"].EN == "" {
 		t.Fatalf("landing=%+v", landing)
 	}
 	encoded := string(value.LandingJSON())
@@ -223,6 +232,45 @@ func TestLandingProjection(t *testing.T) {
 	landing.Flags[0].AppliesTo[0] = "changed"
 	if value.Commands[0].Flags[0] != "archive" || value.Commands[0].Arguments[0].Name != "source" || value.Routes[0].Source[0] != "local" || value.Flags[0].AppliesTo[0] != "path-to-path" {
 		t.Fatal("landing projection aliases contract slices")
+	}
+}
+
+func TestGeneratedHelpAndREADME(t *testing.T) {
+	value := validContract()
+	value.Commands[0].Arguments[0].Prefix = "to"
+	value.Commands = append(value.Commands, Command{Name: "future", Path: "future", Usage: "courier future", Status: "planned"})
+	value.Flags[0].Requires = []string{"archive"}
+	value.Flags[0].Conflicts = []string{"archive"}
+	value.Flags = append(value.Flags, Flag{Name: "future", Status: "planned"})
+	help := string(value.HelpGo())
+	for _, wanted := range []string{"Code generated by contractdoc", `"from"`, "English description.", "Path to path", "structuredArgumentHelp", "structuredFlagHelp"} {
+		if !strings.Contains(help, wanted) {
+			t.Fatalf("help missing %q: %s", wanted, help)
+		}
+	}
+	section := string(value.READMESection())
+	for _, wanted := range []string{READMEStart, READMEEnd, "### Arguments", "### Options", "Required", "Optional", "English description."} {
+		if !strings.Contains(section, wanted) {
+			t.Fatalf("README section missing %q: %s", wanted, section)
+		}
+	}
+	original := []byte("before\n" + READMEStart + "\nstale\n" + READMEEnd + "\nafter\n")
+	updated, err := value.UpdateREADME(original)
+	if err != nil || !bytes.Contains(updated, value.READMESection()) || !bytes.HasPrefix(updated, []byte("before\n")) || !bytes.HasSuffix(updated, []byte("\nafter\n")) {
+		t.Fatalf("updated=%q err=%v", updated, err)
+	}
+	for _, invalid := range [][]byte{
+		[]byte("missing"),
+		[]byte(READMEEnd + "\n" + READMEStart),
+		[]byte(READMEStart + READMEStart + READMEEnd),
+		[]byte(READMEStart + READMEEnd + READMEEnd),
+	} {
+		if _, err := value.UpdateREADME(invalid); err == nil {
+			t.Fatalf("invalid README accepted: %q", invalid)
+		}
+	}
+	if humanScopes([]string{"path-to-path", "unknown"}, "ru") != "Из пути в путь, unknown" || markdownCell("a|b") != `a\|b` || requirement(false) != "Optional" || requiredValue(nil) {
+		t.Fatal("generated documentation helpers are inconsistent")
 	}
 }
 
@@ -261,7 +309,7 @@ func TestCheckCobra(t *testing.T) {
 	value := validContract()
 	root := &cobra.Command{Use: "courier"}
 	from := &cobra.Command{Use: "from", Run: func(*cobra.Command, []string) {}}
-	from.Flags().Bool("archive", false, "archive")
+	from.Flags().Bool("archive", false, value.Flags[0].Description.EN)
 	root.AddCommand(from)
 	if err := value.CheckCobra(root); err != nil {
 		t.Fatal(err)
@@ -277,6 +325,14 @@ func TestCheckCobra(t *testing.T) {
 	from.Flags().Bool("extra", false, "extra")
 	if err := extra.CheckCobra(root); err == nil {
 		t.Fatal("expected flag mismatch")
+	}
+
+	root = &cobra.Command{Use: "courier"}
+	from = &cobra.Command{Use: "from", Run: func(*cobra.Command, []string) {}}
+	from.Flags().Bool("archive", false, "stale help")
+	root.AddCommand(from)
+	if err := value.CheckCobra(root); err == nil {
+		t.Fatal("expected help mismatch")
 	}
 
 	broken := validContract()

@@ -5,13 +5,14 @@ import "encoding/json"
 // LandingData is the generated, public, shipped-only contract projection used
 // by the static project site.
 type LandingData struct {
-	ContractVersion string            `json:"contractVersion"`
-	TargetRelease   string            `json:"targetRelease"`
-	Endpoints       []LandingEndpoint `json:"endpoints"`
-	Commands        []LandingCommand  `json:"commands"`
-	Flags           []LandingFlag     `json:"flags"`
-	Routes          []LandingRoute    `json:"routes"`
-	Examples        []string          `json:"examples"`
+	ContractVersion string                   `json:"contractVersion"`
+	TargetRelease   string                   `json:"targetRelease"`
+	Endpoints       []LandingEndpoint        `json:"endpoints"`
+	Commands        []LandingCommand         `json:"commands"`
+	Flags           []LandingFlag            `json:"flags"`
+	Routes          []LandingRoute           `json:"routes"`
+	ScopeLabels     map[string]LocalizedText `json:"scopeLabels"`
+	Examples        []string                 `json:"examples"`
 }
 
 type LandingEndpoint struct {
@@ -29,24 +30,27 @@ type LandingCommand struct {
 }
 
 type LandingArgument struct {
-	Name         string `json:"name"`
-	Kind         string `json:"kind"`
-	Required     bool   `json:"required"`
-	Prefix       string `json:"prefix,omitempty"`
-	OmitWhenFlag string `json:"omitWhenFlag,omitempty"`
+	Name         string        `json:"name"`
+	Kind         string        `json:"kind"`
+	Required     bool          `json:"required"`
+	Prefix       string        `json:"prefix,omitempty"`
+	OmitWhenFlag string        `json:"omitWhenFlag,omitempty"`
+	Description  LocalizedText `json:"description"`
 }
 
 type LandingFlag struct {
-	Name        string   `json:"name"`
-	Syntax      string   `json:"syntax"`
-	ValueKind   string   `json:"valueKind"`
-	Choices     []string `json:"choices"`
-	Placeholder string   `json:"placeholder"`
-	Repeatable  bool     `json:"repeatable"`
-	Default     string   `json:"default"`
-	AppliesTo   []string `json:"appliesTo"`
-	Conflicts   []string `json:"conflicts"`
-	Requires    []string `json:"requires"`
+	Name        string        `json:"name"`
+	Syntax      string        `json:"syntax"`
+	ValueKind   string        `json:"valueKind"`
+	Choices     []string      `json:"choices"`
+	Placeholder string        `json:"placeholder"`
+	Repeatable  bool          `json:"repeatable"`
+	Default     string        `json:"default"`
+	AppliesTo   []string      `json:"appliesTo"`
+	Conflicts   []string      `json:"conflicts"`
+	Requires    []string      `json:"requires"`
+	Required    bool          `json:"required"`
+	Description LocalizedText `json:"description"`
 }
 
 type LandingRoute struct {
@@ -59,7 +63,7 @@ type LandingRoute struct {
 // Landing projects only shipped and system inventory from the canonical
 // contract. Planned entries cannot reach the public site bundle.
 func (c Contract) Landing() LandingData {
-	result := LandingData{ContractVersion: c.ContractVersion, TargetRelease: c.TargetRelease, Examples: append([]string(nil), c.Examples...)}
+	result := LandingData{ContractVersion: c.ContractVersion, TargetRelease: c.TargetRelease, Examples: append([]string(nil), c.Examples...), ScopeLabels: ApplicabilityLabels()}
 	for _, endpoint := range c.EndpointKinds {
 		if endpoint.Status == "shipped" {
 			result.Endpoints = append(result.Endpoints, LandingEndpoint{Name: endpoint.Name, Syntax: endpoint.Syntax})
@@ -69,7 +73,7 @@ func (c Contract) Landing() LandingData {
 		if command.Status == "shipped" || command.Status == "system" {
 			arguments := make([]LandingArgument, 0, len(command.Arguments))
 			for _, argument := range command.Arguments {
-				arguments = append(arguments, LandingArgument{Name: argument.Name, Kind: argument.Kind, Required: argument.Required, Prefix: argument.Prefix, OmitWhenFlag: argument.OmitWhenFlag})
+				arguments = append(arguments, LandingArgument{Name: argument.Name, Kind: argument.Kind, Required: requiredValue(argument.Required), Prefix: argument.Prefix, OmitWhenFlag: argument.OmitWhenFlag, Description: argument.Description})
 			}
 			result.Commands = append(result.Commands, LandingCommand{Name: command.Name, Path: command.Path, Usage: command.Usage, System: command.System, Arguments: arguments, Flags: append([]string(nil), command.Flags...)})
 		}
@@ -80,6 +84,7 @@ func (c Contract) Landing() LandingData {
 				Name: flag.Name, Syntax: flag.Syntax, ValueKind: flag.ValueKind, Choices: append([]string(nil), flag.Choices...), Placeholder: flag.Placeholder,
 				Repeatable: flag.Repeatable, Default: flag.Default, AppliesTo: append([]string(nil), flag.AppliesTo...),
 				Conflicts: append([]string(nil), flag.Conflicts...), Requires: append([]string(nil), flag.Requires...),
+				Required: requiredValue(flag.Required), Description: flag.Description,
 			})
 		}
 	}

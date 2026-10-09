@@ -13,6 +13,10 @@ import (
 func (c Contract) CheckCobra(root *cobra.Command) error {
 	expectedCommands := map[string]Command{}
 	expectedFlags := map[string]struct{}{}
+	flagMetadata := map[string]Flag{}
+	for _, flag := range c.Flags {
+		flagMetadata[flag.Name] = flag
+	}
 	for _, command := range c.Commands {
 		if command.Status == "shipped" || command.Status == "system" {
 			expectedCommands[command.Path] = command
@@ -33,6 +37,12 @@ func (c Contract) CheckCobra(root *cobra.Command) error {
 				actualFlags[path+" --"+flag.Name] = struct{}{}
 			}
 		})
+		for _, name := range expectedCommands[path].Flags {
+			flag := command.LocalNonPersistentFlags().Lookup(name)
+			if flag != nil && flag.Usage != flagMetadata[name].Description.EN {
+				return fmt.Errorf("flag help parity failed for %s --%s", path, name)
+			}
+		}
 	}
 	return equalStringKeys("flag", expectedFlags, actualFlags)
 }

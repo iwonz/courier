@@ -95,6 +95,30 @@ func TestCommandsAndExitCodes(t *testing.T) {
 	}
 }
 
+func TestStructuredCommandHelp(t *testing.T) {
+	for _, test := range []struct {
+		args []string
+		want []string
+	}{
+		{args: []string{"from", "--help"}, want: []string{"Arguments:", "<source>", "Required", "Options:", "--force-source-creation", "Optional", "Applies to: Path to path", "repeatable: yes", "conflicts: --extract", "requires: --extract"}},
+		{args: []string{"ui", "start", "--help"}, want: []string{"--background", "survives terminal closure", "Administration UI start"}},
+		{args: []string{"servers", "--help"}, want: []string{"Usage:", "courier servers"}},
+	} {
+		var output bytes.Buffer
+		if code := Execute(context.Background(), NewRoot(Dependencies{}), test.args, &output, io.Discard); code != ExitOK {
+			t.Fatalf("args=%v code=%d", test.args, code)
+		}
+		for _, wanted := range test.want {
+			if !strings.Contains(output.String(), wanted) {
+				t.Fatalf("args=%v missing=%q output=%q", test.args, wanted, output.String())
+			}
+		}
+	}
+	if requirementLabel(true) != "Required" || requirementLabel(false) != "Optional" || yesNo(true) != "yes" || yesNo(false) != "no" {
+		t.Fatal("structured help labels are inconsistent")
+	}
+}
+
 func TestUnknownRuntimeRoute(t *testing.T) {
 	err := runRoute(context.Background(), Dependencies{}, operation.Plan{Route: operation.Route(255)}, selection.All(), io.Discard, io.Discard)
 	var commandErr *commandError
@@ -511,7 +535,7 @@ func TestTransferFailurePathsAndCleanup(t *testing.T) {
 					case "in":
 						return fakeInfo{name: "in"}, nil
 					case "out/":
-						return nil, fs.ErrNotExist
+						return fakeInfo{name: "out", directory: true}, nil
 					default:
 						return nil, errors.New("resolved destination stat")
 					}
@@ -783,6 +807,50 @@ func TestTerminalConfirmation(t *testing.T) {
 	}
 }
 
+func TestTerminalDirectoryConfirmation(t *testing.T) {
+	originalTerminal := terminalAttached
+	t.Cleanup(func() { terminalAttached = originalTerminal })
+	if accepted, err := terminalDirectoryConfirmation(nil, io.Discard)(context.Background(), "Create?"); accepted || !errors.Is(err, errDirectoryConfirmationUnavailable) {
+		t.Fatalf("nonterminal accepted=%v err=%v", accepted, err)
+	}
+	inputName := filepath.Join(t.TempDir(), "answer")
+	if err := os.WriteFile(inputName, []byte("yes\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	input, err := os.Open(inputName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer input.Close()
+	terminalAttached = func(int) bool { return true }
+	var output bytes.Buffer
+	accepted, err := terminalDirectoryConfirmation(input, &output)(context.Background(), "Create directory?")
+	if err != nil || !accepted || output.String() != "Create directory? [y/N] " {
+		t.Fatalf("accepted=%v output=%q err=%v", accepted, output.String(), err)
+	}
+	if _, err := input.Seek(0, io.SeekStart); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := terminalDirectoryConfirmation(input, failureWriter{})(context.Background(), "Create?"); err == nil {
+		t.Fatal("output failure ignored")
+	}
+	closed, err := os.Open(inputName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := closed.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := terminalDirectoryConfirmation(closed, io.Discard)(context.Background(), "Create?"); err == nil {
+		t.Fatal("closed input failure ignored")
+	}
+	canceled, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := terminalDirectoryConfirmation(input, io.Discard)(canceled, "Create?"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancellation=%v", err)
+	}
+}
+
 func TestDefaultDependencyFailuresAndErrorHelpers(t *testing.T) {
 	originalHome, originalLoad := userHomeDirectory, loadSSHConfig
 	t.Cleanup(func() { userHomeDirectory, loadSSHConfig = originalHome, originalLoad })
@@ -818,12 +886,13 @@ func transferDependencies(t *testing.T, open func(context.Context, endpoint.Endp
 		OpenArtifact: func(name string) (fsx.Backend, string, func() error, error) {
 			return fsx.Local{}, name, func() error { return nil }, nil
 		},
-		Transfer: (transfer.Engine{Token: func() (string, error) { return "test", nil }}).Run,
-		Archive:  archive.CreateSelected,
-		Extract:  registry.Extract,
-		Reporter: report.New,
-		Terminal: func(io.Writer) bool { return false },
-		TempDir:  t.TempDir(),
+		Transfer:         (transfer.Engine{Token: func() (string, error) { return "test", nil }}).Run,
+		Archive:          archive.CreateSelected,
+		Extract:          registry.Extract,
+		Reporter:         report.New,
+		Terminal:         func(io.Writer) bool { return false },
+		ConfirmDirectory: func(context.Context, string) (bool, error) { return true, nil },
+		TempDir:          t.TempDir(),
 	}
 }
 

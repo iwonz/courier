@@ -1,6 +1,6 @@
-schema_version: 2
-contract_version: 0.15.0
-target_release: 0.3.9
+schema_version: 3
+contract_version: 0.16.0
+target_release: 0.3.10
 language: en
 
 endpoint_kinds:
@@ -27,9 +27,9 @@ commands:
     status: shipped
     system: false
     arguments:
-      - {name: source, kind: endpoint, required: true, prefix: "", omit_when_flag: ""}
-      - {name: destination, kind: endpoint, required: true, prefix: to, omit_when_flag: ""}
-    flags: [archive, extract, listen, background, auth, auth-attempts, auth-fail-action, limit, no-ui, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate, download-rate]
+      - {name: source, kind: endpoint, required: true, prefix: "", omit_when_flag: "", description: {en: "File, directory, browser upload, or webhook input to read from.", ru: "Файл, каталог, браузерная загрузка или webhook, откуда получать данные."}}
+      - {name: destination, kind: endpoint, required: true, prefix: to, omit_when_flag: "", description: {en: "Path, browser download, or HTTP endpoint that receives the data.", ru: "Путь, браузерная выдача или HTTP-адрес, куда передаются данные."}}
+    flags: [archive, extract, listen, background, force-source-creation, auth, auth-attempts, auth-fail-action, limit, no-ui, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate, download-rate]
   - name: servers
     path: servers
     usage: courier servers
@@ -43,7 +43,7 @@ commands:
     status: shipped
     system: false
     arguments:
-      - {name: uuid, kind: uuid, required: true, prefix: "", omit_when_flag: all}
+      - {name: uuid, kind: uuid, required: true, prefix: "", omit_when_flag: all, description: {en: "Delivery or server UUID to stop; omitted when --all is used.", ru: "UUID доставки или сервера для остановки; не указывается вместе с --all."}}
     flags: [all]
   - name: ui-start
     path: ui start
@@ -65,7 +65,7 @@ commands:
     status: system
     system: true
     arguments:
-      - {name: command, kind: command-path, required: false, prefix: "", omit_when_flag: ""}
+      - {name: command, kind: command-path, required: false, prefix: "", omit_when_flag: "", description: {en: "Command path whose detailed help should be shown.", ru: "Путь команды, для которой нужно показать подробную справку."}}
     flags: []
   - name: version
     path: version
@@ -86,6 +86,8 @@ flags:
   - name: archive
     syntax: --archive
     status: shipped
+    required: false
+    description: {en: "Pack the source into a verified <source-name>.tar.gz before transfer.", ru: "Упаковать источник в проверенный <имя-источника>.tar.gz перед передачей."}
     value_kind: boolean
     choices: []
     placeholder: ""
@@ -97,6 +99,8 @@ flags:
   - name: extract
     syntax: --extract
     status: shipped
+    required: false
+    description: {en: "Safely extract a tar.gz source into the destination root.", ru: "Безопасно распаковать tar.gz в корневой каталог назначения."}
     value_kind: boolean
     choices: []
     placeholder: ""
@@ -108,6 +112,8 @@ flags:
   - name: listen
     syntax: --listen <host:port>
     status: shipped
+    required: false
+    description: {en: "Bind incoming browser, webhook, or administration traffic to this address.", ru: "Принимать входящий браузерный, webhook- или административный трафик на этом адресе."}
     value_kind: host-port
     choices: []
     placeholder: host:port
@@ -119,6 +125,8 @@ flags:
   - name: background
     syntax: --background
     status: shipped
+    required: false
+    description: {en: "Detach browser downloads, browser uploads, incoming webhooks, or ui start after printing the URL and UUID; the process survives terminal closure until stopped by courier servers stop, courier ui stop, configured stop behavior, a fatal worker failure, or process termination.", ru: "Отсоединить браузерную выдачу, браузерную загрузку, входящий webhook или ui start после вывода URL и UUID; процесс переживает закрытие терминала и работает до courier servers stop, courier ui stop, настроенного условия остановки, критической ошибки worker или завершения процесса."}
     value_kind: boolean
     choices: []
     placeholder: ""
@@ -127,9 +135,24 @@ flags:
     applies_to: [web-to-path, path-to-web, webhook-to-path, ui-start]
     conflicts: []
     requires: []
+  - name: force-source-creation
+    syntax: --force-source-creation
+    status: shipped
+    required: false
+    description: {en: "Create every missing directory endpoint recursively without asking; no other safety confirmation is bypassed.", ru: "Рекурсивно создать все отсутствующие каталоги без запроса; остальные защитные подтверждения не отключаются."}
+    value_kind: boolean
+    choices: []
+    placeholder: ""
+    repeatable: false
+    default: "false"
+    applies_to: [path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http]
+    conflicts: []
+    requires: []
   - name: auth
     syntax: --auth <none|basic|password>
     status: shipped
+    required: false
+    description: {en: "Choose no authentication, HTTP Basic authentication, or a browser password.", ru: "Выбрать отсутствие аутентификации, HTTP Basic или пароль для браузера."}
     value_kind: enum
     choices: [none, basic, password]
     placeholder: none|basic|password
@@ -141,6 +164,8 @@ flags:
   - name: auth-attempts
     syntax: --auth-attempts <N>
     status: shipped
+    required: false
+    description: {en: "Set how many failed authentication attempts are allowed before the configured action.", ru: "Задать число неудачных попыток входа до выполнения настроенного действия."}
     value_kind: unsigned
     choices: []
     placeholder: N
@@ -152,6 +177,8 @@ flags:
   - name: auth-fail-action
     syntax: --auth-fail-action <ban|stop>
     status: shipped
+    required: false
+    description: {en: "Ban the peer or stop the delivery when the authentication-attempt limit is reached.", ru: "Заблокировать узел или остановить доставку после исчерпания попыток входа."}
     value_kind: enum
     choices: [ban, stop]
     placeholder: ban|stop
@@ -163,6 +190,8 @@ flags:
   - name: limit
     syntax: --limit <N>
     status: shipped
+    required: false
+    description: {en: "Limit concurrent transfers for a hosted delivery, or allow an unlimited count.", ru: "Ограничить число одновременных передач для hosted-доставки или не задавать предел."}
     value_kind: text
     choices: []
     placeholder: N|unlimited
@@ -174,6 +203,8 @@ flags:
   - name: no-ui
     syntax: --no-ui
     status: shipped
+    required: false
+    description: {en: "Expose only the versioned browser-delivery data API, without the web interface.", ru: "Открыть только версионированный API браузерной доставки без веб-интерфейса."}
     value_kind: boolean
     choices: []
     placeholder: ""
@@ -185,6 +216,8 @@ flags:
   - name: allow-ip
     syntax: --allow-ip <IP/CIDR>
     status: shipped
+    required: false
+    description: {en: "Allow one peer IP address or CIDR; repeat the option to add more networks.", ru: "Разрешить один IP-адрес или CIDR; повторите параметр для дополнительных сетей."}
     value_kind: ip-cidr
     choices: []
     placeholder: IP/CIDR
@@ -196,6 +229,8 @@ flags:
   - name: exclude
     syntax: --exclude <pattern>
     status: shipped
+    required: false
+    description: {en: "Exclude paths with an ordered gitignore-style pattern.", ru: "Исключить пути упорядоченным шаблоном в стиле gitignore."}
     value_kind: text
     choices: []
     placeholder: pattern
@@ -207,6 +242,8 @@ flags:
   - name: exclude-regex
     syntax: --exclude-regex <regex>
     status: shipped
+    required: false
+    description: {en: "Exclude paths matching a Go regular expression.", ru: "Исключить пути, совпадающие с регулярным выражением Go."}
     value_kind: regex
     choices: []
     placeholder: regex
@@ -218,6 +255,8 @@ flags:
   - name: exclude-from
     syntax: --exclude-from <file>
     status: shipped
+    required: false
+    description: {en: "Read ordered gitignore-style exclusion rules from a local file.", ru: "Прочитать упорядоченные правила исключения в стиле gitignore из локального файла."}
     value_kind: path
     choices: []
     placeholder: file
@@ -229,6 +268,8 @@ flags:
   - name: max-file-size
     syntax: --max-file-size <size|unlimited>
     status: shipped
+    required: false
+    description: {en: "Set the largest accepted incoming file size, or remove the configurable limit.", ru: "Задать максимальный размер входящего файла или убрать настраиваемый предел."}
     value_kind: quantity
     choices: []
     placeholder: size|unlimited
@@ -240,6 +281,8 @@ flags:
   - name: max-extracted-size
     syntax: --max-extracted-size <size|unlimited>
     status: shipped
+    required: false
+    description: {en: "Set the maximum total expanded archive size; requires --extract.", ru: "Задать максимальный суммарный размер распакованных данных; требует --extract."}
     value_kind: quantity
     choices: []
     placeholder: size|unlimited
@@ -251,6 +294,8 @@ flags:
   - name: upload-rate
     syntax: --upload-rate <rate|unlimited>
     status: shipped
+    required: false
+    description: {en: "Limit the aggregate upload rate, or allow an unlimited rate.", ru: "Ограничить суммарную скорость отправки или не задавать предел."}
     value_kind: rate
     choices: []
     placeholder: rate|unlimited
@@ -262,6 +307,8 @@ flags:
   - name: download-rate
     syntax: --download-rate <rate|unlimited>
     status: shipped
+    required: false
+    description: {en: "Limit the aggregate download rate, or allow an unlimited rate.", ru: "Ограничить суммарную скорость скачивания или не задавать предел."}
     value_kind: rate
     choices: []
     placeholder: rate|unlimited
@@ -273,6 +320,8 @@ flags:
   - name: all
     syntax: --all
     status: shipped
+    required: false
+    description: {en: "Stop every discovered Courier delivery and server instead of one UUID.", ru: "Остановить все найденные доставки и серверы Courier вместо одного UUID."}
     value_kind: boolean
     choices: []
     placeholder: ""
@@ -287,27 +336,27 @@ routes:
     status: shipped
     source: [local, ssh]
     destination: [local, ssh]
-    allowed_flags: [archive, extract, exclude, exclude-regex, exclude-from, max-extracted-size, upload-rate, download-rate]
+    allowed_flags: [archive, extract, force-source-creation, exclude, exclude-regex, exclude-from, max-extracted-size, upload-rate, download-rate]
   - name: web-to-path
     status: shipped
     source: [web]
     destination: [local, ssh]
-    allowed_flags: [extract, listen, background, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
+    allowed_flags: [extract, listen, background, force-source-creation, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
   - name: path-to-web
     status: shipped
     source: [local, ssh]
     destination: [web]
-    allowed_flags: [archive, listen, background, auth, auth-attempts, auth-fail-action, limit, no-ui, allow-ip, exclude, exclude-regex, exclude-from, download-rate]
+    allowed_flags: [archive, listen, background, force-source-creation, auth, auth-attempts, auth-fail-action, limit, no-ui, allow-ip, exclude, exclude-regex, exclude-from, download-rate]
   - name: webhook-to-path
     status: shipped
     source: [webhook]
     destination: [local, ssh]
-    allowed_flags: [extract, listen, background, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
+    allowed_flags: [extract, listen, background, force-source-creation, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
   - name: path-to-http
     status: shipped
     source: [local, ssh]
     destination: [http]
-    allowed_flags: [archive, auth, exclude, exclude-regex, exclude-from, upload-rate]
+    allowed_flags: [archive, force-source-creation, auth, exclude, exclude-regex, exclude-from, upload-rate]
 
 unsupported:
   - courier servers list

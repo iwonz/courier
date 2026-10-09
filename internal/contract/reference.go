@@ -18,6 +18,12 @@ func (c Contract) Reference() []byte {
 		}
 		fmt.Fprintf(&output, "| %s | `%s` | %s |\n", command.Status, command.Usage, kind)
 	}
+	output.WriteString("\n## Arguments\n\n| Command | Argument | Requirement | Description |\n|---|---|---|---|\n")
+	for _, command := range c.Commands {
+		for _, argument := range command.Arguments {
+			fmt.Fprintf(&output, "| `%s` | `<%s>` | %s | %s |\n", command.Path, argument.Name, requirement(requiredValue(argument.Required)), markdownCell(argument.Description.EN))
+		}
+	}
 	output.WriteString("\n## Endpoint kinds\n\n| Status | Kind | Syntax |\n|---|---|---|\n")
 	for _, endpoint := range c.EndpointKinds {
 		fmt.Fprintf(&output, "| %s | `%s` | %s |\n", endpoint.Status, endpoint.Name, endpoint.Syntax)
@@ -34,13 +40,17 @@ func (c Contract) Reference() []byte {
 		}
 		fmt.Fprintf(&output, "| %s | `%s` | %s | %s | %s |\n", route.Status, route.Name, strings.Join(route.Source, ", "), strings.Join(route.Destination, ", "), flags)
 	}
-	output.WriteString("\n## Options\n\n| Status | Option | Repeatable | Default | Applies to | Conflicts |\n|---|---|---:|---|---|---|\n")
+	output.WriteString("\n## Options\n\n| Status | Option | Requirement | Description | Applies to | Default | Repeatable | Requires | Conflicts |\n|---|---|---|---|---|---|---:|---|---|\n")
 	for _, flag := range c.Flags {
 		conflicts := "none"
 		if len(flag.Conflicts) != 0 {
 			conflicts = strings.Join(flag.Conflicts, ", ")
 		}
-		fmt.Fprintf(&output, "| %s | `%s` | %t | `%s` | %s | %s |\n", flag.Status, flag.Syntax, flag.Repeatable, flag.Default, strings.Join(flag.AppliesTo, ", "), conflicts)
+		requires := "none"
+		if len(flag.Requires) != 0 {
+			requires = strings.Join(flag.Requires, ", ")
+		}
+		fmt.Fprintf(&output, "| %s | `%s` | %s | %s | %s | `%s` | %t | %s | %s |\n", flag.Status, markdownCell(flag.Syntax), requirement(requiredValue(flag.Required)), markdownCell(flag.Description.EN), markdownCell(humanScopes(flag.AppliesTo, "en")), markdownCell(flag.Default), flag.Repeatable, requires, conflicts)
 	}
 	output.WriteString("\n## Explicitly unsupported\n\n")
 	for _, value := range c.Unsupported {
@@ -52,4 +62,31 @@ func (c Contract) Reference() []byte {
 	}
 	output.WriteString("```\n")
 	return output.Bytes()
+}
+
+func requirement(required bool) string {
+	if required {
+		return "Required"
+	}
+	return "Optional"
+}
+
+func humanScopes(scopes []string, locale string) string {
+	labels := ApplicabilityLabels()
+	values := make([]string, len(scopes))
+	for index, scope := range scopes {
+		label, ok := labels[scope]
+		if !ok {
+			values[index] = scope
+		} else if locale == "ru" {
+			values[index] = label.RU
+		} else {
+			values[index] = label.EN
+		}
+	}
+	return strings.Join(values, ", ")
+}
+
+func markdownCell(value string) string {
+	return strings.ReplaceAll(value, "|", "\\|")
 }

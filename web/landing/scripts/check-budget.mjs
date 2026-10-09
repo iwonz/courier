@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const limits = {
-  "assets/landing.js": 150 * 1024,
+  // The generated bilingual CLI metadata is part of the offline landing page.
+  "assets/landing.js": 155 * 1024,
   "assets/landing-index.css": 9 * 1024,
 };
 

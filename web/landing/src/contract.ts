@@ -1,5 +1,10 @@
 import generated from "./contract.generated.json";
 
+export interface LocalizedText {
+  en: string;
+  ru: string;
+}
+
 export interface LandingCommand {
   name: string;
   path: string;
@@ -15,6 +20,7 @@ export interface LandingArgument {
   required: boolean;
   prefix?: string;
   omitWhenFlag?: string;
+  description: LocalizedText;
 }
 
 export interface LandingFlag {
@@ -28,6 +34,8 @@ export interface LandingFlag {
   appliesTo: string[];
   conflicts: string[] | null;
   requires: string[] | null;
+  required: boolean;
+  description: LocalizedText;
 }
 
 export interface LandingRoute {
@@ -44,6 +52,7 @@ export interface LandingContract {
   commands: LandingCommand[];
   flags: LandingFlag[];
   routes: LandingRoute[];
+  scopeLabels: Record<string, LocalizedText>;
   examples: string[];
 }
 

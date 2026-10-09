@@ -42,30 +42,36 @@ case "$doctor" in
     exit 0
     ;;
 esac
-if brew list --formula courier >/dev/null 2>&1; then
-  printf '%s\n' "refusing to replace an existing courier Formula during snapshot verification" >&2
-  exit 1
-fi
+courier_was_installed=false
+if brew list --formula courier >/dev/null 2>&1; then courier_was_installed=true; fi
 
 tap="courier-local/snapshot-$$"
 installed=false
 tapped=false
+trusted=false
 developer_was_on=false
 if brew config | grep -q '^HOMEBREW_DEVELOPER:'; then developer_was_on=true; fi
 cleanup() {
   if [ "$installed" = true ]; then brew uninstall --force courier >/dev/null; fi
   if [ "$tapped" = true ]; then brew untap --force "$tap" >/dev/null; fi
+  if [ "$trusted" = true ]; then brew untrust --tap "$tap" >/dev/null; fi
   if [ "$developer_was_on" = false ]; then brew developer off >/dev/null; fi
   rm -rf "$temporary"
 }
 trap cleanup EXIT HUP INT TERM
 HOMEBREW_NO_AUTO_UPDATE=1 brew tap-new --no-git "$tap" >/dev/null
 tapped=true
+brew trust --tap "$tap" >/dev/null
+trusted=true
 if [ "$developer_was_on" = false ]; then brew developer off >/dev/null; fi
 tap_root=$(brew --repository "$tap")
 local_formula="$tap_root/Formula/courier.rb"
 ./scripts/render-homebrew-formula.sh "$version" "$sha256" "$commit" "$date" "file://$source" "$local_formula"
 brew audit --strict --formula "$tap/courier"
+if [ "$courier_was_installed" = true ]; then
+  printf '%s\n' "Homebrew install/test skipped because courier is already installed; Formula audit and equivalent source build verified"
+  exit 0
+fi
 HOMEBREW_NO_AUTO_UPDATE=1 brew install --build-from-source --formula "$tap/courier"
 installed=true
 brew test "$tap/courier"
@@ -74,5 +80,7 @@ brew uninstall --force courier
 installed=false
 brew untap --force "$tap" >/dev/null
 tapped=false
+brew untrust --tap "$tap" >/dev/null
+trusted=false
 rm -rf "$temporary"
 trap - EXIT HUP INT TERM

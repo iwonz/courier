@@ -74,8 +74,8 @@ courier ui stop
 
 The destination rules are deterministic:
 
-- an existing directory or a path ending in `/` receives the source under its source name;
-- every other destination is the exact final path;
+- an existing directory, a path ending in `/` or `\`, or a missing destination for a directory source receives the source under its source name;
+- every other destination is the exact final path, so `courier from ./report.pdf to ./renamed.pdf` does not create `renamed.pdf` as a directory;
 - an existing final path is a collision and is never overwritten or merged; unrelated entries in a destination directory are preserved;
 - `--archive` transfers a verified `<source-name>.tar.gz` instead of the source tree.
 - `--extract` treats the destination as an extraction root and accepts tar.gz only. It performs a complete read-only inspection before staging, rejects collisions, and preserves unrelated destination entries. The expanded-size default is `100GiB` and can be changed with `--max-extracted-size <size|unlimited>`; fixed limits of 100,000 entries, depth 64, and a 100:1 expansion ratio always apply.
@@ -83,6 +83,49 @@ The destination rules are deterministic:
 Courier never deletes the source. An identical plain source/destination is a successful no-op; transformed identity and copying a directory into itself are rejected. Files are staged under private partial names and committed only into an absent final path after preflight and transfer complete.
 
 Selection is shared by ordinary copy, archive creation, and extraction. `--exclude` uses ordered gitignore syntax, `--exclude-regex` uses Go regular expressions, and `--exclude-from` expands a local gitignore-style rule file at its exact command-line position. The rule file is read before transfer endpoints are opened.
+
+Before transfer or server startup, Courier checks every local or SSH path. Missing directory endpoints are listed for confirmation in source-then-destination order and are created privately with mode `0700` only after every confirmation succeeds. Non-interactive use must pass `--force-source-creation`; this flag authorizes only missing-directory creation and never bypasses SSH trust, credentials, authentication, collisions, or overwrite protection. Missing extraction archives and unarchived outgoing-webhook files fail instead of being created.
+
+Browser downloads, browser uploads, incoming webhooks, and `courier ui start` stay attached to the initiating terminal by default. `--background` prints the URL and UUID after readiness, returns immediately, and leaves the detached process running after terminal closure. Stop it with `courier servers stop <uuid>`, `courier servers stop --all`, or `courier ui stop` as appropriate; configured stop behavior, fatal worker failure, and process termination also end it.
+
+## Command parameters
+
+<!-- BEGIN GENERATED CLI PARAMETERS -->
+
+### Arguments
+
+| Command | Argument | Status | Description |
+|---|---|---|---|
+| `from` | `<source>` | Required | File, directory, browser upload, or webhook input to read from. |
+| `from` | `<destination>` | Required | Path, browser download, or HTTP endpoint that receives the data. |
+| `servers stop` | `<uuid>` | Required | Delivery or server UUID to stop; omitted when --all is used. |
+| `help` | `<command>` | Optional | Command path whose detailed help should be shown. |
+
+### Options
+
+| Option | Status | Description | Applies to | Default | Repeatable | Requires / conflicts |
+|---|---|---|---|---|---:|---|
+| `--archive` | Optional | Pack the source into a verified <source-name>.tar.gz before transfer. | Path to path, Path to browser download, Path to HTTP webhook | `false` | false | conflicts with extract |
+| `--extract` | Optional | Safely extract a tar.gz source into the destination root. | Path to path, Browser upload to path, Incoming webhook to path | `false` | false | conflicts with archive |
+| `--listen <host:port>` | Optional | Bind incoming browser, webhook, or administration traffic to this address. | Browser upload to path, Path to browser download, Incoming webhook to path, Administration UI start | `127.0.0.1:8080` | false | none |
+| `--background` | Optional | Detach browser downloads, browser uploads, incoming webhooks, or ui start after printing the URL and UUID; the process survives terminal closure until stopped by courier servers stop, courier ui stop, configured stop behavior, a fatal worker failure, or process termination. | Browser upload to path, Path to browser download, Incoming webhook to path, Administration UI start | `false` | false | none |
+| `--force-source-creation` | Optional | Create every missing directory endpoint recursively without asking; no other safety confirmation is bypassed. | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | `false` | false | none |
+| `--auth <none\|basic\|password>` | Optional | Choose no authentication, HTTP Basic authentication, or a browser password. | Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | `none` | false | none |
+| `--auth-attempts <N>` | Optional | Set how many failed authentication attempts are allowed before the configured action. | Browser upload to path, Path to browser download, Incoming webhook to path | `5` | false | none |
+| `--auth-fail-action <ban\|stop>` | Optional | Ban the peer or stop the delivery when the authentication-attempt limit is reached. | Browser upload to path, Path to browser download, Incoming webhook to path | `ban` | false | none |
+| `--limit <N>` | Optional | Limit concurrent transfers for a hosted delivery, or allow an unlimited count. | Browser upload to path, Path to browser download, Incoming webhook to path | `unlimited` | false | none |
+| `--no-ui` | Optional | Expose only the versioned browser-delivery data API, without the web interface. | Path to browser download | `false` | false | none |
+| `--allow-ip <IP/CIDR>` | Optional | Allow one peer IP address or CIDR; repeat the option to add more networks. | Browser upload to path, Path to browser download, Incoming webhook to path | `none` | true | none |
+| `--exclude <pattern>` | Optional | Exclude paths with an ordered gitignore-style pattern. | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | `none` | true | none |
+| `--exclude-regex <regex>` | Optional | Exclude paths matching a Go regular expression. | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | `none` | true | none |
+| `--exclude-from <file>` | Optional | Read ordered gitignore-style exclusion rules from a local file. | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | `none` | true | none |
+| `--max-file-size <size\|unlimited>` | Optional | Set the largest accepted incoming file size, or remove the configurable limit. | Browser upload to path, Incoming webhook to path | `10GiB` | false | none |
+| `--max-extracted-size <size\|unlimited>` | Optional | Set the maximum total expanded archive size; requires --extract. | Path to path, Browser upload to path, Incoming webhook to path | `100GiB` | false | requires extract |
+| `--upload-rate <rate\|unlimited>` | Optional | Limit the aggregate upload rate, or allow an unlimited rate. | Local path to SSH path, SSH path to SSH path, Browser upload to path, Incoming webhook to path, Path to HTTP webhook | `unlimited` | false | none |
+| `--download-rate <rate\|unlimited>` | Optional | Limit the aggregate download rate, or allow an unlimited rate. | SSH path to local path, SSH path to SSH path, Path to browser download | `unlimited` | false | none |
+| `--all` | Optional | Stop every discovered Courier delivery and server instead of one UUID. | Server stop | `false` | false | none |
+
+<!-- END GENERATED CLI PARAMETERS -->
 
 ## SSH
 

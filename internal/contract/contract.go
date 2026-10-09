@@ -34,6 +34,37 @@ type Endpoint struct {
 	Syntax string `yaml:"syntax"`
 }
 
+// LocalizedText contains the public English and Russian copy carried by the
+// contract and its generated consumers.
+type LocalizedText struct {
+	EN string `yaml:"en" json:"en"`
+	RU string `yaml:"ru" json:"ru"`
+}
+
+func (text LocalizedText) valid() bool {
+	return strings.TrimSpace(text.EN) == text.EN && text.EN != "" && strings.TrimSpace(text.RU) == text.RU && text.RU != ""
+}
+
+func requiredValue(value *bool) bool { return value != nil && *value }
+
+// ApplicabilityLabels returns stable human-facing labels for route, direction,
+// and command scopes used by option metadata.
+func ApplicabilityLabels() map[string]LocalizedText {
+	return map[string]LocalizedText{
+		"path-to-path":    {EN: "Path to path", RU: "Из пути в путь"},
+		"web-to-path":     {EN: "Browser upload to path", RU: "Из браузера в путь"},
+		"path-to-web":     {EN: "Path to browser download", RU: "Из пути в браузер"},
+		"webhook-to-path": {EN: "Incoming webhook to path", RU: "Из входящего webhook в путь"},
+		"path-to-http":    {EN: "Path to HTTP webhook", RU: "Из пути в HTTP webhook"},
+		"local-to-local":  {EN: "Local path to local path", RU: "Из локального пути в локальный"},
+		"local-to-ssh":    {EN: "Local path to SSH path", RU: "Из локального пути в SSH"},
+		"ssh-to-local":    {EN: "SSH path to local path", RU: "Из SSH-пути в локальный"},
+		"ssh-to-ssh":      {EN: "SSH path to SSH path", RU: "Из SSH-пути в SSH"},
+		"ui-start":        {EN: "Administration UI start", RU: "Запуск панели управления"},
+		"servers-stop":    {EN: "Server stop", RU: "Остановка серверов"},
+	}
+}
+
 type Command struct {
 	Name      string     `yaml:"name"`
 	Path      string     `yaml:"path"`
@@ -45,25 +76,28 @@ type Command struct {
 }
 
 type Argument struct {
-	Name         string `yaml:"name"`
-	Kind         string `yaml:"kind"`
-	Required     bool   `yaml:"required"`
-	Prefix       string `yaml:"prefix"`
-	OmitWhenFlag string `yaml:"omit_when_flag"`
+	Name         string        `yaml:"name"`
+	Kind         string        `yaml:"kind"`
+	Required     *bool         `yaml:"required"`
+	Prefix       string        `yaml:"prefix"`
+	OmitWhenFlag string        `yaml:"omit_when_flag"`
+	Description  LocalizedText `yaml:"description"`
 }
 
 type Flag struct {
-	Name        string   `yaml:"name"`
-	Syntax      string   `yaml:"syntax"`
-	Status      string   `yaml:"status"`
-	ValueKind   string   `yaml:"value_kind"`
-	Choices     []string `yaml:"choices"`
-	Placeholder string   `yaml:"placeholder"`
-	Repeatable  bool     `yaml:"repeatable"`
-	Default     string   `yaml:"default"`
-	AppliesTo   []string `yaml:"applies_to"`
-	Conflicts   []string `yaml:"conflicts"`
-	Requires    []string `yaml:"requires"`
+	Name        string        `yaml:"name"`
+	Syntax      string        `yaml:"syntax"`
+	Status      string        `yaml:"status"`
+	Required    *bool         `yaml:"required"`
+	Description LocalizedText `yaml:"description"`
+	ValueKind   string        `yaml:"value_kind"`
+	Choices     []string      `yaml:"choices"`
+	Placeholder string        `yaml:"placeholder"`
+	Repeatable  bool          `yaml:"repeatable"`
+	Default     string        `yaml:"default"`
+	AppliesTo   []string      `yaml:"applies_to"`
+	Conflicts   []string      `yaml:"conflicts"`
+	Requires    []string      `yaml:"requires"`
 }
 
 type Route struct {
@@ -94,7 +128,7 @@ func Load(name string) (Contract, error) {
 
 // Validate checks cross-references and compatibility metadata.
 func (c Contract) Validate() error {
-	if c.SchemaVersion != 2 || !semanticVersion.MatchString(c.ContractVersion) || !semanticVersion.MatchString(c.TargetRelease) || c.Language != "en" {
+	if c.SchemaVersion != 3 || !semanticVersion.MatchString(c.ContractVersion) || !semanticVersion.MatchString(c.TargetRelease) || c.Language != "en" {
 		return errors.New("contract metadata is invalid")
 	}
 	endpoints, err := namedStatuses("endpoint", c.EndpointKinds, func(value Endpoint) (string, string) { return value.Name, value.Status })
@@ -130,7 +164,7 @@ func (c Contract) Validate() error {
 		}
 		argumentNames := map[string]struct{}{}
 		for _, argument := range command.Arguments {
-			if !contractIdentifier.MatchString(argument.Name) || !validArgumentKind(argument.Kind) {
+			if !contractIdentifier.MatchString(argument.Name) || !validArgumentKind(argument.Kind) || argument.Required == nil || !argument.Description.valid() {
 				return fmt.Errorf("command %q has invalid argument metadata", command.Name)
 			}
 			if _, exists := argumentNames[argument.Name]; exists {
@@ -146,7 +180,7 @@ func (c Contract) Validate() error {
 		}
 	}
 	for _, flag := range c.Flags {
-		if flag.Syntax == "" || flag.Default == "" || len(flag.AppliesTo) == 0 || !validValueKind(flag.ValueKind) {
+		if flag.Syntax == "" || flag.Default == "" || len(flag.AppliesTo) == 0 || !validValueKind(flag.ValueKind) || flag.Required == nil || *flag.Required || !flag.Description.valid() {
 			return fmt.Errorf("flag %q has incomplete behavior", flag.Name)
 		}
 		if flag.ValueKind == "boolean" {

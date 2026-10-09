@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -21,6 +22,9 @@ import (
 	"github.com/iwonz/courier/internal/policy"
 	"github.com/iwonz/courier/internal/selection"
 )
+
+// ErrEndpointPath identifies a safe, user-actionable hosted path failure.
+var ErrEndpointPath = errors.New("hosted endpoint path invalid")
 
 type Resource struct {
 	Endpoint endpoint.Endpoint
@@ -138,13 +142,16 @@ func (host *Host) Register(ctx context.Context, record delivery.Delivery, runtim
 	}()
 	info, err := resource.Backend.Lstat(resource.Path)
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return endpointPathError(record.Route, openedEndpoint, "does not exist")
+		}
 		return err
 	}
 	if (record.Route == delivery.RouteWebToPath || record.Route == delivery.RouteWebhookToPath) && !info.IsDir() {
-		return errors.New("incoming delivery destination must be an existing directory")
+		return endpointPathError(record.Route, openedEndpoint, "is not a directory")
 	}
 	if record.Route == delivery.RoutePathToWeb && !info.Mode().IsRegular() && !info.IsDir() {
-		return errors.New("browser download source must be a file or directory")
+		return endpointPathError(record.Route, openedEndpoint, "is not a file or directory")
 	}
 	if record.Route == delivery.RoutePathToWeb && definition.Archive {
 		prepared, prepareErr := host.archive(ctx, resource, info.Name(), selector)
@@ -192,6 +199,14 @@ func (host *Host) Register(ctx context.Context, record delivery.Delivery, runtim
 	host.byID[record.ID] = hosted
 	success = true
 	return nil
+}
+
+func endpointPathError(route delivery.Route, value, problem string) error {
+	role := "Source"
+	if route == delivery.RouteWebToPath || route == delivery.RouteWebhookToPath {
+		role = "Destination"
+	}
+	return fmt.Errorf("%w: %w: %s path %q %s", delivery.ErrInvalid, ErrEndpointPath, role, value, problem)
 }
 
 func (host *Host) Stop(_ context.Context, id delivery.ID) error {

@@ -60,8 +60,12 @@ func TestPathRouteAcceptance(t *testing.T) {
 			}
 
 			var stdout, stderr bytes.Buffer
-			code := app.Execute(context.Background(), app.NewRoot(dependencies), []string{"from", sourceArgument, "to", destinationArgument}, &stdout, &stderr)
-			data, err := os.ReadFile(filepath.Join(destination, "nested directory", name))
+			code := app.Execute(context.Background(), app.NewRoot(dependencies), []string{"from", sourceArgument, "to", destinationArgument, "--force-source-creation"}, &stdout, &stderr)
+			destinationName := filepath.Base(source)
+			if test.sourceRemote {
+				destinationName = "payload"
+			}
+			data, err := os.ReadFile(filepath.Join(destination, destinationName, "nested directory", name))
 			if code != app.ExitOK || err != nil || string(data) != "accepted payload" {
 				t.Fatalf("code=%d data=%q err=%v stdout=%q stderr=%q", code, data, err, stdout.String(), stderr.String())
 			}
@@ -93,7 +97,7 @@ func TestArchiveExtractionAcceptance(t *testing.T) {
 	}
 
 	extractionRoot := filepath.Join(root, "extracted")
-	if code := app.Execute(context.Background(), app.NewRoot(dependencies), []string{"from", archivePath, "to", extractionRoot, "--extract"}, io.Discard, io.Discard); code != app.ExitOK {
+	if code := app.Execute(context.Background(), app.NewRoot(dependencies), []string{"from", archivePath, "to", extractionRoot, "--extract", "--force-source-creation"}, io.Discard, io.Discard); code != app.ExitOK {
 		t.Fatalf("extract exit code=%d", code)
 	}
 	data, err := os.ReadFile(filepath.Join(extractionRoot, "release payload", "nested", "файл.txt"))

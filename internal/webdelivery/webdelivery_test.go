@@ -315,8 +315,15 @@ func TestHostRegistrationLifecycle(t *testing.T) {
 	host.open = func(_ context.Context, value endpoint.Endpoint, _ EndpointRuntime) (*Resource, error) {
 		return &Resource{Endpoint: value, Backend: fsx.Local{}, Path: filepath.Join(root, "missing"), Close: func() error { closed.Add(1); return nil }}, nil
 	}
-	if err := host.Register(context.Background(), record, marshalDefinition(t, definition)); err == nil || closed.Load() != 1 {
+	if err := host.Register(context.Background(), record, marshalDefinition(t, definition)); err == nil || !errors.Is(err, ErrEndpointPath) || !errors.Is(err, delivery.ErrInvalid) || closed.Load() != 1 {
 		t.Fatalf("expected stat rollback: %v closed=%d", err, closed.Load())
+	}
+	host.open = func(_ context.Context, value endpoint.Endpoint, _ EndpointRuntime) (*Resource, error) {
+		backend := overrideBackend{Backend: fsx.Local{}, lstat: func(string) (fs.FileInfo, error) { return nil, io.ErrClosedPipe }}
+		return &Resource{Endpoint: value, Backend: backend, Path: "unreadable", Close: func() error { closed.Add(1); return nil }}, nil
+	}
+	if err := host.Register(context.Background(), record, marshalDefinition(t, definition)); !errors.Is(err, io.ErrClosedPipe) || errors.Is(err, ErrEndpointPath) {
+		t.Fatalf("arbitrary stat failure=%v", err)
 	}
 	file := filepath.Join(root, "file")
 	if err := os.WriteFile(file, []byte("x"), 0o600); err != nil {
@@ -325,7 +332,7 @@ func TestHostRegistrationLifecycle(t *testing.T) {
 	host.open = func(_ context.Context, value endpoint.Endpoint, _ EndpointRuntime) (*Resource, error) {
 		return &Resource{Endpoint: value, Backend: fsx.Local{}, Path: file, Close: func() error { closed.Add(1); return nil }}, nil
 	}
-	if err := host.Register(context.Background(), record, marshalDefinition(t, definition)); err == nil {
+	if err := host.Register(context.Background(), record, marshalDefinition(t, definition)); err == nil || !errors.Is(err, ErrEndpointPath) {
 		t.Fatal("expected upload directory error")
 	}
 	host.open = localOpen

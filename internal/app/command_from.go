@@ -13,7 +13,7 @@ import (
 )
 
 type transferFlagValues struct {
-	archive, extract, background, noUI                      operation.BoolValue
+	archive, extract, background, forceSourceCreation, noUI operation.BoolValue
 	listen, auth, authAttempts, authFailAction, limit       operation.SingleValue
 	maxFileSize, maxExtractedSize, uploadRate, downloadRate operation.SingleValue
 	allowIP                                                 operation.RepeatedValue
@@ -36,6 +36,7 @@ func (values *transferFlagValues) options() []operation.Option {
 	appendBool(operation.OptionExtract, &values.extract)
 	appendSingle(operation.OptionListen, &values.listen)
 	appendBool(operation.OptionBackground, &values.background)
+	appendBool(operation.OptionForceSourceCreation, &values.forceSourceCreation)
 	appendSingle(operation.OptionAuth, &values.auth)
 	appendSingle(operation.OptionAuthAttempts, &values.authAttempts)
 	appendSingle(operation.OptionAuthFailAction, &values.authFailAction)
@@ -85,6 +86,7 @@ func newTransferCommand(dependencies Dependencies) *cobra.Command {
 	boolFlag(command, &values.extract, "extract", "extract a tar.gz archive into the destination root")
 	command.Flags().Var(&values.listen, "listen", "incoming HTTP delivery bind address (default 127.0.0.1:8080)")
 	boolFlag(command, &values.background, "background", "keep the delivery active after this command exits")
+	boolFlag(command, &values.forceSourceCreation, "force-source-creation", "create missing directory endpoints without confirmation")
 	command.Flags().Var(&values.auth, "auth", "authentication mode: none, basic, or password")
 	command.Flags().Var(&values.authAttempts, "auth-attempts", "failed authentication threshold (default 5)")
 	command.Flags().Var(&values.authFailAction, "auth-fail-action", "threshold action: ban or stop (default ban)")
@@ -110,6 +112,9 @@ func runRoute(ctx context.Context, dependencies Dependencies, plan operation.Pla
 			return &commandError{code: ExitControl, stage: "control", cause: errors.New("web delivery dependencies are incomplete")}
 		}
 		if err := dependencies.Hosted(ctx, plan, stdout); err != nil {
+			if isHostedPathPreflightError(err) {
+				return &commandError{code: ExitTransfer, stage: string(progress.StagePreflight), cause: err}
+			}
 			return &commandError{code: ExitControl, stage: "control", cause: err}
 		}
 		return nil

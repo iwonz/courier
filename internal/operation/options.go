@@ -16,24 +16,25 @@ import (
 type OptionName string
 
 const (
-	OptionArchive          OptionName = "archive"
-	OptionExtract          OptionName = "extract"
-	OptionListen           OptionName = "listen"
-	OptionBackground       OptionName = "background"
-	OptionAuth             OptionName = "auth"
-	OptionAuthAttempts     OptionName = "auth-attempts"
-	OptionAuthFailAction   OptionName = "auth-fail-action"
-	OptionLimit            OptionName = "limit"
-	OptionNoUI             OptionName = "no-ui"
-	OptionAllowIP          OptionName = "allow-ip"
-	OptionExclude          OptionName = "exclude"
-	OptionExcludeRegex     OptionName = "exclude-regex"
-	OptionExcludeFrom      OptionName = "exclude-from"
-	OptionMaxFileSize      OptionName = "max-file-size"
-	OptionMaxExtractedSize OptionName = "max-extracted-size"
-	OptionUploadRate       OptionName = "upload-rate"
-	OptionDownloadRate     OptionName = "download-rate"
-	OptionAll              OptionName = "all"
+	OptionArchive             OptionName = "archive"
+	OptionExtract             OptionName = "extract"
+	OptionListen              OptionName = "listen"
+	OptionBackground          OptionName = "background"
+	OptionForceSourceCreation OptionName = "force-source-creation"
+	OptionAuth                OptionName = "auth"
+	OptionAuthAttempts        OptionName = "auth-attempts"
+	OptionAuthFailAction      OptionName = "auth-fail-action"
+	OptionLimit               OptionName = "limit"
+	OptionNoUI                OptionName = "no-ui"
+	OptionAllowIP             OptionName = "allow-ip"
+	OptionExclude             OptionName = "exclude"
+	OptionExcludeRegex        OptionName = "exclude-regex"
+	OptionExcludeFrom         OptionName = "exclude-from"
+	OptionMaxFileSize         OptionName = "max-file-size"
+	OptionMaxExtractedSize    OptionName = "max-extracted-size"
+	OptionUploadRate          OptionName = "upload-rate"
+	OptionDownloadRate        OptionName = "download-rate"
+	OptionAll                 OptionName = "all"
 )
 
 // Option is one raw command-line occurrence. Slice order is command-line order.
@@ -90,23 +91,24 @@ type SelectionRule struct {
 
 // Options contains effective typed values plus explicit occurrence metadata.
 type Options struct {
-	Archive          bool
-	Extract          bool
-	Listen           string
-	Background       bool
-	Auth             AuthMode
-	AuthAttempts     uint64
-	AuthFailAction   AuthFailAction
-	Limit            Limit
-	NoUI             bool
-	AllowIP          []netip.Prefix
-	Selection        []SelectionRule
-	MaxFileSize      Quantity
-	MaxExtractedSize Quantity
-	UploadRate       Quantity
-	DownloadRate     Quantity
-	Occurrences      []Occurrence
-	explicit         map[OptionName]bool
+	Archive             bool
+	Extract             bool
+	Listen              string
+	Background          bool
+	ForceSourceCreation bool
+	Auth                AuthMode
+	AuthAttempts        uint64
+	AuthFailAction      AuthFailAction
+	Limit               Limit
+	NoUI                bool
+	AllowIP             []netip.Prefix
+	Selection           []SelectionRule
+	MaxFileSize         Quantity
+	MaxExtractedSize    Quantity
+	UploadRate          Quantity
+	DownloadRate        Quantity
+	Occurrences         []Occurrence
+	explicit            map[OptionName]bool
 }
 
 // Explicit reports whether an option occurred on the command line.
@@ -134,24 +136,25 @@ type MatrixEndpoint struct {
 }
 
 var optionDefinitions = map[OptionName]optionDefinition{
-	OptionArchive:          {routes: routeSet(RoutePathToPath, RoutePathToWeb, RoutePathToHTTP)},
-	OptionExtract:          {routes: routeSet(RoutePathToPath, RouteWebToPath, RouteWebhookToPath)},
-	OptionListen:           {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
-	OptionBackground:       {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
-	OptionAuth:             {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath, RoutePathToHTTP)},
-	OptionAuthAttempts:     {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
-	OptionAuthFailAction:   {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
-	OptionLimit:            {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
-	OptionNoUI:             {routes: routeSet(RoutePathToWeb)},
-	OptionAllowIP:          {repeatable: true, routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
-	OptionExclude:          {repeatable: true, routes: allRoutes()},
-	OptionExcludeRegex:     {repeatable: true, routes: allRoutes()},
-	OptionExcludeFrom:      {repeatable: true, routes: allRoutes()},
-	OptionMaxFileSize:      {routes: routeSet(RouteWebToPath, RouteWebhookToPath)},
-	OptionMaxExtractedSize: {routes: routeSet(RoutePathToPath, RouteWebToPath, RouteWebhookToPath)},
-	OptionUploadRate:       {routes: routeSet(RouteWebToPath, RouteWebhookToPath, RoutePathToHTTP), directions: directionSet(DirectionLocalToSSH, DirectionSSHToSSH)},
-	OptionDownloadRate:     {routes: routeSet(RoutePathToWeb), directions: directionSet(DirectionSSHToLocal, DirectionSSHToSSH)},
-	OptionAll:              {},
+	OptionArchive:             {routes: routeSet(RoutePathToPath, RoutePathToWeb, RoutePathToHTTP)},
+	OptionExtract:             {routes: routeSet(RoutePathToPath, RouteWebToPath, RouteWebhookToPath)},
+	OptionListen:              {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
+	OptionBackground:          {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
+	OptionForceSourceCreation: {routes: allRoutes()},
+	OptionAuth:                {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath, RoutePathToHTTP)},
+	OptionAuthAttempts:        {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
+	OptionAuthFailAction:      {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
+	OptionLimit:               {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
+	OptionNoUI:                {routes: routeSet(RoutePathToWeb)},
+	OptionAllowIP:             {repeatable: true, routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
+	OptionExclude:             {repeatable: true, routes: allRoutes()},
+	OptionExcludeRegex:        {repeatable: true, routes: allRoutes()},
+	OptionExcludeFrom:         {repeatable: true, routes: allRoutes()},
+	OptionMaxFileSize:         {routes: routeSet(RouteWebToPath, RouteWebhookToPath)},
+	OptionMaxExtractedSize:    {routes: routeSet(RoutePathToPath, RouteWebToPath, RouteWebhookToPath)},
+	OptionUploadRate:          {routes: routeSet(RouteWebToPath, RouteWebhookToPath, RoutePathToHTTP), directions: directionSet(DirectionLocalToSSH, DirectionSSHToSSH)},
+	OptionDownloadRate:        {routes: routeSet(RoutePathToWeb), directions: directionSet(DirectionSSHToLocal, DirectionSSHToSSH)},
+	OptionAll:                 {},
 }
 
 // ContractMatrix returns a defensive snapshot for contract verification.
@@ -267,6 +270,8 @@ func applyOption(result *Options, occurrence Occurrence) error {
 		result.Listen = value
 	case OptionBackground:
 		result.Background, err = parseBool(value)
+	case OptionForceSourceCreation:
+		result.ForceSourceCreation, err = parseBool(value)
 	case OptionAuth:
 		result.Auth = AuthMode(value)
 		if result.Auth != AuthNone && result.Auth != AuthBasic && result.Auth != AuthPassword {

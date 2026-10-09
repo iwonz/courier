@@ -4,7 +4,7 @@ Courier implements one deliberately small webhook profile. It is suitable for so
 
 ## Incoming webhook
 
-Start an incoming endpoint whose final destination is an existing local or SSH directory:
+Start an incoming endpoint whose final destination is a local or SSH directory:
 
 ```sh
 courier from webhook:// to ./inbox/
@@ -54,4 +54,6 @@ The native HTTP client performs normal TLS certificate verification for HTTPS an
 - A received non-2xx status is a known rejection. A redirect is reported in this category and its target is not contacted.
 - If payload bytes were consumed by the HTTP transport but no response arrived, Courier reports an unknown outcome and the byte count. It does not retry because doing so could duplicate a receiver-side effect.
 
-Incoming foreground ownership and `--background` follow the same worker and lease rules as browser deliveries. Outgoing webhook delivery is a finite operation and does not create a server or durable delivery record.
+Courier validates incoming destinations before worker acquisition. Missing destination directories and extraction roots require interactive confirmation or `--force-source-creation`; non-interactive use without the flag fails at preflight with exit code `20`. An unarchived outgoing webhook source is file-only: if it is missing, Courier fails before opening an HTTP request and never creates a directory in its place. An archived outgoing source may be an existing or authorized empty directory.
+
+Incoming foreground ownership and `--background` follow the same worker and lease rules as browser deliveries. With `--background`, Courier prints the ready URL and UUID, returns, survives terminal closure, appears in `courier servers`, and stops through the delivery/server UUID, configured stop behavior, fatal worker failure, or process termination. Outgoing webhook delivery is a finite operation and does not create a server or durable delivery record.

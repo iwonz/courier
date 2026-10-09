@@ -127,7 +127,7 @@ func TestHostRegistrationFailuresAndCloseErrors(t *testing.T) {
 	host.open = func(_ context.Context, _ endpoint.Endpoint, _ EndpointRuntime) (*Resource, error) {
 		return &Resource{Backend: specialBackend, Path: root}, nil
 	}
-	if err := host.Register(context.Background(), record, marshalDefinition(t, definition)); err == nil {
+	if err := host.Register(context.Background(), record, marshalDefinition(t, definition)); err == nil || !errors.Is(err, ErrEndpointPath) {
 		t.Fatal("expected special source rejection")
 	}
 	host.open = localOpen

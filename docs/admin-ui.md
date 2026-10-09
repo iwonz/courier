@@ -9,7 +9,7 @@ courier ui start --background --listen 127.0.0.1:9090
 courier ui stop
 ```
 
-The default address is `http://127.0.0.1:9090/`. Only literal loopback IPv4 and IPv6 addresses are accepted. A foreground start prints the URL after both listeners and private state are ready, then runs until interruption or `courier ui stop`. `--background` starts the same embedded server in a detached internal process and returns only after its UUID-bound IPC handshake succeeds.
+The default address is `http://127.0.0.1:9090/`. Only literal loopback IPv4 and IPv6 addresses are accepted. A foreground start prints the URL after both listeners and private state are ready, then runs until interruption or `courier ui stop`. `--background` starts the same embedded server in a detached internal process, prints the ready URL and administration UUID, returns only after its UUID-bound IPC handshake succeeds, and survives terminal closure. It ends through `courier ui stop`, a fatal process failure, or process termination.
 
 ## Singleton and process authority
 

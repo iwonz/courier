@@ -1,6 +1,6 @@
 {
-  "contractVersion": "0.15.0",
-  "targetRelease": "0.3.9",
+  "contractVersion": "0.16.0",
+  "targetRelease": "0.3.10",
   "endpoints": [
     {
       "name": "local",
@@ -33,13 +33,21 @@
         {
           "name": "source",
           "kind": "endpoint",
-          "required": true
+          "required": true,
+          "description": {
+            "en": "File, directory, browser upload, or webhook input to read from.",
+            "ru": "Файл, каталог, браузерная загрузка или webhook, откуда получать данные."
+          }
         },
         {
           "name": "destination",
           "kind": "endpoint",
           "required": true,
-          "prefix": "to"
+          "prefix": "to",
+          "description": {
+            "en": "Path, browser download, or HTTP endpoint that receives the data.",
+            "ru": "Путь, браузерная выдача или HTTP-адрес, куда передаются данные."
+          }
         }
       ],
       "flags": [
@@ -47,6 +55,7 @@
         "extract",
         "listen",
         "background",
+        "force-source-creation",
         "auth",
         "auth-attempts",
         "auth-fail-action",
@@ -80,7 +89,11 @@
           "name": "uuid",
           "kind": "uuid",
           "required": true,
-          "omitWhenFlag": "all"
+          "omitWhenFlag": "all",
+          "description": {
+            "en": "Delivery or server UUID to stop; omitted when --all is used.",
+            "ru": "UUID доставки или сервера для остановки; не указывается вместе с --all."
+          }
         }
       ],
       "flags": [
@@ -115,7 +128,11 @@
         {
           "name": "command",
           "kind": "command-path",
-          "required": false
+          "required": false,
+          "description": {
+            "en": "Command path whose detailed help should be shown.",
+            "ru": "Путь команды, для которой нужно показать подробную справку."
+          }
         }
       ],
       "flags": null
@@ -154,7 +171,12 @@
       "conflicts": [
         "extract"
       ],
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Pack the source into a verified \u003csource-name\u003e.tar.gz before transfer.",
+        "ru": "Упаковать источник в проверенный \u003cимя-источника\u003e.tar.gz перед передачей."
+      }
     },
     {
       "name": "extract",
@@ -172,7 +194,12 @@
       "conflicts": [
         "archive"
       ],
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Safely extract a tar.gz source into the destination root.",
+        "ru": "Безопасно распаковать tar.gz в корневой каталог назначения."
+      }
     },
     {
       "name": "listen",
@@ -189,7 +216,12 @@
         "ui-start"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Bind incoming browser, webhook, or administration traffic to this address.",
+        "ru": "Принимать входящий браузерный, webhook- или административный трафик на этом адресе."
+      }
     },
     {
       "name": "background",
@@ -206,7 +238,35 @@
         "ui-start"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Detach browser downloads, browser uploads, incoming webhooks, or ui start after printing the URL and UUID; the process survives terminal closure until stopped by courier servers stop, courier ui stop, configured stop behavior, a fatal worker failure, or process termination.",
+        "ru": "Отсоединить браузерную выдачу, браузерную загрузку, входящий webhook или ui start после вывода URL и UUID; процесс переживает закрытие терминала и работает до courier servers stop, courier ui stop, настроенного условия остановки, критической ошибки worker или завершения процесса."
+      }
+    },
+    {
+      "name": "force-source-creation",
+      "syntax": "--force-source-creation",
+      "valueKind": "boolean",
+      "choices": null,
+      "placeholder": "",
+      "repeatable": false,
+      "default": "false",
+      "appliesTo": [
+        "path-to-path",
+        "web-to-path",
+        "path-to-web",
+        "webhook-to-path",
+        "path-to-http"
+      ],
+      "conflicts": null,
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Create every missing directory endpoint recursively without asking; no other safety confirmation is bypassed.",
+        "ru": "Рекурсивно создать все отсутствующие каталоги без запроса; остальные защитные подтверждения не отключаются."
+      }
     },
     {
       "name": "auth",
@@ -227,7 +287,12 @@
         "path-to-http"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Choose no authentication, HTTP Basic authentication, or a browser password.",
+        "ru": "Выбрать отсутствие аутентификации, HTTP Basic или пароль для браузера."
+      }
     },
     {
       "name": "auth-attempts",
@@ -243,7 +308,12 @@
         "webhook-to-path"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Set how many failed authentication attempts are allowed before the configured action.",
+        "ru": "Задать число неудачных попыток входа до выполнения настроенного действия."
+      }
     },
     {
       "name": "auth-fail-action",
@@ -262,7 +332,12 @@
         "webhook-to-path"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Ban the peer or stop the delivery when the authentication-attempt limit is reached.",
+        "ru": "Заблокировать узел или остановить доставку после исчерпания попыток входа."
+      }
     },
     {
       "name": "limit",
@@ -278,7 +353,12 @@
         "webhook-to-path"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Limit concurrent transfers for a hosted delivery, or allow an unlimited count.",
+        "ru": "Ограничить число одновременных передач для hosted-доставки или не задавать предел."
+      }
     },
     {
       "name": "no-ui",
@@ -292,7 +372,12 @@
         "path-to-web"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Expose only the versioned browser-delivery data API, without the web interface.",
+        "ru": "Открыть только версионированный API браузерной доставки без веб-интерфейса."
+      }
     },
     {
       "name": "allow-ip",
@@ -308,7 +393,12 @@
         "webhook-to-path"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Allow one peer IP address or CIDR; repeat the option to add more networks.",
+        "ru": "Разрешить один IP-адрес или CIDR; повторите параметр для дополнительных сетей."
+      }
     },
     {
       "name": "exclude",
@@ -326,7 +416,12 @@
         "path-to-http"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Exclude paths with an ordered gitignore-style pattern.",
+        "ru": "Исключить пути упорядоченным шаблоном в стиле gitignore."
+      }
     },
     {
       "name": "exclude-regex",
@@ -344,7 +439,12 @@
         "path-to-http"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Exclude paths matching a Go regular expression.",
+        "ru": "Исключить пути, совпадающие с регулярным выражением Go."
+      }
     },
     {
       "name": "exclude-from",
@@ -362,7 +462,12 @@
         "path-to-http"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Read ordered gitignore-style exclusion rules from a local file.",
+        "ru": "Прочитать упорядоченные правила исключения в стиле gitignore из локального файла."
+      }
     },
     {
       "name": "max-file-size",
@@ -377,7 +482,12 @@
         "webhook-to-path"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Set the largest accepted incoming file size, or remove the configurable limit.",
+        "ru": "Задать максимальный размер входящего файла или убрать настраиваемый предел."
+      }
     },
     {
       "name": "max-extracted-size",
@@ -395,7 +505,12 @@
       "conflicts": null,
       "requires": [
         "extract"
-      ]
+      ],
+      "required": false,
+      "description": {
+        "en": "Set the maximum total expanded archive size; requires --extract.",
+        "ru": "Задать максимальный суммарный размер распакованных данных; требует --extract."
+      }
     },
     {
       "name": "upload-rate",
@@ -413,7 +528,12 @@
         "path-to-http"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Limit the aggregate upload rate, or allow an unlimited rate.",
+        "ru": "Ограничить суммарную скорость отправки или не задавать предел."
+      }
     },
     {
       "name": "download-rate",
@@ -429,7 +549,12 @@
         "path-to-web"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Limit the aggregate download rate, or allow an unlimited rate.",
+        "ru": "Ограничить суммарную скорость скачивания или не задавать предел."
+      }
     },
     {
       "name": "all",
@@ -443,7 +568,12 @@
         "servers-stop"
       ],
       "conflicts": null,
-      "requires": null
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Stop every discovered Courier delivery and server instead of one UUID.",
+        "ru": "Остановить все найденные доставки и серверы Courier вместо одного UUID."
+      }
     }
   ],
   "routes": [
@@ -460,6 +590,7 @@
       "allowedFlags": [
         "archive",
         "extract",
+        "force-source-creation",
         "exclude",
         "exclude-regex",
         "exclude-from",
@@ -481,6 +612,7 @@
         "extract",
         "listen",
         "background",
+        "force-source-creation",
         "auth",
         "auth-attempts",
         "auth-fail-action",
@@ -507,6 +639,7 @@
         "archive",
         "listen",
         "background",
+        "force-source-creation",
         "auth",
         "auth-attempts",
         "auth-fail-action",
@@ -532,6 +665,7 @@
         "extract",
         "listen",
         "background",
+        "force-source-creation",
         "auth",
         "auth-attempts",
         "auth-fail-action",
@@ -556,6 +690,7 @@
       ],
       "allowedFlags": [
         "archive",
+        "force-source-creation",
         "auth",
         "exclude",
         "exclude-regex",
@@ -564,6 +699,52 @@
       ]
     }
   ],
+  "scopeLabels": {
+    "local-to-local": {
+      "en": "Local path to local path",
+      "ru": "Из локального пути в локальный"
+    },
+    "local-to-ssh": {
+      "en": "Local path to SSH path",
+      "ru": "Из локального пути в SSH"
+    },
+    "path-to-http": {
+      "en": "Path to HTTP webhook",
+      "ru": "Из пути в HTTP webhook"
+    },
+    "path-to-path": {
+      "en": "Path to path",
+      "ru": "Из пути в путь"
+    },
+    "path-to-web": {
+      "en": "Path to browser download",
+      "ru": "Из пути в браузер"
+    },
+    "servers-stop": {
+      "en": "Server stop",
+      "ru": "Остановка серверов"
+    },
+    "ssh-to-local": {
+      "en": "SSH path to local path",
+      "ru": "Из SSH-пути в локальный"
+    },
+    "ssh-to-ssh": {
+      "en": "SSH path to SSH path",
+      "ru": "Из SSH-пути в SSH"
+    },
+    "ui-start": {
+      "en": "Administration UI start",
+      "ru": "Запуск панели управления"
+    },
+    "web-to-path": {
+      "en": "Browser upload to path",
+      "ru": "Из браузера в путь"
+    },
+    "webhook-to-path": {
+      "en": "Incoming webhook to path",
+      "ru": "Из входящего webhook в путь"
+    }
+  },
   "examples": [
     "courier from ./report.pdf to server:/srv/inbox/",
     "courier from root@203.0.113.10:/opt/node/data to ./backup/",

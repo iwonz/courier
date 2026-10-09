@@ -5,16 +5,20 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"net/netip"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/iwonz/courier/internal/delivery"
 	"github.com/iwonz/courier/internal/endpoint"
+	"github.com/iwonz/courier/internal/fsx"
+	"github.com/iwonz/courier/internal/ipc"
 	"github.com/iwonz/courier/internal/operation"
 	"github.com/iwonz/courier/internal/policy"
 	"github.com/iwonz/courier/internal/sshx"
@@ -121,9 +125,9 @@ func TestDeliveryCredentialPrompt(t *testing.T) {
 }
 
 func TestEndpointCredentialProvider(t *testing.T) {
-	originalOpen, originalDetect, originalClose := openSSHConnection, detectSSHPlatform, closeSSHConnection
+	originalOpen, originalDetect, originalClose, originalRooted := openSSHConnection, detectSSHPlatform, closeSSHConnection, openRootedPath
 	t.Cleanup(func() {
-		openSSHConnection, detectSSHPlatform, closeSSHConnection = originalOpen, originalDetect, originalClose
+		openSSHConnection, detectSSHPlatform, closeSSHConnection, openRootedPath = originalOpen, originalDetect, originalClose, originalRooted
 	})
 	openSSHConnection = func(ctx context.Context, factory sshx.Factory, host, username string) (*sshx.Connection, error) {
 		if host == "fail" {
@@ -163,15 +167,20 @@ func TestEndpointCredentialProvider(t *testing.T) {
 	if runtime, err := provider(context.Background(), endpoint.Endpoint{Path: "local"}); err != nil || len(runtime.Credentials) != 0 {
 		t.Fatalf("local runtime=%#v err=%v", runtime, err)
 	}
-	if runtime, err := provider(context.Background(), endpoint.Endpoint{Remote: true, Host: "fail"}); err == nil || len(runtime.Credentials) != 0 {
+	openRootedPath = func(string) (*fsx.RootedLocal, string, error) { return nil, "", errors.New("local open") }
+	if runtime, err := provider(context.Background(), endpoint.Endpoint{Path: "local"}); err == nil || runtime != nil {
+		t.Fatalf("local open failure runtime=%#v err=%v", runtime, err)
+	}
+	openRootedPath = originalRooted
+	if runtime, err := provider(context.Background(), endpoint.Endpoint{Remote: true, Host: "fail"}); err == nil || runtime != nil {
 		t.Fatalf("open failure runtime=%#v err=%v", runtime, err)
 	}
 	withoutPrompt := endpointCredentialProvider(sshx.Factory{})
-	if runtime, err := withoutPrompt(context.Background(), endpoint.Endpoint{Remote: true, Host: "prompt", User: "user"}); err == nil || len(runtime.Credentials) != 0 {
+	if runtime, err := withoutPrompt(context.Background(), endpoint.Endpoint{Remote: true, Host: "prompt", User: "user"}); err == nil || runtime != nil {
 		t.Fatalf("missing prompt runtime=%#v err=%v", runtime, err)
 	}
 	failingPrompt := endpointCredentialProvider(sshx.Factory{Prompt: func(string) ([]byte, error) { return nil, errors.New("prompt") }})
-	if runtime, err := failingPrompt(context.Background(), endpoint.Endpoint{Remote: true, Host: "prompt", User: "user"}); err == nil || len(runtime.Credentials) != 0 {
+	if runtime, err := failingPrompt(context.Background(), endpoint.Endpoint{Remote: true, Host: "prompt", User: "user"}); err == nil || runtime != nil {
 		t.Fatalf("prompt failure runtime=%#v err=%v", runtime, err)
 	}
 	runtime, err := provider(context.Background(), endpoint.Endpoint{Remote: true, Host: "prompt", User: "user"})
@@ -179,6 +188,9 @@ func TestEndpointCredentialProvider(t *testing.T) {
 		t.Fatalf("captured runtime=%#v err=%v", runtime, err)
 	}
 	runtime.Clear()
+	if err := runtime.Resource.Close(); err != nil {
+		t.Fatal(err)
+	}
 	helperProvider := endpointCredentialProvider(sshx.Factory{
 		Prompt: func(string) ([]byte, error) { return []byte("secret"), nil },
 		SFTPFallback: func(context.Context, *sshx.Connection, *sshx.CapabilityError) (*sftp.Client, io.Closer, error) {
@@ -189,14 +201,17 @@ func TestEndpointCredentialProvider(t *testing.T) {
 		t.Fatalf("helper runtime=%#v err=%v", runtime, err)
 	} else {
 		runtime.Clear()
+		if err := runtime.Resource.Close(); err != nil {
+			t.Fatal(err)
+		}
 		if runtime.AllowHelper {
 			t.Fatal("helper approval was not cleared")
 		}
 	}
-	if runtime, err := provider(context.Background(), endpoint.Endpoint{Remote: true, Host: "detect"}); err == nil || len(runtime.Credentials) != 0 {
+	if runtime, err := provider(context.Background(), endpoint.Endpoint{Remote: true, Host: "detect"}); err == nil || runtime != nil {
 		t.Fatalf("detect failure runtime=%#v err=%v", runtime, err)
 	}
-	if runtime, err := provider(context.Background(), endpoint.Endpoint{Remote: true, Host: "close"}); err == nil || len(runtime.Credentials) != 0 {
+	if runtime, err := provider(context.Background(), endpoint.Endpoint{Remote: true, Host: "close"}); err != nil || runtime == nil || runtime.Resource.Close() == nil {
 		t.Fatalf("close failure runtime=%#v err=%v", runtime, err)
 	}
 	if closeCalls != 4 {
@@ -214,6 +229,23 @@ func TestBrowserCommandDependencyFailures(t *testing.T) {
 	stderr.Reset()
 	if code := Execute(context.Background(), NewRoot(dependencies), args, io.Discard, &stderr); code != ExitControl || !strings.Contains(stderr.String(), "web failure") {
 		t.Fatalf("web failure code=%d stderr=%q", code, stderr.String())
+	}
+	for _, failure := range []error{
+		&pathPreflightError{message: "Destination directory is missing"},
+		fmt.Errorf("%w: Destination path is missing", webdelivery.ErrEndpointPath),
+		&ipc.RemoteError{Code: ipc.CodeInvalid, Message: webdelivery.ErrEndpointPath.Error() + ": Destination path is missing"},
+	} {
+		dependencies.Hosted = func(context.Context, operation.Plan, io.Writer) error { return failure }
+		stderr.Reset()
+		if code := Execute(context.Background(), NewRoot(dependencies), args, io.Discard, &stderr); code != ExitTransfer || !strings.Contains(stderr.String(), "stage: preflight") {
+			t.Fatalf("preflight failure=%v code=%d stderr=%q", failure, code, stderr.String())
+		}
+	}
+	dependencies.Hosted = func(context.Context, operation.Plan, io.Writer) error {
+		return &ipc.RemoteError{Code: ipc.CodeInvalid, Message: "unrelated invalid request"}
+	}
+	if code := Execute(context.Background(), NewRoot(dependencies), args, io.Discard, io.Discard); code != ExitControl {
+		t.Fatalf("unrelated IPC failure code=%d", code)
 	}
 }
 
@@ -288,19 +320,66 @@ func TestAcquireWebDelivery(t *testing.T) {
 	}
 }
 
+func TestHostedPreflightPrecedesAcquisition(t *testing.T) {
+	originalAcquire := runWebAcquire
+	t.Cleanup(func() { runWebAcquire = originalAcquire })
+	missing := filepath.Join(t.TempDir(), "incoming")
+	provider := func(_ context.Context, value endpoint.Endpoint) (*HostedEndpoint, error) {
+		return &HostedEndpoint{Resource: &Resource{Endpoint: value, Backend: fsx.Local{}, Path: missing}}, nil
+	}
+	credentials := func(context.Context, operation.AuthMode) (policy.Credentials, error) {
+		return policy.Credentials{}, nil
+	}
+	acquired := false
+	runWebAcquire = func(context.Context, operation.Plan, delivery.Policy, json.RawMessage) (worker.Acquired, error) {
+		acquired = true
+		return worker.Acquired{DeliveryID: appWebDeliveryID}, nil
+	}
+	plan, err := operation.Build(operation.Request{
+		Source: "web://", Destination: missing,
+		Options: []operation.Option{{Name: operation.OptionBackground, Value: "true"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := webRunner(credentials, provider, nil)(context.Background(), plan, io.Discard); err == nil || !isPathPreflightError(err) || acquired {
+		t.Fatalf("missing path error=%v acquired=%v", err, acquired)
+	}
+	forced, err := operation.Build(operation.Request{
+		Source: "web://", Destination: missing,
+		Options: []operation.Option{
+			{Name: operation.OptionBackground, Value: "true"},
+			{Name: operation.OptionForceSourceCreation, Value: "true"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var output bytes.Buffer
+	if err := webRunner(credentials, provider, nil)(context.Background(), forced, &output); err != nil || !acquired || !strings.Contains(output.String(), string(appWebDeliveryID)) {
+		t.Fatalf("forced error=%v acquired=%v output=%q", err, acquired, output.String())
+	}
+	if info, err := os.Stat(missing); err != nil || !info.IsDir() {
+		t.Fatalf("created path info=%v err=%v", info, err)
+	}
+}
+
 func TestWebRunnerBranches(t *testing.T) {
 	originalDefinition, originalAddress, originalWebhookAddress, originalAcquire, originalRelease := newWebDefinition, webAddress, webhookAddress, runWebAcquire, releaseWebLease
 	t.Cleanup(func() {
 		newWebDefinition, webAddress, webhookAddress, runWebAcquire, releaseWebLease = originalDefinition, originalAddress, originalWebhookAddress, originalAcquire, originalRelease
 	})
 	plan := browserPlan(t, true)
-	if err := webRunner(nil, nil)(context.Background(), plan, io.Discard); err == nil {
+	localProvider := func(_ context.Context, value endpoint.Endpoint) (*HostedEndpoint, error) {
+		return &HostedEndpoint{Resource: &Resource{Endpoint: value, Backend: fsx.Local{}, Path: value.Path}}, nil
+	}
+	if err := webRunner(nil, nil, nil)(context.Background(), plan, io.Discard); err == nil {
 		t.Fatal("nil credential provider accepted")
 	}
 	credentialError := errors.New("credentials")
 	if err := webRunner(func(context.Context, operation.AuthMode) (policy.Credentials, error) {
 		return policy.Credentials{}, credentialError
-	}, nil)(context.Background(), plan, io.Discard); !errors.Is(err, credentialError) {
+	}, localProvider, nil)(context.Background(), plan, io.Discard); !errors.Is(err, credentialError) {
 		t.Fatalf("credential error=%v", err)
 	}
 	provider := func(context.Context, operation.AuthMode) (policy.Credentials, error) {
@@ -310,13 +389,18 @@ func TestWebRunnerBranches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := webRunner(provider, nil)(context.Background(), remotePlan, io.Discard); err == nil {
+	if err := webRunner(provider, nil, nil)(context.Background(), remotePlan, io.Discard); err == nil {
 		t.Fatal("missing SSH credential provider accepted")
 	}
+	if err := webRunner(provider, func(context.Context, endpoint.Endpoint) (*HostedEndpoint, error) {
+		return &HostedEndpoint{}, nil
+	}, nil)(context.Background(), remotePlan, io.Discard); err == nil {
+		t.Fatal("incomplete endpoint resource accepted")
+	}
 	endpointError := errors.New("endpoint credentials")
-	if err := webRunner(provider, func(context.Context, endpoint.Endpoint) (webdelivery.EndpointRuntime, error) {
-		return webdelivery.EndpointRuntime{}, endpointError
-	})(context.Background(), remotePlan, io.Discard); !errors.Is(err, endpointError) {
+	if err := webRunner(provider, func(context.Context, endpoint.Endpoint) (*HostedEndpoint, error) {
+		return nil, endpointError
+	}, nil)(context.Background(), remotePlan, io.Discard); !errors.Is(err, endpointError) {
 		t.Fatalf("endpoint credential error=%v", err)
 	}
 	endpointSecret := []byte("endpoint secret")
@@ -326,27 +410,28 @@ func TestWebRunnerBranches(t *testing.T) {
 		}
 		return webdelivery.Definition{}, errors.New("remote definition")
 	}
-	if err := webRunner(provider, func(context.Context, endpoint.Endpoint) (webdelivery.EndpointRuntime, error) {
-		return webdelivery.EndpointRuntime{Credentials: []webdelivery.EndpointCredential{{Prompt: "prompt", Secret: endpointSecret}}}, nil
-	})(context.Background(), remotePlan, io.Discard); err == nil || !bytes.Equal(endpointSecret, make([]byte, len(endpointSecret))) {
+	remoteSource := t.TempDir()
+	if err := webRunner(provider, func(_ context.Context, value endpoint.Endpoint) (*HostedEndpoint, error) {
+		return &HostedEndpoint{EndpointRuntime: webdelivery.EndpointRuntime{Credentials: []webdelivery.EndpointCredential{{Prompt: "prompt", Secret: endpointSecret}}}, Resource: &Resource{Endpoint: value, Backend: fsx.Local{}, Path: remoteSource}}, nil
+	}, nil)(context.Background(), remotePlan, io.Discard); err == nil || !bytes.Equal(endpointSecret, make([]byte, len(endpointSecret))) {
 		t.Fatalf("remote definition error=%v cleared=%v", err, endpointSecret)
 	}
 	newWebDefinition = func(operation.Plan, policy.Credentials, webdelivery.EndpointRuntime, io.Reader) (webdelivery.Definition, error) {
 		return webdelivery.Definition{}, errors.New("definition")
 	}
-	if err := webRunner(provider, nil)(context.Background(), plan, io.Discard); err == nil {
+	if err := webRunner(provider, localProvider, nil)(context.Background(), plan, io.Discard); err == nil {
 		t.Fatal("definition error ignored")
 	}
 	newWebDefinition = originalDefinition
 	overflow := plan
 	overflow.Options.Limit = operation.Limit{Value: math.MaxUint64}
-	if err := webRunner(provider, nil)(context.Background(), overflow, io.Discard); err == nil {
+	if err := webRunner(provider, localProvider, nil)(context.Background(), overflow, io.Discard); err == nil {
 		t.Fatal("policy conversion error ignored")
 	}
 	runWebAcquire = func(context.Context, operation.Plan, delivery.Policy, json.RawMessage) (worker.Acquired, error) {
 		return worker.Acquired{}, errors.New("acquire")
 	}
-	if err := webRunner(provider, nil)(context.Background(), plan, io.Discard); err == nil {
+	if err := webRunner(provider, localProvider, nil)(context.Background(), plan, io.Discard); err == nil {
 		t.Fatal("acquire error ignored")
 	}
 	lease := &worker.Lease{}
@@ -356,15 +441,15 @@ func TestWebRunnerBranches(t *testing.T) {
 	releases := 0
 	releaseWebLease = func(*worker.Lease, context.Context) error { releases++; return nil }
 	webAddress = func(string, string) (string, error) { return "", errors.New("address") }
-	if err := webRunner(provider, nil)(context.Background(), plan, io.Discard); err == nil || releases != 1 {
+	if err := webRunner(provider, localProvider, nil)(context.Background(), plan, io.Discard); err == nil || releases != 1 {
 		t.Fatalf("address error=%v releases=%d", err, releases)
 	}
 	webAddress = func(string, string) (string, error) { return "http://delivery/", nil }
-	if err := webRunner(provider, nil)(context.Background(), plan, failureWriter{}); err == nil || releases != 2 {
+	if err := webRunner(provider, localProvider, nil)(context.Background(), plan, failureWriter{}); err == nil || releases != 2 {
 		t.Fatalf("output error=%v releases=%d", err, releases)
 	}
 	var output bytes.Buffer
-	if err := webRunner(provider, nil)(context.Background(), plan, &output); err != nil || !strings.Contains(output.String(), string(appWebDeliveryID)) {
+	if err := webRunner(provider, localProvider, nil)(context.Background(), plan, &output); err != nil || !strings.Contains(output.String(), string(appWebDeliveryID)) {
 		t.Fatalf("background output=%q err=%v", output.String(), err)
 	}
 	foreground := plan
@@ -372,7 +457,7 @@ func TestWebRunnerBranches(t *testing.T) {
 	runWebAcquire = func(context.Context, operation.Plan, delivery.Policy, json.RawMessage) (worker.Acquired, error) {
 		return worker.Acquired{DeliveryID: appWebDeliveryID}, nil
 	}
-	if err := webRunner(provider, nil)(context.Background(), foreground, io.Discard); err == nil {
+	if err := webRunner(provider, localProvider, nil)(context.Background(), foreground, io.Discard); err == nil {
 		t.Fatal("missing foreground lease accepted")
 	}
 	runWebAcquire = func(context.Context, operation.Plan, delivery.Policy, json.RawMessage) (worker.Acquired, error) {
@@ -382,7 +467,7 @@ func TestWebRunnerBranches(t *testing.T) {
 	releaseWebLease = func(*worker.Lease, context.Context) error { return releaseError }
 	canceled, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := webRunner(provider, nil)(canceled, foreground, io.Discard); !errors.Is(err, context.Canceled) || !errors.Is(err, releaseError) {
+	if err := webRunner(provider, localProvider, nil)(canceled, foreground, io.Discard); !errors.Is(err, context.Canceled) || !errors.Is(err, releaseError) {
 		t.Fatalf("foreground result=%v", err)
 	}
 	webhookPlan, err := operation.Build(operation.Request{Source: "webhook://", Destination: t.TempDir(), Options: []operation.Option{{Name: operation.OptionBackground, Value: "true"}}})
@@ -399,7 +484,7 @@ func TestWebRunnerBranches(t *testing.T) {
 		return "http://delivery/upload", nil
 	}
 	output.Reset()
-	if err := webRunner(provider, nil)(context.Background(), webhookPlan, &output); err != nil || !strings.Contains(output.String(), "/upload") {
+	if err := webRunner(provider, localProvider, nil)(context.Background(), webhookPlan, &output); err != nil || !strings.Contains(output.String(), "/upload") {
 		t.Fatalf("webhook output=%q err=%v", output.String(), err)
 	}
 }
@@ -434,6 +519,7 @@ func TestDeliveryPolicyAndFlagCollection(t *testing.T) {
 	_ = values.extract.Set("false")
 	_ = values.listen.Set("127.0.0.1:9000")
 	_ = values.background.Set("true")
+	_ = values.forceSourceCreation.Set("true")
 	_ = values.auth.Set("basic")
 	_ = values.authAttempts.Set("7")
 	_ = values.authFailAction.Set("stop")
@@ -445,7 +531,7 @@ func TestDeliveryPolicyAndFlagCollection(t *testing.T) {
 	_ = values.uploadRate.Set("3MiB/s")
 	_ = values.downloadRate.Set("4MiB/s")
 	_ = values.selection.For(operation.OptionExclude).Set("*.tmp")
-	if options := values.options(); len(options) != 15 {
+	if options := values.options(); len(options) != 16 {
 		t.Fatalf("unexpected option count: %d (%v)", len(options), options)
 	}
 	empty := (&transferFlagValues{}).options()

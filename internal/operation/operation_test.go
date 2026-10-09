@@ -105,6 +105,7 @@ func TestBuildEffectiveOptions(t *testing.T) {
 			{Name: OptionExtract},
 			{Name: OptionListen, Value: "[::1]:9000"},
 			{Name: OptionBackground},
+			{Name: OptionForceSourceCreation},
 			{Name: OptionAuth, Value: "basic"},
 			{Name: OptionAuthAttempts, Value: "7"},
 			{Name: OptionAuthFailAction, Value: "stop"},
@@ -124,7 +125,7 @@ func TestBuildEffectiveOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 	options := plan.Options
-	if !options.Extract || options.Listen != "[::1]:9000" || !options.Background || options.Auth != AuthBasic || options.AuthAttempts != 7 || options.AuthFailAction != AuthFailStop {
+	if !options.Extract || options.Listen != "[::1]:9000" || !options.Background || !options.ForceSourceCreation || options.Auth != AuthBasic || options.AuthAttempts != 7 || options.AuthFailAction != AuthFailStop {
 		t.Fatalf("scalar options=%+v", options)
 	}
 	if options.Limit.Unlimited || options.Limit.Value != 3 || options.NoUI || options.MaxFileSize.Value != 2_000_000_000 || options.MaxExtractedSize.Value != 3<<30 || options.UploadRate.Value != 50<<20 || !options.DownloadRate.Unlimited {
@@ -137,9 +138,9 @@ func TestBuildEffectiveOptions(t *testing.T) {
 		}
 	}
 	wantSelection := []SelectionRule{
-		{Kind: SelectionGitignore, Value: "*.tmp", Position: 9},
-		{Kind: SelectionFile, Value: "rules.txt", Position: 10},
-		{Kind: SelectionRegex, Value: `^private/`, Position: 11},
+		{Kind: SelectionGitignore, Value: "*.tmp", Position: 10},
+		{Kind: SelectionFile, Value: "rules.txt", Position: 11},
+		{Kind: SelectionRegex, Value: `^private/`, Position: 12},
 	}
 	if !reflect.DeepEqual(options.Selection, wantSelection) || len(options.Occurrences) != len(request.Options) {
 		t.Fatalf("selection=%+v occurrences=%+v", options.Selection, options.Occurrences)
@@ -184,6 +185,7 @@ func TestOptionValidationErrors(t *testing.T) {
 		{"all is control only", withOptions(validWeb, Option{Name: OptionAll}), OptionAll},
 		{"invalid archive bool", Request{Source: "./in", Destination: "./out", Options: []Option{{Name: OptionArchive, Value: "sometimes"}}}, OptionArchive},
 		{"invalid extract bool", withOptions(validWeb, Option{Name: OptionExtract, Value: "sometimes"}), OptionExtract},
+		{"invalid force creation bool", withOptions(validWeb, Option{Name: OptionForceSourceCreation, Value: "sometimes"}), OptionForceSourceCreation},
 		{"invalid listen", withOptions(validWeb, Option{Name: OptionListen, Value: "localhost"}), OptionListen},
 		{"zero listen port", withOptions(validWeb, Option{Name: OptionListen, Value: "localhost:0"}), OptionListen},
 		{"invalid auth", withOptions(validWeb, Option{Name: OptionAuth, Value: "token"}), OptionAuth},
@@ -300,7 +302,7 @@ func TestContractMatrix(t *testing.T) {
 	if !reflect.DeepEqual(matrix.Options[OptionUploadRate], []string{"local-to-ssh", "path-to-http", "ssh-to-ssh", "web-to-path", "webhook-to-path"}) {
 		t.Fatalf("upload scopes=%v", matrix.Options[OptionUploadRate])
 	}
-	if !reflect.DeepEqual(matrix.Allowed[RoutePathToPath], []OptionName{OptionArchive, OptionDownloadRate, OptionExclude, OptionExcludeFrom, OptionExcludeRegex, OptionExtract, OptionMaxExtractedSize, OptionUploadRate}) {
+	if !reflect.DeepEqual(matrix.Allowed[RoutePathToPath], []OptionName{OptionArchive, OptionDownloadRate, OptionExclude, OptionExcludeFrom, OptionExcludeRegex, OptionExtract, OptionForceSourceCreation, OptionMaxExtractedSize, OptionUploadRate}) {
 		t.Fatalf("path options=%v", matrix.Allowed[RoutePathToPath])
 	}
 	matrix.Routes[0].Sources[0] = endpoint.KindHTTP

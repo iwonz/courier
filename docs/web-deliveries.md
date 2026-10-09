@@ -1,6 +1,6 @@
 # Browser deliveries
 
-Courier can expose a local or SSH-backed path for browser download, or accept a browser upload into an existing local or SSH-backed directory. Both routes use the same worker, policy, selection, and staged-storage layers as other Courier operations.
+Courier can expose a local or SSH-backed path for browser download, or accept a browser upload into a local or SSH-backed directory. Both routes use the same worker, policy, selection, and staged-storage layers as other Courier operations.
 
 ## Start a delivery
 
@@ -38,6 +38,8 @@ A shared file is streamed with a bounded buffer. A shared directory can be navig
 
 With `--archive`, Courier creates and verifies one `<source-name>.tar.gz` before registering the public delivery; that archive is the only published object. Without the flag, whole-directory downloads are generated from a preflighted manifest after authorization and reservation.
 
+Courier validates the hosted local or SSH path before acquiring a worker. A missing download source is treated as an empty directory; an upload destination and extraction root are always directories. Courier asks before recursively creating each missing directory, or creates it without prompting when `--force-source-creation` is present. A non-interactive command without that flag fails at preflight with exit code `20`. If the path disappears or changes type before worker registration, Courier returns the same sanitized path-specific preflight failure rather than an internal-worker error.
+
 `--exclude`, `--exclude-regex`, and `--exclude-from` use their original command-line order. `--download-rate` is an aggregate delivery limit shared by concurrent client sends and, for SSH-backed sources, the remote-read leg.
 
 ## Upload and commit behavior
@@ -50,7 +52,7 @@ With `--extract`, the uploaded object must be tar.gz. Courier inspects every ent
 
 ## Lifecycle and API-only mode
 
-Without `--background`, the initiating process owns a foreground lease. Interrupting it stops only that delivery and closes its endpoint resources. With `--background`, the worker retains the delivery after the command exits; the printed UUID is the stable control identity used by the server-control commands once they ship.
+Without `--background`, the initiating process owns a foreground lease. Interrupting it stops only that delivery and closes its endpoint resources. With `--background`, Courier prints the ready URL and delivery UUID, returns, and keeps the worker alive after terminal closure. The UUID appears in `courier servers`; stop it with `courier servers stop <uuid>` or stop its server with `courier servers stop <server-uuid>` or `--all`. Configured stop behavior, a fatal worker failure, and process termination also end the delivery.
 
 `--no-ui` disables the HTML entry point and returns a small versioned JSON description after authorization. Versioned metadata, session, upload, and download endpoints remain available under the opaque delivery URL. Static UI assets contain no delivery metadata or credentials.
 

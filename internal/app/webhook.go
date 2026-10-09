@@ -19,11 +19,6 @@ func runOutgoingWebhook(ctx context.Context, dependencies Dependencies, plan ope
 	if dependencies.Open == nil || dependencies.Webhook == nil || dependencies.DeliveryCredentials == nil || dependencies.Reporter == nil || dependencies.Terminal == nil || plan.Options.Archive && (dependencies.Archive == nil || dependencies.OpenArtifact == nil) {
 		return transferCommandError(progress.StagePreflight, errors.New("outgoing webhook dependencies are incomplete"), 0)
 	}
-	credentials, err := dependencies.DeliveryCredentials(ctx, plan.Options.Auth)
-	if err != nil {
-		return transferCommandError(progress.StagePreflight, err, 0)
-	}
-	defer clearCredentials(&credentials)
 	source, err := dependencies.Open(ctx, plan.Source)
 	if err != nil {
 		code := ExitTransfer
@@ -41,7 +36,11 @@ func runOutgoingWebhook(ctx context.Context, dependencies Dependencies, plan ope
 			}
 		}
 	}()
-	info, err := source.Backend.Lstat(source.Path)
+	expectation := pathRequiredFile
+	if plan.Options.Archive {
+		expectation = pathFlexibleSource
+	}
+	info, err := preflightSinglePath(ctx, dependencies.ConfirmDirectory, plan.Options.ForceSourceCreation, source, "Source", expectation)
 	if err != nil {
 		return transferCommandError(progress.StagePreflight, err, 0)
 	}
@@ -54,6 +53,11 @@ func runOutgoingWebhook(ctx context.Context, dependencies Dependencies, plan ope
 	if !plan.Options.Archive && !selector.Include(plan.Source.Base(), false) {
 		return transferCommandError(progress.StagePreflight, errors.New("outgoing webhook source is excluded"), 0)
 	}
+	credentials, err := dependencies.DeliveryCredentials(ctx, plan.Options.Auth)
+	if err != nil {
+		return transferCommandError(progress.StagePreflight, err, 0)
+	}
+	defer clearCredentials(&credentials)
 
 	reporter := dependencies.Reporter(stderr, dependencies.Terminal(stderr))
 	defer reporter.Finish()

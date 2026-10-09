@@ -16,6 +16,7 @@ import (
 	"github.com/iwonz/courier/internal/buildinfo"
 	"github.com/iwonz/courier/internal/delivery"
 	"github.com/iwonz/courier/internal/endpoint"
+	"github.com/iwonz/courier/internal/ipc"
 	"github.com/iwonz/courier/internal/operation"
 	"github.com/iwonz/courier/internal/policy"
 	"github.com/iwonz/courier/internal/sshx"
@@ -103,14 +104,30 @@ func deliveryCredentialPrompt(input *os.File, output io.Writer) func(context.Con
 	}
 }
 
-func endpointCredentialProvider(factory sshx.Factory) func(context.Context, endpoint.Endpoint) (webdelivery.EndpointRuntime, error) {
-	return func(ctx context.Context, value endpoint.Endpoint) (runtime webdelivery.EndpointRuntime, resultErr error) {
+// HostedEndpoint carries an opened endpoint for preflight and the bounded
+// credentials needed for the worker to reopen it after acquisition.
+type HostedEndpoint struct {
+	webdelivery.EndpointRuntime
+	Resource *Resource
+}
+
+func endpointCredentialProvider(factory sshx.Factory) func(context.Context, endpoint.Endpoint) (*HostedEndpoint, error) {
+	return func(ctx context.Context, value endpoint.Endpoint) (prepared *HostedEndpoint, resultErr error) {
 		if !value.Remote {
-			return webdelivery.EndpointRuntime{}, nil
+			backend, relative, err := openRootedPath(value.Path)
+			if err != nil {
+				return nil, err
+			}
+			return &HostedEndpoint{Resource: &Resource{Endpoint: value, Backend: backend, Path: relative, Close: backend.Close}}, nil
 		}
+		runtime := webdelivery.EndpointRuntime{}
+		var connection *sshx.Connection
 		defer func() {
 			if resultErr != nil {
 				runtime.Clear()
+				if connection != nil {
+					_ = closeSSHConnection(connection)
+				}
 			}
 		}()
 		connectionFactory := factory
@@ -138,40 +155,49 @@ func endpointCredentialProvider(factory sshx.Factory) func(context.Context, endp
 		}
 		connection, err := openSSHConnection(ctx, connectionFactory, value.Host, value.User)
 		if err != nil {
-			return runtime, err
+			return nil, err
 		}
 		if _, _, err := detectSSHPlatform(ctx, connection); err != nil {
-			_ = closeSSHConnection(connection)
-			return runtime, err
+			return nil, err
 		}
-		if err := closeSSHConnection(connection); err != nil {
-			return runtime, err
-		}
-		return runtime, nil
+		effective := value
+		effective.Host = connection.Target.Host
+		effective.User = connection.Target.User
+		resource := &Resource{Endpoint: effective, Backend: sshx.NewSFTPBackend(connection.SFTP), Path: value.Path, Close: func() error { return closeSSHConnection(connection) }}
+		return &HostedEndpoint{EndpointRuntime: runtime, Resource: resource}, nil
 	}
 }
 
-func webRunner(credentials func(context.Context, operation.AuthMode) (policy.Credentials, error), endpointCredentials func(context.Context, endpoint.Endpoint) (webdelivery.EndpointRuntime, error)) func(context.Context, operation.Plan, io.Writer) error {
+func webRunner(credentials func(context.Context, operation.AuthMode) (policy.Credentials, error), endpointCredentials func(context.Context, endpoint.Endpoint) (*HostedEndpoint, error), confirm DirectoryConfirm) func(context.Context, operation.Plan, io.Writer) error {
 	return func(ctx context.Context, plan operation.Plan, output io.Writer) error {
 		if credentials == nil {
 			return errors.New("web credential provider is unavailable")
 		}
-		remote := plan.Source
-		if !remote.Remote {
-			remote = plan.Destination
+		pathEndpoint := plan.Source
+		role := "Source"
+		expectation := pathFlexibleSource
+		if plan.Route == operation.RouteWebToPath || plan.Route == operation.RouteWebhookToPath {
+			pathEndpoint = plan.Destination
+			role = "Destination"
+			expectation = pathDirectory
 		}
-		endpointRuntime := webdelivery.EndpointRuntime{}
-		if remote.Remote {
-			if endpointCredentials == nil {
-				return errors.New("web SSH credential provider is unavailable")
-			}
-			var err error
-			endpointRuntime, err = endpointCredentials(ctx, remote)
-			if err != nil {
-				return err
-			}
+		if endpointCredentials == nil {
+			return errors.New("web endpoint provider is unavailable")
 		}
+		prepared, err := endpointCredentials(ctx, pathEndpoint)
+		if err != nil {
+			return err
+		}
+		if prepared == nil || prepared.Resource == nil {
+			return errors.New("web endpoint provider returned an incomplete resource")
+		}
+		endpointRuntime := prepared.EndpointRuntime
 		defer endpointRuntime.Clear()
+		_, preflightErr := preflightSinglePath(ctx, confirm, plan.Options.ForceSourceCreation, prepared.Resource, role, expectation)
+		closeErr := closeResources(prepared.Resource)
+		if preflightErr != nil || closeErr != nil {
+			return errors.Join(preflightErr, closeErr)
+		}
 		secret, err := credentials(ctx, plan.Options.Auth)
 		if err != nil {
 			return err
@@ -226,6 +252,14 @@ func clearCredentials(credentials *policy.Credentials) {
 	clear(credentials.BasicPassword)
 	clear(credentials.Password)
 	*credentials = policy.Credentials{}
+}
+
+func isHostedPathPreflightError(err error) bool {
+	if isPathPreflightError(err) || errors.Is(err, webdelivery.ErrEndpointPath) {
+		return true
+	}
+	var remote *ipc.RemoteError
+	return errors.As(err, &remote) && remote.Code == ipc.CodeInvalid && strings.Contains(remote.Message, webdelivery.ErrEndpointPath.Error())
 }
 
 func deliveryPolicy(plan operation.Plan) (delivery.Policy, error) {

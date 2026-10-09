@@ -25,6 +25,8 @@ const (
 	contractPath  = "docs/cli-contract.yaml"
 	referencePath = "docs/cli-reference.md"
 	landingPath   = "web/landing/src/contract.generated.json"
+	helpPath      = "internal/app/help_contract.generated.go"
+	readmePath    = "README.md"
 )
 
 type generatedOutput struct {
@@ -54,7 +56,22 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "check planner parity: %v\n", err)
 		return 1
 	}
-	outputs := []generatedOutput{{path: referencePath, data: value.Reference()}, {path: landingPath, data: value.LandingJSON()}}
+	readme, err := readFile(readmePath)
+	if err != nil {
+		fmt.Fprintf(stderr, "read generated contract data %s: %v\n", readmePath, err)
+		return 1
+	}
+	updatedREADME, err := value.UpdateREADME(readme)
+	if err != nil {
+		fmt.Fprintf(stderr, "update generated contract data %s: %v\n", readmePath, err)
+		return 1
+	}
+	outputs := []generatedOutput{
+		{path: referencePath, data: value.Reference()},
+		{path: landingPath, data: value.LandingJSON()},
+		{path: helpPath, data: value.HelpGo()},
+		{path: readmePath, data: updatedREADME},
+	}
 	if mode == "--write" {
 		for _, output := range outputs {
 			if err := writeFile(output.path, output.data, 0o644); err != nil {
@@ -66,7 +83,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 	for _, output := range outputs {
-		current, err := readFile(output.path)
+		current := readme
+		var err error
+		if output.path != readmePath {
+			current, err = readFile(output.path)
+		}
 		if err != nil {
 			fmt.Fprintf(stderr, "read generated contract data %s: %v\n", output.path, err)
 			return 1
@@ -76,7 +97,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 	}
-	fmt.Fprintln(stdout, "verified CLI contract, reference, and landing data")
+	fmt.Fprintln(stdout, "verified CLI contract and generated parameter documentation")
 	return 0
 }
 

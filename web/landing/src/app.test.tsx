@@ -13,6 +13,7 @@ import {
   installs,
   localizedEndpointDescription,
   localizedEndpointLabel,
+  localizedScope,
 } from "./app";
 import { contractData } from "./contract";
 import { type LandingMessage } from "./catalog";
@@ -43,6 +44,7 @@ describe("landing contract projection", () => {
     expect(endpointExample("local", "source")).toBe("./project");
     expect(endpointExample("ssh", "destination")).toBe("courier@host:/srv/destination/");
     expect(endpointExample("future", "source")).toBe("future");
+    expect(localizedScope("future", "en")).toBe("future");
     expect(endpointMessage("ssh", "source")).toBe("endpointRemote");
     expect(endpointMessage("http", "destination")).toBe("endpointWebHook");
     expect(endpointMessage("future", "source")).toBeUndefined();
@@ -329,11 +331,20 @@ describe("React landing", () => {
     expect(activeLocal?.className).toContain("bg-[var(--terminal-fill-action)]");
     expect(activeLocal?.className).not.toContain("bg-background");
     expect(screen.getByText("COURIER CLI")).toBeTruthy();
+    expect(screen.getByText("Pack the source into a verified <source-name>.tar.gz before transfer.")).toBeTruthy();
+    expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).toContain("Optional");
+    expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).toContain("Path to path");
+    expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).toContain("Conflicts with: --extract");
+    expect(document.querySelector('[data-builder-argument="source"]')?.textContent).toContain("File, directory, browser upload");
     const localeButton = screen.getByRole("button", { name: /Language:/ });
     expect(localeButton.querySelector('[data-locale-icon="en"] svg')).toBeTruthy();
     fireEvent.click(localeButton);
     expect(localeButton.querySelectorAll('[data-locale-icon="ru"] i')).toHaveLength(3);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Отсюда — куда угодно.");
+    expect(screen.getByText("Упаковать источник в проверенный <имя-источника>.tar.gz перед передачей.")).toBeTruthy();
+    expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).toContain("Необязательно");
+    expect(document.querySelector('[data-builder-flag="archive"]')?.textContent).toContain("Из пути в путь");
+    expect(document.querySelector('[data-builder-argument="source"]')?.textContent).toContain("Файл, каталог, браузерная загрузка");
     expect(document.body.textContent).not.toContain("Все связи взяты из опубликованного контракта CLI");
   });
 });

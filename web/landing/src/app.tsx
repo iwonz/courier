@@ -23,7 +23,7 @@ import {
   usePreferences,
 } from "@courier/ui";
 import { landingText, type LandingMessage } from "./catalog";
-import { contractData, type LandingCommand, type LandingFlag, type LandingRoute } from "./contract";
+import { contractData, type LandingCommand, type LandingFlag, type LandingRoute, type LocalizedText } from "./contract";
 import { argumentValid, buildCommand, flagEnabled, updateFlagValues, type FlagValues, type ShellMode } from "./command-builder";
 
 interface InstallChannel { readonly name: string; readonly command: string; readonly icon?: BrandIconName; }
@@ -89,6 +89,8 @@ export function commandFlags(commandName: string, compatibleOnly: boolean, comma
   const names = commands.find((command) => command.name === commandName)?.flags ?? [];
   return flags.filter((flag) => names.includes(flag.name));
 }
+export function localizedContractText(value: LocalizedText, locale: "en" | "ru"): string { return value[locale]; }
+export function localizedScope(scope: string, locale: "en" | "ru"): string { return contractData.scopeLabels[scope]?.[locale] ?? scope; }
 
 const routePairs = expandRoutePairs(contractData.routes);
 const initialRoute = routePairs.find((pair) => pair.source === "local" && pair.destination === "ssh")!;
@@ -187,13 +189,13 @@ function LandingContent(): React.JSX.Element {
       {t("enabled")}
     </label>;
     if (flag.valueKind === "enum") return <Select value={values[0] ?? ""} disabled={disabled} onValueChange={(value) => setFlagValue(flag, [value])}>
-      <SelectTrigger aria-label={flag.syntax}><SelectValue placeholder={`${flag.placeholder} · ${t("optionDefault")}: ${flag.default}`} /></SelectTrigger>
+      <SelectTrigger className="min-w-0" aria-label={flag.syntax}><SelectValue placeholder={`${flag.placeholder} · ${t("optionDefault")}: ${flag.default}`} /></SelectTrigger>
       <SelectContent>{(flag.choices as string[]).map((choice) => <SelectItem key={choice} value={choice}>{choice}</SelectItem>)}</SelectContent>
     </Select>;
     if (flag.repeatable) {
       const rows = values.length ? values : [""];
-      return <div className="grid gap-2">{rows.map((value, index) => <div key={`${flag.name}:${index}`} className="flex gap-2">
-        <Input aria-label={`${flag.syntax} ${index + 1}`} value={value} disabled={disabled} placeholder={`${flag.placeholder} · ${t("optionDefault")}: ${flag.default}`} onChange={(event) => {
+      return <div className="grid min-w-0 gap-2">{rows.map((value, index) => <div key={`${flag.name}:${index}`} className="flex min-w-0 gap-2">
+        <Input className="min-w-0" aria-label={`${flag.syntax} ${index + 1}`} value={value} disabled={disabled} placeholder={`${flag.placeholder} · ${t("optionDefault")}: ${flag.default}`} onChange={(event) => {
           const next = [...rows];
           next[index] = event.currentTarget.value;
           setFlagValue(flag, next);
@@ -203,7 +205,7 @@ function LandingContent(): React.JSX.Element {
         </Button>
       </div>)}</div>;
     }
-    return <Input aria-label={flag.syntax} value={values[0] ?? ""} disabled={disabled} inputMode={flag.valueKind === "unsigned" ? "numeric" : undefined} placeholder={`${flag.placeholder} · ${t("optionDefault")}: ${flag.default}`} onChange={(event) => setFlagValue(flag, [event.currentTarget.value])} />;
+    return <Input className="min-w-0" aria-label={flag.syntax} value={values[0] ?? ""} disabled={disabled} inputMode={flag.valueKind === "unsigned" ? "numeric" : undefined} placeholder={`${flag.placeholder} · ${t("optionDefault")}: ${flag.default}`} onChange={(event) => setFlagValue(flag, [event.currentTarget.value])} />;
   };
   const endpointButton = (name: string, side: "source" | "destination"): React.JSX.Element => {
     const valid = side === "source" || routePairs.some((pair) => pair.source === selectedSource && pair.destination === name);
@@ -262,16 +264,16 @@ function LandingContent(): React.JSX.Element {
                   <div className="grid content-start gap-2"><span className="px-1 text-xs font-semibold text-muted-foreground">{t("destinationLabel")}</span>{destinationEndpoints.map((name) => endpointButton(name, "destination"))}</div>
                 </div> : null}
                 <div data-courier-cli-options-header className="flex min-h-14 min-w-0 flex-wrap items-center justify-between gap-3 px-3 py-3"><span className="text-sm font-semibold uppercase tracking-[.08em]">{t("optionsLabel")}</span><label className="flex min-w-0 items-center gap-2 text-xs font-medium text-muted-foreground"><Checkbox checked={compatibleOnly} onCheckedChange={(checked) => setCompatibleOnly(checked === true)} /><span className="min-w-0 break-words">{t("compatibleOnly")}</span></label></div>
-                <div data-courier-cli-options-list className="max-h-[31rem] min-w-0 overflow-y-auto">
+                <div data-courier-cli-options-list className="max-h-[31rem] min-w-0 overflow-x-hidden overflow-y-auto">
                   {selectedCommandData!.arguments.map((argument) => {
                     const omitted = Boolean(argument.omitWhenFlag && flagEnabled(flagValues, argument.omitWhenFlag));
                     const valid = argumentValid(argument, argumentValues[argument.name] ?? "", flagValues);
-                    return <article key={argument.name} data-builder-argument={argument.name} className="grid gap-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.9fr)] sm:items-center">
-                      <div className="grid gap-1"><code className="font-mono text-sm font-bold text-primary">{`<${argument.name}>`}</code><span className="text-xs text-muted-foreground">{argument.required ? t("requiredValue") : t("optionalValue")}{argument.prefix ? ` · ${argument.prefix}` : ""}</span></div>
-                      {argument.kind === "command-path" ? <Select value={argumentValues[argument.name] ?? ""} onValueChange={(value) => setArgumentValue(argument.name, value, argument.omitWhenFlag)}><SelectTrigger aria-label={argument.name}><SelectValue placeholder={t("chooseCommandPath")} /></SelectTrigger><SelectContent>{contractData.commands.filter((candidate) => candidate.name !== selectedCommandData.name).map((candidate) => <SelectItem key={candidate.name} value={candidate.path}>{candidate.path}</SelectItem>)}</SelectContent></Select> : <Input aria-label={argument.name} value={argumentValues[argument.name] ?? ""} disabled={omitted} aria-invalid={!valid} placeholder={omitted ? `--${argument.omitWhenFlag}` : argument.name} onChange={(event) => setArgumentValue(argument.name, event.currentTarget.value, argument.omitWhenFlag)} />}
+                    return <article key={argument.name} data-builder-argument={argument.name} className="grid min-w-0 gap-4 px-3 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.9fr)] sm:items-center">
+                      <div className="grid min-w-0 gap-2"><div className="flex min-w-0 flex-wrap items-center gap-2"><code className="font-mono text-sm font-bold text-primary">{`<${argument.name}>`}</code><span className="text-[.6875rem] font-semibold uppercase tracking-[.06em] text-muted-foreground">{argument.required ? t("requiredValue") : t("optionalValue")}</span></div><p data-parameter-description className="text-xs leading-relaxed text-foreground/80">{localizedContractText(argument.description, locale)}</p>{argument.prefix ? <span className="text-xs text-muted-foreground">{t("to")}: <code>{argument.prefix}</code></span> : null}</div>
+                      {argument.kind === "command-path" ? <Select value={argumentValues[argument.name] ?? ""} onValueChange={(value) => setArgumentValue(argument.name, value, argument.omitWhenFlag)}><SelectTrigger className="min-w-0" aria-label={argument.name}><SelectValue placeholder={t("chooseCommandPath")} /></SelectTrigger><SelectContent>{contractData.commands.filter((candidate) => candidate.name !== selectedCommandData.name).map((candidate) => <SelectItem key={candidate.name} value={candidate.path}>{candidate.path}</SelectItem>)}</SelectContent></Select> : <Input className="min-w-0" aria-label={argument.name} value={argumentValues[argument.name] ?? ""} disabled={omitted} aria-invalid={!valid} placeholder={omitted ? `--${argument.omitWhenFlag}` : argument.name} onChange={(event) => setArgumentValue(argument.name, event.currentTarget.value, argument.omitWhenFlag)} />}
                     </article>;
                   })}
-                  {visibleFlags.length ? visibleFlags.map((flag) => <article key={flag.name} data-builder-flag={flag.name} className="grid gap-3 px-3 py-3 hover:bg-muted sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.9fr)] sm:items-center"><div className="grid gap-1"><div className="flex flex-wrap items-baseline justify-between gap-2"><code className="font-mono text-sm font-bold text-primary">{flag.syntax}</code><span className="text-xs text-muted-foreground">{t("optionDefault")}: {flag.default}</span></div><p className="text-xs leading-relaxed text-muted-foreground">{t("repeatable")}: {flag.repeatable ? t("yes") : t("no")} · {t("applies")}: {flag.appliesTo.join(", ")}{(flag.requires ?? []).length ? ` · ${t("requires")}: ${(flag.requires as string[]).map((name) => `--${name}`).join(", ")}` : ""}</p></div>{flagControl(flag)}</article>) : <p data-courier-cli-empty className="p-5 text-sm text-muted-foreground">{t("noCompatibleOptions")}</p>}
+                  {visibleFlags.length ? visibleFlags.map((flag) => <article key={flag.name} data-builder-flag={flag.name} className="grid min-w-0 gap-4 px-3 py-4 hover:bg-muted sm:grid-cols-[minmax(0,1fr)_minmax(12rem,.9fr)] sm:items-center"><div className="grid min-w-0 gap-2"><div className="flex min-w-0 flex-wrap items-center gap-2"><code className="break-all font-mono text-sm font-bold text-primary">{flag.syntax}</code><span className="text-[.6875rem] font-semibold uppercase tracking-[.06em] text-muted-foreground">{t("optionalValue")}</span></div><p data-parameter-description className="text-xs leading-relaxed text-foreground/80">{localizedContractText(flag.description, locale)}</p><div data-parameter-metadata className="flex min-w-0 flex-wrap gap-x-4 gap-y-1 text-xs leading-relaxed text-muted-foreground"><span>{t("optionDefault")}: <code>{flag.default}</code></span><span>{t("repeatable")}: {flag.repeatable ? t("yes") : t("no")}</span><span className="basis-full">{t("applies")}: {flag.appliesTo.map((scope) => localizedScope(scope, locale)).join(", ")}</span>{(flag.requires ?? []).length ? <span>{t("requires")}: {(flag.requires as string[]).map((name) => `--${name}`).join(", ")}</span> : null}{(flag.conflicts ?? []).length ? <span>{t("conflicts")}: {(flag.conflicts as string[]).map((name) => `--${name}`).join(", ")}</span> : null}</div></div>{flagControl(flag)}</article>) : <p data-courier-cli-empty className="p-5 text-sm text-muted-foreground">{t("noCompatibleOptions")}</p>}
                 </div>
               </section>
             </div>

@@ -29,7 +29,6 @@ import (
 	"github.com/iwonz/courier/internal/sshx"
 	"github.com/iwonz/courier/internal/transfer"
 	"github.com/iwonz/courier/internal/update"
-	"github.com/iwonz/courier/internal/webdelivery"
 	"github.com/iwonz/courier/internal/webhook"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -64,7 +63,8 @@ type Dependencies struct {
 	Hosted              func(context.Context, operation.Plan, io.Writer) error
 	Webhook             func(context.Context, webhook.Request) (webhook.Result, error)
 	DeliveryCredentials func(context.Context, operation.AuthMode) (policy.Credentials, error)
-	DeliveryEndpoint    func(context.Context, endpoint.Endpoint) (webdelivery.EndpointRuntime, error)
+	DeliveryEndpoint    func(context.Context, endpoint.Endpoint) (*HostedEndpoint, error)
+	ConfirmDirectory    DirectoryConfirm
 	Select              func([]operation.SelectionRule) (selection.Selector, error)
 	Update              func(context.Context) (update.Result, error)
 	ListServers         func(context.Context) ([]control.ServerView, error)
@@ -192,9 +192,10 @@ func DefaultDependencies(input *os.File, promptOutput io.Writer) (Dependencies, 
 		Build:               BuildIdentity{Version: buildinfo.Version, Commit: buildinfo.Commit, Date: buildinfo.Date},
 		DeliveryCredentials: deliveryCredentialPrompt(input, promptOutput),
 		DeliveryEndpoint:    endpointCredentialProvider(factory),
+		ConfirmDirectory:    terminalDirectoryConfirmation(input, promptOutput),
 		Webhook:             (webhook.Sender{}).Send,
 	}
-	dependencies.Hosted = webRunner(dependencies.DeliveryCredentials, dependencies.DeliveryEndpoint)
+	dependencies.Hosted = webRunner(dependencies.DeliveryCredentials, dependencies.DeliveryEndpoint, dependencies.ConfirmDirectory)
 	return dependencies, nil
 }
 
@@ -207,6 +208,26 @@ func terminalConfirmation(input *os.File, output io.Writer) helper.Confirm {
 			return false, err
 		}
 		fmt.Fprintf(output, "%s [y/N] ", question)
+		answer, err := bufio.NewReader(input).ReadString('\n')
+		if err != nil && !errors.Is(err, io.EOF) {
+			return false, err
+		}
+		answer = strings.ToLower(strings.TrimSpace(answer))
+		return answer == "y" || answer == "yes", nil
+	}
+}
+
+func terminalDirectoryConfirmation(input *os.File, output io.Writer) DirectoryConfirm {
+	return func(ctx context.Context, question string) (bool, error) {
+		if input == nil || !terminalAttached(int(input.Fd())) {
+			return false, errDirectoryConfirmationUnavailable
+		}
+		if err := ctx.Err(); err != nil {
+			return false, err
+		}
+		if _, err := fmt.Fprintf(output, "%s [y/N] ", question); err != nil {
+			return false, err
+		}
 		answer, err := bufio.NewReader(input).ReadString('\n')
 		if err != nil && !errors.Is(err, io.EOF) {
 			return false, err
@@ -235,13 +256,15 @@ func writerIsTerminal(output io.Writer) bool {
 
 // NewRoot builds the Cobra command tree without global state.
 func NewRoot(dependencies Dependencies) *cobra.Command {
-	return mustRoot(NewRootWithProviders(
+	root := mustRoot(NewRootWithProviders(
 		ProviderFunc(func() *cobra.Command { return newTransferCommand(dependencies) }),
 		ProviderFunc(func() *cobra.Command { return newServersCommand(dependencies.ListServers, dependencies.StopServers) }),
 		ProviderFunc(func() *cobra.Command { return newUICommand(dependencies.StartUI, dependencies.StopUI) }),
 		ProviderFunc(func() *cobra.Command { return newVersionCommand(dependencies.Build) }),
 		ProviderFunc(func() *cobra.Command { return newUpdateCommand(dependencies.Update) }),
 	))
+	installContractHelp(root)
+	return root
 }
 
 func mustRoot(root *cobra.Command, err error) *cobra.Command {
@@ -347,6 +370,15 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 	if disposition == safety.NoOp {
 		return transferOutcome{destination: destination.Endpoint.Raw, result: transfer.Result{Destination: destination.Path}}, nil
 	}
+	if !archiveMode {
+		if _, err := endpoint.ResolveDestination(source.Endpoint, destination.Endpoint, false, ""); err != nil {
+			return transferOutcome{}, transferCommandError(progress.StagePreflight, err, 0)
+		}
+	}
+	sourceInfo, destinationInfo, err := preflightTransferPaths(ctx, dependencies.ConfirmDirectory, plan.Options.ForceSourceCreation, source, destination, archiveMode, extractMode)
+	if err != nil {
+		return transferOutcome{}, transferCommandError(progress.StagePreflight, err, 0)
+	}
 	if extractMode {
 		reporter := dependencies.Reporter(stderr, dependencies.Terminal(stderr))
 		defer reporter.Finish()
@@ -365,24 +397,12 @@ func performTransfer(ctx context.Context, dependencies Dependencies, plan operat
 		}
 		return transferOutcome{destination: destination.Endpoint.Raw, result: transfer.Result{Destination: destination.Path, Bytes: result.Bytes, Elapsed: result.Elapsed}}, nil
 	}
-	sourceInfo, err := source.Backend.Lstat(source.Path)
-	if err != nil {
-		return transferOutcome{}, transferCommandError(progress.StagePreflight, err, 0)
-	}
-	destinationIsDirectory := false
-	if info, statErr := destination.Backend.Lstat(destination.Path); statErr == nil {
-		destinationIsDirectory = info.IsDir()
-	} else if !errors.Is(statErr, fs.ErrNotExist) {
-		return transferOutcome{}, transferCommandError(progress.StagePreflight, statErr, 0)
-	}
+	destinationIsDirectory := destinationInfo != nil && destinationInfo.IsDir()
 	outputName := ""
 	if archiveMode {
 		outputName = source.Endpoint.Base() + ".tar.gz"
 	}
-	actualEndpoint, err := endpoint.ResolveDestination(source.Endpoint, destination.Endpoint, destinationIsDirectory, outputName)
-	if err != nil {
-		return transferOutcome{}, transferCommandError(progress.StagePreflight, err, 0)
-	}
+	actualEndpoint, _ := endpoint.ResolveDestination(source.Endpoint, destination.Endpoint, destinationIsDirectory, outputName) // source name was validated above
 	disposition, err = safety.EvaluateTransfer(source.Endpoint, actualEndpoint, sourceInfo.IsDir(), transformation)
 	if err != nil {
 		return transferOutcome{}, transferCommandError(progress.StagePreflight, err, 0)

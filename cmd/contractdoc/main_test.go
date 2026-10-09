@@ -20,6 +20,25 @@ func toolContract() contract.Contract {
 	return value
 }
 
+func toolGenerated(value contract.Contract) map[string][]byte {
+	readme := []byte("before\n" + contract.READMEStart + "\n" + contract.READMEEnd + "\nafter\n")
+	updated, err := value.UpdateREADME(readme)
+	if err != nil {
+		panic(err)
+	}
+	return map[string][]byte{
+		referencePath: value.Reference(),
+		landingPath:   value.LandingJSON(),
+		helpPath:      value.HelpGo(),
+		readmePath:    updated,
+	}
+}
+
+func toolReader(value contract.Contract) func(string) ([]byte, error) {
+	generated := toolGenerated(value)
+	return func(name string) ([]byte, error) { return generated[name], nil }
+}
+
 func restoreGlobals(t *testing.T) {
 	t.Helper()
 	originalExit, originalRead, originalWrite, originalLoad, originalRoot := exitProcess, readFile, writeFile, load, root
@@ -34,13 +53,7 @@ func TestRunModes(t *testing.T) {
 	value := toolContract()
 	load = func(string) (contract.Contract, error) { return value, nil }
 	root = func() *cobra.Command { return app.NewRoot(app.Dependencies{}) }
-	reference := value.Reference()
-	readFile = func(name string) ([]byte, error) {
-		if name == landingPath {
-			return value.LandingJSON(), nil
-		}
-		return reference, nil
-	}
+	readFile = toolReader(value)
 	var stdout, stderr bytes.Buffer
 	if code := run(nil, &stdout, &stderr); code != 0 || stdout.String() == "" || stderr.Len() != 0 {
 		t.Fatalf("code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
@@ -49,7 +62,7 @@ func TestRunModes(t *testing.T) {
 	written := 0
 	writeFile = func(string, []byte, os.FileMode) error { written++; return nil }
 	stdout.Reset()
-	if code := run([]string{"--write"}, &stdout, &stderr); code != 0 || written != 2 {
+	if code := run([]string{"--write"}, &stdout, &stderr); code != 0 || written != 4 {
 		t.Fatalf("code=%d written=%v", code, written)
 	}
 
@@ -90,34 +103,38 @@ func TestRunFailures(t *testing.T) {
 			value := toolContract()
 			load = func(string) (contract.Contract, error) { return value, nil }
 			root = func() *cobra.Command { return app.NewRoot(app.Dependencies{}) }
+			generated := toolGenerated(value)
 			readFile = func(name string) ([]byte, error) {
 				if name == landingPath {
 					return nil, errors.New("read")
 				}
-				return value.Reference(), nil
+				return generated[name], nil
 			}
 		}, nil},
 		{"landing stale", func() {
 			value := toolContract()
 			load = func(string) (contract.Contract, error) { return value, nil }
 			root = func() *cobra.Command { return app.NewRoot(app.Dependencies{}) }
+			generated := toolGenerated(value)
 			readFile = func(name string) ([]byte, error) {
 				if name == landingPath {
 					return []byte("stale"), nil
 				}
-				return value.Reference(), nil
+				return generated[name], nil
 			}
 		}, nil},
 		{"write", func() {
 			value := toolContract()
 			load = func(string) (contract.Contract, error) { return value, nil }
 			root = func() *cobra.Command { return app.NewRoot(app.Dependencies{}) }
+			readFile = toolReader(value)
 			writeFile = func(string, []byte, os.FileMode) error { return errors.New("write") }
 		}, []string{"--write"}},
 		{"landing write", func() {
 			value := toolContract()
 			load = func(string) (contract.Contract, error) { return value, nil }
 			root = func() *cobra.Command { return app.NewRoot(app.Dependencies{}) }
+			readFile = toolReader(value)
 			writeFile = func(name string, _ []byte, _ os.FileMode) error {
 				if name == landingPath {
 					return errors.New("write")
@@ -143,12 +160,7 @@ func TestMain(t *testing.T) {
 	value := toolContract()
 	load = func(string) (contract.Contract, error) { return value, nil }
 	root = func() *cobra.Command { return app.NewRoot(app.Dependencies{}) }
-	readFile = func(name string) ([]byte, error) {
-		if name == landingPath {
-			return value.LandingJSON(), nil
-		}
-		return value.Reference(), nil
-	}
+	readFile = toolReader(value)
 	exited := -1
 	exitProcess = func(code int) { exited = code }
 	originalArgs := os.Args

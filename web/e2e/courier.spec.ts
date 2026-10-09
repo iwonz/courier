@@ -248,6 +248,7 @@ test("landing keeps the static header, official brands, route signal, and comman
         };
       })).toEqual(theme === "dark" ? expect.objectContaining({ background: "#000000", surface: "#0D1015", primary: "#71FFF6", actionFill: "#71FFF6", selectionFill: "#FAD14F", destructive: "#C94A55", bodyFont: expect.stringContaining("Overpass Mono"), headingFont: expect.stringContaining("Pixelify Sans") }) : expect.objectContaining({ background: "#FFFFFF", surface: "rgba(0, 0, 0, .04)", primary: "#006B67", actionFill: "#71FFF6", selectionFill: "#FAD14F", destructive: "#C94A55", bodyFont: expect.stringContaining("Overpass Mono"), headingFont: expect.stringContaining("Pixelify Sans") }));
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      expect(await page.locator("[data-courier-cli-options-list]").evaluate((list) => list.scrollWidth <= list.clientWidth)).toBe(true);
       expect(await page.locator("[data-courier-cli-command-list]").evaluate((list, width) => {
         const style = getComputedStyle(list);
         return width < 1024 ? style.display === "flex" && style.overflowX === "auto" && list.scrollWidth > list.clientWidth : style.display === "block" && style.overflowY === "auto";
