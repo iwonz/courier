@@ -148,6 +148,7 @@ test("compiled browser upload and webhook routes commit exact files and stop cle
   await mkdir(destination, { recursive: true });
   const browser = await hosted(direct.home, ["from", "web://", "to", destination, "--listen", `127.0.0.1:${portBase}`]);
   try {
+    await new Promise((resolve) => setTimeout(resolve, 6000));
     await page.goto(browser.url);
     await expect(page.locator("[data-courier-manifest]")).toBeVisible();
     const unicode = Buffer.from("Привет, Courier 🌍\n", "utf8");

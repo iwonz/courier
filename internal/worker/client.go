@@ -14,10 +14,11 @@ import (
 )
 
 var (
-	callIPC       = ipc.Call
-	openIPC       = ipc.Open
-	configureIPC  = ipc.Configure
-	newIPCRequest = ipc.NewRequest
+	callIPC            = ipc.Call
+	openIPC            = ipc.Open
+	configureIPC       = ipc.Configure
+	configureStreamIPC = ipc.ConfigureStream
+	newIPCRequest      = ipc.NewRequest
 )
 
 type Client struct {
@@ -246,7 +247,7 @@ type Subscription struct {
 }
 
 func (subscription *Subscription) Next(ctx context.Context) (ProgressEvent, error) {
-	stop, err := configureIPC(ctx, subscription.connection)
+	stop, err := configureStreamIPC(ctx, subscription.connection)
 	if err != nil {
 		return ProgressEvent{}, err
 	}

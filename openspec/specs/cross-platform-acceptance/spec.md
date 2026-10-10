@@ -161,7 +161,12 @@ Courier SHALL verify landing, delivery, and administration in English/Russian an
 
 ### Requirement: Compiled hosted-route browser acceptance
 
-Courier SHALL build the real executable before browser acceptance and SHALL serially exercise embedded hosted applications and HTTP routes in isolated homes with unique ports and mandatory process/resource cleanup.
+Courier SHALL build the real executable before browser acceptance and SHALL serially exercise embedded hosted applications and HTTP routes in isolated homes with unique ports, mandatory process/resource cleanup, and a foreground idle interval beyond the ordinary IPC request timeout.
+
+#### Scenario: Idle browser upload remains available
+
+- **WHEN** a compiled foreground `from web://` delivery remains idle for more than five seconds before browser navigation
+- **THEN** the initiating process remains active, the embedded upload application is reachable, and external stop exits cleanly with code `0`
 
 #### Scenario: Browser uploads sequential files
 

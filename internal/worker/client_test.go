@@ -257,8 +257,10 @@ func TestClientCallsListAndSubscription(t *testing.T) {
 }
 
 func TestLeaseSubscriptionAndExchangeFailures(t *testing.T) {
-	originalConfigure, originalRequest := configureIPC, newIPCRequest
-	t.Cleanup(func() { configureIPC, newIPCRequest = originalConfigure, originalRequest })
+	originalConfigure, originalStreamConfigure, originalRequest := configureIPC, configureStreamIPC, newIPCRequest
+	t.Cleanup(func() {
+		configureIPC, configureStreamIPC, newIPCRequest = originalConfigure, originalStreamConfigure, originalRequest
+	})
 	want := errors.New("failure")
 	configureIPC = func(context.Context, net.Conn) (func() bool, error) { return nil, want }
 	lease := &Lease{connection: &rpcConn{}, deliveryID: workerDeliveryID, leaseID: workerLeaseID}
@@ -295,11 +297,11 @@ func TestLeaseSubscriptionAndExchangeFailures(t *testing.T) {
 	}
 
 	subscription := &Subscription{connection: &rpcConn{}, requestID: workerLeaseID}
-	configureIPC = func(context.Context, net.Conn) (func() bool, error) { return nil, want }
+	configureStreamIPC = func(context.Context, net.Conn) (func() bool, error) { return nil, want }
 	if _, err := subscription.Next(context.Background()); !errors.Is(err, want) {
 		t.Fatalf("subscription configure=%v", err)
 	}
-	configureIPC = originalConfigure
+	configureStreamIPC = originalStreamConfigure
 	if _, err := subscription.Next(context.Background()); !errors.Is(err, io.EOF) {
 		t.Fatalf("subscription read=%v", err)
 	}

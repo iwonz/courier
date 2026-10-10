@@ -88,12 +88,12 @@ func TestConnectionContext(t *testing.T) {
 	connection := &scriptedConn{deadlines: make(chan time.Time, 2)}
 	canceled, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := configureConnection(canceled, connection); !errors.Is(err, context.Canceled) {
+	if _, err := configureConnection(canceled, connection, true); !errors.Is(err, context.Canceled) {
 		t.Fatalf("canceled=%v", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	stop, err := configureConnection(ctx, connection)
+	stop, err := configureConnection(ctx, connection, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestConnectionContext(t *testing.T) {
 	withDeadline, cancelDeadline := context.WithDeadline(context.Background(), deadline)
 	defer cancelDeadline()
 	connection = &scriptedConn{deadlines: make(chan time.Time, 1)}
-	stop, err = configureConnection(withDeadline, connection)
+	stop, err = configureConnection(withDeadline, connection, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,6 +130,49 @@ func TestConnectionContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	configuredStop()
+}
+
+func TestStreamingConnectionContext(t *testing.T) {
+	if _, err := ConfigureStream(context.Background(), nil); !errors.Is(err, ErrProtocol) {
+		t.Fatalf("nil connection=%v", err)
+	}
+	connection := &scriptedConn{deadlines: make(chan time.Time, 2)}
+	ctx, cancel := context.WithCancel(context.Background())
+	stop, err := ConfigureStream(ctx, connection)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if initial := <-connection.deadlines; !initial.IsZero() {
+		t.Fatalf("stream deadline=%v", initial)
+	}
+	cancel()
+	select {
+	case interrupted := <-connection.deadlines:
+		if time.Until(interrupted) > time.Second {
+			t.Fatalf("interrupt deadline=%v", interrupted)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("stream cancellation did not interrupt connection")
+	}
+	stop()
+
+	deadline := time.Now().Add(time.Minute)
+	withDeadline, cancelDeadline := context.WithDeadline(context.Background(), deadline)
+	defer cancelDeadline()
+	connection = &scriptedConn{deadlines: make(chan time.Time, 1)}
+	stop, err = ConfigureStream(withDeadline, connection)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+	if actual := <-connection.deadlines; !actual.Equal(deadline) {
+		t.Fatalf("stream deadline=%v want=%v", actual, deadline)
+	}
+
+	want := errors.New("failure")
+	if _, err := ConfigureStream(context.Background(), &scriptedConn{deadlineErr: want}); !errors.Is(err, want) {
+		t.Fatalf("stream deadline failure=%v", err)
+	}
 }
 
 func newScriptedConn(t *testing.T, response Response) *scriptedConn {

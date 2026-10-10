@@ -103,7 +103,17 @@ Courier SHALL revalidate the hosted path during registration and return a stable
 
 ### Requirement: Observable foreground termination
 
-Courier SHALL retain each progress subscriber's delivery filter, publish a final filtered snapshot or tombstone before closing subscribers, and classify foreground termination from that evidence.
+Courier SHALL retain each progress subscriber's delivery filter, allow a healthy subscription to remain silent without an implicit request timeout, publish a final filtered snapshot or tombstone before closing subscribers, and classify foreground termination from that evidence.
+
+#### Scenario: Foreground delivery remains idle
+
+- **WHEN** a foreground browser or webhook delivery emits no progress for longer than the ordinary IPC request timeout
+- **THEN** its progress subscription, worker, lease, and initiating command remain active
+
+#### Scenario: Caller bounds a subscription read
+
+- **WHEN** a progress-subscription caller supplies a deadline or cancels its context
+- **THEN** the blocked read terminates promptly with the caller's context result
 
 #### Scenario: Delivery is stopped externally
 

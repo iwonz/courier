@@ -55,7 +55,7 @@ func Open(ctx context.Context, endpoint string) (net.Conn, func() bool, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	stop, err := configureConnection(ctx, connection)
+	stop, err := configureConnection(ctx, connection, true)
 	if err != nil {
 		_ = connection.Close()
 		return nil, nil, err
@@ -67,16 +67,29 @@ func Configure(ctx context.Context, connection net.Conn) (func() bool, error) {
 	if connection == nil {
 		return nil, fmt.Errorf("%w: connection is required", ErrProtocol)
 	}
-	return configureConnection(ctx, connection)
+	return configureConnection(ctx, connection, true)
 }
 
-func configureConnection(ctx context.Context, connection net.Conn) (func() bool, error) {
+// ConfigureStream binds a long-lived connection to the caller's context
+// without imposing the default request/response timeout while it is idle.
+func ConfigureStream(ctx context.Context, connection net.Conn) (func() bool, error) {
+	if connection == nil {
+		return nil, fmt.Errorf("%w: connection is required", ErrProtocol)
+	}
+	return configureConnection(ctx, connection, false)
+}
+
+func configureConnection(ctx context.Context, connection net.Conn, bounded bool) (func() bool, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	deadline, ok := ctx.Deadline()
 	if !ok {
-		deadline = time.Now().Add(defaultCallTimeout)
+		if bounded {
+			deadline = time.Now().Add(defaultCallTimeout)
+		} else {
+			deadline = time.Time{}
+		}
 	}
 	if err := connection.SetDeadline(deadline); err != nil {
 		return nil, err
