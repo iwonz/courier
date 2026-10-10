@@ -21,6 +21,11 @@ func (err *cyclicReportError) Unwrap() error {
 	return err
 }
 
+type emptyJoinedReportError struct{}
+
+func (emptyJoinedReportError) Error() string   { return "empty joined error" }
+func (emptyJoinedReportError) Unwrap() []error { return nil }
+
 func TestLineReporterAndSummaries(t *testing.T) {
 	var output bytes.Buffer
 	reporter := New(&output, false)
@@ -107,6 +112,7 @@ func TestCancellationOnlyClassification(t *testing.T) {
 		{name: "wrapped", err: fmt.Errorf("waiting: %w", context.Canceled), want: true},
 		{name: "joined cancellation", err: errors.Join(context.Canceled, fmt.Errorf("watch: %w", context.Canceled)), want: true},
 		{name: "mixed cleanup failure", err: errors.Join(context.Canceled, errors.New("cleanup failed"))},
+		{name: "empty joined error", err: emptyJoinedReportError{}},
 		{name: "deadline", err: context.DeadlineExceeded},
 		{name: "cycle", err: cycle},
 	}

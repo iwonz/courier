@@ -948,6 +948,13 @@ func TestDefaultDependencyFailuresAndErrorHelpers(t *testing.T) {
 	if got := transferCommandError(progress.StageCleanup, cause, 7); got.code != ExitTransfer || got.confirmed != 7 {
 		t.Fatalf("transfer error=%+v", got)
 	}
+	deep := error(cause)
+	for range 101 {
+		deep = fmt.Errorf("wrapped: %w", deep)
+	}
+	if got := commandErrorForReport(deep); got != nil {
+		t.Fatalf("deep command error=%v", got)
+	}
 }
 
 func transferDependencies(t *testing.T, open func(context.Context, endpoint.Endpoint) (*Resource, error)) Dependencies {
