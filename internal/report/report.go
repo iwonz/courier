@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -170,6 +171,45 @@ func InterruptedWithMode(output io.Writer, mode terminalui.Mode, stage string, r
 		{Label: "Confirmed", Value: fmt.Sprintf("%d bytes", confirmed)},
 	}, "! Exit code 130")
 	fmt.Fprint(output, panel)
+}
+
+// IsCancellationOnly reports whether every leaf in an error tree is context.Canceled.
+// It deliberately differs from errors.Is: a joined cleanup failure must not be
+// hidden merely because one of its siblings is a cancellation.
+func IsCancellationOnly(err error) bool {
+	return cancellationOnly(err, make(map[error]struct{}))
+}
+
+func cancellationOnly(err error, path map[error]struct{}) bool {
+	if err == nil {
+		return false
+	}
+	if err == context.Canceled {
+		return true
+	}
+	if reflect.TypeOf(err).Comparable() {
+		if _, exists := path[err]; exists {
+			return false
+		}
+		path[err] = struct{}{}
+		defer delete(path, err)
+	}
+	if joined, ok := err.(interface{ Unwrap() []error }); ok {
+		children := joined.Unwrap()
+		if len(children) == 0 {
+			return false
+		}
+		for _, child := range children {
+			if !cancellationOnly(child, path) {
+				return false
+			}
+		}
+		return true
+	}
+	if wrapped, ok := err.(interface{ Unwrap() error }); ok {
+		return cancellationOnly(wrapped.Unwrap(), path)
+	}
+	return false
 }
 
 func normalize(event progress.Event) progress.Event {

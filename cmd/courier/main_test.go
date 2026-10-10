@@ -51,8 +51,16 @@ func TestInternalFailureRedactionAndInterruption(t *testing.T) {
 	if code := internalFailure(&stderr, app.ExitControl, "control", fmt.Errorf("token=unsafe: %w", context.Canceled)); code != app.ExitInterrupted {
 		t.Fatalf("code=%d", code)
 	}
-	if output := stderr.String(); strings.Contains(output, "unsafe") || !strings.Contains(output, "token=[REDACTED]") {
+	if output := stderr.String(); strings.Contains(output, "unsafe") || !strings.Contains(output, "context canceled") {
 		t.Fatalf("stderr=%q", output)
+	}
+	stderr.Reset()
+	mixed := errors.Join(context.Canceled, errors.New("lease release failed"))
+	if code := internalFailure(&stderr, app.ExitControl, "control", mixed); code != app.ExitControl {
+		t.Fatalf("mixed code=%d stderr=%q", code, stderr.String())
+	}
+	if output := stderr.String(); !strings.Contains(output, "lease release failed") || !strings.Contains(output, "result: failed") {
+		t.Fatalf("mixed stderr=%q", output)
 	}
 }
 

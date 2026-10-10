@@ -302,20 +302,17 @@ func Execute(ctx context.Context, root *cobra.Command, args []string, stdout, st
 	if err == nil {
 		return ExitOK
 	}
-	var commandErr *commandError
-	if errors.As(err, &commandErr) {
+	commandErr := commandErrorForReport(err)
+	if commandErr != nil {
 		if commandErr.code == ExitCLI {
 			renderUsageError(stderr, terminalMode(stderr), root, args, commandErr.cause)
 			return ExitCLI
 		}
-		if commandErr.cause == context.Canceled {
+		if report.IsCancellationOnly(err) {
 			report.InterruptedWithMode(stderr, terminalMode(stderr), commandErr.stage, commandErr.read, commandErr.sent, commandErr.confirmed)
-		} else {
-			report.FailureCountersWithMode(stderr, terminalMode(stderr), commandErr.stage, commandErr.cause, commandErr.read, commandErr.sent, commandErr.confirmed)
-		}
-		if errors.Is(err, context.Canceled) {
 			return ExitInterrupted
 		}
+		report.FailureCountersWithMode(stderr, terminalMode(stderr), commandErr.stage, commandErr.cause, commandErr.read, commandErr.sent, commandErr.confirmed)
 		return commandErr.code
 	}
 	var usageErr *usageError
@@ -323,15 +320,47 @@ func Execute(ctx context.Context, root *cobra.Command, args []string, stdout, st
 		renderUsageError(stderr, terminalMode(stderr), root, args, usageErr.cause)
 		return ExitCLI
 	}
-	if err == context.Canceled {
+	if report.IsCancellationOnly(err) {
 		report.InterruptedWithMode(stderr, terminalMode(stderr), string(progress.StagePreflight), 0, 0, 0)
-	} else {
-		renderUsageError(stderr, terminalMode(stderr), root, args, err)
-	}
-	if errors.Is(err, context.Canceled) {
 		return ExitInterrupted
 	}
+	renderUsageError(stderr, terminalMode(stderr), root, args, err)
 	return ExitCLI
+}
+
+func commandErrorForReport(err error) *commandError {
+	var fallback *commandError
+	if selected := findCommandError(err, &fallback, 0); selected != nil {
+		return selected
+	}
+	return fallback
+}
+
+func findCommandError(err error, fallback **commandError, depth int) *commandError {
+	if err == nil || depth > 100 {
+		return nil
+	}
+	if typed, ok := err.(*commandError); ok {
+		if *fallback == nil {
+			*fallback = typed
+		}
+		if !report.IsCancellationOnly(typed.cause) {
+			return typed
+		}
+		return nil
+	}
+	if joined, ok := err.(interface{ Unwrap() []error }); ok {
+		for _, child := range joined.Unwrap() {
+			if selected := findCommandError(child, fallback, depth+1); selected != nil {
+				return selected
+			}
+		}
+		return nil
+	}
+	if wrapped, ok := err.(interface{ Unwrap() error }); ok {
+		return findCommandError(wrapped.Unwrap(), fallback, depth+1)
+	}
+	return nil
 }
 
 type transferOutcome struct {

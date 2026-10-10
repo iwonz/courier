@@ -21,6 +21,7 @@ import (
 	"github.com/iwonz/courier/internal/ipc"
 	"github.com/iwonz/courier/internal/operation"
 	"github.com/iwonz/courier/internal/policy"
+	"github.com/iwonz/courier/internal/report"
 	"github.com/iwonz/courier/internal/sshx"
 	"github.com/iwonz/courier/internal/webdelivery"
 	"github.com/iwonz/courier/internal/worker"
@@ -246,6 +247,27 @@ func TestBrowserCommandDependencyFailures(t *testing.T) {
 	}
 	if code := Execute(context.Background(), NewRoot(dependencies), args, io.Discard, io.Discard); code != ExitControl {
 		t.Fatalf("unrelated IPC failure code=%d", code)
+	}
+}
+
+func TestHostedCommandInterruptionReporting(t *testing.T) {
+	forceTerminalMode(t, 100)
+	routes := [][]string{
+		{"from", "web://", "to", t.TempDir()},
+		{"from", "webhook://", "to", t.TempDir()},
+		{"from", "source.bin", "to", "web://"},
+	}
+	for _, args := range routes {
+		dependencies := Dependencies{Hosted: func(context.Context, operation.Plan, io.Writer) error {
+			return errors.Join(fmt.Errorf("wait: %w", context.Canceled))
+		}}
+		var stderr bytes.Buffer
+		if code := Execute(context.Background(), NewRoot(dependencies), args, io.Discard, &stderr); code != ExitInterrupted {
+			t.Fatalf("args=%v code=%d stderr=%q", args, code, stderr.String())
+		}
+		if output := stderr.String(); !strings.Contains(output, "STOPPED BY USER") || strings.Contains(output, "OPERATION FAILED") || strings.Contains(output, "context canceled") {
+			t.Fatalf("args=%v output=%q", args, output)
+		}
 	}
 }
 
@@ -477,11 +499,11 @@ func TestWebRunnerBranches(t *testing.T) {
 	releaseWebLease = func(*worker.Lease, context.Context) error { return releaseError }
 	canceled, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := webRunner(provider, localProvider, nil)(canceled, foreground, io.Discard); !errors.Is(err, context.Canceled) || !errors.Is(err, releaseError) {
+	if err := webRunner(provider, localProvider, nil)(canceled, foreground, io.Discard); !errors.Is(err, context.Canceled) || !errors.Is(err, releaseError) || report.IsCancellationOnly(err) {
 		t.Fatalf("foreground result=%v", err)
 	}
 	releaseWebLease = func(*worker.Lease, context.Context) error { return nil }
-	if err := webRunner(provider, localProvider, nil)(canceled, foreground, io.Discard); !errors.Is(err, context.Canceled) {
+	if err := webRunner(provider, localProvider, nil)(canceled, foreground, io.Discard); !errors.Is(err, context.Canceled) || !report.IsCancellationOnly(err) {
 		t.Fatalf("foreground cancellation=%v", err)
 	}
 	external := &sequenceProgressWatcher{events: []worker.ProgressEvent{{Snapshot: delivery.Snapshot{Tombstones: []delivery.Tombstone{{TargetID: appWebDeliveryID, Kind: delivery.TargetDelivery, Reason: delivery.ReasonStopped}}}}}}

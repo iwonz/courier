@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -145,13 +146,56 @@ func TestUsageErrorsOmitOperationalReport(t *testing.T) {
 func TestExecuteInterrupted(t *testing.T) {
 	for _, err := range []error{
 		context.Canceled,
+		fmt.Errorf("waiting: %w", context.Canceled),
+		errors.Join(context.Canceled, fmt.Errorf("watching: %w", context.Canceled)),
 		&commandError{code: ExitTransfer, stage: string(progress.StageTransfer), read: 3, sent: 2, confirmed: 1, cause: context.Canceled},
+		&commandError{code: ExitControl, stage: "control", cause: errors.Join(context.Canceled)},
 	} {
-		root := &cobra.Command{Use: "courier", RunE: func(*cobra.Command, []string) error { return err }}
+		root := &cobra.Command{Use: "courier", SilenceErrors: true, SilenceUsage: true, RunE: func(*cobra.Command, []string) error { return err }}
 		var stderr bytes.Buffer
 		if code := Execute(context.Background(), root, nil, io.Discard, &stderr); code != ExitInterrupted || !strings.Contains(stderr.String(), "result: failed") {
 			t.Fatalf("code=%d stderr=%q", code, stderr.String())
 		}
+	}
+}
+
+func TestExecuteInteractiveInterruptionAndMixedFailure(t *testing.T) {
+	forceTerminalMode(t, 90)
+
+	interrupted := &commandError{
+		code: ExitControl, stage: "control", read: 3, sent: 2, confirmed: 1,
+		cause: errors.Join(fmt.Errorf("wait: %w", context.Canceled)),
+	}
+	root := &cobra.Command{Use: "courier", SilenceErrors: true, SilenceUsage: true, RunE: func(*cobra.Command, []string) error { return interrupted }}
+	var stderr bytes.Buffer
+	if code := Execute(context.Background(), root, nil, io.Discard, &stderr); code != ExitInterrupted {
+		t.Fatalf("interruption code=%d stderr=%q", code, stderr.String())
+	}
+	if output := stderr.String(); !strings.Contains(output, "STOPPED BY USER") || !strings.Contains(output, "control") || !strings.Contains(output, "3 bytes") || strings.Contains(output, "OPERATION FAILED") || strings.Contains(output, "context canceled") {
+		t.Fatalf("interruption output=%q", output)
+	}
+
+	stderr.Reset()
+	mixed := &commandError{code: ExitControl, stage: "control", cause: errors.Join(context.Canceled, errors.New("lease release failed"))}
+	root = &cobra.Command{Use: "courier", SilenceErrors: true, SilenceUsage: true, RunE: func(*cobra.Command, []string) error { return mixed }}
+	if code := Execute(context.Background(), root, nil, io.Discard, &stderr); code != ExitControl {
+		t.Fatalf("mixed code=%d stderr=%q", code, stderr.String())
+	}
+	if output := stderr.String(); !strings.Contains(output, "OPERATION FAILED") || !strings.Contains(output, "lease release failed") || strings.Contains(output, "STOPPED BY USER") {
+		t.Fatalf("mixed output=%q", output)
+	}
+
+	stderr.Reset()
+	joined := errors.Join(
+		&commandError{code: ExitControl, stage: "control", cause: context.Canceled},
+		&commandError{code: ExitTransfer, stage: string(progress.StageCleanup), cause: errors.New("cleanup failed")},
+	)
+	root = &cobra.Command{Use: "courier", SilenceErrors: true, SilenceUsage: true, RunE: func(*cobra.Command, []string) error { return joined }}
+	if code := Execute(context.Background(), root, nil, io.Discard, &stderr); code != ExitTransfer {
+		t.Fatalf("joined code=%d stderr=%q", code, stderr.String())
+	}
+	if output := stderr.String(); !strings.Contains(output, "cleanup failed") || strings.Contains(output, "context canceled") {
+		t.Fatalf("joined output=%q", output)
 	}
 }
 

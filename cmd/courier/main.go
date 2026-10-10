@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"io"
 	"os"
 	"os/signal"
@@ -60,14 +59,11 @@ func run(ctx context.Context, args []string, input *os.File, stdout, stderr io.W
 
 func internalFailure(stderr io.Writer, code int, stage string, err error) int {
 	mode := terminalui.Detect(stderr, os.Getenv)
-	if err == context.Canceled {
+	if report.IsCancellationOnly(err) {
 		report.InterruptedWithMode(stderr, mode, stage, 0, 0, 0)
-	} else {
-		report.FailureCountersWithMode(stderr, mode, stage, err, 0, 0, 0)
-	}
-	if errors.Is(err, context.Canceled) {
 		return app.ExitInterrupted
 	}
+	report.FailureCountersWithMode(stderr, mode, stage, err, 0, 0, 0)
 	return code
 }
 

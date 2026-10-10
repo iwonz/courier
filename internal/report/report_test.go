@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +13,13 @@ import (
 	"github.com/iwonz/courier/internal/terminalui"
 	"github.com/vbauerster/mpb/v8/decor"
 )
+
+type cyclicReportError struct{}
+
+func (*cyclicReportError) Error() string { return "cycle" }
+func (err *cyclicReportError) Unwrap() error {
+	return err
+}
 
 func TestLineReporterAndSummaries(t *testing.T) {
 	var output bytes.Buffer
@@ -84,5 +92,29 @@ func TestRichSummariesAndInterruption(t *testing.T) {
 	InterruptedWithMode(&output, terminalui.Mode{}, "control", 3, 2, 1)
 	if got := output.String(); !strings.Contains(got, context.Canceled.Error()) || !strings.Contains(got, "result: failed") {
 		t.Fatalf("plain interrupted=%q", got)
+	}
+}
+
+func TestCancellationOnlyClassification(t *testing.T) {
+	cycle := &cyclicReportError{}
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{name: "nil", err: nil},
+		{name: "exact", err: context.Canceled, want: true},
+		{name: "wrapped", err: fmt.Errorf("waiting: %w", context.Canceled), want: true},
+		{name: "joined cancellation", err: errors.Join(context.Canceled, fmt.Errorf("watch: %w", context.Canceled)), want: true},
+		{name: "mixed cleanup failure", err: errors.Join(context.Canceled, errors.New("cleanup failed"))},
+		{name: "deadline", err: context.DeadlineExceeded},
+		{name: "cycle", err: cycle},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := IsCancellationOnly(test.err); got != test.want {
+				t.Fatalf("IsCancellationOnly(%v)=%v want=%v", test.err, got, test.want)
+			}
+		})
 	}
 }
