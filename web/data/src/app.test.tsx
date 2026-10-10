@@ -94,11 +94,12 @@ describe("delivery React application", () => {
     expect(document.body.textContent).toContain("The route is unavailable or authorization is required.");
   });
 
-  it("uploads one selected file, refreshes, and ignores an empty selection", async () => {
+  it("shows pending and committed upload states, blocks overlap, and ignores an empty selection", async () => {
+    let completeUpload!: (value: Response) => void;
+    const pendingUpload = new Promise<Response>((resolve) => { completeUpload = resolve; });
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(response({ name: "Upload", path: "", size: 0, type: "upload" }))
-      .mockResolvedValueOnce(response({}))
-      .mockResolvedValueOnce(response(directory()));
+      .mockReturnValueOnce(pendingUpload);
     vi.stubGlobal("fetch", fetchMock);
     render(<DataApp />);
     const input = await waitFor(() => {
@@ -109,27 +110,57 @@ describe("delivery React application", () => {
     Object.defineProperty(input, "files", { configurable: true, value: { item: () => null } });
     fireEvent.change(input);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    Object.defineProperty(input, "files", { configurable: true, value: { item: () => new File(["x"], "x.txt") } });
+    const file = new File(["x"], "x.txt");
+    Object.defineProperty(input, "files", { configurable: true, value: { item: () => file } });
+    Object.defineProperty(input, "value", { configurable: true, writable: true, value: "selected" });
     fireEvent.change(input);
-    await screen.findByText("No entries are available at this path.");
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const pendingStatus = await screen.findByRole("status");
+    expect(pendingStatus.getAttribute("aria-live")).toBe("polite");
+    expect(pendingStatus.textContent).toContain("Upload in progress");
+    expect(input.disabled).toBe(true);
+    fireEvent.change(input);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    completeUpload(response({}, 201));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("File delivered"));
+    expect(screen.getByText("Courier committed this file to the destination.")).toBeTruthy();
+    expect(input.disabled).toBe(false);
+    expect(input.value).toBe("");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("reports an upload failure and renders a shared file as one download", async () => {
+  it("keeps metadata visible, reports upload failures, and permits the same-file retry", async () => {
     const uploadFetch = vi.fn()
       .mockResolvedValueOnce(response({ name: "Upload", path: "", size: 0, type: "upload" }))
-      .mockResolvedValueOnce(response("", 500));
+      .mockResolvedValueOnce(response({ error: "destination already exists" }, 409))
+      .mockResolvedValueOnce(response({}, 201))
+      .mockRejectedValueOnce("network unavailable");
     vi.stubGlobal("fetch", uploadFetch);
-    const first = render(<DataApp />);
+    render(<DataApp />);
     const input = await waitFor(() => {
       const node = document.querySelector<HTMLInputElement>('input[type="file"]');
       expect(node).not.toBeNull();
       return node!;
     });
-    Object.defineProperty(input, "files", { configurable: true, value: { item: () => new File(["x"], "x.txt") } });
+    const file = new File(["x"], "x.txt");
+    Object.defineProperty(input, "files", { configurable: true, value: { item: () => file } });
+    Object.defineProperty(input, "value", { configurable: true, writable: true, value: "selected" });
     fireEvent.change(input);
-    await waitFor(() => expect(uploadFetch).toHaveBeenCalledTimes(2));
-    first.unmount();
+    await screen.findByText("Upload failed");
+    expect(screen.getByText(/Courier request failed \(409\): destination already exists/)).toBeTruthy();
+    expect(document.querySelector("[data-courier-manifest]")).not.toBeNull();
+    expect(input.value).toBe("");
+    input.value = "selected";
+    fireEvent.change(input);
+    await screen.findByText("File delivered");
+    expect(input.value).toBe("");
+    input.value = "selected";
+    fireEvent.change(input);
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("network unavailable"));
+    expect(input.value).toBe("");
+    expect(uploadFetch).toHaveBeenCalledTimes(4);
+  });
+
+  it("renders a shared file as one download", async () => {
     resetBrowserPreferenceController();
     vi.stubGlobal("fetch", vi.fn(async () => response({ name: "report.pdf", path: "", size: 10, type: "file" })));
     render(<DataApp />);

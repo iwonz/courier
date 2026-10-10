@@ -15,6 +15,17 @@ export interface LoginResult {
 
 export type Fetcher = typeof fetch;
 
+const maximumErrorBodyCharacters = 1024;
+const maximumErrorReasonCharacters = 256;
+const unsafeErrorReason = /[\u0000-\u001f\u007f]/;
+
+export class CourierRequestError extends Error {
+  constructor(readonly status: number, readonly reason = "") {
+    super(reason ? `Courier request failed (${status}): ${reason}` : `Courier request failed (${status})`);
+    this.name = "CourierRequestError";
+  }
+}
+
 export function apiURL(endpoint: string, path = "", pathname = globalThis.location.pathname): string {
   const root = pathname.endsWith("/") ? pathname : `${pathname}/`;
   const url = new URL(`api/v1/${endpoint}`, globalThis.location.origin);
@@ -27,7 +38,19 @@ export function apiURL(endpoint: string, path = "", pathname = globalThis.locati
 
 async function decode<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    throw new Error(`Courier request failed (${response.status})`);
+    const body = await response.text().catch(() => "");
+    let reason = "";
+    if (body.length <= maximumErrorBodyCharacters) {
+      try {
+        const candidate = (JSON.parse(body) as { error?: unknown }).error;
+        if (typeof candidate === "string" && candidate.length <= maximumErrorReasonCharacters && !unsafeErrorReason.test(candidate)) {
+          reason = candidate.trim();
+        }
+      } catch {
+        // A non-JSON response is intentionally reduced to its HTTP status.
+      }
+    }
+    throw new CourierRequestError(response.status, reason);
   }
   return response.json() as Promise<T>;
 }

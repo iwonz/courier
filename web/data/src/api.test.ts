@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { apiURL, childPath, downloadURL, loadMetadata, login, parentPath, upload } from "./api";
+import { CourierRequestError, apiURL, childPath, downloadURL, loadMetadata, login, parentPath, upload } from "./api";
 
 describe("data API", () => {
   beforeEach(() => history.replaceState({}, "", "/d/token/"));
@@ -18,7 +18,23 @@ describe("data API", () => {
   it("loads metadata and rejects HTTP failures", async () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify({ name: "root", path: "", size: 0, type: "directory" }), { status: 200 })) as typeof fetch;
     await expect(loadMetadata("", fetcher)).resolves.toMatchObject({ name: "root" });
-    await expect(loadMetadata("", vi.fn(async () => new Response("", { status: 403 })) as typeof fetch)).rejects.toThrow("403");
+    await expect(loadMetadata("", vi.fn(async () => new Response(JSON.stringify({ error: "request denied" }), { status: 403 })) as typeof fetch)).rejects.toEqual(new CourierRequestError(403, "request denied"));
+  });
+
+  it("bounds malformed and unsafe HTTP failure details", async () => {
+    const bodies = [
+      "not json",
+      JSON.stringify({ error: 42 }),
+      JSON.stringify({ error: "x".repeat(300) }),
+      JSON.stringify({ error: "unsafe\nreason" }),
+      JSON.stringify({ error: "x".repeat(1100) }),
+    ];
+    for (const body of bodies) {
+      const fetcher = vi.fn(async () => new Response(body, { status: 500 })) as typeof fetch;
+      await expect(loadMetadata("", fetcher)).rejects.toEqual(new CourierRequestError(500));
+    }
+    const unreadable = vi.fn(async () => ({ ok: false, status: 502, text: async () => Promise.reject(new Error("read")) }) as Response) as typeof fetch;
+    await expect(loadMetadata("", unreadable)).rejects.toEqual(new CourierRequestError(502));
   });
 
   it("logs in and uploads with bounded request metadata", async () => {

@@ -1,6 +1,6 @@
 {
   "contractVersion": "0.16.0",
-  "targetRelease": "0.3.13",
+  "targetRelease": "0.3.14",
   "endpoints": [
     {
       "name": "local",

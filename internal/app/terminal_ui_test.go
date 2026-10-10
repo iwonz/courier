@@ -276,9 +276,11 @@ func TestHostedTerminalLifecycle(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := waitForHostedStop(ctx, &failAfterWriter{remaining: 1}, operation.RoutePathToWeb, time.Now(), id, blockingProgressWatcher{}); !errors.Is(err, context.Canceled) || !strings.Contains(err.Error(), "write") {
+	releaseCanceledWatcher := make(chan struct{})
+	if _, err := waitForHostedStop(ctx, &failAfterWriter{remaining: 1}, operation.RoutePathToWeb, time.Now(), id, delayedCancelProgressWatcher{release: releaseCanceledWatcher}); !errors.Is(err, context.Canceled) || !strings.Contains(err.Error(), "write") {
 		t.Fatalf("clear error=%v", err)
 	}
+	close(releaseCanceledWatcher)
 
 	terminalMode = func(io.Writer) terminalui.Mode { return terminalui.Mode{} }
 	ctx, cancel = context.WithCancel(context.Background())
@@ -302,6 +304,16 @@ func (blockingProgressWatcher) Next(ctx context.Context) (worker.ProgressEvent, 
 }
 
 func (blockingProgressWatcher) Close() error { return nil }
+
+type delayedCancelProgressWatcher struct{ release <-chan struct{} }
+
+func (watcher delayedCancelProgressWatcher) Next(ctx context.Context) (worker.ProgressEvent, error) {
+	<-ctx.Done()
+	<-watcher.release
+	return worker.ProgressEvent{}, ctx.Err()
+}
+
+func (delayedCancelProgressWatcher) Close() error { return nil }
 
 type sequenceProgressWatcher struct {
 	events []worker.ProgressEvent

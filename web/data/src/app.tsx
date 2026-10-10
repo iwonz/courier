@@ -25,12 +25,19 @@ import {
 import { childPath, downloadURL, loadMetadata, login, parentPath, upload, type Entry, type Metadata } from "./api";
 import { dataText } from "./catalog";
 
+type UploadState =
+  | { phase: "idle" }
+  | { phase: "pending"; name: string }
+  | { phase: "success"; name: string }
+  | { phase: "failure"; name: string; reason: string };
+
 function DataContent(): React.JSX.Element {
   const { locale } = usePreferences();
   const [metadata, setMetadata] = React.useState<Metadata>();
   const [failed, setFailed] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [csrf, setCsrf] = React.useState("");
+  const [uploadState, setUploadState] = React.useState<UploadState>({ phase: "idle" });
   const t = React.useCallback((message: Parameters<typeof dataText>[1]) => dataText(locale, message), [locale]);
 
   const refresh = React.useCallback(async (path = ""): Promise<void> => {
@@ -64,13 +71,16 @@ function DataContent(): React.JSX.Element {
   const sendFile = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     const input = event.currentTarget;
     const file = input.files?.item(0);
-    if (!file) return;
+    if (!file || uploadState.phase === "pending") return;
+    setUploadState({ phase: "pending", name: file.name });
     try {
       await upload(file, csrf);
+      setUploadState({ phase: "success", name: file.name });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      setUploadState({ phase: "failure", name: file.name, reason });
+    } finally {
       input.value = "";
-      await refresh();
-    } catch {
-      setFailed(true);
     }
   };
 
@@ -100,7 +110,11 @@ function DataContent(): React.JSX.Element {
         <RouteDisplay className="mt-8 border-y border-border bg-card px-4" source="sender" destination={metadata.name} />
         <Card data-courier-manifest className="border-b border-border bg-card"><CardHeader className="flex-row items-center justify-between gap-4 border-b border-border"><div><CardTitle>{metadata.name}</CardTitle><CardDescription>{t("manifest")}</CardDescription></div><Badge variant="success"><PixelIcon name="check" className="size-3.5" />{t("ready")}</Badge></CardHeader>
           <CardContent className="p-0">
-            {metadata.type === "upload" ? <div className="grid justify-items-start gap-3 p-5 sm:p-6"><h2 className="text-lg font-semibold">{t("uploadTitle")}</h2><p className="max-w-2xl text-sm text-muted-foreground">{t("uploadHelp")}</p><label className={cn(buttonVariants({ variant: "default" }), "cursor-pointer")}><PixelIcon name="upload" className="size-4" />{t("upload")}<input type="file" className="sr-only" onChange={(event) => void sendFile(event)} /></label></div> : metadata.type === "file" ? <div className="p-5 sm:p-6"><Button asChild><a href={downloadURL(metadata.path)}><PixelIcon name="download" />{t("download")}</a></Button></div> : <>
+            {metadata.type === "upload" ? <div className="grid justify-items-start gap-3 p-5 sm:p-6"><h2 className="text-lg font-semibold">{t("uploadTitle")}</h2><p className="max-w-2xl text-sm text-muted-foreground">{t("uploadHelp")}</p><label aria-disabled={uploadState.phase === "pending"} className={cn(buttonVariants({ variant: "default" }), uploadState.phase === "pending" ? "cursor-wait opacity-70" : "cursor-pointer")}><PixelIcon name="upload" className="size-4" />{uploadState.phase === "pending" ? t("uploadingAction") : t("upload")}<input type="file" className="sr-only" disabled={uploadState.phase === "pending"} onChange={(event) => void sendFile(event)} /></label>
+              {uploadState.phase === "pending" ? <Alert data-courier-upload-status role="status" aria-live="polite"><AlertTitle>{t("uploadingTitle")}</AlertTitle><AlertDescription><span className="font-semibold text-foreground">{uploadState.name}</span><br />{t("uploadingHelp")}</AlertDescription></Alert> : null}
+              {uploadState.phase === "success" ? <Alert data-courier-upload-status role="status" aria-live="polite" className="border-primary text-foreground"><AlertTitle>{t("uploadSuccessTitle")}</AlertTitle><AlertDescription><span className="font-semibold">{uploadState.name}</span><br />{t("uploadSuccessHelp")}</AlertDescription></Alert> : null}
+              {uploadState.phase === "failure" ? <Alert data-courier-upload-status variant="destructive"><AlertTitle>{t("uploadFailureTitle")}</AlertTitle><AlertDescription><span className="font-semibold">{uploadState.name}</span><br />{uploadState.reason}<br />{t("uploadFailureHelp")}</AlertDescription></Alert> : null}
+            </div> : metadata.type === "file" ? <div className="p-5 sm:p-6"><Button asChild><a href={downloadURL(metadata.path)}><PixelIcon name="download" />{t("download")}</a></Button></div> : <>
               <div className="flex flex-wrap gap-2 p-4"><Button asChild><a href={downloadURL(metadata.path, true)}><PixelIcon name="download" />{t("downloadAll")}</a></Button>{metadata.path ? <Button type="button" variant="ghost" onClick={() => void refresh(parentPath(metadata.path))}><PixelIcon name="arrow-up" />{t("up")}</Button> : null}</div>
               {(metadata.entries ?? []).length ? <ul>{metadata.entries!.map(entry)}</ul> : <p className="p-5 text-sm text-muted-foreground">{t("empty")}</p>}
             </>}

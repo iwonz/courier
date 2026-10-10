@@ -119,10 +119,10 @@ async function expectNoControlSockets(home: string): Promise<void> {
   }
 }
 
-async function upload(page: Page, name: string, data: Buffer, mimeType = "application/octet-stream"): Promise<void> {
+async function upload(page: Page, name: string, data: Buffer, mimeType = "application/octet-stream"): Promise<import("@playwright/test").Response> {
   const response = page.waitForResponse((candidate) => candidate.url().includes("/api/v1/upload") && candidate.request().method() === "POST");
   await page.locator('input[type="file"]').setInputFiles({ name, mimeType, buffer: data });
-  expect((await response).status()).toBe(201);
+  return response;
 }
 
 async function createArchive(root: string, name: string, files: Record<string, Buffer | string>): Promise<string> {
@@ -153,9 +153,16 @@ test("compiled browser upload and webhook routes commit exact files and stop cle
     await expect(page.locator("[data-courier-manifest]")).toBeVisible();
     const unicode = Buffer.from("Привет, Courier 🌍\n", "utf8");
     const binaryData = Buffer.from([0, 1, 2, 3, 127, 128, 254, 255]);
-    await upload(page, "unicode-текст.txt", unicode, "text/plain");
-    await upload(page, "binary.bin", binaryData);
+    expect((await upload(page, "unicode-текст.txt", unicode, "text/plain")).status()).toBe(201);
+    await expect(page.locator("[data-courier-upload-status]")).toContainText("unicode-текст.txt");
+    expect((await upload(page, "binary.bin", binaryData)).status()).toBe(201);
+    await expect(page.locator("[data-courier-upload-status]")).toContainText("binary.bin");
     expect(await readFile(join(destination, "unicode-текст.txt"))).toEqual(unicode);
+    expect(await readFile(join(destination, "binary.bin"))).toEqual(binaryData);
+    expect((await upload(page, "binary.bin", Buffer.from("replacement"))).status()).toBe(409);
+    await expect(page.locator("[data-courier-upload-status]")).toContainText("409");
+    await expect(page.locator("[data-courier-upload-status]")).toContainText("destination already exists");
+    expect((await upload(page, "binary.bin", Buffer.from("retry"))).status()).toBe(409);
     expect(await readFile(join(destination, "binary.bin"))).toEqual(binaryData);
     await stopHosted(direct.home, browser.process, browser.id);
   } finally {
@@ -189,6 +196,7 @@ test("compiled browser upload and webhook routes commit exact files and stop cle
     expect(await readFile(join(webhookDestination, "payload.bin"))).toEqual(Buffer.from([0, 255, 4, 5]));
     const collision = await fetch(webhook.url, { method: "POST", body: oneFileForm("note.txt", Buffer.from("replacement"), "text/plain") });
     expect(collision.status).toBe(409);
+    expect(await collision.json()).toEqual({ error: "destination already exists" });
     expect((await readFile(join(webhookDestination, "note.txt"))).toString()).toBe("webhook text");
     const multiple = new FormData();
     multiple.append("file", new Blob(["first"]), "first.txt");

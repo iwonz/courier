@@ -113,7 +113,17 @@ Interactive incoming webhook readiness SHALL include a QR whose payload is the e
 
 ### Requirement: Compiled webhook acceptance
 
-Courier SHALL exercise incoming and outgoing webhook profiles through the compiled binary and real HTTP multipart requests.
+Courier SHALL exercise incoming and outgoing webhook profiles through the compiled binary and real HTTP multipart requests, asserting both committed destination bytes and explicit guarded HTTP outcomes.
+
+#### Scenario: Incoming multipart is committed
+
+- **WHEN** compiled-runtime acceptance sends one valid file part to an incoming webhook
+- **THEN** the endpoint returns committed success and the destination contains the exact submitted bytes
+
+#### Scenario: Incoming multipart name conflicts
+
+- **WHEN** compiled-runtime acceptance sends a valid file part whose final name already exists
+- **THEN** the endpoint returns an explicit guarded collision response and preserves the original destination bytes
 
 #### Scenario: Incoming multipart contains multiple files
 
