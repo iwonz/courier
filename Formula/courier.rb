@@ -1,8 +1,8 @@
 class Courier < Formula
   desc "Safely transfer files and directories between local and SSH endpoints"
   homepage "https://github.com/iwonz/courier"
-  url "https://github.com/iwonz/courier/releases/download/v0.3.13/courier_0.3.13_source.tar.gz"
-  sha256 "0841fa7366e4bf659343f7ec3f907fa13dfc81d4a87a4f42aee1fbfc2768cac5"
+  url "https://github.com/iwonz/courier/releases/download/v0.3.14/courier_0.3.14_source.tar.gz"
+  sha256 "40eddd2d3d3e5db655923047c6d7b8580f320a87ab14c4e36882bd2909d3570b"
   license "MIT"
 
   depends_on "go" => :build
@@ -12,8 +12,8 @@ class Courier < Formula
     ldflags = %W[
       -s -w
       -X github.com/iwonz/courier/internal/buildinfo.Version=#{version}
-      -X github.com/iwonz/courier/internal/buildinfo.Commit=3211d45a295aec8dc07f77079b3b7a4e2a918d08
-      -X github.com/iwonz/courier/internal/buildinfo.Date=2026-10-10T20:16:36+03:00
+      -X github.com/iwonz/courier/internal/buildinfo.Commit=9b0f721a0f276298905424984a742bbf8eb360aa
+      -X github.com/iwonz/courier/internal/buildinfo.Date=2026-10-10T20:37:47+03:00
     ]
     system "go", "build", "-trimpath", "-ldflags", ldflags.join(" "), "-o", bin/"courier", "./cmd/courier"
   end
