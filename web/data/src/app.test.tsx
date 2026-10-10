@@ -8,10 +8,47 @@ import { mountData } from "./main";
 const response = (body: unknown, status = 200): Response => new Response(typeof body === "string" ? body : JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const directory = (path = "", entries: unknown[] = []): object => ({ name: path ? "folder" : "root", path, size: 5, type: "directory", entries });
 
+class BrowserUploadRequest {
+  static instances: BrowserUploadRequest[] = [];
+  static nextSendError: unknown;
+  readonly upload: { onprogress: ((event: ProgressEvent) => void) | null } = { onprogress: null };
+  readonly open = vi.fn();
+  readonly setRequestHeader = vi.fn();
+  readonly send = vi.fn(() => {
+    if (BrowserUploadRequest.nextSendError !== undefined) {
+      const error = BrowserUploadRequest.nextSendError;
+      BrowserUploadRequest.nextSendError = undefined;
+      throw error;
+    }
+  });
+  withCredentials = false;
+  status = 0;
+  responseText = "";
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  onabort: (() => void) | null = null;
+  ontimeout: (() => void) | null = null;
+
+  constructor() { BrowserUploadRequest.instances.push(this); }
+
+  progress(loaded: number, total: number): void {
+    this.upload.onprogress?.({ lengthComputable: true, loaded, total } as ProgressEvent);
+  }
+
+  respond(status: number, body = "{}"): void {
+    this.status = status;
+    this.responseText = body;
+    this.onload?.();
+  }
+}
+
 beforeEach(() => {
   history.replaceState({}, "", "/d/token/");
   localStorage.clear();
   resetBrowserPreferenceController();
+  BrowserUploadRequest.instances = [];
+  BrowserUploadRequest.nextSendError = undefined;
+  vi.stubGlobal("XMLHttpRequest", BrowserUploadRequest);
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
 });
 
@@ -94,12 +131,8 @@ describe("delivery React application", () => {
     expect(document.body.textContent).toContain("The route is unavailable or authorization is required.");
   });
 
-  it("shows pending and committed upload states, blocks overlap, and ignores an empty selection", async () => {
-    let completeUpload!: (value: Response) => void;
-    const pendingUpload = new Promise<Response>((resolve) => { completeUpload = resolve; });
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce(response({ name: "Upload", path: "", size: 0, type: "upload" }))
-      .mockReturnValueOnce(pendingUpload);
+  it("queues multiple files, reports progress, continues after failure, and blocks overlap", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response({ name: "Upload", path: "", size: 0, type: "upload" }));
     vi.stubGlobal("fetch", fetchMock);
     render(<DataApp />);
     const input = await waitFor(() => {
@@ -107,34 +140,49 @@ describe("delivery React application", () => {
       expect(node).not.toBeNull();
       return node!;
     });
-    Object.defineProperty(input, "files", { configurable: true, value: { item: () => null } });
+    expect(input.multiple).toBe(true);
+    Object.defineProperty(input, "files", { configurable: true, value: null });
     fireEvent.change(input);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const file = new File(["x"], "x.txt");
-    Object.defineProperty(input, "files", { configurable: true, value: { item: () => file } });
+    const first = new File(["abcd"], "first.txt");
+    const second = new File(["xy"], "second.bin");
+    Object.defineProperty(input, "files", { configurable: true, value: [first, second] });
     Object.defineProperty(input, "value", { configurable: true, writable: true, value: "selected" });
     fireEvent.change(input);
-    const pendingStatus = await screen.findByRole("status");
-    expect(pendingStatus.getAttribute("aria-live")).toBe("polite");
-    expect(pendingStatus.textContent).toContain("Upload in progress");
+    await waitFor(() => expect(document.querySelectorAll("[data-courier-upload-item]")).toHaveLength(2));
+    expect(document.querySelector('[data-courier-upload-item][data-state="uploading"]')?.textContent).toContain("first.txt");
+    expect(document.querySelector('[data-courier-upload-item][data-state="queued"]')?.textContent).toContain("second.bin");
+    expect(screen.getByText("4 Bytes")).toBeTruthy();
+    expect(screen.getByText("2 Bytes")).toBeTruthy();
+    expect(screen.getByRole("status").getAttribute("aria-live")).toBe("polite");
+    expect(screen.getByRole("status").textContent).toContain("0/2");
     expect(input.disabled).toBe(true);
-    fireEvent.change(input);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    completeUpload(response({}, 201));
-    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("File delivered"));
-    expect(screen.getByText("Courier committed this file to the destination.")).toBeTruthy();
-    expect(input.disabled).toBe(false);
     expect(input.value).toBe("");
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(BrowserUploadRequest.instances).toHaveLength(1);
+    BrowserUploadRequest.instances[0]!.progress(1, 4);
+    await screen.findByText("25%");
+    expect(screen.getByRole("progressbar", { name: "first.txt: Upload in progress" })).toBeTruthy();
+    expect(screen.getByRole("progressbar", { name: "second.bin: Queued" })).toBeTruthy();
+    fireEvent.change(input);
+    expect(BrowserUploadRequest.instances).toHaveLength(1);
+    BrowserUploadRequest.instances[0]!.respond(201);
+    await waitFor(() => expect(BrowserUploadRequest.instances).toHaveLength(2));
+    expect(document.querySelector('[data-courier-upload-item][data-state="success"]')?.textContent).toContain("first.txt");
+    expect(document.querySelector('[data-courier-upload-item][data-state="uploading"]')?.textContent).toContain("second.bin");
+    BrowserUploadRequest.instances[1]!.respond(409, JSON.stringify({ error: "destination already exists" }));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("2/2"));
+    expect(document.querySelector('[data-courier-upload-item][data-state="failure"]')?.textContent).toContain("second.bin");
+    expect(screen.getByText(/Courier request failed \(409\): destination already exists/)).toBeTruthy();
+    expect(input.disabled).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: /Language:/ }));
+    expect(screen.getByText("Очередь загрузки")).toBeTruthy();
+    expect(screen.getByText(/Завершено: 2\/2/)).toBeTruthy();
   });
 
-  it("keeps metadata visible, reports upload failures, and permits the same-file retry", async () => {
-    const uploadFetch = vi.fn()
-      .mockResolvedValueOnce(response({ name: "Upload", path: "", size: 0, type: "upload" }))
-      .mockResolvedValueOnce(response({ error: "destination already exists" }, 409))
-      .mockResolvedValueOnce(response({}, 201))
-      .mockRejectedValueOnce("network unavailable");
-    vi.stubGlobal("fetch", uploadFetch);
+  it("keeps metadata visible and permits the same-file retry after each completed batch", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response({ name: "Upload", path: "", size: 0, type: "upload" }));
+    vi.stubGlobal("fetch", fetchMock);
     render(<DataApp />);
     const input = await waitFor(() => {
       const node = document.querySelector<HTMLInputElement>('input[type="file"]');
@@ -142,22 +190,28 @@ describe("delivery React application", () => {
       return node!;
     });
     const file = new File(["x"], "x.txt");
-    Object.defineProperty(input, "files", { configurable: true, value: { item: () => file } });
+    Object.defineProperty(input, "files", { configurable: true, value: [file] });
     Object.defineProperty(input, "value", { configurable: true, writable: true, value: "selected" });
     fireEvent.change(input);
+    await waitFor(() => expect(BrowserUploadRequest.instances).toHaveLength(1));
+    BrowserUploadRequest.instances[0]!.respond(409, JSON.stringify({ error: "destination already exists" }));
     await screen.findByText("Upload failed");
     expect(screen.getByText(/Courier request failed \(409\): destination already exists/)).toBeTruthy();
     expect(document.querySelector("[data-courier-manifest]")).not.toBeNull();
     expect(input.value).toBe("");
     input.value = "selected";
     fireEvent.change(input);
+    await waitFor(() => expect(BrowserUploadRequest.instances).toHaveLength(2));
+    BrowserUploadRequest.instances[1]!.respond(201);
     await screen.findByText("File delivered");
     expect(input.value).toBe("");
+    BrowserUploadRequest.nextSendError = "network unavailable";
     input.value = "selected";
     fireEvent.change(input);
-    await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("network unavailable"));
+    await waitFor(() => expect(document.querySelector("[data-courier-upload-error]")?.textContent).toContain("network unavailable"));
     expect(input.value).toBe("");
-    expect(uploadFetch).toHaveBeenCalledTimes(4);
+    expect(BrowserUploadRequest.instances).toHaveLength(3);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("renders a shared file as one download", async () => {

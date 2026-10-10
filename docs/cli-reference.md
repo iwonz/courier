@@ -1,6 +1,6 @@
 # Courier CLI reference
 
-Contract version `0.16.0`; target release `0.3.16`. This file is generated from `docs/cli-contract.yaml`.
+Contract version `0.16.0`; target release `0.3.17`. This file is generated from `docs/cli-contract.yaml`.
 
 ## Commands
 

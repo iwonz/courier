@@ -14,6 +14,13 @@ export interface LoginResult {
 }
 
 export type Fetcher = typeof fetch;
+export type UploadRequestFactory = () => XMLHttpRequest;
+
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+  percent: number;
+}
 
 const maximumErrorBodyCharacters = 1024;
 const maximumErrorReasonCharacters = 256;
@@ -24,6 +31,21 @@ export class CourierRequestError extends Error {
     super(reason ? `Courier request failed (${status}): ${reason}` : `Courier request failed (${status})`);
     this.name = "CourierRequestError";
   }
+}
+
+function requestError(status: number, body: string): CourierRequestError {
+  let reason = "";
+  if (body.length <= maximumErrorBodyCharacters) {
+    try {
+      const candidate = (JSON.parse(body) as { error?: unknown }).error;
+      if (typeof candidate === "string" && candidate.length <= maximumErrorReasonCharacters && !unsafeErrorReason.test(candidate)) {
+        reason = candidate.trim();
+      }
+    } catch {
+      // A non-JSON response is intentionally reduced to its HTTP status.
+    }
+  }
+  return new CourierRequestError(status, reason);
 }
 
 export function apiURL(endpoint: string, path = "", pathname = globalThis.location.pathname): string {
@@ -39,18 +61,7 @@ export function apiURL(endpoint: string, path = "", pathname = globalThis.locati
 async function decode<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    let reason = "";
-    if (body.length <= maximumErrorBodyCharacters) {
-      try {
-        const candidate = (JSON.parse(body) as { error?: unknown }).error;
-        if (typeof candidate === "string" && candidate.length <= maximumErrorReasonCharacters && !unsafeErrorReason.test(candidate)) {
-          reason = candidate.trim();
-        }
-      } catch {
-        // A non-JSON response is intentionally reduced to its HTTP status.
-      }
-    }
-    throw new CourierRequestError(response.status, reason);
+    throw requestError(response.status, body);
   }
   return response.json() as Promise<T>;
 }
@@ -68,15 +79,38 @@ export async function login(password: string, fetcher: Fetcher = globalThis.fetc
   }));
 }
 
-export async function upload(file: File, csrf: string, fetcher: Fetcher = globalThis.fetch): Promise<void> {
+export async function upload(
+  file: File,
+  csrf: string,
+  onProgress: (progress: UploadProgress) => void = () => undefined,
+  requestFactory: UploadRequestFactory = () => new XMLHttpRequest(),
+): Promise<void> {
   const body = new FormData();
   body.append("file", file);
-  await decode(await fetcher(apiURL("upload"), {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { "X-Courier-CSRF": csrf, "X-Courier-File-Size": String(file.size) },
-    body,
-  }));
+  const request = requestFactory();
+  onProgress({ loaded: 0, total: file.size, percent: 0 });
+  await new Promise<void>((resolve, reject) => {
+    request.open("POST", apiURL("upload"));
+    request.withCredentials = true;
+    request.setRequestHeader("X-Courier-CSRF", csrf);
+    request.setRequestHeader("X-Courier-File-Size", String(file.size));
+    request.upload.onprogress = (event): void => {
+      const ratio = event.lengthComputable && event.total > 0 ? Math.max(0, Math.min(1, event.loaded / event.total)) : 0;
+      onProgress({ loaded: Math.round(file.size * ratio), total: file.size, percent: Math.round(100 * ratio) });
+    };
+    request.onload = (): void => {
+      if (request.status >= 200 && request.status < 300) {
+        onProgress({ loaded: file.size, total: file.size, percent: 100 });
+        resolve();
+        return;
+      }
+      reject(requestError(request.status, request.responseText));
+    };
+    request.onerror = (): void => reject(new CourierRequestError(0, "network error"));
+    request.onabort = (): void => reject(new CourierRequestError(0, "upload aborted"));
+    request.ontimeout = (): void => reject(new CourierRequestError(0, "upload timed out"));
+    request.send(body);
+  });
 }
 
 export function downloadURL(path: string, archive = false): string {

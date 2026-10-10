@@ -1,6 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CourierRequestError, apiURL, childPath, downloadURL, loadMetadata, login, parentPath, upload } from "./api";
 
+class UploadRequest {
+  readonly upload: { onprogress: ((event: ProgressEvent) => void) | null } = { onprogress: null };
+  readonly open = vi.fn();
+  readonly setRequestHeader = vi.fn();
+  readonly send = vi.fn();
+  withCredentials = false;
+  status = 0;
+  responseText = "";
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  onabort: (() => void) | null = null;
+  ontimeout: (() => void) | null = null;
+
+  factory = (): XMLHttpRequest => this as unknown as XMLHttpRequest;
+}
+
 describe("data API", () => {
   beforeEach(() => history.replaceState({}, "", "/d/token/"));
 
@@ -37,12 +53,45 @@ describe("data API", () => {
     await expect(loadMetadata("", unreadable)).rejects.toEqual(new CourierRequestError(502));
   });
 
-  it("logs in and uploads with bounded request metadata", async () => {
+  it("logs in and uploads with bounded request metadata and real progress", async () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify({ csrf: "token" }), { status: 200 })) as typeof fetch;
     await expect(login("secret", fetcher)).resolves.toEqual({ csrf: "token" });
     expect(fetcher).toHaveBeenCalledWith("/d/token/api/v1/session", expect.objectContaining({ method: "POST" }));
-    const uploadFetch = vi.fn(async () => new Response("{}", { status: 200 })) as typeof fetch;
-    await upload(new File(["abc"], "a.txt"), "csrf", uploadFetch);
-    expect(uploadFetch).toHaveBeenCalledWith("/d/token/api/v1/upload", expect.objectContaining({ headers: expect.objectContaining({ "X-Courier-CSRF": "csrf", "X-Courier-File-Size": "3" }) }));
+
+    const request = new UploadRequest();
+    const progress = vi.fn();
+    const result = upload(new File(["abc"], "a.txt"), "csrf", progress, request.factory);
+    expect(request.open).toHaveBeenCalledWith("POST", "/d/token/api/v1/upload");
+    expect(request.withCredentials).toBe(true);
+    expect(request.setRequestHeader).toHaveBeenCalledWith("X-Courier-CSRF", "csrf");
+    expect(request.setRequestHeader).toHaveBeenCalledWith("X-Courier-File-Size", "3");
+    expect(request.send.mock.calls[0]?.[0]).toBeInstanceOf(FormData);
+    expect(progress).toHaveBeenLastCalledWith({ loaded: 0, total: 3, percent: 0 });
+    request.upload.onprogress?.({ lengthComputable: false, loaded: 2, total: 0 } as ProgressEvent);
+    request.upload.onprogress?.({ lengthComputable: true, loaded: 2, total: 0 } as ProgressEvent);
+    request.upload.onprogress?.({ lengthComputable: true, loaded: 1, total: 2 } as ProgressEvent);
+    expect(progress).toHaveBeenLastCalledWith({ loaded: 2, total: 3, percent: 50 });
+    request.upload.onprogress?.({ lengthComputable: true, loaded: 3, total: 2 } as ProgressEvent);
+    expect(progress).toHaveBeenLastCalledWith({ loaded: 3, total: 3, percent: 100 });
+    request.status = 201;
+    request.onload?.();
+    await expect(result).resolves.toBeUndefined();
+    expect(progress).toHaveBeenLastCalledWith({ loaded: 3, total: 3, percent: 100 });
+  });
+
+  it("rejects guarded HTTP, network, abort, and timeout upload failures", async () => {
+    const rejected = new UploadRequest();
+    const failure = upload(new File(["x"], "x.txt"), "csrf", undefined, rejected.factory);
+    rejected.status = 409;
+    rejected.responseText = JSON.stringify({ error: "destination already exists" });
+    rejected.onload?.();
+    await expect(failure).rejects.toEqual(new CourierRequestError(409, "destination already exists"));
+
+    for (const [event, reason] of [["onerror", "network error"], ["onabort", "upload aborted"], ["ontimeout", "upload timed out"]] as const) {
+      const request = new UploadRequest();
+      const result = upload(new File([], "empty.bin"), "csrf", undefined, request.factory);
+      request[event]?.();
+      await expect(result).rejects.toEqual(new CourierRequestError(0, reason));
+    }
   });
 });

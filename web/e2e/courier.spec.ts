@@ -299,6 +299,37 @@ test("protected delivery reveals no metadata before authentication", async ({ pa
   await expect(page.locator("body")).not.toContainText(secretMarker);
 });
 
+test("browser upload renders a responsive sequential queue", async ({ page }) => {
+  let releaseFirst!: () => void;
+  const firstPending = new Promise<void>((resolve) => { releaseFirst = resolve; });
+  let uploads = 0;
+  await page.route("**/api/v1/meta*", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ name: "Upload", path: "", size: 0, type: "upload" }) }));
+  await page.route("**/api/v1/upload", async (route) => {
+    uploads += 1;
+    if (uploads === 1) await firstPending;
+    await route.fulfill({ status: 201, contentType: "application/json", body: "{}" });
+  });
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto(dataURL);
+  const input = page.locator('input[type="file"]');
+  await expect(input).toHaveAttribute("multiple", "");
+  await input.setInputFiles([
+    { name: "first.txt", mimeType: "text/plain", buffer: Buffer.from("first") },
+    { name: "second.bin", mimeType: "application/octet-stream", buffer: Buffer.from([0, 1, 2, 255]) },
+  ]);
+  const items = page.locator("[data-courier-upload-item]");
+  await expect(items).toHaveCount(2);
+  await expect(items.nth(0)).toHaveAttribute("data-state", "uploading");
+  await expect(items.nth(1)).toHaveAttribute("data-state", "queued");
+  await expect(input).toBeDisabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  releaseFirst();
+  await expect.poll(() => uploads).toBe(2);
+  await expect(page.locator('[data-courier-upload-item][data-state="success"]')).toHaveCount(2);
+  await expect(page.locator("[data-courier-upload-summary]")).toContainText("2/2");
+  await expect(input).toBeEnabled();
+});
+
 test("admin keeps secrets out of the shadcn control plane and mutates through APIs", async ({ page }) => {
   const snapshot = { servers: [{
     id: "00000000-0000-4000-8000-000000000001", bind: "127.0.0.1:8080", processId: 42, state: "active", status: "live", startedAt: "", updatedAt: "",

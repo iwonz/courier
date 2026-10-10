@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type Response } from "@playwright/test";
 import { spawn, execFile, execFileSync, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createServer, type Server } from "node:http";
 import { mkdtemp, mkdir, readFile, readdir, writeFile, lstat } from "node:fs/promises";
@@ -125,6 +125,21 @@ async function upload(page: Page, name: string, data: Buffer, mimeType = "applic
   return response;
 }
 
+async function uploadBatch(page: Page, files: Array<{ name: string; data: Buffer; mimeType?: string }>): Promise<Response[]> {
+  const responses: Response[] = [];
+  const collect = (response: Response): void => {
+    if (response.url().includes("/api/v1/upload") && response.request().method() === "POST") responses.push(response);
+  };
+  page.on("response", collect);
+  try {
+    await page.locator('input[type="file"]').setInputFiles(files.map(({ name, data, mimeType = "application/octet-stream" }) => ({ name, mimeType, buffer: data })));
+    await expect.poll(() => responses.length).toBe(files.length);
+    return responses;
+  } finally {
+    page.off("response", collect);
+  }
+}
+
 async function createArchive(root: string, name: string, files: Record<string, Buffer | string>): Promise<string> {
   const source = join(root, name);
   for (const [relative, contents] of Object.entries(files)) {
@@ -153,17 +168,30 @@ test("compiled browser upload and webhook routes commit exact files and stop cle
     await expect(page.locator("[data-courier-manifest]")).toBeVisible();
     const unicode = Buffer.from("Привет, Courier 🌍\n", "utf8");
     const binaryData = Buffer.from([0, 1, 2, 3, 127, 128, 254, 255]);
-    expect((await upload(page, "unicode-текст.txt", unicode, "text/plain")).status()).toBe(201);
+    const initial = await uploadBatch(page, [
+      { name: "unicode-текст.txt", data: unicode, mimeType: "text/plain" },
+      { name: "binary.bin", data: binaryData },
+    ]);
+    expect(initial.map((response) => response.status())).toEqual([201, 201]);
+    await expect(page.locator("[data-courier-upload-item]")).toHaveCount(2);
+    await expect(page.locator('[data-courier-upload-item][data-state="success"]')).toHaveCount(2);
+    await expect(page.locator("[data-courier-upload-summary]")).toContainText("2/2");
     await expect(page.locator("[data-courier-upload-status]")).toContainText("unicode-текст.txt");
-    expect((await upload(page, "binary.bin", binaryData)).status()).toBe(201);
     await expect(page.locator("[data-courier-upload-status]")).toContainText("binary.bin");
     expect(await readFile(join(destination, "unicode-текст.txt"))).toEqual(unicode);
     expect(await readFile(join(destination, "binary.bin"))).toEqual(binaryData);
-    expect((await upload(page, "binary.bin", Buffer.from("replacement"))).status()).toBe(409);
+    const afterCollision = Buffer.from("continued after collision");
+    const mixed = await uploadBatch(page, [
+      { name: "binary.bin", data: Buffer.from("replacement") },
+      { name: "after-collision.txt", data: afterCollision, mimeType: "text/plain" },
+    ]);
+    expect(mixed.map((response) => response.status())).toEqual([409, 201]);
+    await expect(page.locator('[data-courier-upload-item][data-state="failure"]')).toContainText("binary.bin");
+    await expect(page.locator('[data-courier-upload-item][data-state="success"]')).toContainText("after-collision.txt");
     await expect(page.locator("[data-courier-upload-status]")).toContainText("409");
     await expect(page.locator("[data-courier-upload-status]")).toContainText("destination already exists");
-    expect((await upload(page, "binary.bin", Buffer.from("retry"))).status()).toBe(409);
     expect(await readFile(join(destination, "binary.bin"))).toEqual(binaryData);
+    expect(await readFile(join(destination, "after-collision.txt"))).toEqual(afterCollision);
     await stopHosted(direct.home, browser.process, browser.id);
   } finally {
     await browser.process.dispose();
