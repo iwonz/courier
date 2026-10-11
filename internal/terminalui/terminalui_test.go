@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"rsc.io/qr"
 )
 
@@ -91,6 +93,78 @@ func TestRendererPlainAndInteractive(t *testing.T) {
 	if !strings.Contains(got, "THINGS") || !strings.Contains(got, "Name") || !strings.Contains(got, "one") {
 		t.Fatalf("table=%q", got)
 	}
+}
+
+func TestRendererUsesCompactThemeNeutralLayouts(t *testing.T) {
+	var output bytes.Buffer
+	wide := New(&output, Mode{Interactive: true, Color: true, Width: 72})
+	panel := wide.Panel("Release notes", ToneInfo, []Field{
+		{Value: "## Changelog\n* 8759741 feat: add browser upload queue progress"},
+		{Label: "Release", Value: "https://github.com/iwonz/courier/releases/tag/v0.3.17"},
+	}, "Verified release metadata")
+	assertThemeNeutral(t, panel)
+	clean := ansi.Strip(panel)
+	for _, wanted := range []string{"• RELEASE NOTES", "  ## Changelog", "  * 8759741", "  Release  https://github.com/", "  Verified release metadata"} {
+		if !strings.Contains(clean, wanted) {
+			t.Fatalf("wide panel missing %q: %q", wanted, clean)
+		}
+	}
+	if longestLine(clean) >= 72 {
+		t.Fatalf("wide panel paints terminal width: %q", clean)
+	}
+
+	narrow := New(&output, Mode{Interactive: true, Color: false, Width: 24}).Panel("Waiting", ToneWarning, []Field{{Label: "Destination", Value: "/a/very/long/destination/path"}}, "! Press Ctrl+C")
+	clean = ansi.Strip(narrow)
+	for _, wanted := range []string{"! WAITING", "  Destination", "    /a/very/long/", "  ! Press Ctrl+C"} {
+		if !strings.Contains(clean, wanted) {
+			t.Fatalf("narrow panel missing %q: %q", wanted, clean)
+		}
+	}
+	if longestLine(clean) > 24 || strings.Contains(narrow, "\x1b[3") {
+		t.Fatalf("narrow panel width/color: %q", narrow)
+	}
+
+	markers := map[string]bool{}
+	colors := map[string]bool{}
+	for _, tone := range []Tone{ToneInfo, ToneSuccess, ToneWarning, ToneFailure} {
+		value := wide.Panel("State", tone, nil, "")
+		assertThemeNeutral(t, value)
+		markers[strings.Fields(ansi.Strip(value))[0]] = true
+		colors[wide.Text(tone, "state")] = true
+	}
+	if len(markers) != 4 || len(colors) != 4 {
+		t.Fatalf("semantic markers=%v colors=%v", markers, colors)
+	}
+
+	compact := wide.Table("Things", []string{"Name", "Value"}, [][]string{{"one", "two"}})
+	assertThemeNeutral(t, compact)
+	if clean = ansi.Strip(compact); !strings.Contains(clean, "• THINGS") || longestLine(clean) >= 72 {
+		t.Fatalf("compact table=%q", clean)
+	}
+	narrowTable := New(&output, Mode{Interactive: true, Color: true, Width: 28}).Table("Long values", []string{"Name", "Value"}, [][]string{{"artifact", "https://example.test/a/very/long/path"}})
+	assertThemeNeutral(t, narrowTable)
+	clean = ansi.Strip(narrowTable)
+	complete := strings.NewReplacer(" ", "", "\n", "", "\t", "", "│", "").Replace(clean)
+	if !strings.Contains(complete, "https://example.test/a/very/long/path") || longestLine(clean) > 28 {
+		t.Fatalf("narrow table=%q", clean)
+	}
+}
+
+func assertThemeNeutral(t *testing.T, value string) {
+	t.Helper()
+	for _, forbidden := range []string{"\x1b[40m", "\x1b[41m", "\x1b[42m", "\x1b[43m", "\x1b[44m", "\x1b[45m", "\x1b[46m", "\x1b[47m", "\x1b[48;", "\x1b[38;2;"} {
+		if strings.Contains(value, forbidden) {
+			t.Fatalf("theme-neutral output contains %q: %q", forbidden, value)
+		}
+	}
+}
+
+func longestLine(value string) int {
+	longest := 0
+	for _, line := range strings.Split(value, "\n") {
+		longest = max(longest, lipgloss.Width(line))
+	}
+	return longest
 }
 
 func TestSanitize(t *testing.T) {

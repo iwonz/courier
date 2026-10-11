@@ -117,7 +117,7 @@ func renderUpdateResult(output io.Writer, mode terminalui.Mode, result update.Re
 	}
 	renderer := terminalui.New(output, mode)
 	if strings.TrimSpace(result.Notes) != "" && !result.Current {
-		fmt.Fprint(output, renderer.Panel("Release notes", terminalui.ToneInfo, []terminalui.Field{{Label: "Notes", Value: result.Notes}}, "Verified release metadata"))
+		fmt.Fprint(output, renderer.Panel("Release notes", terminalui.ToneInfo, []terminalui.Field{{Value: result.Notes}}, "Verified release metadata"))
 	}
 	title := "Courier is up to date"
 	fields := []terminalui.Field{{Label: "Version", Value: result.From}, {Label: "Release", Value: result.ReleaseURL}}

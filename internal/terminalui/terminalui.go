@@ -79,7 +79,9 @@ func New(output io.Writer, mode Mode) *Renderer {
 		mode.Width = defaultWidth
 	}
 	renderer := lipgloss.NewRenderer(output)
-	if !mode.Color {
+	if mode.Color {
+		renderer.SetColorProfile(termenv.ANSI)
+	} else {
 		renderer.SetColorProfile(termenv.Ascii)
 	}
 	return &Renderer{mode: mode, renderer: renderer}
@@ -158,34 +160,42 @@ func (r *Renderer) Panel(title string, tone Tone, fields []Field, footer string)
 		}
 		return plain.String()
 	}
-	accent := r.accent(tone)
+	contentWidth := max(1, r.mode.Width-2)
 	labelWidth := 0
 	for _, field := range fields {
 		if width := lipgloss.Width(Sanitize(field.Label)); width > labelWidth {
 			labelWidth = width
 		}
 	}
-	labelStyle := r.renderer.NewStyle().Foreground(lipgloss.Color("#A8AFB8")).Width(labelWidth)
-	valueStyle := r.renderer.NewStyle().Foreground(lipgloss.Color("#FFFFFF"))
-	lines := []string{r.renderer.NewStyle().Bold(true).Foreground(accent).Render(strings.ToUpper(Sanitize(title)))}
+	labelStyle := r.renderer.NewStyle().Bold(true).Width(labelWidth)
+	lines := []string{r.heading(tone, title)}
+	wide := r.mode.Width >= 48 && labelWidth+4 < contentWidth
 	for _, field := range fields {
-		lines = append(lines, lipgloss.JoinHorizontal(lipgloss.Top, labelStyle.Render(Sanitize(field.Label)), "  ", valueStyle.Render(Sanitize(field.Value))))
+		label, value := Sanitize(field.Label), Sanitize(field.Value)
+		if label == "" {
+			for _, line := range wrapLines(value, contentWidth) {
+				lines = append(lines, "  "+line)
+			}
+			continue
+		}
+		if !wide {
+			lines = append(lines, "  "+r.renderer.NewStyle().Bold(true).Render(label))
+			for _, line := range wrapLines(value, max(1, r.mode.Width-4)) {
+				lines = append(lines, "    "+line)
+			}
+			continue
+		}
+		indent := strings.Repeat(" ", labelWidth+4)
+		wrapped := wrapLines(value, max(1, contentWidth-labelWidth-2))
+		lines = append(lines, "  "+labelStyle.Render(label)+"  "+wrapped[0])
+		for _, line := range wrapped[1:] {
+			lines = append(lines, indent+line)
+		}
 	}
 	if footer != "" {
-		lines = append(lines, r.renderer.NewStyle().Foreground(accent).Render(Sanitize(footer)))
+		lines = append(lines, "  "+r.renderer.NewStyle().Bold(true).Render(Sanitize(footer)))
 	}
-	width := r.mode.Width - 4
-	if width < 36 {
-		width = 36
-	}
-	return r.renderer.NewStyle().
-		Width(width).
-		Padding(1, 1).
-		Foreground(lipgloss.Color("#FFFFFF")).
-		Background(lipgloss.Color("#0D1015")).
-		Border(lipgloss.NormalBorder()).
-		BorderForeground(accent).
-		Render(strings.Join(lines, "\n")) + "\n"
+	return strings.Join(lines, "\n") + "\n\n"
 }
 
 // Table renders a responsive terminal table.
@@ -204,36 +214,57 @@ func (r *Renderer) Table(title string, headers []string, rows [][]string) string
 		}
 		return plain.String()
 	}
-	base := r.renderer.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Background(lipgloss.Color("#0D1015")).Padding(0, 1)
-	header := base.Bold(true).Foreground(lipgloss.Color("#000000")).Background(lipgloss.Color("#71FFF6"))
+	base := r.renderer.NewStyle().Padding(0, 1)
+	header := base.Bold(true)
 	grid := table.New().
 		Headers(cleanHeaders...).
 		Rows(cleanRows...).
 		Border(lipgloss.NormalBorder()).
-		BorderStyle(r.renderer.NewStyle().Foreground(lipgloss.Color("#626A73"))).
 		StyleFunc(func(row, _ int) lipgloss.Style {
 			if row == table.HeaderRow {
 				return header
 			}
 			return base
 		}).
-		Wrap(true).
-		Width(max(36, r.mode.Width-2))
-	titleText := r.renderer.NewStyle().Bold(true).Foreground(lipgloss.Color("#FAD14F")).Render(strings.ToUpper(Sanitize(title)))
-	return titleText + "\n" + grid.Render() + "\n"
+		Wrap(true)
+	rendered := grid.Render()
+	if lipgloss.Width(rendered) > r.mode.Width {
+		rendered = grid.Width(max(1, r.mode.Width)).Render()
+	}
+	return r.heading(ToneInfo, title) + "\n" + rendered + "\n\n"
 }
 
 func (r *Renderer) accent(tone Tone) lipgloss.Color {
 	switch tone {
 	case ToneSuccess:
-		return lipgloss.Color("#71FFF6")
+		return lipgloss.Color("2")
 	case ToneWarning:
-		return lipgloss.Color("#FAD14F")
+		return lipgloss.Color("3")
 	case ToneFailure:
-		return lipgloss.Color("#C94A55")
+		return lipgloss.Color("1")
 	default:
-		return lipgloss.Color("#71FFF6")
+		return lipgloss.Color("6")
 	}
+}
+
+func (r *Renderer) heading(tone Tone, title string) string {
+	marker := "•"
+	switch tone {
+	case ToneSuccess:
+		marker = "✓"
+	case ToneWarning:
+		marker = "!"
+	case ToneFailure:
+		marker = "×"
+	}
+	marker = r.renderer.NewStyle().Foreground(r.accent(tone)).Render(marker)
+	title = r.renderer.NewStyle().Bold(true).Render(strings.ToUpper(Sanitize(title)))
+	return marker + " " + title
+}
+
+func wrapLines(value string, width int) []string {
+	wrapped := ansi.Wrap(value, max(1, width), " /_")
+	return strings.Split(wrapped, "\n")
 }
 
 func cleanRow(values []string) []string {
