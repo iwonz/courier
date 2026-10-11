@@ -101,13 +101,18 @@ func TestRendererUsesCompactThemeNeutralLayouts(t *testing.T) {
 	panel := wide.Panel("Release notes", ToneInfo, []Field{
 		{Value: "## Changelog\n* 8759741 feat: add browser upload queue progress"},
 		{Label: "Release", Value: "https://github.com/iwonz/courier/releases/tag/v0.3.17"},
+		{Label: "Reason", Value: "This deliberately long labeled value wraps onto a continuation line while preserving every word."},
 	}, "Verified release metadata")
 	assertThemeNeutral(t, panel)
 	clean := ansi.Strip(panel)
-	for _, wanted := range []string{"• RELEASE NOTES", "  ## Changelog", "  * 8759741", "  Release  https://github.com/", "  Verified release metadata"} {
+	for _, wanted := range []string{"• RELEASE NOTES", "  ## Changelog", "  * 8759741", "  Release  https://github.com/", "  Reason   This deliberately long labeled value wraps onto a", "           continuation line while preserving every word.", "  Verified release metadata"} {
 		if !strings.Contains(clean, wanted) {
 			t.Fatalf("wide panel missing %q: %q", wanted, clean)
 		}
+	}
+	complete := strings.NewReplacer(" ", "", "\n", "").Replace(clean)
+	if !strings.Contains(complete, "Thisdeliberatelylonglabeledvaluewrapsontoacontinuationlinewhilepreservingeveryword.") {
+		t.Fatalf("wide panel lost wrapped field content: %q", clean)
 	}
 	if longestLine(clean) >= 72 {
 		t.Fatalf("wide panel paints terminal width: %q", clean)
@@ -144,7 +149,7 @@ func TestRendererUsesCompactThemeNeutralLayouts(t *testing.T) {
 	narrowTable := New(&output, Mode{Interactive: true, Color: true, Width: 28}).Table("Long values", []string{"Name", "Value"}, [][]string{{"artifact", "https://example.test/a/very/long/path"}})
 	assertThemeNeutral(t, narrowTable)
 	clean = ansi.Strip(narrowTable)
-	complete := strings.NewReplacer(" ", "", "\n", "", "\t", "", "│", "").Replace(clean)
+	complete = strings.NewReplacer(" ", "", "\n", "", "\t", "", "│", "").Replace(clean)
 	if !strings.Contains(complete, "https://example.test/a/very/long/path") || longestLine(clean) > 28 {
 		t.Fatalf("narrow table=%q", clean)
 	}
