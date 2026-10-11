@@ -110,6 +110,7 @@ Browser downloads, browser uploads, incoming webhooks, and `courier ui start` st
 | `--listen <host:port>` | Optional | Bind incoming browser, webhook, or administration traffic to this address. | `127.0.0.1:8080` | false | Browser upload to path, Path to browser download, Incoming webhook to path, Administration UI start | none | none |
 | `--background` | Optional | Detach browser downloads, browser uploads, incoming webhooks, or ui start after printing the URL and UUID; the process survives terminal closure until stopped by courier servers stop, courier ui stop, configured stop behavior, a fatal worker failure, or process termination. | `false` | false | Browser upload to path, Path to browser download, Incoming webhook to path, Administration UI start | none | none |
 | `--force-source-creation` | Optional | Create every missing directory endpoint recursively without asking; no other safety confirmation is bypassed. | `false` | false | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | none | none |
+| `--filename-policy <preserve\|unique>` | Optional | Preserve an incoming upload's safe basename, or commit it under a unique UUID name while retaining the original name in activity records. | `preserve` | false | Browser upload to path, Incoming webhook to path | none | extract |
 | `--auth <none\|basic\|password>` | Optional | Choose no authentication, HTTP Basic authentication, or a browser password. | `none` | false | Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | none | none |
 | `--auth-attempts <N>` | Optional | Set how many failed authentication attempts are allowed before the configured action. | `5` | false | Browser upload to path, Path to browser download, Incoming webhook to path | none | none |
 | `--auth-fail-action <ban\|stop>` | Optional | Ban the peer or stop the delivery when the authentication-attempt limit is reached. | `ban` | false | Browser upload to path, Path to browser download, Incoming webhook to path | none | none |
@@ -181,6 +182,8 @@ Browser delivery pages, the administration interface, and the project landing pa
 The [brand system](docs/brand.md) defines Courier's positioning, compact 8-bit Relay pigeon, pixel visual language, operational vocabulary, accessibility rules, and approved communication patterns.
 
 See [Browser deliveries](docs/web-deliveries.md) for `web://` URLs, authentication, safe navigation, transactional uploads, and foreground/background lifecycle behavior.
+
+Incoming browser and webhook routes default to preserving a safe filename. Use `--filename-policy unique` to commit under a UUID name while retaining the original identity in immutable destination and global activity receipts. The administration UI exposes this secret-free activity after the live delivery ends. Human-facing sizes and rates consistently distinguish bytes from bits and use grouped IEC units; redirected CLI counters remain raw and stable.
 
 See [Webhook deliveries](docs/webhook-deliveries.md) for Courier's exact incoming and outgoing multipart profile, HTTP result semantics, and intentionally unsupported provider-specific behavior.
 

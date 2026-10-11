@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -19,6 +20,14 @@ const (
 )
 
 var testTime = time.Unix(1_700_000_000, 0).UTC()
+
+func validUploadReceipt() UploadReceipt {
+	return UploadReceipt{
+		SchemaVersion: UploadReceiptSchemaVersion, ID: thirdID, ServerID: serverID, DeliveryID: deliveryID,
+		Route: RouteWebToPath, Destination: "./incoming", OriginalName: "report.pdf", StoredName: "report.pdf",
+		Bytes: 411789, SHA256: strings.Repeat("a", 64), Auth: AuthNone, Subject: "anonymous", Peer: "192.0.2.1", ReceivedAt: testTime,
+	}
+}
 
 func validServer() Server {
 	return Server{ID: serverID, Bind: "127.0.0.1:8080", ControlEndpoint: "control.sock", ProcessID: 42, State: StateStarting, StartedAt: testTime, UpdatedAt: testTime}
@@ -229,6 +238,42 @@ func TestRecordValidation(t *testing.T) {
 
 	if invalidText("safe") || !invalidText(" ") || !invalidText("bad\x7f") || !invalidTimes(time.Time{}, testTime) || !invalidTimes(testTime, testTime.Add(-time.Second)) || invalidTimes(testTime, testTime) {
 		t.Fatal("primitive validation mismatch")
+	}
+}
+
+func TestUploadReceiptValidation(t *testing.T) {
+	receipt := validUploadReceipt()
+	if err := receipt.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	extracted := receipt
+	extracted.Route, extracted.StoredName, extracted.Extracted, extracted.Entries = RouteWebhookToPath, "", true, 2
+	if err := extracted.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	invalid := []func(*UploadReceipt){
+		func(value *UploadReceipt) { value.SchemaVersion = 0 },
+		func(value *UploadReceipt) { value.Route = RoutePathToWeb },
+		func(value *UploadReceipt) { value.Destination = "bad\npath" },
+		func(value *UploadReceipt) { value.OriginalName = "nested/file" },
+		func(value *UploadReceipt) { value.Bytes = -1 },
+		func(value *UploadReceipt) { value.StoredName = "nested/file" },
+		func(value *UploadReceipt) { value.Entries = 1 },
+		func(value *UploadReceipt) { value.Auth = "token" },
+		func(value *UploadReceipt) { value.Subject = "bad\nactor" },
+		func(value *UploadReceipt) { value.Peer = "not-an-ip" },
+		func(value *UploadReceipt) { value.SHA256 = "ABC" },
+	}
+	for index, mutate := range invalid {
+		candidate := receipt
+		mutate(&candidate)
+		if err := candidate.Validate(); !errors.Is(err, ErrInvalid) {
+			t.Fatalf("case=%d receipt=%+v err=%v", index, candidate, err)
+		}
+	}
+	extracted.StoredName = "archive.tar.gz"
+	if err := extracted.Validate(); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("extracted stored name=%v", err)
 	}
 }
 

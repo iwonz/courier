@@ -350,7 +350,7 @@ func TestRunProcessHostFactoryPaths(t *testing.T) {
 	config := validProcessConfig(t, directory, bind)
 	originalFactory := newProcessHost
 	t.Cleanup(func() { newProcessHost = originalFactory })
-	newProcessHost = func(func(delivery.ID)) (DeliveryHost, error) { return nil, errors.New("host factory") }
+	newProcessHost = func(*delivery.Store, func(delivery.ID)) (DeliveryHost, error) { return nil, errors.New("host factory") }
 	if err := runProcess(context.Background(), config); err == nil {
 		t.Fatal("host factory error ignored")
 	}
@@ -360,7 +360,7 @@ func TestRunProcessHostFactoryPaths(t *testing.T) {
 	bind = probe.Addr().String()
 	_ = probe.Close()
 	config = validProcessConfig(t, directory, bind)
-	newProcessHost = func(func(delivery.ID)) (DeliveryHost, error) { return nil, nil }
+	newProcessHost = func(*delivery.Store, func(delivery.ID)) (DeliveryHost, error) { return nil, nil }
 	if err := runProcess(context.Background(), config); err == nil {
 		t.Fatal("nil host attachment accepted")
 	}
@@ -372,7 +372,7 @@ func TestRunProcessHostFactoryPaths(t *testing.T) {
 	config = validProcessConfig(t, directory, bind)
 	ctx, cancel := context.WithCancel(context.Background())
 	host := &fakeDeliveryHost{closed: make(chan struct{}), serveStarted: make(chan struct{})}
-	newProcessHost = func(stop func(delivery.ID)) (DeliveryHost, error) {
+	newProcessHost = func(_ *delivery.Store, stop func(delivery.ID)) (DeliveryHost, error) {
 		host.onServe = func() { stop(delivery.ID("00000000-0000-4000-8000-000000000099")); cancel() }
 		return host, nil
 	}
@@ -403,20 +403,28 @@ func TestNewWorkerWebHostDependenciesAndOpeners(t *testing.T) {
 		workerOpenSSH, workerDetectSSH, workerRemoteResource = originalOpen, originalDetect, originalResource
 		workerOpenRooted = originalRooted
 	})
+	store, err := delivery.OpenStore(filepath.Join(t.TempDir(), "state"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	if _, err := newWorkerWebHost(nil, nil); err == nil {
+		t.Fatal("nil store accepted")
+	}
 	workerHome = func() (string, error) { return "", errors.New("home") }
-	if _, err := newWorkerWebHost(nil); err == nil {
+	if _, err := newWorkerWebHost(store, nil); err == nil {
 		t.Fatal("home error ignored")
 	}
 	workerHome = func() (string, error) { return t.TempDir(), nil }
 	workerLoadConfig = func(string, string) (*sshx.Config, error) { return nil, errors.New("config") }
-	if _, err := newWorkerWebHost(nil); err == nil {
+	if _, err := newWorkerWebHost(store, nil); err == nil {
 		t.Fatal("config error ignored")
 	}
 	home := t.TempDir()
 	workerHome = func() (string, error) { return home, nil }
 	workerLoadConfig = func(string, string) (*sshx.Config, error) { return nil, os.ErrNotExist }
 	workerUser = func() (*user.User, error) { return nil, errors.New("user") }
-	host, err := newWorkerWebHost(nil)
+	host, err := newWorkerWebHost(store, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -447,7 +455,7 @@ func TestNewWorkerWebHostDependenciesAndOpeners(t *testing.T) {
 	workerOpenSSH = func(context.Context, sshx.Factory, endpoint.Endpoint) (*sshx.Connection, error) {
 		return nil, errors.New("ssh")
 	}
-	host, err = newWorkerWebHost(nil)
+	host, err = newWorkerWebHost(store, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -504,7 +512,7 @@ func TestNewWorkerWebHostDependenciesAndOpeners(t *testing.T) {
 	workerOpenSSH, workerDetectSSH, workerRemoteResource = originalOpen, originalDetect, originalResource
 	workerOpenRooted = originalRooted
 	stopped := make(chan delivery.ID, 1)
-	callbackHost, err := newWorkerWebHost(func(id delivery.ID) { stopped <- id })
+	callbackHost, err := newWorkerWebHost(store, func(id delivery.ID) { stopped <- id })
 	if err != nil {
 		t.Fatal(err)
 	}

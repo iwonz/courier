@@ -171,7 +171,7 @@ func TestExecuteInteractiveInterruptionAndMixedFailure(t *testing.T) {
 	if code := Execute(context.Background(), root, nil, io.Discard, &stderr); code != ExitInterrupted {
 		t.Fatalf("interruption code=%d stderr=%q", code, stderr.String())
 	}
-	if output := stderr.String(); !strings.Contains(output, "STOPPED BY USER") || !strings.Contains(output, "control") || !strings.Contains(output, "3 bytes") || strings.Contains(output, "OPERATION FAILED") || strings.Contains(output, "context canceled") {
+	if output := stderr.String(); !strings.Contains(output, "STOPPED BY USER") || !strings.Contains(output, "control") || !strings.Contains(output, "3 B") || strings.Contains(output, "OPERATION FAILED") || strings.Contains(output, "context canceled") {
 		t.Fatalf("interruption output=%q", output)
 	}
 

@@ -1,6 +1,6 @@
 schema_version: 3
-contract_version: 0.16.0
-target_release: 0.3.19
+contract_version: 0.17.0
+target_release: 0.3.20
 language: en
 
 endpoint_kinds:
@@ -29,7 +29,7 @@ commands:
     arguments:
       - {name: source, kind: endpoint, required: true, prefix: "", omit_when_flag: "", description: {en: "File, directory, browser upload, or webhook input to read from.", ru: "Файл, каталог, браузерная загрузка или webhook, откуда получать данные."}}
       - {name: destination, kind: endpoint, required: true, prefix: to, omit_when_flag: "", description: {en: "Path, browser download, or HTTP endpoint that receives the data.", ru: "Путь, браузерная выдача или HTTP-адрес, куда передаются данные."}}
-    flags: [archive, extract, listen, background, force-source-creation, auth, auth-attempts, auth-fail-action, limit, no-ui, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate, download-rate]
+    flags: [archive, extract, listen, background, force-source-creation, filename-policy, auth, auth-attempts, auth-fail-action, limit, no-ui, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate, download-rate]
   - name: servers
     path: servers
     usage: courier servers
@@ -147,6 +147,19 @@ flags:
     default: "false"
     applies_to: [path-to-path, web-to-path, path-to-web, webhook-to-path, path-to-http]
     conflicts: []
+    requires: []
+  - name: filename-policy
+    syntax: --filename-policy <preserve|unique>
+    status: shipped
+    required: false
+    description: {en: "Preserve an incoming upload's safe basename, or commit it under a unique UUID name while retaining the original name in activity records.", ru: "Сохранить безопасное исходное имя входящего файла или записать его под уникальным UUID-именем, сохранив оригинал в журнале активности."}
+    value_kind: enum
+    choices: [preserve, unique]
+    placeholder: preserve|unique
+    repeatable: false
+    default: preserve
+    applies_to: [web-to-path, webhook-to-path]
+    conflicts: [extract]
     requires: []
   - name: auth
     syntax: --auth <none|basic|password>
@@ -341,7 +354,7 @@ routes:
     status: shipped
     source: [web]
     destination: [local, ssh]
-    allowed_flags: [extract, listen, background, force-source-creation, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
+    allowed_flags: [extract, listen, background, force-source-creation, filename-policy, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
   - name: path-to-web
     status: shipped
     source: [local, ssh]
@@ -351,7 +364,7 @@ routes:
     status: shipped
     source: [webhook]
     destination: [local, ssh]
-    allowed_flags: [extract, listen, background, force-source-creation, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
+    allowed_flags: [extract, listen, background, force-source-creation, filename-policy, auth, auth-attempts, auth-fail-action, limit, allow-ip, exclude, exclude-regex, exclude-from, max-file-size, max-extracted-size, upload-rate]
   - name: path-to-http
     status: shipped
     source: [local, ssh]

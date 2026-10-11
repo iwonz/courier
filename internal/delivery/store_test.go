@@ -198,6 +198,128 @@ func TestHistoryRetentionAndRedaction(t *testing.T) {
 	}
 }
 
+func TestUploadActivityStore(t *testing.T) {
+	directory := filepath.Join(t.TempDir(), "state")
+	store, err := OpenStoreWithRetentions(directory, 2, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	receipts := []UploadReceipt{validUploadReceipt(), validUploadReceipt(), validUploadReceipt()}
+	receipts[0].ID = thirdID
+	receipts[1].ID, receipts[1].ReceivedAt = fourthID, testTime.Add(time.Nanosecond)
+	receipts[2].ID, receipts[2].ReceivedAt = ID("00000000-0000-4000-8000-000000000005"), testTime.Add(2*time.Nanosecond)
+	for _, receipt := range receipts {
+		if err := store.AppendUploadReceipt(context.Background(), receipt); err != nil {
+			t.Fatal(err)
+		}
+	}
+	recent, err := store.RecentUploadReceipts(context.Background(), 1)
+	if err != nil || len(recent) != 1 || recent[0].ID != receipts[2].ID {
+		t.Fatalf("recent=%+v err=%v", recent, err)
+	}
+	recent, err = store.RecentUploadReceipts(context.Background(), 10)
+	if err != nil || len(recent) != 2 || recent[0].ID != receipts[2].ID || recent[1].ID != receipts[1].ID {
+		t.Fatalf("retained=%+v err=%v", recent, err)
+	}
+	if err := store.AppendUploadReceipt(context.Background(), receipts[2]); !errors.Is(err, ErrRevisionConflict) {
+		t.Fatalf("duplicate=%v", err)
+	}
+	if err := store.AppendUploadReceipt(context.Background(), UploadReceipt{}); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("invalid=%v", err)
+	}
+	if _, err := store.RecentUploadReceipts(context.Background(), 0); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("limit=%v", err)
+	}
+	ctx := canceledContext()
+	if err := store.AppendUploadReceipt(ctx, validUploadReceipt()); !errors.Is(err, context.Canceled) {
+		t.Fatalf("append cancellation=%v", err)
+	}
+	if _, err := store.RecentUploadReceipts(ctx, 1); !errors.Is(err, context.Canceled) {
+		t.Fatalf("read cancellation=%v", err)
+	}
+	if _, err := store.readUploadReceipt("invalid"); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("filename=%v", err)
+	}
+	if _, err := os.Stat(filepath.Join(directory, activityFilename(receipts[2]))); err != nil {
+		t.Fatalf("activity file=%v", err)
+	}
+}
+
+func TestUploadActivityCorruption(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		content func(UploadReceipt) []byte
+		nameFor func(UploadReceipt) string
+	}{
+		{"invalid json", func(UploadReceipt) []byte { return []byte("{") }, func(value UploadReceipt) string { return activityFilename(value) }},
+		{"metadata mismatch", func(value UploadReceipt) []byte { data, _ := encodeJSON(value); return data }, func(value UploadReceipt) string { value.ID = fourthID; return activityFilename(value) }},
+		{"invalid receipt", func(value UploadReceipt) []byte {
+			value.Route = RoutePathToWeb
+			data, _ := encodeJSON(value)
+			return data
+		}, func(value UploadReceipt) string { return activityFilename(value) }},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			directory := filepath.Join(t.TempDir(), "state")
+			store, err := OpenStore(directory)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer store.Close()
+			receipt := validUploadReceipt()
+			if err := os.WriteFile(filepath.Join(directory, test.nameFor(receipt)), test.content(receipt), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := store.RecentUploadReceipts(context.Background(), 10); err == nil {
+				t.Fatal("corrupt upload activity accepted")
+			}
+		})
+	}
+	if _, err := OpenStoreWithRetentions(filepath.Join(t.TempDir(), "bad"), 1, 0); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("activity retention=%v", err)
+	}
+}
+
+func TestUploadActivityRotationFailures(t *testing.T) {
+	receipt := validUploadReceipt()
+	encoded, err := encodeJSON(receipt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := activityFilename(receipt)
+	want := errors.New("failure")
+	entries := []fs.DirEntry{fakeDirEntry{name: name}, fakeDirEntry{name: name}, fakeDirEntry{name: "unrelated"}}
+	tests := []struct {
+		name  string
+		store *Store
+		ctx   context.Context
+		want  error
+	}{
+		{"canceled", &Store{root: &fakeStateRoot{}}, canceledContext(), context.Canceled},
+		{"read directory", &Store{root: &fakeStateRoot{readDirErr: want}}, context.Background(), want},
+		{"default retention", &Store{root: &fakeStateRoot{}}, context.Background(), nil},
+		{"private check", &Store{root: &fakeStateRoot{entries: entries, lstatErr: want}, activityRetention: 1}, context.Background(), want},
+		{"remove", &Store{root: &fakeStateRoot{entries: entries, lstatInfo: fakeFileInfo{mode: 0o600}, readData: encoded, removeErr: want}, activityRetention: 1}, context.Background(), want},
+		{"sync", &Store{root: &fakeStateRoot{entries: entries, lstatInfo: fakeFileInfo{mode: 0o600}, readData: encoded, syncErr: want}, activityRetention: 1}, context.Background(), want},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.store.rotateActivity(test.ctx); !errors.Is(err, test.want) {
+				t.Fatalf("error=%v", err)
+			}
+		})
+	}
+	root := &fakeStateRoot{readDirErr: want}
+	if _, err := (&Store{root: root}).RecentUploadReceipts(context.Background(), 1); !errors.Is(err, want) {
+		t.Fatalf("recent read directory=%v", err)
+	}
+	root = &fakeStateRoot{lstatErr: want}
+	if _, err := (&Store{root: root}).readUploadReceipt(name); !errors.Is(err, want) {
+		t.Fatalf("receipt private read=%v", err)
+	}
+}
+
 func TestHistoryRotationFailures(t *testing.T) {
 	first := historyFilename(HistoryEvent{ID: thirdID, At: testTime})
 	second := historyFilename(HistoryEvent{ID: fourthID, At: testTime.Add(time.Nanosecond)})
@@ -490,8 +612,10 @@ func TestStoreInjectedReadAndEncodeFailures(t *testing.T) {
 		t.Fatalf("history private=%v", err)
 	}
 
-	originalRegistry, originalHistory := encodeRegistryState, encodeHistoryState
-	t.Cleanup(func() { encodeRegistryState, encodeHistoryState = originalRegistry, originalHistory })
+	originalRegistry, originalHistory, originalActivity := encodeRegistryState, encodeHistoryState, encodeActivityState
+	t.Cleanup(func() {
+		encodeRegistryState, encodeHistoryState, encodeActivityState = originalRegistry, originalHistory, originalActivity
+	})
 	directory := filepath.Join(t.TempDir(), "state")
 	realStore, err := OpenStore(directory)
 	if err != nil {
@@ -506,6 +630,10 @@ func TestStoreInjectedReadAndEncodeFailures(t *testing.T) {
 	event := HistoryEvent{ID: thirdID, TargetID: deliveryID, Kind: HistoryStopped, At: testTime}
 	if err := realStore.AppendHistory(context.Background(), event); !errors.Is(err, want) {
 		t.Fatalf("history encode=%v", err)
+	}
+	encodeActivityState = func(any) ([]byte, error) { return nil, want }
+	if err := realStore.AppendUploadReceipt(context.Background(), validUploadReceipt()); !errors.Is(err, want) {
+		t.Fatalf("activity encode=%v", err)
 	}
 }
 

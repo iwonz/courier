@@ -27,11 +27,16 @@ type Controller interface {
 	UpdatePolicy(context.Context, delivery.ID, uint64, delivery.Policy) error
 }
 
+type ActivityReader interface {
+	RecentUploadReceipts(context.Context, int) ([]delivery.UploadReceipt, error)
+}
+
 type APIConfig struct {
 	Host           string
 	Control        Controller
 	EventInterval  time.Duration
 	MaxSubscribers int
+	Activity       ActivityReader
 }
 
 type API struct {
@@ -40,11 +45,13 @@ type API struct {
 	control       Controller
 	eventInterval time.Duration
 	subscribers   chan struct{}
+	activity      ActivityReader
 	handler       http.Handler
 }
 
 type Snapshot struct {
-	Servers []ServerSnapshot `json:"servers"`
+	Servers []ServerSnapshot         `json:"servers"`
+	Uploads []delivery.UploadReceipt `json:"uploads"`
 }
 
 type ServerSnapshot struct {
@@ -88,7 +95,7 @@ func NewAPI(config APIConfig) (*API, error) {
 		maximum = 16
 	}
 	api := &API{
-		host: config.Host, origin: "http://" + config.Host, control: config.Control,
+		host: config.Host, origin: "http://" + config.Host, control: config.Control, activity: config.Activity,
 		eventInterval: interval, subscribers: make(chan struct{}, maximum),
 	}
 	router := chi.NewRouter()
@@ -157,7 +164,7 @@ func (api *API) snapshot(ctx context.Context) (Snapshot, error) {
 	if err != nil {
 		return Snapshot{}, err
 	}
-	result := Snapshot{Servers: make([]ServerSnapshot, 0, len(views))}
+	result := Snapshot{Servers: make([]ServerSnapshot, 0, len(views)), Uploads: []delivery.UploadReceipt{}}
 	for _, view := range views {
 		status := "unreachable"
 		if view.Live {
@@ -175,6 +182,12 @@ func (api *API) snapshot(ctx context.Context) (Snapshot, error) {
 			})
 		}
 		result.Servers = append(result.Servers, server)
+	}
+	if api.activity != nil {
+		result.Uploads, err = api.activity.RecentUploadReceipts(ctx, 200)
+		if err != nil {
+			return Snapshot{}, err
+		}
 	}
 	return result, nil
 }

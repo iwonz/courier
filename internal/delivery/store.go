@@ -24,18 +24,23 @@ import (
 const (
 	registryPrefix = "registry-"
 	historyPrefix  = "history-"
+	activityPrefix = "activity-"
 	// DefaultHistoryRetention bounds private operational history growth.
 	DefaultHistoryRetention = 256
+	// DefaultActivityRetention bounds private per-upload activity growth.
+	DefaultActivityRetention = 10_000
 )
 
 var (
 	registryNamePattern = regexp.MustCompile(`^registry-([0-9]{20})[.]json$`)
 	historyNamePattern  = regexp.MustCompile(`^history-([0-9]{20})-([0-9a-f-]{36})[.]json$`)
+	activityNamePattern = regexp.MustCompile(`^activity-([0-9]{20})-([0-9a-f-]{36})[.]json$`)
 	makeStateDirectory  = os.MkdirAll
 	lstatStateDirectory = os.Lstat
 	chmodStateDirectory = os.Chmod
 	encodeRegistryState = encodeJSON
 	encodeHistoryState  = encodeJSON
+	encodeActivityState = encodeJSON
 	userConfigDirectory = os.UserConfigDir
 	openStateRoot       = func(name string) (stateRoot, error) {
 		root, err := os.OpenRoot(name)
@@ -78,24 +83,31 @@ func (root *osStateRoot) Sync() error              { return syncStateDirectory(r
 func (root *osStateRoot) Close() error             { return root.root.Close() }
 
 type Store struct {
-	directory        string
-	root             stateRoot
-	historyRetention int
-	mutex            sync.Mutex
+	directory         string
+	root              stateRoot
+	historyRetention  int
+	activityRetention int
+	mutex             sync.Mutex
 }
 
 func OpenStore(directory string) (*Store, error) {
-	return OpenStoreWithHistoryRetention(directory, DefaultHistoryRetention)
+	return OpenStoreWithRetentions(directory, DefaultHistoryRetention, DefaultActivityRetention)
 }
 
 // OpenStoreWithHistoryRetention opens a store with an explicit positive
 // history bound. It is primarily useful for constrained deployments and tests.
 func OpenStoreWithHistoryRetention(directory string, retention int) (*Store, error) {
+	return OpenStoreWithRetentions(directory, retention, DefaultActivityRetention)
+}
+
+// OpenStoreWithRetentions opens a store with explicit positive operational
+// history and upload activity bounds. It is primarily useful in tests.
+func OpenStoreWithRetentions(directory string, historyRetention, activityRetention int) (*Store, error) {
 	if strings.TrimSpace(directory) == "" {
 		return nil, fmt.Errorf("%w: state directory is required", ErrInvalid)
 	}
-	if retention <= 0 {
-		return nil, fmt.Errorf("%w: history retention must be positive", ErrInvalid)
+	if historyRetention <= 0 || activityRetention <= 0 {
+		return nil, fmt.Errorf("%w: state retention must be positive", ErrInvalid)
 	}
 	if info, err := lstatStateDirectory(directory); err == nil {
 		if !info.IsDir() || info.Mode()&fs.ModeSymlink != 0 {
@@ -121,7 +133,7 @@ func OpenStoreWithHistoryRetention(directory string, retention int) (*Store, err
 	if err != nil {
 		return nil, err
 	}
-	return &Store{directory: directory, root: root, historyRetention: retention}, nil
+	return &Store{directory: directory, root: root, historyRetention: historyRetention, activityRetention: activityRetention}, nil
 }
 
 func (store *Store) Directory() string { return store.directory }
@@ -313,6 +325,111 @@ func (store *Store) History(ctx context.Context) ([]HistoryEvent, error) {
 	return result, nil
 }
 
+// AppendUploadReceipt durably commits one validated secret-free upload record.
+func (store *Store) AppendUploadReceipt(ctx context.Context, receipt UploadReceipt) error {
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+	if err := receipt.Validate(); err != nil {
+		return err
+	}
+	data, err := encodeActivityState(receipt)
+	if err != nil {
+		return err
+	}
+	if err := store.writeImmutable(ctx, activityFilename(receipt), ".activity-", data); err != nil {
+		return err
+	}
+	return store.rotateActivity(ctx)
+}
+
+// RecentUploadReceipts returns at most limit validated receipts newest first.
+func (store *Store) RecentUploadReceipts(ctx context.Context, limit int) ([]UploadReceipt, error) {
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+	if limit <= 0 {
+		return nil, fmt.Errorf("%w: activity limit must be positive", ErrInvalid)
+	}
+	if err := store.ready(ctx); err != nil {
+		return nil, err
+	}
+	entries, err := store.root.ReadDir()
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0)
+	for _, entry := range entries {
+		if activityNamePattern.MatchString(entry.Name()) {
+			names = append(names, entry.Name())
+		}
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(names)))
+	if len(names) > limit {
+		names = names[:limit]
+	}
+	result := make([]UploadReceipt, 0, len(names))
+	for _, name := range names {
+		receipt, err := store.readUploadReceipt(name)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, receipt)
+	}
+	return result, nil
+}
+
+func (store *Store) rotateActivity(ctx context.Context) error {
+	if err := store.ready(ctx); err != nil {
+		return err
+	}
+	entries, err := store.root.ReadDir()
+	if err != nil {
+		return err
+	}
+	names := make([]string, 0)
+	for _, entry := range entries {
+		if activityNamePattern.MatchString(entry.Name()) {
+			names = append(names, entry.Name())
+		}
+	}
+	sort.Strings(names)
+	retention := store.activityRetention
+	if retention <= 0 {
+		retention = DefaultActivityRetention
+	}
+	remove := len(names) - retention
+	for _, name := range names[:max(remove, 0)] {
+		if _, err := store.readUploadReceipt(name); err != nil {
+			return err
+		}
+		if err := store.root.Remove(name); err != nil {
+			return err
+		}
+	}
+	if remove > 0 {
+		return store.root.Sync()
+	}
+	return nil
+}
+
+func (store *Store) readUploadReceipt(name string) (UploadReceipt, error) {
+	matches := activityNamePattern.FindStringSubmatch(name)
+	if matches == nil {
+		return UploadReceipt{}, fmt.Errorf("%w: invalid activity filename", ErrInvalid)
+	}
+	data, err := store.readPrivate(name)
+	if err != nil {
+		return UploadReceipt{}, err
+	}
+	var receipt UploadReceipt
+	if err := decodeStrict(data, &receipt); err != nil {
+		return UploadReceipt{}, err
+	}
+	if receipt.ID != ID(matches[2]) || receipt.ReceivedAt.UnixNano() < 0 || fmt.Sprintf("%020d", receipt.ReceivedAt.UnixNano()) != matches[1] {
+		return UploadReceipt{}, fmt.Errorf("%w: activity filename metadata mismatch", ErrInvalid)
+	}
+	return receipt, receipt.Validate()
+}
+
 func (store *Store) writeImmutable(ctx context.Context, final, temporaryPrefix string, data []byte) (resultErr error) {
 	if err := store.ready(ctx); err != nil {
 		return err
@@ -386,6 +503,10 @@ func registryFilename(revision uint64) string {
 
 func historyFilename(event HistoryEvent) string {
 	return fmt.Sprintf("%s%020d-%s.json", historyPrefix, event.At.UnixNano(), event.ID)
+}
+
+func activityFilename(receipt UploadReceipt) string {
+	return fmt.Sprintf("%s%020d-%s.json", activityPrefix, receipt.ReceivedAt.UnixNano(), receipt.ID)
 }
 
 func encodeJSON(value any) ([]byte, error) {

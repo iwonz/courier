@@ -13,11 +13,11 @@ import (
 )
 
 type transferFlagValues struct {
-	archive, extract, background, forceSourceCreation, noUI operation.BoolValue
-	listen, auth, authAttempts, authFailAction, limit       operation.SingleValue
-	maxFileSize, maxExtractedSize, uploadRate, downloadRate operation.SingleValue
-	allowIP                                                 operation.RepeatedValue
-	selection                                               operation.OrderedValues
+	archive, extract, background, forceSourceCreation, noUI           operation.BoolValue
+	listen, filenamePolicy, auth, authAttempts, authFailAction, limit operation.SingleValue
+	maxFileSize, maxExtractedSize, uploadRate, downloadRate           operation.SingleValue
+	allowIP                                                           operation.RepeatedValue
+	selection                                                         operation.OrderedValues
 }
 
 func (values *transferFlagValues) options() []operation.Option {
@@ -37,6 +37,7 @@ func (values *transferFlagValues) options() []operation.Option {
 	appendSingle(operation.OptionListen, &values.listen)
 	appendBool(operation.OptionBackground, &values.background)
 	appendBool(operation.OptionForceSourceCreation, &values.forceSourceCreation)
+	appendSingle(operation.OptionFilenamePolicy, &values.filenamePolicy)
 	appendSingle(operation.OptionAuth, &values.auth)
 	appendSingle(operation.OptionAuthAttempts, &values.authAttempts)
 	appendSingle(operation.OptionAuthFailAction, &values.authFailAction)
@@ -79,6 +80,7 @@ func newTransferCommand(dependencies Dependencies) *cobra.Command {
 					return &commandError{code: ExitCLI, stage: string(progress.StagePreflight), cause: err}
 				}
 			}
+			selector = selection.ProtectCourierMetadata(selector)
 			return runRoute(command.Context(), dependencies, plan, selector, command.OutOrStdout(), command.ErrOrStderr())
 		},
 	}
@@ -87,6 +89,7 @@ func newTransferCommand(dependencies Dependencies) *cobra.Command {
 	command.Flags().Var(&values.listen, "listen", "incoming HTTP delivery bind address (default 127.0.0.1:8080)")
 	boolFlag(command, &values.background, "background", "keep the delivery active after this command exits")
 	boolFlag(command, &values.forceSourceCreation, "force-source-creation", "create missing directory endpoints without confirmation")
+	command.Flags().Var(&values.filenamePolicy, "filename-policy", "Preserve an incoming upload's safe basename, or commit it under a unique UUID name while retaining the original name in activity records.")
 	command.Flags().Var(&values.auth, "auth", "authentication mode: none, basic, or password")
 	command.Flags().Var(&values.authAttempts, "auth-attempts", "failed authentication threshold (default 5)")
 	command.Flags().Var(&values.authFailAction, "auth-fail-action", "threshold action: ban or stop (default ban)")

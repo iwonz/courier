@@ -12,6 +12,7 @@ import (
 
 	"github.com/iwonz/courier/internal/diagnostic"
 	"github.com/iwonz/courier/internal/progress"
+	"github.com/iwonz/courier/internal/quantity"
 	"github.com/iwonz/courier/internal/terminalui"
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
@@ -90,7 +91,7 @@ func (r *Reporter) warningText(value string) string {
 
 func (r *Reporter) stagePrefix(decor.Statistics) string {
 	event := r.event.Load().(progress.Event)
-	return r.terminal.Text(terminalui.ToneInfo, string(event.Stage)) + fmt.Sprintf(" r=%d s=%d c=%d ", event.Read, event.Sent, event.Confirmed)
+	return r.terminal.Text(terminalui.ToneInfo, string(event.Stage)) + fmt.Sprintf(" r=%s s=%s c=%s ", quantity.Bytes(event.Read), quantity.Bytes(event.Sent), quantity.Bytes(event.Confirmed))
 }
 
 // Finish flushes terminal rendering.
@@ -120,7 +121,7 @@ func SuccessWithMode(output io.Writer, mode terminalui.Mode, source, destination
 	panel := terminalui.New(output, mode).Panel("Transfer complete", terminalui.ToneSuccess, []terminalui.Field{
 		{Label: "Source", Value: source},
 		{Label: "Destination", Value: destination},
-		{Label: "Transferred", Value: fmt.Sprintf("%d bytes", bytes)},
+		{Label: "Transferred", Value: quantity.BytesDetailed(bytes)},
 		{Label: "Elapsed", Value: elapsed.Round(time.Millisecond).String()},
 	}, "✓ Confirmed by the destination")
 	fmt.Fprint(output, panel)
@@ -151,9 +152,9 @@ func FailureCountersWithMode(output io.Writer, mode terminalui.Mode, stage strin
 	panel := terminalui.New(output, mode).Panel("Operation failed", terminalui.ToneFailure, []terminalui.Field{
 		{Label: "Stage", Value: stage},
 		{Label: "Reason", Value: diagnostic.Redact(reason.Error())},
-		{Label: "Read", Value: fmt.Sprintf("%d bytes", read)},
-		{Label: "Sent", Value: fmt.Sprintf("%d bytes", sent)},
-		{Label: "Confirmed", Value: fmt.Sprintf("%d bytes", confirmed)},
+		{Label: "Read", Value: quantity.BytesDetailed(read)},
+		{Label: "Sent", Value: quantity.BytesDetailed(sent)},
+		{Label: "Confirmed", Value: quantity.BytesDetailed(confirmed)},
 	}, "× No uncertain outcome was reported as success")
 	fmt.Fprint(output, panel)
 }
@@ -166,9 +167,9 @@ func InterruptedWithMode(output io.Writer, mode terminalui.Mode, stage string, r
 	}
 	panel := terminalui.New(output, mode).Panel("Stopped by user", terminalui.ToneWarning, []terminalui.Field{
 		{Label: "Stage", Value: stage},
-		{Label: "Read", Value: fmt.Sprintf("%d bytes", read)},
-		{Label: "Sent", Value: fmt.Sprintf("%d bytes", sent)},
-		{Label: "Confirmed", Value: fmt.Sprintf("%d bytes", confirmed)},
+		{Label: "Read", Value: quantity.BytesDetailed(read)},
+		{Label: "Sent", Value: quantity.BytesDetailed(sent)},
+		{Label: "Confirmed", Value: quantity.BytesDetailed(confirmed)},
 	}, "! Exit code 130")
 	fmt.Fprint(output, panel)
 }

@@ -51,16 +51,17 @@ func (runtime EndpointRuntime) Prompt(label string) ([]byte, error) {
 }
 
 type Definition struct {
-	Version     int                       `json:"version"`
-	Token       string                    `json:"token"`
-	Source      string                    `json:"source"`
-	Destination string                    `json:"destination"`
-	Archive     bool                      `json:"archive"`
-	Extract     bool                      `json:"extract"`
-	NoUI        bool                      `json:"noUi"`
-	Selection   []operation.SelectionRule `json:"selection,omitempty"`
-	Credentials policy.Credentials        `json:"credentials"`
-	Endpoint    EndpointRuntime           `json:"endpointRuntime,omitempty"`
+	Version        int                       `json:"version"`
+	Token          string                    `json:"token"`
+	Source         string                    `json:"source"`
+	Destination    string                    `json:"destination"`
+	Archive        bool                      `json:"archive"`
+	Extract        bool                      `json:"extract"`
+	NoUI           bool                      `json:"noUi"`
+	FilenamePolicy operation.FilenamePolicy  `json:"filenamePolicy,omitempty"`
+	Selection      []operation.SelectionRule `json:"selection,omitempty"`
+	Credentials    policy.Credentials        `json:"credentials"`
+	Endpoint       EndpointRuntime           `json:"endpointRuntime,omitempty"`
 }
 
 func (definition *Definition) ClearSecrets() {
@@ -89,7 +90,8 @@ func NewDefinition(plan operation.Plan, credentials policy.Credentials, endpoint
 	definition := Definition{
 		Version: DefinitionVersion, Token: token, Source: plan.Source.Raw, Destination: plan.Destination.Raw,
 		Archive: plan.Options.Archive, Extract: plan.Options.Extract, NoUI: plan.Options.NoUI,
-		Selection: append([]operation.SelectionRule(nil), plan.Options.Selection...), Credentials: cloneCredentials(credentials),
+		FilenamePolicy: incomingFilenamePolicy(plan),
+		Selection:      append([]operation.SelectionRule(nil), plan.Options.Selection...), Credentials: cloneCredentials(credentials),
 		Endpoint: cloneEndpointRuntime(endpointRuntime),
 	}
 	if err := definition.Validate(routeForPlan(plan)); err != nil {
@@ -112,6 +114,20 @@ func routeForPlan(plan operation.Plan) delivery.Route {
 	return ""
 }
 
+func incomingFilenamePolicy(plan operation.Plan) operation.FilenamePolicy {
+	if plan.Route == operation.RouteWebToPath || plan.Route == operation.RouteWebhookToPath {
+		return plan.Options.FilenamePolicy
+	}
+	return ""
+}
+
+func (definition Definition) effectiveFilenamePolicy() operation.FilenamePolicy {
+	if definition.FilenamePolicy == "" {
+		return operation.FilenamePreserve
+	}
+	return definition.FilenamePolicy
+}
+
 func (definition Definition) Validate(route delivery.Route) error {
 	if definition.Version != DefinitionVersion || strings.TrimSpace(definition.Source) != definition.Source || strings.TrimSpace(definition.Destination) != definition.Destination {
 		return errors.New("invalid web delivery definition")
@@ -127,15 +143,15 @@ func (definition Definition) Validate(route delivery.Route) error {
 	}
 	switch route {
 	case delivery.RouteWebToPath:
-		if source.Kind != endpoint.KindWeb || !destination.IsPath() || definition.Archive {
+		if source.Kind != endpoint.KindWeb || !destination.IsPath() || definition.Archive || !validIncomingFilenamePolicy(definition) {
 			return errors.New("invalid browser-upload definition")
 		}
 	case delivery.RouteWebhookToPath:
-		if source.Kind != endpoint.KindWebhook || !destination.IsPath() || definition.Archive || definition.NoUI {
+		if source.Kind != endpoint.KindWebhook || !destination.IsPath() || definition.Archive || definition.NoUI || !validIncomingFilenamePolicy(definition) {
 			return errors.New("invalid incoming-webhook definition")
 		}
 	case delivery.RoutePathToWeb:
-		if !source.IsPath() || destination.Kind != endpoint.KindWeb || definition.Extract {
+		if !source.IsPath() || destination.Kind != endpoint.KindWeb || definition.Extract || definition.FilenamePolicy != "" {
 			return errors.New("invalid browser-download definition")
 		}
 	default:
@@ -154,6 +170,11 @@ func (definition Definition) Validate(route delivery.Route) error {
 		}
 	}
 	return nil
+}
+
+func validIncomingFilenamePolicy(definition Definition) bool {
+	policy := definition.effectiveFilenamePolicy()
+	return (policy == operation.FilenamePreserve || policy == operation.FilenameUnique) && !(definition.Extract && policy != operation.FilenamePreserve)
 }
 
 func RandomDefinition(plan operation.Plan, credentials policy.Credentials) (Definition, error) {

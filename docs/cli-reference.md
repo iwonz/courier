@@ -1,6 +1,6 @@
 # Courier CLI reference
 
-Contract version `0.16.0`; target release `0.3.19`. This file is generated from `docs/cli-contract.yaml`.
+Contract version `0.17.0`; target release `0.3.20`. This file is generated from `docs/cli-contract.yaml`.
 
 ## Commands
 
@@ -39,9 +39,9 @@ Contract version `0.16.0`; target release `0.3.19`. This file is generated from 
 | Status | Route | Source | Destination | Allowed options |
 |---|---|---|---|---|
 | shipped | `path-to-path` | local, ssh | local, ssh | `--archive`, `--extract`, `--force-source-creation`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-extracted-size`, `--upload-rate`, `--download-rate` |
-| shipped | `web-to-path` | web | local, ssh | `--extract`, `--listen`, `--background`, `--force-source-creation`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
+| shipped | `web-to-path` | web | local, ssh | `--extract`, `--listen`, `--background`, `--force-source-creation`, `--filename-policy`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
 | shipped | `path-to-web` | local, ssh | web | `--archive`, `--listen`, `--background`, `--force-source-creation`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--no-ui`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--download-rate` |
-| shipped | `webhook-to-path` | webhook | local, ssh | `--extract`, `--listen`, `--background`, `--force-source-creation`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
+| shipped | `webhook-to-path` | webhook | local, ssh | `--extract`, `--listen`, `--background`, `--force-source-creation`, `--filename-policy`, `--auth`, `--auth-attempts`, `--auth-fail-action`, `--limit`, `--allow-ip`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--max-file-size`, `--max-extracted-size`, `--upload-rate` |
 | shipped | `path-to-http` | local, ssh | http | `--archive`, `--force-source-creation`, `--auth`, `--exclude`, `--exclude-regex`, `--exclude-from`, `--upload-rate` |
 
 ## Options
@@ -53,6 +53,7 @@ Contract version `0.16.0`; target release `0.3.19`. This file is generated from 
 | shipped | `--listen <host:port>` | Optional | Bind incoming browser, webhook, or administration traffic to this address. | `127.0.0.1:8080` | false | Browser upload to path, Path to browser download, Incoming webhook to path, Administration UI start | none | none |
 | shipped | `--background` | Optional | Detach browser downloads, browser uploads, incoming webhooks, or ui start after printing the URL and UUID; the process survives terminal closure until stopped by courier servers stop, courier ui stop, configured stop behavior, a fatal worker failure, or process termination. | `false` | false | Browser upload to path, Path to browser download, Incoming webhook to path, Administration UI start | none | none |
 | shipped | `--force-source-creation` | Optional | Create every missing directory endpoint recursively without asking; no other safety confirmation is bypassed. | `false` | false | Path to path, Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | none | none |
+| shipped | `--filename-policy <preserve\|unique>` | Optional | Preserve an incoming upload's safe basename, or commit it under a unique UUID name while retaining the original name in activity records. | `preserve` | false | Browser upload to path, Incoming webhook to path | none | extract |
 | shipped | `--auth <none\|basic\|password>` | Optional | Choose no authentication, HTTP Basic authentication, or a browser password. | `none` | false | Browser upload to path, Path to browser download, Incoming webhook to path, Path to HTTP webhook | none | none |
 | shipped | `--auth-attempts <N>` | Optional | Set how many failed authentication attempts are allowed before the configured action. | `5` | false | Browser upload to path, Path to browser download, Incoming webhook to path | none | none |
 | shipped | `--auth-fail-action <ban\|stop>` | Optional | Ban the peer or stop the delivery when the authentication-attempt limit is reached. | `ban` | false | Browser upload to path, Path to browser download, Incoming webhook to path | none | none |

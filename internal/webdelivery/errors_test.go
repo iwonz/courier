@@ -36,6 +36,7 @@ type overrideBackend struct {
 	readDir func(string) ([]fs.DirEntry, error)
 	open    func(string) (io.ReadCloser, error)
 	create  func(string, fs.FileMode) (fsx.Writable, error)
+	mkdir   func(string, fs.FileMode) error
 	commit  func(string, string) error
 	remove  func(string) error
 }
@@ -64,6 +65,12 @@ func (backend overrideBackend) Create(name string, mode fs.FileMode) (fsx.Writab
 	}
 	return backend.Backend.Create(name, mode)
 }
+func (backend overrideBackend) MkdirAll(name string, mode fs.FileMode) error {
+	if backend.mkdir != nil {
+		return backend.mkdir(name, mode)
+	}
+	return backend.Backend.MkdirAll(name, mode)
+}
 func (backend overrideBackend) CommitAbsent(stage, final string) error {
 	if backend.commit != nil {
 		return backend.commit(stage, final)
@@ -81,6 +88,7 @@ type errorWritable struct {
 	writeErr error
 	syncErr  error
 	closeErr error
+	onClose  func()
 }
 
 func (writer *errorWritable) Write(data []byte) (int, error) {
@@ -89,8 +97,14 @@ func (writer *errorWritable) Write(data []byte) (int, error) {
 	}
 	return len(data), nil
 }
-func (writer *errorWritable) Sync() error  { return writer.syncErr }
-func (writer *errorWritable) Close() error { return writer.closeErr }
+func (writer *errorWritable) Sync() error { return writer.syncErr }
+func (writer *errorWritable) Close() error {
+	if writer.onClose != nil {
+		writer.onClose()
+		writer.onClose = nil
+	}
+	return writer.closeErr
+}
 
 type errorReadCloser struct {
 	reader   io.Reader

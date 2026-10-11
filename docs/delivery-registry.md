@@ -42,6 +42,8 @@ A registry update uses this no-replace protocol:
 
 Revision filenames contain a fixed-width sequence. A concurrent writer cannot replace an existing revision; it receives a revision conflict and must reload. Interrupted temporary files do not supersede the previous complete revision. History uses the same private immutable commit protocol and is ordered by timestamp and event UUID when read.
 
+Acknowledged browser and webhook uploads also create secret-free immutable activity objects beside registry history. Their filenames bind a fixed-width receive timestamp to the receipt UUID; readers strictly compare filename metadata with validated content. The global index retains the newest 10,000 receipts by default and returns recent records newest-first. Receipts link server and delivery UUIDs to original/stored filename, exact bytes, SHA-256, route, destination, actor, canonical peer IP, and receive time. They never alter the registry schema or worker protocol version.
+
 Courier flushes each immutable state file before committing it. It also synchronizes the containing directory on operating systems that expose portable directory `fsync` semantics. Windows does not support `Sync` on an `os.File` opened for a directory, so the post-commit directory flush is a documented best-effort boundary there; an unsupported directory flush never turns a successfully flushed no-replace state commit into `Access is denied`.
 
 State objects must be private regular files on systems with POSIX permission bits. Symlinks, malformed JSON, unknown JSON fields, filename/content mismatches, invalid references, and invalid lifecycle or policy values fail closed.

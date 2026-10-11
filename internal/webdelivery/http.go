@@ -5,24 +5,29 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"mime"
 	"mime/multipart"
 	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"path"
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/iwonz/courier/internal/archive"
 	"github.com/iwonz/courier/internal/delivery"
 	"github.com/iwonz/courier/internal/fsx"
+	"github.com/iwonz/courier/internal/operation"
 	"github.com/iwonz/courier/internal/policy"
 )
 
@@ -490,7 +495,17 @@ func (host *Host) receiveUpload(response http.ResponseWriter, request *http.Requ
 		writeError(response, http.StatusBadRequest, "unsafe or excluded file name")
 		return
 	}
-	finalPath := hosted.resource.Backend.Join(hosted.resource.Path, name)
+	storedName, finalPath, err := host.selectUploadDestination(hosted, name)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if errors.Is(err, fsx.ErrDestinationExists) {
+			status = http.StatusConflict
+		} else if errors.Is(err, delivery.ErrInvalid) {
+			status = http.StatusBadRequest
+		}
+		writeError(response, status, "destination unavailable")
+		return
+	}
 	if _, err := hosted.resource.Backend.Lstat(finalPath); err == nil {
 		writeError(response, http.StatusConflict, "destination already exists")
 		return
@@ -510,7 +525,8 @@ func (host *Host) receiveUpload(response http.ResponseWriter, request *http.Requ
 		writeError(response, http.StatusInternalServerError, "staging unavailable")
 		return
 	}
-	limited := &uploadWriter{ctx: request.Context(), destination: writer, authorization: authorization}
+	digest := sha256.New()
+	limited := &uploadWriter{ctx: request.Context(), destination: io.MultiWriter(writer, digest), authorization: authorization}
 	_, copyErr := io.CopyBuffer(limited, part, make([]byte, streamBufferSize))
 	closeErr := errors.Join(writer.Sync(), writer.Close())
 	if copyErr != nil || closeErr != nil {
@@ -539,7 +555,12 @@ func (host *Host) receiveUpload(response http.ResponseWriter, request *http.Requ
 			writeError(response, status, "archive extraction failed")
 			return
 		}
-		writeJSON(response, http.StatusCreated, map[string]any{"name": name, "bytes": authorizationBytes(authorization), "entries": result.Entries})
+		receipt, receiptErr := host.uploadReceipt(request, hosted, name, "", authorizationBytes(authorization), hex.EncodeToString(digest.Sum(nil)), true, result.Entries)
+		if receiptErr != nil || writeDestinationReceipt(request.Context(), hosted.resource, receipt) != nil || host.recordActivity(request.Context(), receipt) != nil {
+			writeError(response, http.StatusInternalServerError, "upload activity unavailable")
+			return
+		}
+		writeJSON(response, http.StatusCreated, map[string]any{"name": name, "originalName": name, "bytes": authorizationBytes(authorization), "entries": result.Entries})
 		return
 	}
 	if err := hosted.resource.Backend.CommitAbsent(stagePath, finalPath); err != nil {
@@ -550,7 +571,77 @@ func (host *Host) receiveUpload(response http.ResponseWriter, request *http.Requ
 		writeError(response, status, "upload commit failed")
 		return
 	}
-	writeJSON(response, http.StatusCreated, map[string]any{"name": name, "bytes": authorizationBytes(authorization)})
+	receipt, receiptErr := host.uploadReceipt(request, hosted, name, storedName, authorizationBytes(authorization), hex.EncodeToString(digest.Sum(nil)), false, 0)
+	if receiptErr != nil || writeDestinationReceipt(request.Context(), hosted.resource, receipt) != nil || host.recordActivity(request.Context(), receipt) != nil {
+		writeError(response, http.StatusInternalServerError, "upload activity unavailable")
+		return
+	}
+	writeJSON(response, http.StatusCreated, map[string]any{"name": storedName, "originalName": name, "storedName": storedName, "bytes": authorizationBytes(authorization)})
+}
+
+func (host *Host) selectUploadDestination(hosted *hostedDelivery, original string) (string, string, error) {
+	if hosted.definition.Extract || hosted.definition.effectiveFilenamePolicy() == operation.FilenamePreserve {
+		return original, hosted.resource.Backend.Join(hosted.resource.Path, original), nil
+	}
+	extension := safeUploadExtension(path.Ext(original))
+	for range 8 {
+		id := host.newID()
+		if !id.Valid() {
+			return "", "", fmt.Errorf("%w: upload name generator returned an invalid UUID", delivery.ErrInvalid)
+		}
+		name := string(id) + extension
+		final := hosted.resource.Backend.Join(hosted.resource.Path, name)
+		if _, err := hosted.resource.Backend.Lstat(final); errors.Is(err, fs.ErrNotExist) {
+			return name, final, nil
+		} else if err != nil {
+			return "", "", err
+		}
+	}
+	return "", "", fsx.ErrDestinationExists
+}
+
+func safeUploadExtension(extension string) string {
+	if len(extension) < 2 || len(extension) > 17 {
+		return ""
+	}
+	for _, character := range extension[1:] {
+		if character < '0' || character > '9' && character < 'A' || character > 'Z' && character < 'a' || character > 'z' {
+			return ""
+		}
+	}
+	return extension
+}
+
+func (host *Host) uploadReceipt(request *http.Request, hosted *hostedDelivery, original, stored string, bytes int64, digest string, extracted bool, entries int) (delivery.UploadReceipt, error) {
+	peer, err := uploadPeer(request.RemoteAddr)
+	if err != nil {
+		return delivery.UploadReceipt{}, err
+	}
+	auth := hosted.policy.Policy().Auth
+	subject := "anonymous"
+	if auth == delivery.AuthBasic {
+		subject, _, _ = request.BasicAuth()
+	} else if auth == delivery.AuthPassword {
+		subject = "password-authenticated"
+	}
+	receipt := delivery.UploadReceipt{
+		SchemaVersion: delivery.UploadReceiptSchemaVersion, ID: host.newID(), ServerID: hosted.record.ServerID, DeliveryID: hosted.record.ID,
+		Route: hosted.record.Route, Destination: hosted.record.Destination, OriginalName: original, StoredName: stored,
+		Bytes: bytes, SHA256: digest, Extracted: extracted, Entries: entries, Auth: auth, Subject: subject, Peer: peer, ReceivedAt: host.now().UTC(),
+	}
+	return receipt, receipt.Validate()
+}
+
+func uploadPeer(remote string) (string, error) {
+	host, _, err := net.SplitHostPort(remote)
+	if err != nil {
+		return "", err
+	}
+	address, err := netip.ParseAddr(host)
+	if err != nil {
+		return "", err
+	}
+	return address.String(), nil
 }
 
 type uploadWriter struct {
@@ -585,7 +676,7 @@ func firstFilePart(reader *multipart.Reader) (*multipart.Part, string, error) {
 }
 
 func safeUploadName(name string) bool {
-	return name != "" && name != "." && name != ".." && path.Base(name) == name && !strings.ContainsAny(name, "\\/\x00\r\n")
+	return name != "" && name != "." && name != ".." && name != delivery.ActivityDirectory && len(name) <= 255 && utf8.ValidString(name) && path.Base(name) == name && !strings.ContainsAny(name, "\\/\x00\r\n")
 }
 
 func sameOrigin(request *http.Request) bool {

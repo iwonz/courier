@@ -161,7 +161,7 @@ func TestUpdateProgressAndResults(t *testing.T) {
 	progress.Handle(update.Event{Stage: update.StageDownloadArchive, Current: 11, Total: 10})
 	progress.Finish()
 	progress.Finish()
-	for _, wanted := range []string{"Checking the latest release", "Downloading the release archive", "Downloading checksums", "Verifying the checksum", "Extracting the Courier binary", "Installing the verified binary", "Completing the update", "50%", "7 bytes", "100%"} {
+	for _, wanted := range []string{"Checking the latest release", "Downloading the release archive", "Downloading checksums", "Verifying the checksum", "Extracting the Courier binary", "Installing the verified binary", "Completing the update", "50%", "7 B", "100%"} {
 		if !strings.Contains(output.String(), wanted) {
 			t.Fatalf("missing %q in %q", wanted, output.String())
 		}

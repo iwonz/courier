@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"mime/multipart"
@@ -16,6 +17,7 @@ import (
 	"net/netip"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -50,10 +52,18 @@ func webDependencies() policy.Dependencies {
 }
 
 func webRecord(id delivery.ID, route delivery.Route, configured delivery.Policy) delivery.Delivery {
-	return delivery.Delivery{
+	record := delivery.Delivery{
 		ID: id, ServerID: testServerID, Route: route, State: delivery.StateStarting,
 		Policy: configured, CreatedAt: webTestTime, UpdatedAt: webTestTime,
 	}
+	if route == delivery.RouteWebToPath {
+		record.Source, record.Destination = "web://", "./incoming"
+	} else if route == delivery.RouteWebhookToPath {
+		record.Source, record.Destination = "webhook://", "./incoming"
+	} else {
+		record.Source, record.Destination = "./source", "web://"
+	}
+	return record
 }
 
 func fixedToken(value byte) string {
@@ -99,6 +109,8 @@ func newTestHost(t *testing.T, stop func(delivery.ID)) *Host {
 			return selection.Compile(rules, func(string) (io.ReadCloser, error) { return nil, fs.ErrNotExist })
 		},
 		PolicyDependencies: webDependencies(), StopRequested: stop,
+		RecordActivity: func(context.Context, delivery.UploadReceipt) error { return nil },
+		Now:            func() time.Time { return webTestTime },
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -130,8 +142,21 @@ func TestDefinitionValidationAndURL(t *testing.T) {
 		t.Fatal(err)
 	}
 	definition, err := NewDefinition(plan, policy.Credentials{}, EndpointRuntime{}, bytes.NewReader(bytes.Repeat([]byte{2}, ResourceTokenBytes)))
-	if err != nil || routeForPlan(plan) != delivery.RouteWebToPath || definition.Token == "" {
+	if err != nil || routeForPlan(plan) != delivery.RouteWebToPath || definition.Token == "" || definition.FilenamePolicy != operation.FilenamePreserve {
 		t.Fatalf("unexpected definition: %#v %v", definition, err)
+	}
+	legacy := definition
+	legacy.FilenamePolicy = ""
+	if err := legacy.Validate(delivery.RouteWebToPath); err != nil || legacy.effectiveFilenamePolicy() != operation.FilenamePreserve {
+		t.Fatalf("legacy definition compatibility=%v", err)
+	}
+	uniquePlan, err := operation.Build(operation.Request{Source: "webhook://", Destination: t.TempDir(), Options: []operation.Option{{Name: operation.OptionFilenamePolicy, Value: "unique"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	uniqueDefinition, err := NewDefinition(uniquePlan, policy.Credentials{}, EndpointRuntime{}, bytes.NewReader(bytes.Repeat([]byte{3}, ResourceTokenBytes)))
+	if err != nil || uniqueDefinition.FilenamePolicy != operation.FilenameUnique {
+		t.Fatalf("unique definition=%+v err=%v", uniqueDefinition, err)
 	}
 	deliveryCredentials := policy.Credentials{BasicUsername: "user", BasicPassword: []byte("basic"), Password: []byte("password")}
 	credentialDefinition, err := NewDefinition(plan, deliveryCredentials, EndpointRuntime{}, bytes.NewReader(bytes.Repeat([]byte{4}, ResourceTokenBytes)))
@@ -280,6 +305,9 @@ func TestHostRegistrationLifecycle(t *testing.T) {
 	host, err := NewHost(HostOptions{Open: localOpen, Select: func([]operation.SelectionRule) (selection.Selector, error) { return selection.All(), nil }, PolicyDependencies: webDependencies(), Server: server})
 	if err != nil || server.Handler == nil {
 		t.Fatalf("expected configured server: %v", err)
+	}
+	if err := host.recordActivity(context.Background(), activityReceipt()); err == nil {
+		t.Fatal("missing global activity recorder accepted a receipt")
 	}
 	defer host.Close(context.Background())
 	configured := delivery.DefaultPolicy()
@@ -596,6 +624,184 @@ func TestBrowserUploadIsTransactional(t *testing.T) {
 	}
 	if response := perform(host, http.MethodPost, base, strings.NewReader("bad"), map[string]string{"Content-Type": "multipart/form-data; boundary=x", "X-Courier-File-Size": "invalid"}); response.Code != http.StatusBadRequest {
 		t.Fatalf("declared parse=%d", response.Code)
+	}
+}
+
+func TestUniqueUploadIdentityAndReceipts(t *testing.T) {
+	root := t.TempDir()
+	ids := []delivery.ID{
+		"00000000-0000-4000-8000-000000000041",
+		"00000000-0000-4000-8000-000000000042",
+	}
+	var receipts []delivery.UploadReceipt
+	host, err := NewHost(HostOptions{
+		Open: localOpen, Select: func([]operation.SelectionRule) (selection.Selector, error) { return selection.All(), nil },
+		PolicyDependencies: webDependencies(), Now: func() time.Time { return webTestTime },
+		NewID: func() delivery.ID { id := ids[0]; ids = ids[1:]; return id },
+		RecordActivity: func(_ context.Context, receipt delivery.UploadReceipt) error {
+			receipts = append(receipts, receipt)
+			return nil
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer host.Close(context.Background())
+	definition := webDefinition(delivery.RouteWebToPath, root)
+	definition.FilenamePolicy = operation.FilenameUnique
+	record := webRecord(testDeliveryID, delivery.RouteWebToPath, delivery.DefaultPolicy())
+	if err := host.Register(context.Background(), record, marshalDefinition(t, definition)); err != nil {
+		t.Fatal(err)
+	}
+	body, contentType := multipartBody(t, "Résumé.PDF", []byte("identity"), false)
+	response := perform(host, http.MethodPost, "/d/"+definition.Token+"/api/v1/upload", body, map[string]string{"Content-Type": contentType})
+	stored := "00000000-0000-4000-8000-000000000041.PDF"
+	data, readErr := os.ReadFile(filepath.Join(root, stored))
+	if response.Code != http.StatusCreated || readErr != nil || string(data) != "identity" || !strings.Contains(response.Body.String(), `"originalName":"Résumé.PDF"`) || !strings.Contains(response.Body.String(), `"storedName":"`+stored+`"`) {
+		t.Fatalf("response=%d %q data=%q err=%v", response.Code, response.Body.String(), data, readErr)
+	}
+	if _, err := os.Stat(filepath.Join(root, "Résumé.PDF")); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("original filename was committed: %v", err)
+	}
+	if len(receipts) != 1 || receipts[0].OriginalName != "Résumé.PDF" || receipts[0].StoredName != stored || receipts[0].Bytes != 8 || receipts[0].Peer != "192.0.2.10" || receipts[0].Subject != "anonymous" || receipts[0].SHA256 != "689f6a627384c7dcb2dcc1487e540223e77bdf9dcd0d8be8a326eda65b0ce9a4" {
+		t.Fatalf("receipt=%+v", receipts)
+	}
+	receiptPath := filepath.Join(root, delivery.ActivityDirectory, delivery.ActivityRecordsDirectory, fmt.Sprintf("%020d-%s.json", webTestTime.UnixNano(), receipts[0].ID))
+	receiptData, err := os.ReadFile(receiptPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var destinationReceipt delivery.UploadReceipt
+	if err := json.Unmarshal(receiptData, &destinationReceipt); err != nil || destinationReceipt != receipts[0] {
+		t.Fatalf("destination receipt=%+v err=%v", destinationReceipt, err)
+	}
+	if info, err := os.Stat(receiptPath); err != nil || runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
+		t.Fatalf("receipt mode=%v err=%v", info.Mode(), err)
+	}
+}
+
+func TestUniqueUploadNameHelpers(t *testing.T) {
+	if safeUploadExtension(".txt") != ".txt" || safeUploadExtension("") != "" || safeUploadExtension("."+strings.Repeat("a", 17)) != "" || safeUploadExtension(".bad-") != "" {
+		t.Fatal("unexpected safe extension classification")
+	}
+	if safeUploadName(delivery.ActivityDirectory) || safeUploadName(strings.Repeat("a", 256)) || safeUploadName(string([]byte{0xff})) {
+		t.Fatal("private, long, or invalid UTF-8 upload name accepted")
+	}
+	if _, err := uploadPeer("invalid"); err == nil {
+		t.Fatal("invalid socket peer accepted")
+	}
+	if _, err := uploadPeer("not-an-ip:80"); err == nil {
+		t.Fatal("invalid peer IP accepted")
+	}
+	root := t.TempDir()
+	resource := &Resource{Backend: fsx.Local{}, Path: root}
+	hosted := &hostedDelivery{definition: Definition{FilenamePolicy: operation.FilenameUnique}, resource: resource}
+	first := delivery.ID("00000000-0000-4000-8000-000000000043")
+	second := delivery.ID("00000000-0000-4000-8000-000000000044")
+	if err := os.WriteFile(filepath.Join(root, string(first)+".txt"), []byte("collision"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ids := []delivery.ID{first, second}
+	host := &Host{newID: func() delivery.ID { id := ids[0]; ids = ids[1:]; return id }}
+	name, _, err := host.selectUploadDestination(hosted, "source.txt")
+	if err != nil || name != string(second)+".txt" {
+		t.Fatalf("retry name=%q err=%v", name, err)
+	}
+	host.newID = func() delivery.ID { return "invalid" }
+	if _, _, err := host.selectUploadDestination(hosted, "source.txt"); !errors.Is(err, delivery.ErrInvalid) {
+		t.Fatalf("invalid generator=%v", err)
+	}
+	host.newID = func() delivery.ID { return first }
+	if _, _, err := host.selectUploadDestination(hosted, "source.txt"); !errors.Is(err, fsx.ErrDestinationExists) {
+		t.Fatalf("exhausted collisions=%v", err)
+	}
+	hosted.definition.Extract = true
+	if name, _, err := host.selectUploadDestination(hosted, "archive.tar.gz"); err != nil || name != "archive.tar.gz" {
+		t.Fatalf("extract destination=%q err=%v", name, err)
+	}
+}
+
+func TestUploadDestinationAndActivityFailures(t *testing.T) {
+	root := t.TempDir()
+	host := newTestHost(t, nil)
+	definition := webDefinition(delivery.RouteWebToPath, root)
+	definition.FilenamePolicy = operation.FilenameUnique
+	record := webRecord(testDeliveryID, delivery.RouteWebToPath, delivery.DefaultPolicy())
+	if err := host.Register(context.Background(), record, marshalDefinition(t, definition)); err != nil {
+		t.Fatal(err)
+	}
+	target := "/d/" + definition.Token + "/api/v1/upload"
+	upload := func(name string) *httptest.ResponseRecorder {
+		body, contentType := multipartBody(t, name, []byte("payload"), false)
+		return perform(host, http.MethodPost, target, body, map[string]string{"Content-Type": contentType})
+	}
+	host.newID = func() delivery.ID { return "invalid" }
+	if response := upload("invalid-id.txt"); response.Code != http.StatusBadRequest {
+		t.Fatalf("invalid generated ID=%d %q", response.Code, response.Body.String())
+	}
+	collisionID := delivery.ID("00000000-0000-4000-8000-000000000045")
+	if err := os.WriteFile(filepath.Join(root, string(collisionID)+".txt"), []byte("exists"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	host.newID = func() delivery.ID { return collisionID }
+	if response := upload("collision.txt"); response.Code != http.StatusConflict {
+		t.Fatalf("generated collision=%d %q", response.Code, response.Body.String())
+	}
+	want := errors.New("unavailable")
+	host.byID[record.ID].resource.Backend = overrideBackend{Backend: fsx.Local{}, lstat: func(string) (fs.FileInfo, error) { return nil, want }}
+	host.newID = delivery.NewID
+	if response := upload("unavailable.txt"); response.Code != http.StatusInternalServerError {
+		t.Fatalf("destination failure=%d %q", response.Code, response.Body.String())
+	}
+
+	failureRoot := t.TempDir()
+	failureHost := newTestHost(t, nil)
+	failureHost.recordActivity = func(context.Context, delivery.UploadReceipt) error { return want }
+	failureDefinition := webDefinition(delivery.RouteWebToPath, failureRoot)
+	failureRecord := webRecord(delivery.ID("00000000-0000-4000-8000-000000000046"), delivery.RouteWebToPath, delivery.DefaultPolicy())
+	if err := failureHost.Register(context.Background(), failureRecord, marshalDefinition(t, failureDefinition)); err != nil {
+		t.Fatal(err)
+	}
+	body, contentType := multipartBody(t, "record.txt", []byte("payload"), false)
+	response := perform(failureHost, http.MethodPost, "/d/"+failureDefinition.Token+"/api/v1/upload", body, map[string]string{"Content-Type": contentType})
+	if response.Code != http.StatusInternalServerError || !strings.Contains(response.Body.String(), "upload activity unavailable") {
+		t.Fatalf("global receipt failure=%d %q", response.Code, response.Body.String())
+	}
+
+	extractRoot := t.TempDir()
+	extractDefinition := webDefinition(delivery.RouteWebToPath, extractRoot)
+	extractDefinition.Token = fixedToken(9)
+	extractDefinition.Extract = true
+	extractRecord := webRecord(delivery.ID("00000000-0000-4000-8000-000000000047"), delivery.RouteWebToPath, delivery.DefaultPolicy())
+	if err := failureHost.Register(context.Background(), extractRecord, marshalDefinition(t, extractDefinition)); err != nil {
+		t.Fatal(err)
+	}
+	payload := tarGzipBody(t, map[string]string{"bundle/file.txt": "contents"})
+	body, contentType = multipartBody(t, "bundle.tar.gz", payload, false)
+	response = perform(failureHost, http.MethodPost, "/d/"+extractDefinition.Token+"/api/v1/upload", body, map[string]string{"Content-Type": contentType})
+	if response.Code != http.StatusInternalServerError || !strings.Contains(response.Body.String(), "upload activity unavailable") {
+		t.Fatalf("extracted receipt failure=%d %q", response.Code, response.Body.String())
+	}
+}
+
+func TestUploadReceiptActorAndPeerFailures(t *testing.T) {
+	configured := delivery.DefaultPolicy()
+	configured.Auth = delivery.AuthPassword
+	engine, err := policy.NewEngine(testDeliveryID, configured, policy.Credentials{Password: []byte("secret")}, webDependencies())
+	if err != nil {
+		t.Fatal(err)
+	}
+	hosted := &hostedDelivery{record: webRecord(testDeliveryID, delivery.RouteWebToPath, configured), policy: engine}
+	host := &Host{newID: delivery.NewID, now: func() time.Time { return webTestTime }}
+	request := httptest.NewRequest(http.MethodPost, "/", nil)
+	request.RemoteAddr = "invalid"
+	if _, err := host.uploadReceipt(request, hosted, "report.pdf", "report.pdf", 1, strings.Repeat("a", 64), false, 0); err == nil {
+		t.Fatal("invalid peer accepted in upload receipt")
+	}
+	request.RemoteAddr = "[2001:db8::1]:1234"
+	receipt, err := host.uploadReceipt(request, hosted, "report.pdf", "report.pdf", 1, strings.Repeat("a", 64), false, 0)
+	if err != nil || receipt.Subject != "password-authenticated" || receipt.Peer != "2001:db8::1" {
+		t.Fatalf("receipt=%+v err=%v", receipt, err)
 	}
 }
 

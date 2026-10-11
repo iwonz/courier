@@ -21,6 +21,7 @@ import {
   ThemeSelector,
   buttonVariants,
   cn,
+  formatBytes,
   usePreferences,
 } from "@courier/ui";
 import { childPath, downloadURL, loadMetadata, login, parentPath, upload, type Entry, type Metadata } from "./api";
@@ -123,7 +124,7 @@ function DataContent(): React.JSX.Element {
     const path = childPath(metadata!.path, item.name);
     return <li key={`${item.type}:${item.name}`} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-4 py-3 last:border-b-0">
       <span className="grid size-9 place-items-center text-primary"><PixelIcon name={item.type === "directory" ? "folder" : "file"} className="size-4" /></span>
-      <div className="min-w-0"><button type="button" className="max-w-full truncate text-left text-sm font-semibold hover:text-primary disabled:pointer-events-none" disabled={item.type !== "directory"} onClick={() => void refresh(path)}>{item.name}</button><p className="text-xs text-muted-foreground">{item.size} {t("itemSize")}</p></div>
+      <div className="min-w-0"><button type="button" className="max-w-full truncate text-left text-sm font-semibold hover:text-primary disabled:pointer-events-none" disabled={item.type !== "directory"} onClick={() => void refresh(path)}>{item.name}</button><p className="text-xs text-muted-foreground">{formatBytes(item.size, locale)}</p></div>
       <Button asChild variant="ghost" size="sm"><a href={downloadURL(path, item.type === "directory")}><PixelIcon name="download" />{item.type === "directory" ? t("downloadArchive") : t("download")}</a></Button>
     </li>;
   };
@@ -152,7 +153,7 @@ function DataContent(): React.JSX.Element {
                   const presentation = uploadPresentation(item);
                   return <li key={item.id} data-courier-upload-item data-state={item.phase} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-border px-4 py-3 last:border-b-0 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                     <span className="row-span-2 grid size-9 place-items-center bg-secondary text-primary"><PixelIcon name="file" className="size-4" /></span>
-                    <div className="min-w-0"><p className="truncate text-sm font-semibold">{item.name}</p><p className="text-xs text-muted-foreground">{item.size} {t("itemSize")}</p>{item.reason ? <p data-courier-upload-error className="mt-1 break-words text-xs text-destructive">{item.reason}<br />{t("uploadFailureHelp")}</p> : null}</div>
+                    <div className="min-w-0"><p className="truncate text-sm font-semibold">{item.name}</p><p className="text-xs text-muted-foreground">{formatBytes(item.size, locale)}</p>{item.reason ? <p data-courier-upload-error className="mt-1 break-words text-xs text-destructive">{item.reason}<br />{t("uploadFailureHelp")}</p> : null}</div>
                     <Badge variant={presentation.variant} className="col-start-2 sm:col-start-3"><PixelIcon name={presentation.icon} className="size-3.5" />{presentation.label}</Badge>
                     <div className="col-span-2 grid min-w-0 grid-cols-[minmax(0,1fr)_3rem] items-center gap-3 sm:col-span-2 sm:col-start-2"><Progress value={item.progress} aria-label={`${item.name}: ${presentation.label}`} /><span className="text-right font-mono text-xs font-semibold tabular-nums">{item.progress}%</span></div>
                   </li>;

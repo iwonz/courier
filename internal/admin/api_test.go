@@ -35,6 +35,17 @@ type fakeController struct {
 	policy      delivery.Policy
 }
 
+type fakeActivityReader struct {
+	receipts []delivery.UploadReceipt
+	err      error
+	limit    int
+}
+
+func (reader *fakeActivityReader) RecentUploadReceipts(_ context.Context, limit int) ([]delivery.UploadReceipt, error) {
+	reader.limit = limit
+	return reader.receipts, reader.err
+}
+
 func (fake *fakeController) List(context.Context) ([]control.ServerView, error) {
 	return fake.views, fake.listErr
 }
@@ -121,6 +132,25 @@ func TestAPIInventoryAndAssets(t *testing.T) {
 	defaulted, err := NewAPI(APIConfig{Host: "127.0.0.1:9090", Control: controller})
 	if err != nil || defaulted.eventInterval != time.Second || cap(defaulted.subscribers) != 16 {
 		t.Fatalf("defaults=%+v err=%v", defaulted, err)
+	}
+}
+
+func TestAPIUploadActivity(t *testing.T) {
+	reader := &fakeActivityReader{receipts: []delivery.UploadReceipt{{ID: adminDeliveryID, OriginalName: "report.pdf"}}}
+	api, err := NewAPI(APIConfig{Host: "127.0.0.1:9090", Control: &fakeController{}, Activity: reader})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response := httptest.NewRecorder()
+	api.ServeHTTP(response, adminRequest(http.MethodGet, "/api/v1/servers", nil))
+	if response.Code != http.StatusOK || reader.limit != 200 || !strings.Contains(response.Body.String(), `"originalName":"report.pdf"`) {
+		t.Fatalf("code=%d limit=%d body=%q", response.Code, reader.limit, response.Body.String())
+	}
+	reader.err = errors.New("activity unavailable")
+	response = httptest.NewRecorder()
+	api.ServeHTTP(response, adminRequest(http.MethodGet, "/api/v1/servers", nil))
+	if response.Code != http.StatusServiceUnavailable {
+		t.Fatalf("activity failure code=%d body=%q", response.Code, response.Body.String())
 	}
 }
 

@@ -172,6 +172,19 @@ func TestRouteSpecificRateOptions(t *testing.T) {
 	}
 }
 
+func TestIncomingFilenamePolicy(t *testing.T) {
+	for _, source := range []string{"web://", "webhook://"} {
+		plan, err := Build(Request{Source: source, Destination: "./out", Options: []Option{{Name: OptionFilenamePolicy, Value: "unique"}}})
+		if err != nil || plan.Options.FilenamePolicy != FilenameUnique || !plan.Options.Explicit(OptionFilenamePolicy) {
+			t.Fatalf("source=%q options=%+v err=%v", source, plan.Options, err)
+		}
+	}
+	plan, err := Build(Request{Source: "web://", Destination: "./out"})
+	if err != nil || plan.Options.FilenamePolicy != FilenamePreserve || plan.Options.Explicit(OptionFilenamePolicy) {
+		t.Fatalf("default options=%+v err=%v", plan.Options, err)
+	}
+}
+
 func TestOptionValidationErrors(t *testing.T) {
 	validWeb := Request{Source: "web://", Destination: "./out"}
 	for _, test := range []struct {
@@ -186,6 +199,8 @@ func TestOptionValidationErrors(t *testing.T) {
 		{"invalid archive bool", Request{Source: "./in", Destination: "./out", Options: []Option{{Name: OptionArchive, Value: "sometimes"}}}, OptionArchive},
 		{"invalid extract bool", withOptions(validWeb, Option{Name: OptionExtract, Value: "sometimes"}), OptionExtract},
 		{"invalid force creation bool", withOptions(validWeb, Option{Name: OptionForceSourceCreation, Value: "sometimes"}), OptionForceSourceCreation},
+		{"invalid filename policy", withOptions(validWeb, Option{Name: OptionFilenamePolicy, Value: "random"}), OptionFilenamePolicy},
+		{"filename policy extract conflict", withOptions(validWeb, Option{Name: OptionExtract}, Option{Name: OptionFilenamePolicy, Value: "preserve"}), OptionFilenamePolicy},
 		{"invalid listen", withOptions(validWeb, Option{Name: OptionListen, Value: "localhost"}), OptionListen},
 		{"zero listen port", withOptions(validWeb, Option{Name: OptionListen, Value: "localhost:0"}), OptionListen},
 		{"invalid auth", withOptions(validWeb, Option{Name: OptionAuth, Value: "token"}), OptionAuth},

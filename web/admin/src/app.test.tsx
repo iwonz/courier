@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetBrowserPreferenceController } from "@courier/ui";
 import { AdminApp, reconcileDeliverySelection } from "./app";
-import type { Delivery, Snapshot } from "./api";
+import type { Delivery, Snapshot, UploadReceipt } from "./api";
 import { mountAdmin } from "./main";
 
 const policy = {
@@ -24,6 +24,25 @@ const snapshot: Snapshot = { servers: [
   { id: "server-a", bind: "127.0.0.1:8080", processId: 42, state: "active", status: "live", startedAt: "", updatedAt: "", deliveries: [firstDelivery, secondDelivery] },
   { id: "server-b", bind: "127.0.0.1:8081", processId: 43, state: "failed", status: "unreachable", startedAt: "", updatedAt: "", deliveries: [] },
 ] };
+
+const receipt = (overrides: Partial<UploadReceipt> = {}): UploadReceipt => ({
+  schemaVersion: 1,
+  id: "receipt-a",
+  serverId: "server-a",
+  deliveryId: "delivery-a",
+  route: "web-to-path",
+  destination: "./incoming",
+  originalName: "quarterly report.pdf",
+  storedName: "unique.pdf",
+  bytes: 411_789,
+  sha256: "a".repeat(64),
+  extracted: false,
+  auth: "basic",
+  subject: "alice",
+  peer: "127.0.0.1",
+  receivedAt: "2026-09-14T12:30:00Z",
+  ...overrides,
+});
 
 const response = (body: unknown, status = 200): Response => new Response(status === 204 ? null : JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 let eventListener: EventListener | undefined;
@@ -181,5 +200,27 @@ describe("administration React application", () => {
     await screen.findByText("server-b");
     expect(screen.getByText("No live Courier servers are registered.")).toBeTruthy();
     view.unmount();
+  });
+
+  it("shows durable browser and webhook upload activity with human quantities", async () => {
+    const withActivity: Snapshot = {
+      ...snapshot,
+      uploads: [
+        receipt(),
+        receipt({ id: "receipt-b", route: "webhook-to-path", originalName: "bundle.tar.gz", storedName: undefined, extracted: true, entries: 4, auth: "none", subject: "anonymous" }),
+        receipt({ id: "receipt-c", originalName: "empty.zip", storedName: undefined, extracted: true, entries: undefined, auth: "password", subject: "password-authenticated" }),
+      ],
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => response(withActivity)));
+    render(<AdminApp />);
+    await screen.findByText("quarterly report.pdf");
+    expect(document.querySelector("[data-courier-upload-activity]")).toBeTruthy();
+    expect(screen.getByText("unique.pdf")).toBeTruthy();
+    expect(screen.getAllByText("402.1 KiB")[0]!.getAttribute("title")).toBe("402.1 KiB (411,789 B)");
+    expect(screen.getByText("4 Entries")).toBeTruthy();
+    expect(screen.getByText("0 Entries")).toBeTruthy();
+    expect(screen.getByText("webhook-to-path")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Language:/ }));
+    expect(screen.getByText("Последние загрузки")).toBeTruthy();
   });
 });

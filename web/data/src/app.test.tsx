@@ -152,8 +152,8 @@ describe("delivery React application", () => {
     await waitFor(() => expect(document.querySelectorAll("[data-courier-upload-item]")).toHaveLength(2));
     expect(document.querySelector('[data-courier-upload-item][data-state="uploading"]')?.textContent).toContain("first.txt");
     expect(document.querySelector('[data-courier-upload-item][data-state="queued"]')?.textContent).toContain("second.bin");
-    expect(screen.getByText("4 Bytes")).toBeTruthy();
-    expect(screen.getByText("2 Bytes")).toBeTruthy();
+    expect(screen.getByText("4 B")).toBeTruthy();
+    expect(screen.getByText("2 B")).toBeTruthy();
     expect(screen.getByRole("status").getAttribute("aria-live")).toBe("polite");
     expect(screen.getByRole("status").textContent).toContain("0/2");
     expect(input.disabled).toBe(true);

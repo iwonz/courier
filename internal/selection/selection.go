@@ -32,6 +32,25 @@ type Selector interface {
 	Include(string, bool) bool
 }
 
+type protectedSelector struct{ Selector }
+
+// ProtectCourierMetadata excludes Courier's private destination metadata from
+// later transfers and publications while retaining the caller's selection.
+func ProtectCourierMetadata(selector Selector) Selector {
+	if selector == nil {
+		selector = All()
+	}
+	return protectedSelector{Selector: selector}
+}
+
+func (selector protectedSelector) Include(relative string, directory bool) bool {
+	clean := path.Clean(relative)
+	if clean == ".courier" || strings.HasPrefix(clean, ".courier/") {
+		return false
+	}
+	return selector.Selector.Include(relative, directory)
+}
+
 // Matcher is an immutable compiled selection policy.
 type Matcher struct {
 	gitignore gitignore.Matcher

@@ -12,6 +12,7 @@ import (
 	"github.com/iwonz/courier/internal/control"
 	"github.com/iwonz/courier/internal/delivery"
 	"github.com/iwonz/courier/internal/operation"
+	"github.com/iwonz/courier/internal/quantity"
 	"github.com/iwonz/courier/internal/terminalui"
 	"github.com/spf13/cobra"
 )
@@ -198,13 +199,27 @@ func renderServersStyled(output io.Writer, mode terminalui.Mode, views []control
 }
 
 func formatCounters(item delivery.Delivery) string {
-	return fmt.Sprintf("read=%d\nsent=%d\nconfirmed=%d", item.Counters.Read, item.Counters.Sent, item.Counters.Confirmed)
+	return fmt.Sprintf("read=%s\nsent=%s\nconfirmed=%s", quantity.Bytes(item.Counters.Read), quantity.Bytes(item.Counters.Sent), quantity.Bytes(item.Counters.Confirmed))
 }
 
 func formatPolicy(item delivery.Delivery) string {
 	return fmt.Sprintf("auth=%s\nattempts=%d\nfail-action=%s\nlimit=%s\nmax-file-size=%s\nmax-extracted-size=%s\nupload-rate=%s\ndownload-rate=%s\nno-ui=%t\nallow-ip=%s",
-		item.Policy.Auth, item.Policy.AuthAttempts, item.Policy.AuthFailAction, formatLimit(item.Policy.DeliveryLimit), formatLimit(item.Policy.MaxFileSize),
-		formatLimit(item.Policy.MaxExtractedSize), formatLimit(item.Policy.UploadRate), formatLimit(item.Policy.DownloadRate), item.Policy.NoUI, formatAllowIP(item.Policy.AllowIP))
+		item.Policy.Auth, item.Policy.AuthAttempts, item.Policy.AuthFailAction, formatLimit(item.Policy.DeliveryLimit), formatByteLimit(item.Policy.MaxFileSize),
+		formatByteLimit(item.Policy.MaxExtractedSize), formatRateLimit(item.Policy.UploadRate), formatRateLimit(item.Policy.DownloadRate), item.Policy.NoUI, formatAllowIP(item.Policy.AllowIP))
+}
+
+func formatByteLimit(limit delivery.Limit) string {
+	if limit.Unlimited {
+		return "unlimited"
+	}
+	return quantity.Bytes(limit.Value)
+}
+
+func formatRateLimit(limit delivery.Limit) string {
+	if limit.Unlimited {
+		return "unlimited"
+	}
+	return quantity.BytesPerSecond(float64(limit.Value))
 }
 
 func renderStopResult(command *cobra.Command, request control.StopRequest, result control.StopResult) error {

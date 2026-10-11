@@ -241,7 +241,7 @@ func runProcess(ctx context.Context, config processConfig) (resultErr error) {
 	if err != nil {
 		return err
 	}
-	host, err := newProcessHost(func(id delivery.ID) {
+	host, err := newProcessHost(store, func(id delivery.ID) {
 		go func() { _, _ = runtime.StopDelivery(context.Background(), id, delivery.ReasonStopped) }()
 	})
 	if err != nil {

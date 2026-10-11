@@ -61,6 +61,14 @@ func TestAllMatcher(t *testing.T) {
 	}
 }
 
+func TestProtectCourierMetadata(t *testing.T) {
+	for _, selector := range []Selector{ProtectCourierMetadata(nil), ProtectCourierMetadata(All())} {
+		if !selector.Include("ordinary.txt", false) || selector.Include(".courier", true) || selector.Include(".courier/activity/receipt.json", false) {
+			t.Fatalf("private metadata protection failed for %#v", selector)
+		}
+	}
+}
+
 func TestCompileFailures(t *testing.T) {
 	failingOpen := func(string) (io.ReadCloser, error) { return nil, errors.New("open") }
 	for _, test := range []struct {

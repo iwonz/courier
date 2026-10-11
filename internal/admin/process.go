@@ -394,7 +394,7 @@ func runProcess(ctx context.Context, config processConfig, ready func(State) err
 		return err
 	}
 	defer func() { resultErr = errors.Join(resultErr, store.Close()) }()
-	api, err := adminNewAPI(APIConfig{Host: config.State.Bind, Control: control.Service{Store: store}})
+	api, err := adminNewAPI(APIConfig{Host: config.State.Bind, Control: control.Service{Store: store}, Activity: store})
 	if err != nil {
 		return err
 	}

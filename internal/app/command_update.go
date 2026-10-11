@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/iwonz/courier/internal/quantity"
 	"github.com/iwonz/courier/internal/terminalui"
 	"github.com/iwonz/courier/internal/update"
 	"github.com/spf13/cobra"
@@ -62,9 +63,9 @@ func (p *updateProgress) Handle(event update.Event) {
 			if percentage > 100 {
 				percentage = 100
 			}
-			detail = fmt.Sprintf(" · %d/%d bytes · %d%%", event.Current, event.Total, percentage)
+			detail = fmt.Sprintf(" · %s / %s · %d%%", quantity.Bytes(event.Current), quantity.Bytes(event.Total), percentage)
 		} else {
-			detail = fmt.Sprintf(" · %d bytes", event.Current)
+			detail = " · " + quantity.Bytes(event.Current)
 		}
 	}
 	line := terminalui.New(p.output, p.mode).Text(tone, marker+" "+label+detail)

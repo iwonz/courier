@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/iwonz/courier/internal/archive"
@@ -46,6 +47,9 @@ type HostOptions struct {
 	PolicyDependencies policy.Dependencies
 	Server             *http.Server
 	StopRequested      func(delivery.ID)
+	RecordActivity     func(context.Context, delivery.UploadReceipt) error
+	Now                func() time.Time
+	NewID              func() delivery.ID
 }
 
 type hostedDelivery struct {
@@ -69,16 +73,19 @@ func (hosted *hostedDelivery) close() error {
 }
 
 type Host struct {
-	mutex         sync.RWMutex
-	open          OpenFunc
-	selectRules   SelectFunc
-	archive       ArchiveFunc
-	dependencies  policy.Dependencies
-	server        *http.Server
-	assets        http.Handler
-	stopRequested func(delivery.ID)
-	byToken       map[string]*hostedDelivery
-	byID          map[delivery.ID]*hostedDelivery
+	mutex          sync.RWMutex
+	open           OpenFunc
+	selectRules    SelectFunc
+	archive        ArchiveFunc
+	dependencies   policy.Dependencies
+	server         *http.Server
+	assets         http.Handler
+	stopRequested  func(delivery.ID)
+	recordActivity func(context.Context, delivery.UploadReceipt) error
+	now            func() time.Time
+	newID          func() delivery.ID
+	byToken        map[string]*hostedDelivery
+	byID           map[delivery.ID]*hostedDelivery
 }
 
 func NewHost(options HostOptions) (*Host, error) {
@@ -92,7 +99,19 @@ func NewHost(options HostOptions) (*Host, error) {
 	host := &Host{
 		open: options.Open, selectRules: options.Select, dependencies: options.PolicyDependencies,
 		archive: options.Archive, server: server, assets: dataAssetHandler(), stopRequested: options.StopRequested,
+		recordActivity: options.RecordActivity, now: options.Now, newID: options.NewID,
 		byToken: make(map[string]*hostedDelivery), byID: make(map[delivery.ID]*hostedDelivery),
+	}
+	if host.recordActivity == nil {
+		host.recordActivity = func(context.Context, delivery.UploadReceipt) error {
+			return errors.New("global upload activity recorder is unavailable")
+		}
+	}
+	if host.now == nil {
+		host.now = time.Now
+	}
+	if host.newID == nil {
+		host.newID = delivery.NewID
 	}
 	if host.archive == nil {
 		host.archive = prepareArchiveResource
@@ -122,6 +141,7 @@ func (host *Host) Register(ctx context.Context, record delivery.Delivery, runtim
 	if err != nil {
 		return err
 	}
+	selector = selection.ProtectCourierMetadata(selector)
 	openedEndpoint := definition.Source
 	if record.Route == delivery.RouteWebToPath || record.Route == delivery.RouteWebhookToPath {
 		openedEndpoint = definition.Destination

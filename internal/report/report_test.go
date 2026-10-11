@@ -64,7 +64,7 @@ func TestInteractiveReporter(t *testing.T) {
 	if reporter.successText("ok") != "ok" || reporter.warningText("wait") != "wait" {
 		t.Fatal("progress palette changed text")
 	}
-	if prefix := reporter.stagePrefix(decor.Statistics{}); prefix != "complete r=8 s=8 c=8 " {
+	if prefix := reporter.stagePrefix(decor.Statistics{}); prefix != "complete r=8 B s=8 B c=8 B " {
 		t.Fatalf("prefix=%q", prefix)
 	}
 	reporter.Finish()
@@ -77,13 +77,13 @@ func TestRichSummariesAndInterruption(t *testing.T) {
 	mode := terminalui.Mode{Interactive: true, Color: false, Width: 80}
 	var output bytes.Buffer
 	SuccessWithMode(&output, mode, "source\x1b[31m", "destination", 42, 1500*time.Millisecond)
-	if got := output.String(); !strings.Contains(got, "TRANSFER COMPLETE") || !strings.Contains(got, "42 bytes") || strings.Contains(got, "\x1b[31m") {
+	if got := output.String(); !strings.Contains(got, "TRANSFER COMPLETE") || !strings.Contains(got, "42 B") || strings.Contains(got, "\x1b[31m") {
 		t.Fatalf("success=%q", got)
 	}
 
 	output.Reset()
 	FailureCountersWithMode(&output, mode, "commit", errors.New("https://user:pass@example.test/a?token=x"), 1, 2, 3)
-	if got := output.String(); !strings.Contains(got, "OPERATION FAILED") || !strings.Contains(got, "3 bytes") || strings.Contains(got, "pass") || strings.Contains(got, "token") {
+	if got := output.String(); !strings.Contains(got, "OPERATION FAILED") || !strings.Contains(got, "3 B") || strings.Contains(got, "pass") || strings.Contains(got, "token") {
 		t.Fatalf("failure=%q", got)
 	}
 

@@ -35,7 +35,10 @@ var (
 	}
 )
 
-func newWorkerWebHost(stop func(delivery.ID)) (DeliveryHost, error) {
+func newWorkerWebHost(store *delivery.Store, stop func(delivery.ID)) (DeliveryHost, error) {
+	if store == nil {
+		return nil, errors.New("worker delivery store is required")
+	}
 	home, err := workerHome()
 	if err != nil {
 		return nil, err
@@ -87,6 +90,7 @@ func newWorkerWebHost(stop func(delivery.ID)) (DeliveryHost, error) {
 			return selection.Compile(rules, selection.OpenFile)
 		},
 		PolicyDependencies: policy.DefaultDependencies(),
+		RecordActivity:     store.AppendUploadReceipt,
 		StopRequested: func(id delivery.ID) {
 			if stop != nil {
 				stop(id)

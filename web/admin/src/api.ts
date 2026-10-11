@@ -40,8 +40,28 @@ export interface Server {
   deliveries: Delivery[];
 }
 
+export interface UploadReceipt {
+  schemaVersion: number;
+  id: string;
+  serverId: string;
+  deliveryId: string;
+  route: "web-to-path" | "webhook-to-path";
+  destination: string;
+  originalName: string;
+  storedName?: string;
+  bytes: number;
+  sha256: string;
+  extracted: boolean;
+  entries?: number;
+  auth: "none" | "basic" | "password";
+  subject: string;
+  peer: string;
+  receivedAt: string;
+}
+
 export interface Snapshot {
   servers: Server[];
+  uploads?: UploadReceipt[];
 }
 
 export type Fetcher = typeof fetch;

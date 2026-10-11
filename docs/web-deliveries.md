@@ -17,6 +17,7 @@ Accept one-file-at-a-time uploads into a directory:
 ```console
 courier from web:// to ./incoming/
 courier from web:// to server:/srv/incoming/ --max-file-size 2GiB
+courier from web:// to ./anonymous-drop/ --filename-policy unique
 courier from web:// to ./expanded/ --extract --max-extracted-size 20GiB
 ```
 
@@ -46,6 +47,12 @@ Courier validates the hosted local or SSH path before acquiring a worker. A miss
 
 Each multipart request must contain exactly one safe base filename. Courier reserves transfer capacity before consuming file bytes, writes a private staging file, syncs it, and commits only when the final name is absent. A collision never replaces the existing entry, and staging data is removed on success, failure, or cancellation.
 
+`--filename-policy preserve` is the default and commits that safe basename unchanged. `--filename-policy unique` commits the file under a fresh canonical UUID plus a safe short extension, while retaining the original basename in the upload receipt. Unique naming is useful for drop boxes where unrelated senders may choose the same name. The option applies only to incoming browser and webhook routes and conflicts with `--extract`, where the archive's validated entry names define the committed tree.
+
+Before acknowledging an upload, Courier writes an immutable JSON receipt under `<destination>/.courier/activity/` and a linked copy in its private global state directory. Each receipt contains receipt/server/delivery UUIDs, route, destination, original and stored names, exact byte count, SHA-256, authentication mode and non-secret subject, canonical peer IP, and receive time. Archive receipts contain their extracted-entry count and do not claim that the archive itself was retained. The `.courier` namespace is always excluded from Courier publication, archive, extraction, and path-transfer traversal. Receipt failure is an operation failure, never a false success.
+
+The destination ledger is intentionally a set of private immutable records rather than SQLite: the same no-replace protocol works through local and SFTP backends without relying on remote database locking or journal semantics. Files use `0600` and metadata directories use `0700` where permission bits are available.
+
 With `--extract`, the uploaded object must be tar.gz. Courier inspects every entry, enforces traversal, symlink, entry-count, depth, expanded-size, and expansion-ratio limits, stages the expanded tree, and commits only non-conflicting top-level entries into the destination root. The uploaded archive itself is not retained.
 
 `--max-file-size` defaults to `10GiB`; `unlimited` removes the product cap. `--upload-rate` is aggregate across the delivery. Selection rules apply to uploaded names.
@@ -56,4 +63,4 @@ Without `--background`, the initiating process owns a foreground lease. Interrup
 
 `--no-ui` disables the HTML entry point and returns a small versioned JSON description after authorization. Versioned metadata, session, upload, and download endpoints remain available under the opaque delivery URL. Static UI assets contain no delivery metadata or credentials.
 
-The embedded delivery application is a React root composed from the repository-owned shadcn [`@courier/ui`](../web/ui) package. It uses mark-v3 in product chrome and only delivery-v3 in the title region. The transfer console separates the actual route/status strip, authorization state, and manifest with flat surfaces and crisp one-pixel rules; manifest entries are ruled rows. No progress, size, or status value is invented. Inputs, alerts, focus, file icons, upload, download, and navigation retain native semantics, and all metadata remains backed exclusively by the existing versioned API.
+The embedded delivery application is a React root composed from the repository-owned shadcn [`@courier/ui`](../web/ui) package. It uses mark-v3 in product chrome and only delivery-v3 in the title region. The transfer console separates the actual route/status strip, authorization state, and manifest with flat surfaces and crisp one-pixel rules; manifest entries are ruled rows. File sizes use explicit IEC byte units and expose exact values when useful. No progress, size, or status value is invented. Inputs, alerts, focus, file icons, upload, download, and navigation retain native semantics, and all metadata remains backed exclusively by the existing versioned API.

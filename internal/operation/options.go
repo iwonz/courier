@@ -21,6 +21,7 @@ const (
 	OptionListen              OptionName = "listen"
 	OptionBackground          OptionName = "background"
 	OptionForceSourceCreation OptionName = "force-source-creation"
+	OptionFilenamePolicy      OptionName = "filename-policy"
 	OptionAuth                OptionName = "auth"
 	OptionAuthAttempts        OptionName = "auth-attempts"
 	OptionAuthFailAction      OptionName = "auth-fail-action"
@@ -67,6 +68,14 @@ const (
 	AuthFailStop AuthFailAction = "stop"
 )
 
+// FilenamePolicy selects the committed basename for incoming uploads.
+type FilenamePolicy string
+
+const (
+	FilenamePreserve FilenamePolicy = "preserve"
+	FilenameUnique   FilenamePolicy = "unique"
+)
+
 // Limit is either unlimited or a positive delivery count.
 type Limit struct {
 	Unlimited bool
@@ -96,6 +105,7 @@ type Options struct {
 	Listen              string
 	Background          bool
 	ForceSourceCreation bool
+	FilenamePolicy      FilenamePolicy
 	Auth                AuthMode
 	AuthAttempts        uint64
 	AuthFailAction      AuthFailAction
@@ -141,6 +151,7 @@ var optionDefinitions = map[OptionName]optionDefinition{
 	OptionListen:              {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
 	OptionBackground:          {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
 	OptionForceSourceCreation: {routes: allRoutes()},
+	OptionFilenamePolicy:      {routes: routeSet(RouteWebToPath, RouteWebhookToPath)},
 	OptionAuth:                {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath, RoutePathToHTTP)},
 	OptionAuthAttempts:        {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
 	OptionAuthFailAction:      {routes: routeSet(RouteWebToPath, RoutePathToWeb, RouteWebhookToPath)},
@@ -213,6 +224,7 @@ func directionSet(directions ...Direction) map[Direction]bool {
 func defaultOptions() Options {
 	return Options{
 		Listen:           "127.0.0.1:8080",
+		FilenamePolicy:   FilenamePreserve,
 		Auth:             AuthNone,
 		AuthAttempts:     5,
 		AuthFailAction:   AuthFailBan,
@@ -251,6 +263,9 @@ func buildOptions(route Route, direction Direction, raw []Option) (Options, erro
 	if result.Explicit(OptionMaxExtractedSize) && !result.Extract {
 		return Options{}, optionError(OptionMaxExtractedSize, "requires --extract")
 	}
+	if result.Extract && result.Explicit(OptionFilenamePolicy) {
+		return Options{}, optionError(OptionFilenamePolicy, "conflicts with --extract")
+	}
 	if result.Auth == AuthPassword && route != RouteWebToPath && route != RoutePathToWeb {
 		return Options{}, optionError(OptionAuth, "password mode requires a browser route")
 	}
@@ -272,6 +287,11 @@ func applyOption(result *Options, occurrence Occurrence) error {
 		result.Background, err = parseBool(value)
 	case OptionForceSourceCreation:
 		result.ForceSourceCreation, err = parseBool(value)
+	case OptionFilenamePolicy:
+		result.FilenamePolicy = FilenamePolicy(value)
+		if result.FilenamePolicy != FilenamePreserve && result.FilenamePolicy != FilenameUnique {
+			err = fmt.Errorf("expected preserve or unique")
+		}
 	case OptionAuth:
 		result.Auth = AuthMode(value)
 		if result.Auth != AuthNone && result.Auth != AuthBasic && result.Auth != AuthPassword {

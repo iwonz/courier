@@ -3,10 +3,12 @@
 package delivery
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net"
 	"net/netip"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -318,6 +320,72 @@ func (event HistoryEvent) Validate() error {
 		return fmt.Errorf("%w: unsafe history diagnostics", ErrInvalid)
 	}
 	return event.Counters.Validate()
+}
+
+const (
+	UploadReceiptSchemaVersion = 1
+	ActivityDirectory          = ".courier"
+	ActivityRecordsDirectory   = "activity"
+)
+
+// UploadReceipt is the secret-free durable identity of one acknowledged
+// incoming browser or webhook upload.
+type UploadReceipt struct {
+	SchemaVersion int       `json:"schemaVersion"`
+	ID            ID        `json:"id"`
+	ServerID      ID        `json:"serverId"`
+	DeliveryID    ID        `json:"deliveryId"`
+	Route         Route     `json:"route"`
+	Destination   string    `json:"destination"`
+	OriginalName  string    `json:"originalName"`
+	StoredName    string    `json:"storedName,omitempty"`
+	Bytes         int64     `json:"bytes"`
+	SHA256        string    `json:"sha256"`
+	Extracted     bool      `json:"extracted"`
+	Entries       int       `json:"entries,omitempty"`
+	Auth          AuthMode  `json:"auth"`
+	Subject       string    `json:"subject"`
+	Peer          string    `json:"peer"`
+	ReceivedAt    time.Time `json:"receivedAt"`
+}
+
+func (receipt UploadReceipt) Validate() error {
+	if receipt.SchemaVersion != UploadReceiptSchemaVersion || !receipt.ID.Valid() || !receipt.ServerID.Valid() || !receipt.DeliveryID.Valid() {
+		return fmt.Errorf("%w: invalid upload receipt identity", ErrInvalid)
+	}
+	if receipt.Route != RouteWebToPath && receipt.Route != RouteWebhookToPath {
+		return fmt.Errorf("%w: invalid upload receipt route", ErrInvalid)
+	}
+	if invalidBoundedText(receipt.Destination, 4096) || invalidUploadReceiptName(receipt.OriginalName) || receipt.Bytes < 0 || receipt.Entries < 0 || receipt.ReceivedAt.IsZero() || receipt.ReceivedAt.Before(time.Unix(0, 0)) {
+		return fmt.Errorf("%w: invalid upload receipt metadata", ErrInvalid)
+	}
+	if receipt.Extracted {
+		if receipt.StoredName != "" {
+			return fmt.Errorf("%w: extracted upload receipt has a stored archive name", ErrInvalid)
+		}
+	} else if invalidUploadReceiptName(receipt.StoredName) || receipt.Entries != 0 {
+		return fmt.Errorf("%w: invalid committed upload receipt", ErrInvalid)
+	}
+	if receipt.Auth != AuthNone && receipt.Auth != AuthBasic && receipt.Auth != AuthPassword || invalidBoundedText(receipt.Subject, 256) {
+		return fmt.Errorf("%w: invalid upload receipt actor", ErrInvalid)
+	}
+	peer, err := netip.ParseAddr(receipt.Peer)
+	if err != nil || peer.String() != receipt.Peer {
+		return fmt.Errorf("%w: invalid upload receipt peer", ErrInvalid)
+	}
+	digest, err := hex.DecodeString(receipt.SHA256)
+	if err != nil || len(digest) != 32 || hex.EncodeToString(digest) != receipt.SHA256 {
+		return fmt.Errorf("%w: invalid upload receipt digest", ErrInvalid)
+	}
+	return nil
+}
+
+func invalidUploadReceiptName(value string) bool {
+	return invalidBoundedText(value, 255) || path.Base(value) != value || strings.ContainsAny(value, "\\/")
+}
+
+func invalidBoundedText(value string, maximum int) bool {
+	return len(value) > maximum || invalidText(value)
 }
 
 func invalidText(value string) bool {

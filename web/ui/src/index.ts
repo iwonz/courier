@@ -23,4 +23,5 @@ export * from "./i18n";
 export * from "./lib/utils";
 export * from "./preferences";
 export * from "./preferences-react";
+export * from "./quantity";
 export * from "./theme";

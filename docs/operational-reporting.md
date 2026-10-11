@@ -15,6 +15,8 @@ The invariant is `0 <= confirmed <= sent <= read`. A local committed write advan
 
 Interactive terminals receive an `mpb` progress bar. Redirected stderr receives deterministic cursor-free lines with stable named fields. The final success summary includes source, actual destination, confirmed bytes, elapsed time, and result. Failure output includes the failing stage, all known counters, a sanitized reason, and result.
 
+Human-facing quantities distinguish bytes (`B`, `KiB`, `MiB`, through `EiB`) from bits (`bit`, `Kibit`, through `Eibit`), group exact decimal digits, and use binary scaling with at most one fractional digit. Rates append `/s`. Interactive summaries include the exact grouped byte value when a compact unit is used. Stable redirected output keeps raw integer byte fields for machine consumption.
+
 ## Diagnostic safety
 
 All final reports and internal-mode failures pass through the same sanitizer. URL user-info, query strings, fragments, and conventional password, token, secret, authorization, and cookie assignments are removed before output. Runtime credentials and sessions remain outside registry and history data.
@@ -22,6 +24,8 @@ All final reports and internal-mode failures pass through the same sanitizer. UR
 ## Private history
 
 Operational history files use the same private immutable write-and-sync protocol as the delivery registry. Optional diagnostic text is sanitized before validation and persistence. Events are read in timestamp-plus-UUID order, and the store retains the newest 256 events by default. Rotation considers only Courier history filenames, verifies that every removal target is a private regular file, removes oldest entries, and synchronizes the state directory.
+
+Upload activity is a separate secret-free immutable stream. The global state store retains the newest 10,000 receipts; each destination keeps its own `.courier/activity` ledger so file identity remains auditable even when the live worker and registry entry are gone.
 
 ## Exit codes
 

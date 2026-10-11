@@ -157,6 +157,31 @@ async function extractArchive(archive: string, root: string): Promise<void> {
   execFileSync("tar", ["-xzf", archive, "-C", root]);
 }
 
+type UploadReceipt = {
+  id: string;
+  deliveryId: string;
+  route: string;
+  originalName: string;
+  storedName?: string;
+  bytes: number;
+  sha256: string;
+};
+
+async function receiptFiles(directory: string, prefix = ""): Promise<UploadReceipt[]> {
+  const names = (await readdir(directory)).filter((name) => name.startsWith(prefix) && name.endsWith(".json")).sort();
+  return Promise.all(names.map(async (name) => JSON.parse((await readFile(join(directory, name))).toString("utf8")) as UploadReceipt));
+}
+
+async function globalReceipts(home: string): Promise<UploadReceipt[]> {
+  for (const state of [join(home, ".config", "courier", "state"), join(home, "Library", "Application Support", "courier", "state")]) {
+    try {
+      const receipts = await receiptFiles(state, "activity-");
+      if (receipts.length) return receipts;
+    } catch { /* try the platform-specific state directory */ }
+  }
+  return [];
+}
+
 test("compiled browser upload and webhook routes commit exact files and stop cleanly", async ({ page }) => {
   const direct = await fixture("incoming");
   const destination = join(direct.root, "browser-destination");
@@ -246,6 +271,69 @@ test("compiled browser upload and webhook routes commit exact files and stop cle
     await stopHosted(direct.home, webhookExtract.process, webhookExtract.id);
   } finally {
     await webhookExtract.process.dispose();
+  }
+});
+
+test("compiled unique naming persists linked destination/global receipts and remains visible after restart", async ({ page }) => {
+  const current = await fixture("unique-activity");
+  const destination = join(current.root, "browser-unique");
+  await mkdir(destination, { recursive: true });
+  const browser = await hosted(current.home, ["from", "web://", "to", destination, "--filename-policy", "unique", "--listen", `127.0.0.1:${portBase + 8}`]);
+  let browserReceipt: UploadReceipt | undefined;
+  try {
+    await page.goto(browser.url);
+    const payload = Buffer.from("unique browser identity", "utf8");
+    const uploaded = await upload(page, "original report.txt", payload, "text/plain");
+    expect(uploaded.status()).toBe(201);
+    const result = await uploaded.json() as { originalName: string; storedName: string };
+    expect(result.originalName).toBe("original report.txt");
+    expect(result.storedName).toMatch(/^[0-9a-f-]{36}[.]txt$/);
+    expect(await readFile(join(destination, result.storedName))).toEqual(payload);
+    await expect(readFile(join(destination, result.originalName))).rejects.toThrow();
+    const destinationReceipts = await receiptFiles(join(destination, ".courier", "activity"));
+    expect(destinationReceipts).toHaveLength(1);
+    browserReceipt = destinationReceipts[0]!;
+    expect(browserReceipt).toMatchObject({ deliveryId: browser.id, route: "web-to-path", originalName: result.originalName, storedName: result.storedName, bytes: payload.length });
+    expect(browserReceipt.sha256).toMatch(/^[0-9a-f]{64}$/);
+    const indexed = await globalReceipts(current.home);
+    expect(indexed).toContainEqual(browserReceipt);
+    await stopHosted(current.home, browser.process, browser.id);
+  } finally {
+    await browser.process.dispose();
+  }
+
+  const admin = new CourierProcess(current.home, ["ui", "start", "--listen", `127.0.0.1:${portBase + 9}`]);
+  try {
+    expect(browserReceipt).toBeDefined();
+    const ready = await admin.match(/Courier administration UI: (http:\/\/[^\n]+)\n/);
+    await page.goto(ready[1]);
+    await expect(page.locator("[data-courier-upload-activity]")).toContainText("original report.txt");
+    await expect(page.locator("[data-courier-upload-activity]")).toContainText(browserReceipt!.storedName!);
+    const stopped = await courier(current.home, ["ui", "stop"]);
+    expect(stopped.code, stopped.stderr).toBe(0);
+    expect((await admin.wait()).code).toBe(0);
+  } finally {
+    await admin.dispose();
+  }
+
+  const webhookDestination = join(current.root, "webhook-unique");
+  await mkdir(webhookDestination, { recursive: true });
+  const webhook = await hosted(current.home, ["from", "webhook://", "to", webhookDestination, "--filename-policy", "unique", "--listen", `127.0.0.1:${portBase + 10}`]);
+  try {
+    const payload = Buffer.from([0, 255, 4, 5]);
+    const uploaded = await fetch(webhook.url, { method: "POST", body: oneFileForm("device payload.bin", payload) });
+    expect(uploaded.status).toBe(201);
+    const result = await uploaded.json() as { originalName: string; storedName: string };
+    expect(result.originalName).toBe("device payload.bin");
+    expect(result.storedName).toMatch(/^[0-9a-f-]{36}[.]bin$/);
+    expect(await readFile(join(webhookDestination, result.storedName))).toEqual(payload);
+    const destinationReceipts = await receiptFiles(join(webhookDestination, ".courier", "activity"));
+    expect(destinationReceipts).toHaveLength(1);
+    expect(destinationReceipts[0]).toMatchObject({ deliveryId: webhook.id, route: "webhook-to-path", originalName: result.originalName, storedName: result.storedName });
+    expect(await globalReceipts(current.home)).toContainEqual(destinationReceipts[0]);
+    await stopHosted(current.home, webhook.process, webhook.id);
+  } finally {
+    await webhook.process.dispose();
   }
 });
 

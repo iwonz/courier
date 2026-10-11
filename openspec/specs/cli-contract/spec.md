@@ -44,7 +44,12 @@ Courier SHALL deterministically generate landing command-builder data from the c
 
 ### Requirement: Localized structured parameter metadata
 
-Courier SHALL maintain CLI contract schema version `3` and contract version `0.16.0` with English and Russian descriptions for every public positional argument and flag, explicit required or optional state, and the existing type, default, repeatability, dependency, conflict, and applicability metadata. All flags SHALL be optional, and argument requiredness SHALL remain command-specific.
+Courier SHALL maintain CLI contract schema version `3` and contract version `0.17.0` with English and Russian descriptions for every public positional argument and flag, explicit required or optional state, and the existing type, default, repeatability, dependency, conflict, and applicability metadata. All flags SHALL be optional, and argument requiredness SHALL remain command-specific.
+
+#### Scenario: Upload filename policy is inspected
+
+- **WHEN** a consumer reads an incoming browser or webhook route
+- **THEN** it finds optional `--filename-policy <preserve|unique>`, default `preserve`, with `--extract` declared as a conflict
 
 #### Scenario: Parameter metadata is incomplete
 

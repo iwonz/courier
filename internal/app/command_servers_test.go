@@ -109,6 +109,9 @@ func TestServersCommand(t *testing.T) {
 }
 
 func TestServerCommandRenderingAndOutputFailures(t *testing.T) {
+	if formatByteLimit(delivery.Limit{Unlimited: true}) != "unlimited" || formatRateLimit(delivery.Limit{Value: 1536}) != "1.5 KiB/s" {
+		t.Fatal("styled quantity limits are inconsistent")
+	}
 	output := renderServers(commandServerViews())
 	for _, expected := range []string{
 		"status: live", "source: ./data", "destination: web://", "auth=basic", "limit=2", "max-file-size=10737418240",

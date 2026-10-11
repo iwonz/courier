@@ -9,6 +9,7 @@ Start an incoming endpoint whose final destination is a local or SSH directory:
 ```sh
 courier from webhook:// to ./inbox/
 courier from webhook:// to server:/srv/inbox/ --auth basic --background
+courier from webhook:// to ./dropbox/ --filename-policy unique
 ```
 
 Courier prints an opaque URL shaped like:
@@ -27,7 +28,9 @@ curl --fail --form 'file=@./report.pdf' 'http://127.0.0.1:8080/d/<token>/upload'
 
 With `--auth basic`, Courier prompts the owner for the username and password before registration. A client supplies standard HTTP Basic authentication; credentials never appear in the Courier command, URL, registry, or logs. Password-session mode is browser-only and is rejected for webhooks.
 
-The endpoint applies `--allow-ip`, `--auth-attempts`, `--auth-fail-action`, `--limit`, ordered selection rules, `--max-file-size`, and aggregate `--upload-rate`. It validates the untrusted filename as one safe basename, rejects a second multipart part, stages bytes privately, and returns success only after an absent final path is committed. An existing name is a conflict and is never overwritten. With `--extract`, the uploaded tar.gz is inspected and extracted through Courier's shared codec and safety limits instead of being retained.
+The endpoint applies `--allow-ip`, `--auth-attempts`, `--auth-fail-action`, `--limit`, ordered selection rules, `--max-file-size`, and aggregate `--upload-rate`. It validates the untrusted filename as one safe basename, rejects a second multipart part, stages bytes privately, and returns success only after an absent final path is committed. An existing name is a conflict and is never overwritten. `--filename-policy preserve` keeps that basename; `unique` stores a UUID name with a safe short extension and records the original. The option conflicts with `--extract`, where the uploaded tar.gz is inspected and extracted through Courier's shared codec and safety limits instead of being retained.
+
+Every acknowledged incoming upload has an immutable destination receipt under `.courier/activity/` and a linked private global receipt. The record connects the original and stored identity to delivery/server UUIDs, exact bytes, SHA-256, actor, peer, route, and time without storing credentials or bearer tokens. Courier excludes its `.courier` metadata namespace from later transfer and publication.
 
 There is no HTML page, metadata API, or password-session endpoint for an incoming webhook. The default listener is loopback. Use a non-loopback `--listen` value only with an appropriate network and authentication policy.
 

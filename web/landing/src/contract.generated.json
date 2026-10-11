@@ -1,6 +1,6 @@
 {
-  "contractVersion": "0.16.0",
-  "targetRelease": "0.3.19",
+  "contractVersion": "0.17.0",
+  "targetRelease": "0.3.20",
   "endpoints": [
     {
       "name": "local",
@@ -56,6 +56,7 @@
         "listen",
         "background",
         "force-source-creation",
+        "filename-policy",
         "auth",
         "auth-attempts",
         "auth-fail-action",
@@ -266,6 +267,31 @@
       "description": {
         "en": "Create every missing directory endpoint recursively without asking; no other safety confirmation is bypassed.",
         "ru": "Рекурсивно создать все отсутствующие каталоги без запроса; остальные защитные подтверждения не отключаются."
+      }
+    },
+    {
+      "name": "filename-policy",
+      "syntax": "--filename-policy \u003cpreserve|unique\u003e",
+      "valueKind": "enum",
+      "choices": [
+        "preserve",
+        "unique"
+      ],
+      "placeholder": "preserve|unique",
+      "repeatable": false,
+      "default": "preserve",
+      "appliesTo": [
+        "web-to-path",
+        "webhook-to-path"
+      ],
+      "conflicts": [
+        "extract"
+      ],
+      "requires": null,
+      "required": false,
+      "description": {
+        "en": "Preserve an incoming upload's safe basename, or commit it under a unique UUID name while retaining the original name in activity records.",
+        "ru": "Сохранить безопасное исходное имя входящего файла или записать его под уникальным UUID-именем, сохранив оригинал в журнале активности."
       }
     },
     {
@@ -613,6 +639,7 @@
         "listen",
         "background",
         "force-source-creation",
+        "filename-policy",
         "auth",
         "auth-attempts",
         "auth-fail-action",
@@ -666,6 +693,7 @@
         "listen",
         "background",
         "force-source-creation",
+        "filename-policy",
         "auth",
         "auth-attempts",
         "auth-fail-action",

@@ -14,6 +14,8 @@ Endpoint parsing rejects control characters and ambiguous forms. Local operation
 
 The transfer engine completes preflight before changing the final target. Data is written under a private partial name and committed only after completion. Existing final paths are rejected rather than overwritten or merged, and unrelated entries in a destination container are preserved. Local commits use exclusive link, symlink, or directory reservation operations; SFTP uses the no-replace protocol rename. Whole-directory atomicity remains subject to the destination operating system, filesystem, and transport guarantees.
 
+Incoming upload accounting uses private immutable JSON receipts, not an in-place database. This avoids unsafe SQLite locking and journal assumptions on SFTP destinations. Destination metadata lives only under `.courier/activity`, uses private permissions where supported, is committed without replacement, and is unconditionally excluded from transfer, archive, extraction, and browser publication. Global receipts contain no passwords, cookies, resource tokens, Authorization values, or forwarded client headers; the peer is the canonical accepted socket address.
+
 ## Optional remote helper
 
 SFTP supplied by the authenticated server is always preferred. A helper is eligible only for a typed failure to start that subsystem. Platform detection is read-only, then Courier requires an explicit interactive `yes`; EOF, an unavailable terminal, errors, and every other answer decline.
